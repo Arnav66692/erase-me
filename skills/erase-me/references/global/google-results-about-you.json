@@ -1,0 +1,66 @@
+{
+  "id": "google-results-about-you",
+  "name": "Google Results about you",
+  "domain": "google.com",
+  "category": "search_engine",
+  "countries": [
+    "US",
+    "GB",
+    "IE",
+    "AU",
+    "CA",
+    "ZA",
+    "BR",
+    "MX",
+    "ES",
+    "FR",
+    "SE",
+    "TH",
+    "IN",
+    "ID"
+  ],
+  "priority": 1,
+  "cluster": "google",
+  "covers": [],
+  "search": {
+    "method": "manual",
+    "url_template": null,
+    "fields": [],
+    "notes": "After sign-in, Google scans its own results for the name, address, phone and email the person enters. The agent cannot run this scan. The person opens the dashboard and reviews the To review tab."
+  },
+  "optout": {
+    "method": "search_removal",
+    "url": "https://myactivity.google.com/results-about-you",
+    "email": null,
+    "requires": [
+      "account"
+    ],
+    "fields_needed": [
+      "full_name",
+      "email",
+      "phone",
+      "address_line"
+    ],
+    "steps": [
+      "Sign in to the Google Account of the person whose info is shown.",
+      "Open the Results about you page and choose Get started or Settings.",
+      "Enter the name and the contact info to monitor, then turn on notifications.",
+      "Open the To review tab, expand each result that shows the info and choose Request to remove.",
+      "Check the Removal requests tab and the confirmation email for the outcome."
+    ],
+    "expected_days": null,
+    "notes": "Removal hides the result in Google Search only. The page stays on the source site. Google may refuse results from government, education or news sites. Google says some features are rolling out to people over 18 in certain markets. Use google-personal-info-removal for people under 18, for someone else, or without signing in."
+  },
+  "relist_risk": "medium",
+  "registries": {},
+  "sources": [
+    {
+      "url": "https://support.google.com/websearch/answer/12719076?hl=en",
+      "license": "official",
+      "attribution": "Google Search Help"
+    }
+  ],
+  "verified": true,
+  "last_verified": "2026-10-27",
+  "verification_note": "Dashboard URL and the help page loaded on 2026-10-27. The help page names no country list, it says certain markets only. The countries field uses the 14 countries reported for the February 2025 rollout by press coverage, not a list from Google. Treat the country list as unverified."
+}

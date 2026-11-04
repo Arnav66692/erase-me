@@ -1,0 +1,56 @@
+{
+  "id": "google-personal-info-removal",
+  "name": "Google personal information removal request",
+  "domain": "google.com",
+  "category": "search_engine",
+  "countries": [
+    "*"
+  ],
+  "priority": 1,
+  "cluster": "google",
+  "covers": [],
+  "search": {
+    "method": "search_engine",
+    "url_template": "https://www.google.com/search?q=%22{first}+{last}%22+{city}",
+    "fields": [
+      "first",
+      "last",
+      "city"
+    ],
+    "notes": "Search Google for the name with a city to collect the result URLs that show personal info."
+  },
+  "optout": {
+    "method": "search_removal",
+    "url": "https://support.google.com/websearch/contact/content_removal_form",
+    "email": null,
+    "requires": [
+      "listing_url"
+    ],
+    "fields_needed": [
+      "full_name",
+      "email",
+      "listing_urls"
+    ],
+    "steps": [
+      "Collect the URL of every result and page that shows the personal info.",
+      "Open the removal request form and choose that the content contains personal information.",
+      "Pick the type of info, such as contact details or a government ID number.",
+      "Enter the name, contact email, the result URLs and the search terms used, and add screenshots if asked.",
+      "Submit and watch the email inbox for the decision."
+    ],
+    "expected_days": null,
+    "notes": "Works in any country and does not need a Google Account. A representative can file for someone else. Google can still keep results it judges to be in the public interest."
+  },
+  "relist_risk": "medium",
+  "registries": {},
+  "sources": [
+    {
+      "url": "https://support.google.com/websearch/answer/9673730?hl=en",
+      "license": "official",
+      "attribution": "Google Search Help"
+    }
+  ],
+  "verified": true,
+  "last_verified": "2026-10-27",
+  "verification_note": "Form and the help page that links to it loaded on 2026-10-27."
+}

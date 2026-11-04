@@ -1,0 +1,93 @@
+{
+  "code": "us-tx-tdpsa",
+  "name": "Texas Data Privacy and Security Act, Tex. Bus. & Com. Code ch. 541",
+  "short_name": "TDPSA",
+  "applies_to": {
+    "countries": [
+      "US"
+    ],
+    "regions": [
+      "US-TX"
+    ]
+  },
+  "status": "in_force",
+  "in_force_from": "2024-07-01",
+  "status_note": "Added by H.B. 4 (88th Leg., R.S., 2023), effective 2024-07-01. The Attorney General has exclusive enforcement authority (541.151) and must give written notice and 30 days to cure before suing (541.154). Texas separately requires data brokers to register each year with the Secretary of State, which keeps a searchable Data Broker Registry (the AG cites Bus. & Com. Code ch. 509, the Secretary of State cites ch. 510). The registry helps identify brokers but is not a deletion channel.",
+  "rights": [
+    {
+      "right": "erasure",
+      "citation": "Tex. Bus. & Com. Code 541.051(b)(3)",
+      "summary": "A consumer may ask a controller to delete personal data provided by or obtained about the consumer."
+    },
+    {
+      "right": "opt_out_sale",
+      "citation": "Tex. Bus. & Com. Code 541.051(b)(5)(B)",
+      "summary": "A consumer may opt out of the sale of their personal data."
+    },
+    {
+      "right": "correction",
+      "citation": "Tex. Bus. & Com. Code 541.051(b)(2)",
+      "summary": "A consumer may ask a controller to correct inaccuracies in their personal data."
+    },
+    {
+      "right": "access",
+      "citation": "Tex. Bus. & Com. Code 541.051(b)(1)",
+      "summary": "A consumer may confirm whether a controller processes their personal data and access it."
+    }
+  ],
+  "deadline": {
+    "days": 45,
+    "day_type": "calendar",
+    "basis": "days",
+    "extension_days": 45,
+    "extension_note": "The controller must respond without undue delay and no later than the 45th day after receipt. It may extend once by 45 more days when reasonably necessary given the complexity and number of requests, if it tells the consumer of the extension and the reason within the first 45 days. A refusal must also arrive within 45 days with the reason and appeal instructions (541.052(c)). Appeal: the controller must offer a conspicuous appeal process and answer an appeal in writing no later than the 60th day after receipt. If it denies the appeal it must give the consumer the online mechanism for submitting a complaint to the Attorney General (541.053).",
+    "citation": "Tex. Bus. & Com. Code 541.052(b), 541.052(c), 541.053"
+  },
+  "regulators": [
+    {
+      "country": "US",
+      "region": "US-TX",
+      "name": "Texas Attorney General, Consumer Protection Division",
+      "complaint_url": "https://www.texasattorneygeneral.gov/consumer-protection/file-consumer-complaint/consumer-privacy-rights",
+      "note": "The page's File A Privacy Complaint button opens the complaint portal at https://consumerprotection.texasattorneygeneral.gov/consumercomplaintportal/s/. The Consumer Protection Division enforces the TDPSA and the Texas Data Broker Act. The statute gives the Attorney General exclusive enforcement authority (541.151)."
+    }
+  ],
+  "identity_verification": "The controller must comply only with an authenticated request, meaning one verified through reasonable means as coming from the consumer entitled to the rights (541.001(2), 541.051(b)). If it cannot authenticate the request with commercially reasonable efforts it may ask for additional information reasonably necessary to authenticate the consumer and the request (541.052(e)). It may not require the consumer to create a new account but may require use of an existing account (541.055(b)). Responses are free at least twice a year per consumer (541.052(d)).",
+  "authorized_agent": {
+    "allowed": false,
+    "citation": "Tex. Bus. & Com. Code 541.055(e)",
+    "note": "A consumer may designate an authorized agent, including through a browser setting or global device setting, only to opt out of targeted advertising and the sale of personal data (541.051(b)(5)(A) and (B)). The statute gives no agent route for deletion, so the consumer should send the deletion request personally. A parent or legal guardian may exercise rights for a known child (541.051(a))."
+  },
+  "templates": {
+    "erasure": "us-state-delete",
+    "followup": "followup-generic",
+    "complaint": "regulator-complaint-generic"
+  },
+  "special_channels": [],
+  "public_records_note": "Personal data excludes publicly available information. The statute says the term \"does not include deidentified data or publicly available information\" (541.001(19)). Publicly available information means information lawfully made available through government records, or information a business has a reasonable basis to believe is lawfully made available to the general public through widely distributed media, by the consumer, or by a person to whom the consumer disclosed it, unless the consumer restricted it to a specific audience (541.001(27)). A people-search site can therefore decline to delete data it took from court, property or voter records. The deletion right still reaches data obtained about the consumer from other sources, and a controller that got data from a third party may comply either by keeping a minimal suppression record or by opting the consumer out of all non-exempt processing (541.052(f)). The Secretary of State Data Broker Registry (https://www.sos.state.tx.us/statdoc/data-brokers.shtml) lists registered brokers and can be used to find targets.",
+  "sources": [
+    {
+      "url": "https://tcss.legis.texas.gov/resources/BC/htm/BC.541.htm",
+      "title": "Texas Business and Commerce Code, Chapter 541, Consumer Data Protection (Texas Legislature statute server)",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://www.texasattorneygeneral.gov/consumer-protection/file-consumer-complaint/consumer-privacy-rights",
+      "title": "Consumer Privacy Rights, Office of the Texas Attorney General",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://www.texasattorneygeneral.gov/consumer-protection/file-consumer-complaint/enforcing-privacy-and-data-security-laws-protect-texans/texas-data-broker-act",
+      "title": "Texas Data Broker Act, Office of the Texas Attorney General",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://www.sos.state.tx.us/statdoc/data-brokers.shtml",
+      "title": "Data Brokers, Texas Secretary of State",
+      "accessed_on": "2026-10-21"
+    }
+  ],
+  "verified": true,
+  "verified_on": "2026-10-21",
+  "verification_note": "Rights, deadline, appeal, authentication, agent and publicly available information rules were read in the current Chapter 541 text served by the Texas Legislature (tcss.legis.texas.gov, because statutes.capitol.texas.gov now loads as a script-only page). Every Subchapter B section shows only the 2023 enactment, so no later amendment applies. The complaint route was read on the AG site. The data broker chapter number differs between the AG page (509) and the Secretary of State page (510), and this file does not rely on either number."
+}

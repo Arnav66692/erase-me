@@ -1,0 +1,57 @@
+{
+  "id": "tr-numarasor",
+  "name": "numarasor.com",
+  "domain": "numarasor.com",
+  "category": "caller_id",
+  "countries": [
+    "TR"
+  ],
+  "priority": 2,
+  "cluster": null,
+  "covers": [],
+  "search": {
+    "method": "url_template",
+    "url_template": "https://www.numarasor.com/{phone}",
+    "fields": [
+      "phone"
+    ],
+    "notes": "Each number has its own page with user comments. Use the national format with a leading 0 and digits only, for example 05XXXXXXXXX."
+  },
+  "optout": {
+    "method": "web_form",
+    "url": "https://www.numarasor.com/numara-kaldirma-talebi",
+    "email": null,
+    "requires": [],
+    "fields_needed": [
+      "phone",
+      "full_name",
+      "email"
+    ],
+    "steps": [
+      "Open the Numara Kaldırma Talebi form.",
+      "Enter the number to remove, full name, email and a contact phone.",
+      "Choose the relationship Numara sahibiyim, or Yasal vekili if acting as a legal representative.",
+      "Write a short reason that cites KVKK Law No. 6698.",
+      "Submit and keep a screenshot. Answer if the site asks for a document proving the number belongs to the person."
+    ],
+    "expected_days": null,
+    "notes": "Türkçe özet. numarasor.com'daki Numara Kaldırma Talebi formunu doldurarak numaranızın sayfasını KVKK kapsamında kaldırtabilirsiniz. The form says the site may ask for a supporting document. No time is stated. If nothing happens, use tr-kvkk-request."
+  },
+  "relist_risk": "medium",
+  "registries": {},
+  "sources": [
+    {
+      "url": "https://www.numarasor.com/numara-kaldirma-talebi",
+      "license": "official",
+      "attribution": "numarasor.com removal request form"
+    },
+    {
+      "url": "https://www.numarasor.com/kvkk",
+      "license": "official",
+      "attribution": "numarasor.com KVKK notice"
+    }
+  ],
+  "verified": true,
+  "last_verified": "2026-10-21",
+  "verification_note": "Removal form and KVKK notice loaded with HTTP 200 on 2026-10-21 and describe the removal request."
+}

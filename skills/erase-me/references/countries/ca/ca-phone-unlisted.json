@@ -1,0 +1,56 @@
+{
+  "id": "ca-phone-unlisted",
+  "name": "Phone company unlisted number (Bell and others)",
+  "domain": "bell.ca",
+  "category": "directory",
+  "countries": [
+    "CA"
+  ],
+  "priority": 1,
+  "cluster": null,
+  "covers": [],
+  "search": {
+    "method": "none",
+    "url_template": "",
+    "fields": [],
+    "notes": "This is the source of published landline listings that feed Canada411 and directory assistance."
+  },
+  "optout": {
+    "method": "phone",
+    "url": "https://support.bell.ca/Home_phone/Phone_line/How_to_unlist_my_Bell_Home_phone_number",
+    "email": null,
+    "requires": [
+      "phone_call"
+    ],
+    "fields_needed": [
+      "full_name",
+      "phone"
+    ],
+    "steps": [
+      "The account holder calls the home phone provider and asks for a non-published or unlisted number.",
+      "For Bell, contact Bell customer service as the support page says. Bell charges 2 dollars a month plus tax, and one-time fees may apply.",
+      "For other providers, ask for the same service and the fee in writing.",
+      "Ask the provider to also send a removal request to Canada411 by email, which Canada411 says speeds up removal.",
+      "Check Canada411 again after one to two months."
+    ],
+    "expected_days": null,
+    "notes": "Bell says an existing listed number cannot be unlisted until the next publication of the directories. Canada411 says the change reaches its site within one to two months, or within two working days when the provider emails Canada411. This costs money each month. Other providers were not checked."
+  },
+  "relist_risk": "low",
+  "registries": {},
+  "sources": [
+    {
+      "url": "https://support.bell.ca/Home_phone/Phone_line/How_to_unlist_my_Bell_Home_phone_number",
+      "license": "official",
+      "attribution": "Bell support, how to get a non-published Bell Home phone number"
+    },
+    {
+      "url": "https://www.canada411.ca/help.html?key=faq",
+      "license": "official",
+      "attribution": "Canada411 FAQ on provider removal requests"
+    }
+  ],
+  "verified": true,
+  "last_verified": "2026-10-21",
+  "verification_note": "Bell support page loaded with HTTP 200 on 2026-10-21 and describes the non-published listing and its 2 dollar monthly fee. Only Bell was checked."
+}

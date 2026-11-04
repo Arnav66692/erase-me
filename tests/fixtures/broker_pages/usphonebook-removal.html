@@ -1,0 +1,22 @@
+<!doctype html>
+<meta charset="utf-8">
+<!-- Synthetic reconstruction of public form structure observed 2026-10-28.
+No broker scripts, identifiers, personal data, live CAPTCHA keys, or tokens. -->
+<form method="POST" action="/removal" id="verifyEmailForm">
+  <select name="user-type" id="user-type" required>
+    <option value="subject" selected>Subject</option>
+    <option value="agent">Authorized agent</option>
+  </select>
+  <input type="text" id="subject-firstname" name="subject-firstname" required>
+  <input type="text" id="subject-middlename" name="subject-middlename">
+  <input type="text" id="subject-lastname" name="subject-lastname" required>
+  <input type="email" id="subject-email" name="subject-email" required>
+  <div hidden>
+    <input type="text" id="agent-firstname" name="agent-firstname">
+    <input type="text" id="agent-lastname" name="agent-lastname">
+    <input type="email" id="agent-email" name="agent-email">
+  </div>
+  <input type="checkbox" name="agreement" id="agreement" required>
+  <div class="g-recaptcha"><textarea name="g-recaptcha-response" hidden></textarea></div>
+  <button type="submit" id="BRP">Start</button>
+</form>

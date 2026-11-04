@@ -1,0 +1,51 @@
+{
+  "id": "tr-ceptennumarasorgula",
+  "name": "Cepten Numara Sorgula 11877 (Mobilişim)",
+  "domain": "ceptennumarasorgula.com",
+  "category": "caller_id",
+  "countries": [
+    "TR"
+  ],
+  "priority": 2,
+  "cluster": null,
+  "covers": [],
+  "search": {
+    "method": "none",
+    "url_template": "",
+    "fields": [],
+    "notes": "Paid name-for-number and number-for-name lookup by Mobilişim A.Ş. under BTK directory licence RH-025. It says queries run against Turkcell, Türk Telekom and Vodafone databases. There is also an iOS app named Numara Sorgula - İsim Sorgula."
+  },
+  "optout": {
+    "method": "legal_request",
+    "url": "https://www.ceptennumarasorgula.com/PrivacyPolicy",
+    "email": "mh@mobilisim.com.tr",
+    "requires": [],
+    "fields_needed": [
+      "full_name",
+      "phone"
+    ],
+    "steps": [
+      "First remove the number from the operator directory (see tr-turkcell-rehber and tr-mobile-operator-rehber), because this service reads operator databases.",
+      "Then send a KVKK deletion request to Mobilişim A.Ş. The App Store listing gives mh@mobilisim.com.tr and 0850 666 06 77 as contacts. Follow tr-kvkk-request for an accepted sending method."
+    ],
+    "expected_days": 30,
+    "notes": "Türkçe özet. Bu servis operatör rehberlerini sorguluyor, önce operatörünüzün rehberinden çıkın, sonra Mobilişim A.Ş.'ye KVKK başvurusu yapın. The site's privacy policy covers app users only and gives no removal process for people who are looked up. The 30 days is the KVKK answer deadline, not a stated removal time."
+  },
+  "relist_risk": "medium",
+  "registries": {},
+  "sources": [
+    {
+      "url": "https://www.ceptennumarasorgula.com/",
+      "license": "official",
+      "attribution": "Cepten Numara Sorgula home page with licence and data source text"
+    },
+    {
+      "url": "https://apps.apple.com/us/app/id1435153449",
+      "license": "official",
+      "attribution": "App Store listing with developer contact"
+    }
+  ],
+  "verified": false,
+  "last_verified": "2026-10-21",
+  "verification_note": "Home page and privacy policy loaded with HTTP 200 on 2026-10-21, but neither describes removal for looked-up people. Contact email comes from the App Store listing."
+}

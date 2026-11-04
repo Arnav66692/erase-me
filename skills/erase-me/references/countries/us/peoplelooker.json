@@ -1,0 +1,59 @@
+{
+  "id": "peoplelooker",
+  "name": "PeopleLooker",
+  "domain": "peoplelooker.com",
+  "category": "people_search",
+  "countries": [
+    "US"
+  ],
+  "priority": 2,
+  "cluster": "beenverified",
+  "covers": [],
+  "search": {
+    "method": "site_search",
+    "url_template": null,
+    "fields": [],
+    "notes": "The opt-out flow has its own search."
+  },
+  "optout": {
+    "method": "web_form",
+    "url": "https://www.peoplelooker.com/opt-out",
+    "email": null,
+    "requires": [
+      "captcha",
+      "email_verification"
+    ],
+    "fields_needed": [
+      "full_name",
+      "region",
+      "email"
+    ],
+    "steps": [
+      "Open the opt-out page and search by name and state.",
+      "Select the matching record.",
+      "Enter an email address and complete any human check yourself.",
+      "Click the verification link in the email."
+    ],
+    "expected_days": 7,
+    "notes": "The URL redirected to /svc/optout/search/optouts on 2026-10-27, the same path style BeenVerified uses. Listed under BeenVerified, LLC in the 2026 California registry. Requirements assumed to match BeenVerified, not confirmed."
+  },
+  "relist_risk": "medium",
+  "registries": {
+    "US-CA": true
+  },
+  "sources": [
+    {
+      "url": "https://github.com/4x3/nulltrace/blob/7fd59edc097c70788dd79e5ab4c31c62cdaa8fe7/source/internal/broker/data/webforms.yaml",
+      "license": "MIT",
+      "attribution": "nulltrace by 4x3, MIT License"
+    },
+    {
+      "url": "https://cppa.ca.gov/data_broker_registry/",
+      "license": "official",
+      "attribution": "California Privacy Protection Agency data broker registry, 2026 list fetched 2026-10-27"
+    }
+  ],
+  "verified": false,
+  "last_verified": null,
+  "verification_note": "Bot-blocked on 2026-10-27 (Cloudflare challenge page), URL from nulltrace."
+}

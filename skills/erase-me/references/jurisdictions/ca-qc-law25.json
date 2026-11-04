@@ -1,0 +1,46 @@
+{
+  "code": "ca-qc-law25",
+  "name": "Act respecting the protection of personal information in the private sector, CQLR c. P-39.1 (Quebec), as amended by the Act to modernize legislative provisions as regards the protection of personal information, S.Q. 2021, c. 25 (Bill 64, Law 25)",
+  "short_name": "Quebec Private Sector Act (Law 25)",
+  "applies_to": {"countries": ["CA"], "regions": ["CA-QC"]},
+  "status": "in_force",
+  "in_force_from": "2023-09-22",
+  "status_note": "The Act dates from 1993 (S.Q. 1993, c. 17). Law 25 was assented to on 2021-09-22 and came into force in stages under its s. 175: some parts on 2022-09-22, most parts on 2023-09-22, and portability (s. 27 third paragraph) on 2024-09-22. The current s. 28 and the new s. 28.1 (enacted by Law 25 s. 121) are not in the exceptions to s. 175, so they have applied since 2023-09-22. Quebec's Act is deemed substantially similar to PIPEDA, so it governs enterprises' handling of personal information within Quebec. Text checked is the LegisQuebec PDF updated to 2026-08-12.",
+  "rights": [
+    {"right": "erasure", "citation": "CQLR c. P-39.1, s. 28.1", "summary": "A person may require an enterprise to stop disseminating their personal information if the dissemination breaks the law or a court order, or if it causes serious injury to their reputation or privacy that clearly outweighs the public interest and freedom of expression, and the remedy goes no further than needed."},
+    {"right": "delisting", "citation": "CQLR c. P-39.1, s. 28.1", "summary": "On the same grounds, a person may require an enterprise to de-index any hyperlink attached to their name that gives access to the information, or to re-index it, with factors such as public-figure status, age at the time, accuracy, sensitivity, context and time elapsed taken into account."},
+    {"right": "correction", "citation": "CQLR c. P-39.1, s. 28 and s. 35", "summary": "A person may require rectification of information that is inaccurate, incomplete or equivocal, or whose collection, communication or keeping is not authorized by law, and when information is deleted the enterprise must issue an attestation of the deletion free of charge."},
+    {"right": "access", "citation": "CQLR c. P-39.1, s. 27", "summary": "An enterprise must confirm whether it holds personal information about the person, communicate it and let the person obtain a copy."}
+  ],
+  "deadline": {
+    "days": 30,
+    "day_type": "calendar",
+    "basis": "days",
+    "extension_days": 0,
+    "extension_note": "The person in charge of the protection of personal information must reply in writing promptly and not later than 30 days after receiving the request. Failure to respond within 30 days is deemed a refusal (s. 32). The same rule applies to s. 28.1 requests, and a granted s. 28.1 request must include a written attestation of the cessation, de-indexation or re-indexation (s. 28.1, last paragraph). The Act gives the enterprise no unilateral extension, but under s. 46 it may ask the Commission to extend the time or limit the request, within the s. 32 time limit.",
+    "citation": "CQLR c. P-39.1, s. 32 and s. 28.1"
+  },
+  "regulators": [
+    {"country": "CA", "region": "CA-QC", "name": "Commission d'accès à l'information du Québec (CAI)", "complaint_url": "https://formulaire.cai.gouv.qc.ca/", "note": "After a written request is refused or goes unanswered, the person may file an application for examination of a disagreement (demande d'examen de mésentente) with the CAI, which acts as an administrative tribunal. It covers access, rectification and s. 28.1 cessation or de-indexation (s. 42). It must be filed in writing within 30 days of the refusal or of the expiry of the response period (s. 43), with a copy of the request and any reply. The Act says the application is subject to fees prescribed by regulation (s. 44), and the amount was not checked. A separate complaint (plainte) to the CAI's oversight section can report other breaches. Both start from the same CAI form portal."}
+  ],
+  "identity_verification": "No request for access or rectification may be considered unless it is made in writing by a person who proves that they are the person concerned or their representative, heir, successor or another listed person (s. 30). The same rule applies to s. 28.1 requests. The request goes to the person in charge of the protection of personal information, who must help identify the information if the request is not precise enough.",
+  "authorized_agent": {"allowed": true, "citation": "CQLR c. P-39.1, s. 30", "note": "A request may be made by the person concerned or by their representative, who must prove that status. The Act does not set the form of proof, so a signed mandate from the person should be attached."},
+  "templates": {"erasure": "pipeda-erasure", "followup": "followup-generic", "complaint": "regulator-complaint-generic"},
+  "special_channels": [
+    {"id": "google-eu-delisting", "name": "Google right to be forgotten delisting request", "url": "https://reportcontent.google.com/forms/rtbf", "note": "Google's legal help page on the right to be forgotten names the Canadian province of Quebec among places outside the EU with a similar right, and links to this web form. Requests may be made on someone else's behalf if the requester can show legal authority. Include the URLs, how the content relates to the person, and the name query. Google decides each request itself. Cite s. 28.1 in the description."}
+  ],
+  "public_records_note": "Section 1 says that Divisions II and III of the Act (collection and confidentiality) \"do not apply to personal information which by law is public\". Division IV, which holds the access and rectification rights and s. 28.1, is not excluded by that sentence, so a s. 28.1 cessation or de-indexation request can still reach information that came from public sources. Section 1 also says the Act \"does not apply to journalistic, historical or genealogical material collected, held, used or communicated for the legitimate information of the public\", and people-search or genealogy sites may rely on that wording.",
+  "sources": [
+    {"url": "https://www.legisquebec.gouv.qc.ca/en/pdf/cs/P-39.1.pdf", "title": "Act respecting the protection of personal information in the private sector, CQLR c. P-39.1, updated to August 12, 2026", "accessed_on": "2026-10-21"},
+    {"url": "https://www.publicationsduquebec.gouv.qc.ca/fileadmin/Fichiers_client/lois_et_reglements/LoisAnnuelles/en/2021/2021C25A.PDF", "title": "Bill 64 (2021, chapter 25), An Act to modernize legislative provisions as regards the protection of personal information", "accessed_on": "2026-10-21"},
+    {"url": "https://www.cai.gouv.qc.ca/protection-renseignements-personnels/citoyens-protection-renseignements-personnels/recours-devant-commission", "title": "Vos recours devant la Commission, CAI", "accessed_on": "2026-10-21"},
+    {"url": "https://formulaire.cai.gouv.qc.ca/", "title": "CAI forms portal", "accessed_on": "2026-10-21"},
+    {"url": "https://www.cai.gouv.qc.ca/uploads/pdfs/CAI_ANN_Under_App_Exam_Disag_Angl.pdf", "title": "Understanding your application for examination of a disagreement, Private Enterprise (CAI)", "accessed_on": "2026-10-21"},
+    {"url": "https://www.cai.gouv.qc.ca/english", "title": "CAI English page and forms", "accessed_on": "2026-10-21"},
+    {"url": "https://www.cai.gouv.qc.ca/protection-renseignements-personnels/sujets-et-domaines-dinteret/principaux-changements-loi-25", "title": "Principaux changements apportés par la Loi 25, CAI", "accessed_on": "2026-10-21"},
+    {"url": "https://support.google.com/legal/answer/10769224?hl=en", "title": "Google, Right to be forgotten overview", "accessed_on": "2026-10-21"}
+  ],
+  "verified": true,
+  "verified_on": "2026-10-21",
+  "verification_note": "Sections 1, 27, 28, 28.1, 30, 32, 35, 42 to 46 were read in the official LegisQuebec PDF updated to 2026-08-12. The LegisQuebec HTML pages returned 403 to automated access, so the PDF was used. The 2023-09-22 date for s. 28 and 28.1 comes from s. 175 of S.Q. 2021, c. 25 in the Publications du Québec annual statute. The CAI recourse page, forms portal and disagreement guide were checked on cai.gouv.qc.ca. The CAI application fee amount was not checked."
+}

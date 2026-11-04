@@ -1,0 +1,55 @@
+{
+  "id": "tr-mobile-operator-rehber",
+  "name": "Vodafone and Türk Telekom directory (rehber) listing",
+  "domain": "vodafone.com.tr",
+  "category": "caller_id",
+  "countries": [
+    "TR"
+  ],
+  "priority": 1,
+  "cluster": null,
+  "covers": [],
+  "search": {
+    "method": "none",
+    "url_template": "",
+    "fields": [],
+    "notes": "Vodafone and Türk Telekom run paid name-for-number lookups for subscribers who are in their directory (rehber)."
+  },
+  "optout": {
+    "method": "phone",
+    "url": "https://www.vodafone.com.tr/",
+    "email": null,
+    "requires": [
+      "phone_call"
+    ],
+    "fields_needed": [
+      "full_name",
+      "phone"
+    ],
+    "steps": [
+      "Call the operator's customer service from the line and ask to be removed from the directory (rehber) and from Bilinmeyen Numaralar lookups.",
+      "Türk Telekom Mobil customers can also try an SMS with the text IPTAL to 11855, as reported by Turkish press. Confirm the result with customer service.",
+      "Ask for the change in writing or note the call reference.",
+      "If the operator refuses, send a KVKK request (see tr-kvkk-request)."
+    ],
+    "expected_days": null,
+    "notes": "Türkçe özet. Vodafone veya Türk Telekom müşteri hizmetlerini arayıp numaranızın rehberden ve Bilinmeyen Numaralar sorgusundan çıkarılmasını isteyin. Under the BTK consumer rights rules, subscribers choose at contract time whether to appear in directories and may change that choice during the contract. The operator's own procedure was not confirmed."
+  },
+  "relist_risk": "unknown",
+  "registries": {},
+  "sources": [
+    {
+      "url": "https://www.takvim.com.tr/teknoloji/turkcell-turk-telekom-vodafone-bilinmeyen-numara-sorgulama-numaradan-isim-sorgulama-bulma-ogrenme-nasil-yapilir-4671446",
+      "license": "own-research",
+      "attribution": "Takvim press article, 2021, on operator lookup and the 11855 IPTAL SMS"
+    },
+    {
+      "url": "https://www.alomaliye.com/2022/01/18/elektronik-haberlesme-sektoru-tuketici-haklari-18-01-2022/",
+      "license": "own-research",
+      "attribution": "Text of the 2022 BTK consumer rights regulation change on directory preferences"
+    }
+  ],
+  "verified": false,
+  "last_verified": "2026-10-21",
+  "verification_note": "No official Vodafone or Türk Telekom page for directory removal was found on 2026-10-21. Tried vodafone.com.tr and turktelekom.com.tr Bilinmeyen Numaralar paths, which returned 404. Steps rely on press and regulation text."
+}

@@ -1,0 +1,98 @@
+{
+  "code": "us-co-cpa",
+  "name": "Colorado Privacy Act, C.R.S. 6-1-1301 to 6-1-1314, with the Colorado Privacy Act Rules, 4 CCR 904-3",
+  "short_name": "CPA",
+  "applies_to": {
+    "countries": [
+      "US"
+    ],
+    "regions": [
+      "US-CO"
+    ]
+  },
+  "status": "in_force",
+  "in_force_from": "2023-07-01",
+  "status_note": "In effect since 2023-07-01 per the Attorney General. The Attorney General lists two later amendments, SB 24-041 on minors and SB 25-276 adding precise geolocation to sensitive data. Neither changes the deletion process. The AG proposed rule amendments in July 2025 to implement them. Controllers must honor universal opt-out mechanisms since 2024-07-01 (6-1-1306(1)(a)(IV)(B)). The Attorney General enforces the CPA.",
+  "rights": [
+    {
+      "right": "erasure",
+      "citation": "C.R.S. 6-1-1306(1)(d), 4 CCR 904-3 Rule 4.06",
+      "summary": "A consumer may have personal data concerning them deleted, and deletion means permanent erasure or de-identification plus instructions to processors."
+    },
+    {
+      "right": "opt_out_sale",
+      "citation": "C.R.S. 6-1-1306(1)(a)(I)(B)",
+      "summary": "A consumer may opt out of the sale of their personal data, including through a universal opt-out mechanism."
+    },
+    {
+      "right": "correction",
+      "citation": "C.R.S. 6-1-1306(1)(c)",
+      "summary": "A consumer may correct inaccuracies in their personal data."
+    },
+    {
+      "right": "access",
+      "citation": "C.R.S. 6-1-1306(1)(b)",
+      "summary": "A consumer may confirm whether a controller processes their personal data and access it."
+    }
+  ],
+  "deadline": {
+    "days": 45,
+    "day_type": "calendar",
+    "basis": "days",
+    "extension_days": 45,
+    "extension_note": "The controller must tell the consumer what action it took without undue delay and within 45 days after receipt. It may extend by 45 more days where reasonably necessary given the complexity and number of requests, and must tell the consumer of the extension and the reasons within the first 45 days. A refusal must come within 45 days with reasons and appeal instructions (6-1-1306(2)(b)). Appeal: the controller must answer an appeal within 45 days, extendable by 60 more days with notice, and must tell the consumer they can contact the Attorney General if they have concerns about the result (6-1-1306(3)). A second or later request within 12 months may carry a fee (6-1-1306(2)(c)).",
+    "citation": "C.R.S. 6-1-1306(2)(a), 6-1-1306(2)(b), 6-1-1306(3), 4 CCR 904-3 Rule 4.09"
+  },
+  "regulators": [
+    {
+      "country": "US",
+      "region": "US-CO",
+      "name": "Colorado Attorney General, Department of Law, Consumer Protection Section",
+      "complaint_url": "https://coag.gov/file-a-complaint/data-privacy-data-breach/",
+      "note": "The AG page invites complaints when a company violates CPA rights. It says the office cannot give legal advice or represent individuals."
+    }
+  ],
+  "identity_verification": "Every data right request must be authenticated by a commercially reasonable method that weighs the right exercised, the sensitivity and volume of the data, the risk of harm and the cost, and must avoid unreasonable burden (Rule 4.08(A)). Where possible the controller should authenticate with data it already holds rather than ask for more (Rule 4.08(B)). Data collected for authentication may be used only for that and must be deleted after the request (Rule 4.08(C)). The consumer cannot be charged for authentication, and a notarized affidavit may be required only if the controller pays for it (Rule 4.08(E)). If authentication fails the controller must say so and explain how to fix it (Rule 4.08(F), C.R.S. 6-1-1306(2)(d)). No new account may be required (6-1-1306(1)).",
+  "authorized_agent": {
+    "allowed": false,
+    "citation": "C.R.S. 6-1-1306(1)(a)(II), 4 CCR 904-3 Rules 4.03(C) and 4.08",
+    "note": "An authorized agent, including a browser setting or global privacy control, may act for the consumer only to opt out of targeted advertising, sale or profiling. The statute and rules give agents no role in deletion requests, so the consumer should send the deletion request personally."
+  },
+  "templates": {
+    "erasure": "us-state-delete",
+    "followup": "followup-generic",
+    "complaint": "regulator-complaint-generic"
+  },
+  "special_channels": [],
+  "public_records_note": "Personal data \"does not include de-identified data or publicly available information\" (6-1-1303(17)(b)). Colorado defines publicly available information narrowly: information lawfully made available from federal, state, or local government records, and information a controller has a reasonable basis to believe the consumer has lawfully made available to the general public. Unlike most states it has no widely distributed media clause. The rules add that publicly available information does not include data obtained in violation of C.R.S. 18-7-107 or 18-7-801, biometric data, genetic information, or nonconsensual intimate images known to the controller (4 CCR 904-3 Rule 2.02). Data a people-search site buys from other brokers or infers is therefore within reach, while copies of government records are not. For data obtained from a third party the controller may keep a minimal suppression record or opt the consumer out of non-exempt processing, and must then tell the consumer which categories it did not delete and why (Rule 4.06(D) and (E)). No Colorado data broker registry was identified on the AG site.",
+  "sources": [
+    {
+      "url": "https://leg.colorado.gov/sites/default/files/images/olls/crs2024-title-06.pdf",
+      "title": "Colorado Revised Statutes 2024, Title 6 (uncertified printout, Office of Legislative Legal Services)",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://coag.gov/app/uploads/2023/03/FINAL-CLEAN-2023.03.15-Official-CPA-Rules.pdf",
+      "title": "Colorado Privacy Act Rules, 4 CCR 904-3, as filed 2023-03-15",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://coag.gov/resources/colorado-privacy-act/",
+      "title": "Colorado Privacy Act, Colorado Attorney General",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://coag.gov/colorado-privacy-act-rulemaking/",
+      "title": "2025 Colorado Privacy Act rulemaking, Colorado Attorney General",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://coag.gov/file-a-complaint/data-privacy-data-breach/",
+      "title": "Data Privacy and Data Breach complaint page, Colorado Attorney General",
+      "accessed_on": "2026-10-21"
+    }
+  ],
+  "verified": true,
+  "verified_on": "2026-10-21",
+  "verification_note": "Statute text came from the 2024 Colorado Revised Statutes printout on leg.colorado.gov, the newest edition that downloaded (a 2025 file was not found). The AG rulemaking page lists SB 24-041 and SB 25-276 as the amendments since 2023, and neither touches 6-1-1306. A 2026 automated decision law (SB 26-189) was reported by secondary sources but was not read and does not appear to change deletion. Rules text is the 2023 filed version, and adoption of the 2025 proposed amendments was not checked."
+}

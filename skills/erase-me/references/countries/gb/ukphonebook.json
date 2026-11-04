@@ -1,0 +1,62 @@
+{
+  "id": "ukphonebook",
+  "name": "ukphonebook.com",
+  "domain": "ukphonebook.com",
+  "category": "people_search",
+  "countries": [
+    "GB"
+  ],
+  "priority": 1,
+  "cluster": null,
+  "covers": [],
+  "search": {
+    "method": "url_template",
+    "url_template": "https://www.ukphonebook.com/residential-telephone-directory/search?name={first}+{last}&location={city}",
+    "fields": [
+      "first",
+      "last",
+      "city"
+    ],
+    "notes": "GET form on the home page with fields name and location. Location also accepts a postcode. Some results need paid credits to view in full."
+  },
+  "optout": {
+    "method": "web_form",
+    "url": "https://www.ukphonebook.com/remove-me",
+    "email": null,
+    "requires": [],
+    "fields_needed": [
+      "first_name",
+      "surname",
+      "address_line",
+      "postcode",
+      "email"
+    ],
+    "steps": [
+      "Open the Record Removal Request Form on ukphonebook.com.",
+      "Enter forename and surname exactly as listed.",
+      "Enter the address and postcode of the listed record.",
+      "Enter an email address and, if wanted, a phone number so the site can follow up.",
+      "Submit the form. Fill in one form per person and per address.",
+      "Check the listing again after 2 working days."
+    ],
+    "expected_days": 2,
+    "notes": "The help page says online forms take up to 2 working days. A printed form can be posted to Simunix Ltd, Middleham House, 2-3 St. Marys Court, York YO24 1AH and takes up to 28 days. The site shows the edited (open) electoral register, so also do gb-open-register. Google may keep showing name and postcode district until it recrawls."
+  },
+  "relist_risk": "medium",
+  "registries": {},
+  "sources": [
+    {
+      "url": "https://www.ukphonebook.com/remove-me",
+      "license": "official",
+      "attribution": "ukphonebook.com removal form"
+    },
+    {
+      "url": "https://www.ukphonebook.com/help",
+      "license": "official",
+      "attribution": "ukphonebook.com Help and FAQs"
+    }
+  ],
+  "verified": true,
+  "last_verified": "2026-10-21",
+  "verification_note": "Removal form and help FAQ loaded with HTTP 200 on 2026-10-21. FAQ describes the online and postal removal process and timelines."
+}

@@ -1,0 +1,32 @@
+{
+  "id": "peoplefind",
+  "name": "PeopleFind Testland",
+  "domain": "peoplefind.example.com",
+  "category": "people_search",
+  "countries": ["ZZ"],
+  "priority": 2,
+  "cluster": "peoplefind",
+  "covers": ["peoplefind-lite"],
+  "search": {
+    "method": "url_template",
+    "url_template": "https://peoplefind.example.com/{first}-{last}/{region_name}/{city}",
+    "fields": ["first", "last", "region_name", "city"],
+    "notes": ""
+  },
+  "optout": {
+    "method": "web_form",
+    "url": "https://peoplefind.example.com/optout",
+    "email": null,
+    "requires": ["email_verification", "captcha", "listing_url"],
+    "fields_needed": ["full_name", "email", "listing_url"],
+    "steps": ["Open the opt-out page.", "Paste the listing URL.", "Solve the CAPTCHA.", "Click the link in the email."],
+    "expected_days": 7,
+    "notes": ""
+  },
+  "relist_risk": "high",
+  "registries": {"ZZ-TV": true},
+  "sources": [{"url": "https://peoplefind.example.com/optout", "license": "own-research", "attribution": ""}],
+  "verified": true,
+  "last_verified": "2026-10-21",
+  "verification_note": ""
+}

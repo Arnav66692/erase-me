@@ -1,0 +1,32 @@
+{
+  "id": "example-callerid",
+  "name": "Example Caller ID",
+  "domain": "callerid.example.com",
+  "category": "caller_id",
+  "countries": [],
+  "priority": 2,
+  "cluster": null,
+  "covers": [],
+  "search": {
+    "method": "manual",
+    "url_template": null,
+    "fields": [],
+    "notes": "Search your number in the app."
+  },
+  "optout": {
+    "method": "in_app",
+    "url": "https://callerid.example.com/unlist",
+    "email": null,
+    "requires": ["app_install", "phone_call"],
+    "fields_needed": ["phone"],
+    "steps": ["Open the unlist page.", "Enter the number.", "Confirm by phone."],
+    "expected_days": 1,
+    "notes": ""
+  },
+  "relist_risk": "medium",
+  "registries": {},
+  "sources": [{"url": "https://callerid.example.com/", "license": "own-research", "attribution": ""}],
+  "verified": false,
+  "last_verified": null,
+  "verification_note": "Not checked yet."
+}

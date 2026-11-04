@@ -1,0 +1,40 @@
+{
+  "code": "mx-lfpdppp",
+  "name": "Ley Federal de Protección de Datos Personales en Posesión de los Particulares, issued by Article Tercero of the Decree published in the Diario Oficial de la Federación on 20 March 2025 (Mexico)",
+  "short_name": "LFPDPPP (2025)",
+  "applies_to": {"countries": ["MX"], "regions": []},
+  "status": "in_force",
+  "in_force_from": "2025-03-21",
+  "status_note": "The 2025 law keeps the old name and abbreviation but is a new statute. It replaced the 2010 law of the same name, which the Decree's second transitional article abrogated. The Decree took effect the day after publication in the DOF (first transitional article), so 2025-03-21. The INAI was dissolved and its data protection functions moved to the Secretaría Anticorrupción y Buen Gobierno (SABG). Only Art. 4 has been amended since (DOF 2025-11-14). The law refers to a Reglamento (Art. 2, XIII). Whether a new Reglamento has been issued was not checked.",
+  "rights": [
+    {"right": "erasure", "citation": "LFPDPPP 2025, Art. 24 and 25", "summary": "The data subject may at any time request cancellation of their data from the controller's files and systems, which leads to a blocking period and then deletion, subject to the exceptions in Art. 25 such as legal obligations or contracts."},
+    {"right": "objection", "citation": "LFPDPPP 2025, Art. 26", "summary": "The data subject may object to processing, or demand that it stop, for a legitimate reason where continued processing would cause them harm, or where automated processing affects them significantly without human intervention."},
+    {"right": "correction", "citation": "LFPDPPP 2025, Art. 23", "summary": "The data subject may request rectification of data that is inaccurate, incomplete or out of date."},
+    {"right": "access", "citation": "LFPDPPP 2025, Art. 22", "summary": "The data subject may access the personal data the controller holds and the conditions of its processing."}
+  ],
+  "deadline": {
+    "days": 20,
+    "day_type": "business",
+    "basis": "days",
+    "extension_days": 20,
+    "extension_note": "The controller must communicate its decision within 20 days of receiving the ARCO request and, if the request succeeds, carry it out within 15 days after communicating the response. Both periods may be extended once by an equal period when the circumstances justify it. The law defines days as business days (días hábiles, Art. 2, VIII). These figures match the old 2010 law.",
+    "citation": "LFPDPPP 2025, Art. 31 and Art. 2, VIII"
+  },
+  "regulators": [
+    {"country": "MX", "region": null, "name": "Secretaría Anticorrupción y Buen Gobierno (SABG), Unidad de Protección de Datos Personales", "complaint_url": "https://portal-transparencia.buengobierno.gob.mx/proteccion-de-datos-personales/normatividad-en-materia-de-proteccion-de-datos-personales/updatospersonales/", "note": "The SABG's Unidad de Protección de Datos Personales is the federal guarantor authority, including for private companies. After an ARCO request, the data subject may file a solicitud de protección de datos within 15 business days of the controller's response, or from the day the response period expires if no reply came, attaching proof of the request date (Art. 40). The page links a downloadable form for the private sector (Formato de solicitud para Protección de Datos Sector Privado) and a separate denuncia form for violations of the law. Questions about the form go to updp.privado@buengobierno.gob.mx. The main gob.mx/buengobierno site served a bot challenge to automated access."}
+  ],
+  "identity_verification": "The ARCO request must include documents proving the identity of the data subject or, where applicable, the legal standing and identity of the representative (Art. 28, II), plus a means for notifications, a clear description of the data and the right exercised. For access, data is delivered only after identity is accredited (Art. 31). The controller may refuse if the data subject or representative is not properly accredited (Art. 33, I).",
+  "authorized_agent": {"allowed": true, "citation": "LFPDPPP 2025, Art. 21, 27 and 28, II", "note": "ARCO rights may be exercised by the data subject or their representante legal. The SABG's protection request form asks for a notarial instrument or a carta poder signed before two witnesses to prove representation, and the same proof is the safe choice for the ARCO request itself."},
+  "templates": {"erasure": "generic-erasure", "followup": "followup-generic", "complaint": "regulator-complaint-generic"},
+  "special_channels": [],
+  "public_records_note": "Consent is not required when the data appear in fuentes de acceso público (Art. 9, II). Those sources are narrowly defined as databases, systems or files that by law may be consulted publicly, and a source does not count if the information was obtained illicitly (Art. 2, X). This removes the consent requirement only. It is not listed among the Art. 25 grounds for refusing cancellation, so a cancellation request under Art. 24 still applies to a people-search site using such data.",
+  "sources": [
+    {"url": "https://dof.gob.mx/nota_detalle.php?codigo=5752569&fecha=20/03/2025", "title": "DOF 20/03/2025, Decreto por el que se expiden la Ley General de Transparencia y Acceso a la Información Pública, la Ley General de Protección de Datos Personales en Posesión de Sujetos Obligados y la Ley Federal de Protección de Datos Personales en Posesión de los Particulares", "accessed_on": "2026-10-21"},
+    {"url": "https://www.diputados.gob.mx/LeyesBiblio/pdf/LFPDPPP.pdf", "title": "LFPDPPP, texto vigente, última reforma DOF 14-11-2025 (Cámara de Diputados)", "accessed_on": "2026-10-21"},
+    {"url": "https://portal-transparencia.buengobierno.gob.mx/proteccion-de-datos-personales/normatividad-en-materia-de-proteccion-de-datos-personales/updatospersonales/", "title": "Unidad de Protección de Datos Personales, SABG", "accessed_on": "2026-10-21"},
+    {"url": "https://portal-transparencia.buengobierno.gob.mx/wp-content/uploads/2026/05/Formato-de-solicitud-para-Proteccion-de-Datos-Sector-Privado.pdf", "title": "Solicitud de Protección de Datos, formato sector privado (SABG, abril de 2026)", "accessed_on": "2026-10-21"}
+  ],
+  "verified": true,
+  "verified_on": "2026-10-21",
+  "verification_note": "Art. 2, 9, 21 to 28, 31, 33, 40 and the transitional articles were read in the DOF publication of 2025-03-20 and in the Chamber of Deputies consolidated text (last amended DOF 2025-11-14). The authority and complaint route were confirmed on the SABG transparency portal and in its April 2026 private-sector form. The form must be downloaded and sent in, and the portal does not say on the page whether online filing exists."
+}

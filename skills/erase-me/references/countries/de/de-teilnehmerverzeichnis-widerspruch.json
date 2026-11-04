@@ -1,0 +1,55 @@
+{
+  "id": "de-teilnehmerverzeichnis-widerspruch",
+  "name": "Widerspruch through the phone provider (all directories)",
+  "domain": "dasoertliche.de",
+  "category": "directory",
+  "countries": [
+    "DE"
+  ],
+  "priority": 1,
+  "cluster": null,
+  "covers": [],
+  "search": {
+    "method": "none",
+    "url_template": "",
+    "fields": [],
+    "notes": "Public subscriber directories in Germany publish entries only because the subscriber agreed with the phone provider under sections 104 and 105 TKG."
+  },
+  "optout": {
+    "method": "phone",
+    "url": "https://www.dasoertliche.de/datenschutz",
+    "email": null,
+    "requires": [
+      "phone_call"
+    ],
+    "fields_needed": [
+      "full_name",
+      "phone"
+    ],
+    "steps": [
+      "The account holder contacts the phone provider using the service number on the contract or bill.",
+      "Ask to withdraw consent to publication in all public subscriber directories, or to limit the entry, and to object to reverse search (Inverssuche).",
+      "Ask for written confirmation.",
+      "Check Das Örtliche, Das Telefonbuch and 11880 after the next directory update."
+    ],
+    "expected_days": null,
+    "notes": "This is the German equivalent of going ex-directory. Das Örtliche says a person can object to all directories at once through the provider. Directories delete the entry once the provider sends the update, so timing depends on the provider."
+  },
+  "relist_risk": "low",
+  "registries": {},
+  "sources": [
+    {
+      "url": "https://www.dasoertliche.de/datenschutz",
+      "license": "official",
+      "attribution": "Das Örtliche Datenschutz on objection through the provider"
+    },
+    {
+      "url": "https://unternehmen.11880.com/faq",
+      "license": "official",
+      "attribution": "11880 FAQ on provider deletion"
+    }
+  ],
+  "verified": true,
+  "last_verified": "2026-10-21",
+  "verification_note": "Das Örtliche privacy page and 11880 FAQ loaded with HTTP 200 on 2026-10-21 and both point to the phone provider."
+}

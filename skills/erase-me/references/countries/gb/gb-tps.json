@@ -1,0 +1,50 @@
+{
+  "id": "gb-tps",
+  "name": "Telephone Preference Service (TPS)",
+  "domain": "tpsonline.org.uk",
+  "category": "marketing",
+  "countries": [
+    "GB"
+  ],
+  "priority": 2,
+  "cluster": null,
+  "covers": [],
+  "search": {
+    "method": "none",
+    "url_template": "",
+    "fields": [],
+    "notes": "TPS is a do-not-call register, not a lookup site."
+  },
+  "optout": {
+    "method": "web_form",
+    "url": "https://www.tpsonline.org.uk/register",
+    "email": null,
+    "requires": [],
+    "fields_needed": [
+      "phone",
+      "postcode",
+      "email"
+    ],
+    "steps": [
+      "Open the TPS registration page.",
+      "Enter the landline or mobile number, plus the postcode and email address the form asks for.",
+      "Submit the form. A mobile can also be registered by texting TPS and an email address to 85095 from that mobile.",
+      "The automated phone line 0345 070 0707 is another route.",
+      "Allow 28 days for organisations to screen against the update."
+    ],
+    "expected_days": 28,
+    "notes": "TPS stops live sales and marketing calls only. It does not remove any listing from a directory or people-search site, does not stop texts or scam calls, and does not stop calls from organisations the person gave permission to. The law lets companies take up to 28 days to update their lists. Anyone asking for money to register with TPS is a scam."
+  },
+  "relist_risk": "low",
+  "registries": {},
+  "sources": [
+    {
+      "url": "https://www.tpsonline.org.uk/register",
+      "license": "official",
+      "attribution": "TPS registration page and site text"
+    }
+  ],
+  "verified": true,
+  "last_verified": "2026-10-21",
+  "verification_note": "tpsonline.org.uk/register loaded with HTTP 200 on 2026-10-21. It is a JavaScript app. The 85095 text route, the 0345 070 0707 line and the 28 day screening rule were read from the site's own bundled page text."
+}

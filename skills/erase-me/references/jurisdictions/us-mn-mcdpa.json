@@ -1,0 +1,88 @@
+{
+  "code": "us-mn-mcdpa",
+  "name": "Minnesota Consumer Data Privacy Act, Minn. Stat. 325M.10 to 325M.21",
+  "short_name": "MCDPA",
+  "applies_to": {
+    "countries": [
+      "US"
+    ],
+    "regions": [
+      "US-MN"
+    ]
+  },
+  "status": "in_force",
+  "in_force_from": "2025-07-31",
+  "status_note": "Added by Laws 2024, chapter 121, article 5, effective 2025-07-31, with postsecondary institutions exempt until 2029-07-31. The Attorney General enforces the act. The mandatory 30-day cure letter expired January 31, 2026 (325M.20(a)). Minnesota adds rights beyond most states, including a list of specific third parties that received the data and a right to question profiling decisions.",
+  "rights": [
+    {
+      "right": "erasure",
+      "citation": "Minn. Stat. 325M.14, subd. 1(d)",
+      "summary": "A consumer may have personal data concerning them deleted."
+    },
+    {
+      "right": "opt_out_sale",
+      "citation": "Minn. Stat. 325M.14, subd. 1(f)",
+      "summary": "A consumer may opt out of processing for targeted advertising, sale of personal data or certain profiling."
+    },
+    {
+      "right": "correction",
+      "citation": "Minn. Stat. 325M.14, subd. 1(c)",
+      "summary": "A consumer may correct inaccurate personal data concerning them."
+    },
+    {
+      "right": "access",
+      "citation": "Minn. Stat. 325M.14, subd. 1(b), 1(h)",
+      "summary": "A consumer may confirm processing, access the categories of data processed, and get a list of specific third parties that received their data."
+    }
+  ],
+  "deadline": {
+    "days": 45,
+    "day_type": "calendar",
+    "basis": "days",
+    "extension_days": 45,
+    "extension_note": "The controller must tell the consumer what it did without undue delay and within 45 days of receipt. It may extend once by 45 more days where reasonably necessary given the complexity and number of requests, and must give notice and reasons within the first 45 days. A refusal must come within 45 days with reasons and appeal instructions (subd. 4(f)). Opt-outs must be honored within 45 days (subd. 4(d)). Appeal: the controller must answer within 45 days, extendable by 60 more days with notice, must explain its reasons in writing, and must clearly tell the consumer how to file a complaint with the Attorney General (subd. 5).",
+    "citation": "Minn. Stat. 325M.14, subd. 4(e), subd. 4(f), subd. 5"
+  },
+  "regulators": [
+    {
+      "country": "US",
+      "region": "US-MN",
+      "name": "Minnesota Attorney General's Office",
+      "complaint_url": "https://www.ag.state.mn.us/Data-Privacy/Complaint/",
+      "note": "The Data Privacy Complaint Form is for reporting MCDPA violations. The AG asks consumers to contact the company first and offers template request letters on its Data Privacy pages."
+    }
+  ],
+  "identity_verification": "A controller need not act on a request to access, correct, delete, port or get the third party list if it cannot authenticate the request with commercially reasonable efforts, and may ask for additional information reasonably necessary to authenticate it (subd. 4(h)). Authenticate means using reasonable means to determine the request is made by or rightfully on behalf of the consumer (325M.11(c)). Opt-outs need no authentication, though a documented fraudulent request may be denied (subd. 4(h)). No new account may be required (subd. 4(c)). Responses are free up to twice a year (subd. 4(g)). In a response the controller must not disclose Social Security, ID, financial or health account numbers, passwords or biometric data (subd. 4(i)).",
+  "authorized_agent": {
+    "allowed": false,
+    "citation": "Minn. Stat. 325M.14, subd. 2(d)",
+    "note": "A consumer may designate an authorized agent, including through a browser setting or global device setting, only to opt out of targeted advertising and sale. A parent or legal guardian may act for a known child, and a guardian or conservator for a person under guardianship or conservatorship (subd. 2(b) and (c)). The definition of authenticate mentions requests made rightfully on behalf of the consumer, but the only agent provision covers opt-outs, so the consumer should send the deletion request personally."
+  },
+  "templates": {
+    "erasure": "us-state-delete",
+    "followup": "followup-generic",
+    "complaint": "regulator-complaint-generic"
+  },
+  "special_channels": [],
+  "public_records_note": "Personal data excludes publicly available information. The statute says \"Personal data does not include deidentified data or publicly available information\" (325M.11(p)). Minnesota's definition is broader than most: publicly available information means information that is lawfully made available from federal, state, or local government records or widely distributed media, or that a controller has a reasonable basis to believe has lawfully been made available to the general public. It does not require that the consumer be the one who made it public. A people-search site can argue that anything it found lawfully online is outside the deletion right. For data obtained from a source other than the consumer, the controller may keep a minimal suppression record or opt the consumer out of non-exempt processing (subd. 4(k)). No Minnesota data broker registry was identified.",
+  "sources": [
+    {
+      "url": "https://www.revisor.mn.gov/statutes/cite/325M/full",
+      "title": "Minnesota Statutes, Chapter 325M, Office of the Revisor of Statutes",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://www.ag.state.mn.us/Data-Privacy/",
+      "title": "Minnesota Consumer Data Privacy Act, Minnesota Attorney General",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://www.ag.state.mn.us/Data-Privacy/Complaint/",
+      "title": "Data Privacy Complaint Form, Minnesota Attorney General",
+      "accessed_on": "2026-10-21"
+    }
+  ],
+  "verified": true,
+  "verified_on": "2026-10-21",
+  "verification_note": "All required fields were read today in Minnesota Statutes chapter 325M on revisor.mn.gov and on the Attorney General's Data Privacy pages."
+}

@@ -1,0 +1,58 @@
+{
+  "id": "tr-telefonsorgulama",
+  "name": "TelefonSorgulama",
+  "domain": "telefonsorgulama.com",
+  "category": "caller_id",
+  "countries": [
+    "TR"
+  ],
+  "priority": 3,
+  "cluster": null,
+  "covers": [],
+  "search": {
+    "method": "url_template",
+    "url_template": "https://www.telefonsorgulama.com/{phone}.html",
+    "fields": [
+      "phone"
+    ],
+    "notes": "Per-number pages with user comments. Use the national format with a leading 0 and digits only, for example 05XXXXXXXXX."
+  },
+  "optout": {
+    "method": "web_form",
+    "url": "https://www.telefonsorgulama.com/iletisim.html",
+    "email": null,
+    "requires": [
+      "captcha"
+    ],
+    "fields_needed": [
+      "full_name",
+      "email",
+      "phone"
+    ],
+    "steps": [
+      "Open the contact page.",
+      "Enter name and email.",
+      "Choose the subject Numara Kaldırma Talebi (KVKK).",
+      "Write the number and the removal request in the message and submit. The form uses reCAPTCHA, which the human may need to complete."
+    ],
+    "expected_days": 1,
+    "notes": "Türkçe özet. telefonsorgulama.com iletişim formunda Numara Kaldırma Talebi (KVKK) konusunu seçin, talepler 24 saat içinde işleniyor. The page says removal requests are handled first and all requests within 24 hours."
+  },
+  "relist_risk": "medium",
+  "registries": {},
+  "sources": [
+    {
+      "url": "https://www.telefonsorgulama.com/iletisim.html",
+      "license": "official",
+      "attribution": "TelefonSorgulama contact and removal page"
+    },
+    {
+      "url": "https://www.telefonsorgulama.com/gizlilik.html",
+      "license": "official",
+      "attribution": "TelefonSorgulama privacy and KVKK notice"
+    }
+  ],
+  "verified": true,
+  "last_verified": "2026-10-21",
+  "verification_note": "Contact page and privacy notice loaded with HTTP 200 on 2026-10-21 and describe the removal request option."
+}

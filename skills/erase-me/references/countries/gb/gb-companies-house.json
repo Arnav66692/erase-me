@@ -1,0 +1,55 @@
+{
+  "id": "gb-companies-house",
+  "name": "Companies House register (home address removal)",
+  "domain": "company-information.service.gov.uk",
+  "category": "directory",
+  "countries": [
+    "GB"
+  ],
+  "priority": 2,
+  "cluster": null,
+  "covers": [],
+  "search": {
+    "method": "url_template",
+    "url_template": "https://find-and-update.company-information.service.gov.uk/search/officers?q={first}+{last}",
+    "fields": [
+      "first",
+      "last"
+    ],
+    "notes": "Only relevant if the person is or was a company director, secretary, LLP member or person with significant control. Old filed documents can show a home address, full date of birth or signature."
+  },
+  "optout": {
+    "method": "postal",
+    "url": "https://www.gov.uk/guidance/removing-your-home-address-from-the-companies-house-register",
+    "email": null,
+    "requires": [],
+    "fields_needed": [
+      "full_name",
+      "address_line",
+      "listing_url"
+    ],
+    "steps": [
+      "Search the officer register and list every filed document that shows the home address, day of birth or signature.",
+      "If the address is the current correspondence address of an active officer, file a replacement address first.",
+      "If the home address was the company's registered office, change the registered office first. For a dissolved company wait 6 months.",
+      "Complete form SR01 from the GOV.UK guidance page.",
+      "Pay 34 pounds for each document listed, as the form explains.",
+      "Post the application to The Registrar of Companies, PO Box 4082, Cardiff CF14 3WE.",
+      "Wait for the Companies House decision notice."
+    ],
+    "expected_days": null,
+    "notes": "This costs money, 34 pounds per document as of the page update dated 1 February 2026. Companies House gives no time for individual applications. Copies already taken by third-party company data sites are not removed, so check those separately."
+  },
+  "relist_risk": "low",
+  "registries": {},
+  "sources": [
+    {
+      "url": "https://www.gov.uk/guidance/removing-your-home-address-from-the-companies-house-register",
+      "license": "official",
+      "attribution": "GOV.UK, removing your personal details from the Companies House register"
+    }
+  ],
+  "verified": true,
+  "last_verified": "2026-10-21",
+  "verification_note": "GOV.UK guidance loaded with HTTP 200 on 2026-10-21 and describes form SR01, the fee and the postal address."
+}

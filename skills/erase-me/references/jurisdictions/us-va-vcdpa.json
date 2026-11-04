@@ -1,0 +1,93 @@
+{
+  "code": "us-va-vcdpa",
+  "name": "Virginia Consumer Data Protection Act, Va. Code 59.1-575 to 59.1-584",
+  "short_name": "VCDPA",
+  "applies_to": {
+    "countries": [
+      "US"
+    ],
+    "regions": [
+      "US-VA"
+    ]
+  },
+  "status": "in_force",
+  "in_force_from": "2023-01-01",
+  "status_note": "In effect since 2023-01-01 per the Attorney General. The Attorney General has exclusive enforcement authority and must give 30 days written notice and a chance to cure before suing (59.1-584). There is no private right of action according to the Attorney General's summary.",
+  "rights": [
+    {
+      "right": "erasure",
+      "citation": "Va. Code 59.1-577(A)(3)",
+      "summary": "A consumer may ask a controller to delete personal data provided by or obtained about the consumer."
+    },
+    {
+      "right": "opt_out_sale",
+      "citation": "Va. Code 59.1-577(A)(5)",
+      "summary": "A consumer may opt out of processing for targeted advertising, sale of personal data or certain profiling."
+    },
+    {
+      "right": "correction",
+      "citation": "Va. Code 59.1-577(A)(2)",
+      "summary": "A consumer may ask a controller to correct inaccuracies in their personal data."
+    },
+    {
+      "right": "access",
+      "citation": "Va. Code 59.1-577(A)(1)",
+      "summary": "A consumer may confirm whether a controller processes their personal data and access it."
+    }
+  ],
+  "deadline": {
+    "days": 45,
+    "day_type": "calendar",
+    "basis": "days",
+    "extension_days": 45,
+    "extension_note": "The controller must respond without undue delay and in all cases within 45 days of receipt. The period may be extended once by 45 more days when reasonably necessary given the complexity and number of requests, if the controller tells the consumer of the extension and the reason within the first 45 days. A refusal must come within 45 days with the reason and appeal instructions (59.1-577(B)(2)). Appeal: the controller must offer a conspicuous appeal process and answer in writing within 60 days of receiving the appeal. If it denies the appeal it must give an online mechanism, if available, or another method to submit a complaint to the Attorney General (59.1-577(C)).",
+    "citation": "Va. Code 59.1-577(B)(1), 59.1-577(B)(2), 59.1-577(C)"
+  },
+  "regulators": [
+    {
+      "country": "US",
+      "region": "US-VA",
+      "name": "Office of the Attorney General of Virginia, Consumer Protection Section",
+      "complaint_url": "https://www.oag.state.va.us/consumer-protection/index.php/file-a-complaint",
+      "note": "The Attorney General's 2026-03-04 news release directs VCDPA complaints to this page. Its Online Complaint Form is at https://www.oag.state.va.us/consumercomplaintform/start. Phone 804-786-2042 per the AG."
+    }
+  ],
+  "identity_verification": "The controller must comply only with an authenticated request, meaning one verified through reasonable means as coming from the consumer entitled to the rights (59.1-575, 59.1-577(A)). If it cannot authenticate the request with commercially reasonable efforts it may ask for additional information reasonably necessary to authenticate the consumer and the request (59.1-577(B)(4)). It may not require the consumer to create a new account but may require use of an existing account (59.1-578(E)). Responses are free up to twice a year per consumer (59.1-577(B)(3)).",
+  "authorized_agent": {
+    "allowed": null,
+    "citation": "Va. Code 59.1-577(A)",
+    "note": "The VCDPA has no authorized agent provision. The only person who may invoke rights for someone else is a known child's parent or legal guardian. Because the statute is silent on agents, the consumer should send the deletion request personally."
+  },
+  "templates": {
+    "erasure": "us-state-delete",
+    "followup": "followup-generic",
+    "complaint": "regulator-complaint-generic"
+  },
+  "special_channels": [],
+  "public_records_note": "Personal data excludes publicly available information. The statute says \"Personal data\" \"does not include de-identified data or publicly available information\" (59.1-575). Publicly available information means information lawfully made available through federal, state, or local government records, or information a business has a reasonable basis to believe is lawfully made available to the general public through widely distributed media, by the consumer, or by a person to whom the consumer disclosed it, unless the consumer restricted it to a specific audience (59.1-575). A people-search site can decline to delete data drawn from public records. For data obtained from a source other than the consumer, the controller may comply either by keeping a minimal suppression record or by opting the consumer out of all non-exempt processing (59.1-577(B)(5)). No Virginia data broker registry was identified on official sites.",
+  "sources": [
+    {
+      "url": "https://law.lis.virginia.gov/vacodefull/title59.1/chapter53/",
+      "title": "Code of Virginia, Title 59.1, Chapter 53, Consumer Data Protection Act",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://www.oag.state.va.us/media-center/news-releases/2971-attorney-general-jay-jones-reminds-virginians-of-their-data-privacy-rights",
+      "title": "Attorney General Jay Jones Reminds Virginians of Their Data Privacy Rights, 2026-03-04",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://www.oag.state.va.us/consumer-protection/files/tips-and-info/Virginia-Consumer-Data-Protection-Act-Summary-2-2-23.pdf",
+      "title": "The Virginia Consumer Data Protection Act, AG summary",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://www.oag.state.va.us/consumer-protection/index.php/file-a-complaint",
+      "title": "File a Complaint, Virginia AG Consumer Protection Section",
+      "accessed_on": "2026-10-21"
+    }
+  ],
+  "verified": true,
+  "verified_on": "2026-10-21",
+  "verification_note": "All required fields were read today in the official Code of Virginia (law.lis.virginia.gov) and on the Attorney General's site. The effective date comes from the AG summary. Authorized agent is null because the statute does not address agents."
+}

@@ -1,0 +1,46 @@
+{
+  "code": "ca-pipeda",
+  "name": "Personal Information Protection and Electronic Documents Act, S.C. 2000, c. 5, Part 1 and Schedule 1 (Canada, federal)",
+  "short_name": "PIPEDA",
+  "applies_to": {"countries": ["CA"], "regions": []},
+  "status": "partial",
+  "in_force_from": "2001-01-01",
+  "status_note": "PIPEDA has no general, express right to erasure. What it gives is narrower. An individual may withdraw consent at any time (Sch. 1, cl. 4.3.8), information no longer needed for its identified purposes should be destroyed, erased or made anonymous (cl. 4.5.3), and an individual who shows that information is inaccurate or incomplete can have it amended, which may mean deletion (cl. 4.9.5). PIPEDA applies to commercial activity across Canada, but organizations covered by a provincial law deemed substantially similar (Alberta, British Columbia and Quebec) are generally exempt for collection, use or disclosure within that province (s. 26(2)(b)). Information that crosses provincial or national borders stays under PIPEDA, and organizations in the Northwest Territories, Yukon and Nunavut are treated as federally regulated. For Quebec residents use ca-qc-law25 alongside this file. Part 1 came into force on 2001-01-01 (SI/2000-29) and reached provincially regulated commerce in 2004 when the s. 30 transition expired. Act text checked is current to 2026-09-30, last amended 2025-03-04.",
+  "rights": [
+    {"right": "erasure", "citation": "PIPEDA Sch. 1, cl. 4.3.8 and 4.5.3", "summary": "There is no stand-alone erasure right, but an individual may withdraw consent at any time on reasonable notice, and information no longer needed for the purposes identified should be destroyed, erased or made anonymous."},
+    {"right": "correction", "citation": "PIPEDA Sch. 1, cl. 4.9 and 4.9.5", "summary": "When an individual shows that their information is inaccurate or incomplete, the organization must amend it, which can mean correcting, deleting or adding information, and pass the change to third parties where appropriate."},
+    {"right": "access", "citation": "PIPEDA s. 8 and Sch. 1, cl. 4.9.1", "summary": "On a written request, an organization must say whether it holds information about the individual, give access to it and account for its use and the third parties it was disclosed to."},
+    {"right": "delisting", "citation": "PIPEDA s. 5(3), as applied in OPC PIPEDA Findings #2025-002 (2025-08-27)", "summary": "The Privacy Commissioner found that a search engine must, in limited circumstances, de-list results for a person's name where showing them risks significant harm that outweighs the public interest, but Google did not accept the finding and the OPC applied to the Federal Court on 2026-08-26 for an order, so this right is not yet confirmed by a court."}
+  ],
+  "deadline": {
+    "days": 30,
+    "day_type": "calendar",
+    "basis": "days",
+    "extension_days": 30,
+    "extension_note": "The 30 days apply to requests under clause 4.9 of Schedule 1, which covers access and the accuracy challenge in 4.9.5 (s. 8(1) and 8(3)). The organization may extend once by up to 30 days if meeting the limit would unreasonably interfere with its activities or consultations make it impracticable, or for the time needed to convert the information into an alternative format, and must send a notice of extension within the first 30 days giving the new limit, the reasons and the right to complain to the Commissioner (s. 8(4)). Silence past the limit is a deemed refusal (s. 8(5)). PIPEDA sets no fixed deadline for acting on a withdrawal of consent under 4.3.8, which only requires reasonable notice.",
+    "citation": "PIPEDA s. 8(3), 8(4), 8(5)"
+  },
+  "regulators": [
+    {"country": "CA", "region": null, "name": "Office of the Privacy Commissioner of Canada (OPC)", "complaint_url": "https://services.priv.gc.ca/plainte-complaint/en/triage", "note": "The OPC asks people to raise the concern with the organization first and says it may not accept a complaint otherwise. The online complaint tool needs JavaScript. The OPC reports processing delays of several months. The Commissioner cannot make binding orders and must apply to the Federal Court within one year of a report of findings to enforce compliance."}
+  ],
+  "identity_verification": "An individual may be required to provide enough information to let the organization give an account of the existence, use and disclosure of their information, and that information may be used only for that purpose (Sch. 1, cl. 4.9.2). A request under clause 4.9 must be in writing (s. 8(1)), and the organization must help an individual who needs assistance preparing it (s. 8(2)).",
+  "authorized_agent": {"allowed": null, "citation": "PIPEDA s. 8 and Sch. 1, cl. 4.9", "note": "PIPEDA does not say whether a request may be made through an agent. It neither authorizes nor forbids it, so expect organizations to ask for the individual's own signed authorization."},
+  "templates": {"erasure": "pipeda-erasure", "followup": "followup-generic", "complaint": "regulator-complaint-generic"},
+  "special_channels": [],
+  "public_records_note": "Organizations may collect, use and disclose without consent information that is \"publicly available and is specified by the regulations\" (PIPEDA s. 7(1)(d), 7(2)(c.1), 7(3)(h.1)). The Regulations Specifying Publicly Available Information, SOR/2001-7, s. 1, limit this to five classes: public telephone directory listings the subscriber could refuse, professional or business directories, statutory registries with a legal right of public access, public judicial or quasi-judicial records, and publications where the individual provided the information. Except for telephone directories, each class applies only where the collection, use and disclosure relate directly to the purpose for which the information appears there. A people-search site that compiles registry or court data into profiles for a different purpose may not fit inside the exemption, so the exemption does not end a request, but expect sites to raise it.",
+  "sources": [
+    {"url": "https://laws-lois.justice.gc.ca/eng/acts/P-8.6/FullText.html", "title": "Personal Information Protection and Electronic Documents Act, S.C. 2000, c. 5, current to 2026-09-30", "accessed_on": "2026-10-21"},
+    {"url": "https://laws-lois.justice.gc.ca/eng/regulations/SOR-2001-7/FullText.html", "title": "Regulations Specifying Publicly Available Information, SOR/2001-7", "accessed_on": "2026-10-21"},
+    {"url": "https://www.priv.gc.ca/en/report-a-concern/", "title": "Report a concern, Office of the Privacy Commissioner of Canada", "accessed_on": "2026-10-21"},
+    {"url": "https://services.priv.gc.ca/plainte-complaint/en/triage", "title": "OPC online complaint form", "accessed_on": "2026-10-21"},
+    {"url": "https://www.priv.gc.ca/en/privacy-topics/privacy-laws-in-canada/the-personal-information-protection-and-electronic-documents-act-pipeda/pipeda_brief/", "title": "PIPEDA requirements in brief (substantially similar provincial laws)", "accessed_on": "2026-10-21"},
+    {"url": "https://www.priv.gc.ca/en/opc-actions-and-decisions/investigations/investigations-into-businesses/2025/pipeda-2025-002/", "title": "PIPEDA Findings #2025-002, Google search engine de-listing investigation", "accessed_on": "2026-10-21"},
+    {"url": "https://www.priv.gc.ca/en/opc-news/news-and-announcements/2025/nr-c_250827/", "title": "Privacy Commissioner finds that Canadians have a right to have information de-listed in limited circumstances", "accessed_on": "2026-10-21"},
+    {"url": "https://www.priv.gc.ca/en/opc-news/news-and-announcements/2026/nr-c_260828/", "title": "Notice of application filed with Federal Court in connection with search engine de-listing investigation", "accessed_on": "2026-10-21"},
+    {"url": "https://www.priv.gc.ca/en/opc-news/news-and-announcements/2025/bg_tl_250827/", "title": "Timeline of events related to the investigation of Google and de-listing", "accessed_on": "2026-10-21"},
+    {"url": "https://www.priv.gc.ca/en/about-the-opc/what-we-do/consultations/completed-consultations/consultation-on-online-reputation/pos_or_201801/", "title": "Draft OPC Position on Online Reputation (2018)", "accessed_on": "2026-10-21"}
+  ],
+  "verified": true,
+  "verified_on": "2026-10-21",
+  "verification_note": "All citations, the deadline and the substantially similar exemption were read in the Justice Laws consolidation current to 2026-09-30. The regulator and complaint form were confirmed on priv.gc.ca. The complaint form is a JavaScript app, so only its loading page was retrieved. The de-listing right rests on OPC findings that Google disputes, and the Federal Court has not yet ruled on the OPC application filed 2026-08-26."
+}

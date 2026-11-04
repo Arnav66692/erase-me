@@ -1,0 +1,89 @@
+{
+  "id": "bing-eu-delisting",
+  "name": "Bing request to block search results in Europe",
+  "domain": "bing.com",
+  "category": "search_engine",
+  "countries": [
+    "AT",
+    "BE",
+    "BG",
+    "HR",
+    "CY",
+    "CZ",
+    "DK",
+    "EE",
+    "FI",
+    "FR",
+    "DE",
+    "GR",
+    "HU",
+    "IS",
+    "IE",
+    "IM",
+    "IT",
+    "LV",
+    "LI",
+    "LT",
+    "LU",
+    "MT",
+    "NL",
+    "NO",
+    "PL",
+    "PT",
+    "RO",
+    "SK",
+    "SI",
+    "ES",
+    "SE",
+    "CH",
+    "GB"
+  ],
+  "priority": 1,
+  "cluster": "bing",
+  "covers": [],
+  "search": {
+    "method": "search_engine",
+    "url_template": "https://www.bing.com/search?q=%22{first}+{last}%22",
+    "fields": [
+      "first",
+      "last"
+    ],
+    "notes": "Search Bing for the name to collect the result URLs to block."
+  },
+  "optout": {
+    "method": "search_removal",
+    "url": "https://www.bing.com/webmaster/tools/eu-privacy-request",
+    "email": null,
+    "requires": [
+      "id_upload",
+      "listing_url"
+    ],
+    "fields_needed": [
+      "full_name",
+      "email",
+      "listing_urls",
+      "address_line"
+    ],
+    "steps": [
+      "Collect each Bing result URL that shows the person and the name used to search.",
+      "Open the form and say whether you are the person or acting for them.",
+      "Enter the full legal name as it appears on the official ID document, the country of residence and a contact email.",
+      "List each URL with a short reason why it is inaccurate, outdated, irrelevant or excessive.",
+      "Sign with the full name and date, then submit."
+    ],
+    "expected_days": 30,
+    "notes": "Right to be forgotten requests for residents of the countries in the form list, which includes the EU, EEA, Switzerland, the UK and the Isle of Man. Blocking applies to searches on the name. Bing balances the request against public interest. The form says a repeat request on the same URLs can take up to 30 days."
+  },
+  "relist_risk": "low",
+  "registries": {},
+  "sources": [
+    {
+      "url": "https://www.bing.com/webmaster/tools/eu-privacy-request",
+      "license": "official",
+      "attribution": "Microsoft Bing"
+    }
+  ],
+  "verified": true,
+  "last_verified": "2026-10-27",
+  "verification_note": "Form loaded on 2026-10-27. Country list copied from the form's residence menu that day."
+}

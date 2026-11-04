@@ -1,0 +1,65 @@
+{
+  "id": "thatsthem",
+  "name": "That's Them",
+  "domain": "thatsthem.com",
+  "category": "people_search",
+  "countries": [
+    "US"
+  ],
+  "priority": 2,
+  "cluster": "spokeo",
+  "covers": [],
+  "search": {
+    "method": "search_engine",
+    "url_template": "https://www.google.com/search?q=site%3Athatsthem.com+%22{first}+{last}%22",
+    "fields": [
+      "first",
+      "last"
+    ],
+    "notes": "No site URL pattern was confirmed, so search Google for the name on this domain and open the listing in a browser."
+  },
+  "optout": {
+    "method": "web_form",
+    "url": "https://thatsthem.com/optout",
+    "email": null,
+    "requires": [
+      "captcha"
+    ],
+    "fields_needed": [
+      "full_name",
+      "address_line",
+      "city",
+      "region",
+      "zip",
+      "email",
+      "phone"
+    ],
+    "steps": [
+      "Open the opt-out page.",
+      "Enter full name, street address, city, state, ZIP, email and phone as shown on the record.",
+      "Complete the captcha yourself and submit.",
+      "Watch for the confirmation email."
+    ],
+    "expected_days": 3,
+    "notes": "The page says requests are usually processed within 72 hours and a confirmation email follows. The 2026 California registry lists That's Them under Spokeo, Inc., but the Spokeo opt-out is separate."
+  },
+  "relist_risk": "medium",
+  "registries": {
+    "US-CA": true
+  },
+  "sources": [
+    {
+      "url": "https://thatsthem.com/optout",
+      "license": "official",
+      "attribution": "That's Them opt-out page"
+    },
+    {
+      "url": "https://cppa.ca.gov/data_broker_registry/",
+      "license": "official",
+      "attribution": "California Privacy Protection Agency data broker registry, 2026 list fetched 2026-10-27"
+    }
+  ],
+  "verified": true,
+  "last_verified": "2026-10-27",
+  "verification_note": "Opt-out page loaded on 2026-10-27 and uses a Turnstile captcha. Search pages served a browser check."
+}

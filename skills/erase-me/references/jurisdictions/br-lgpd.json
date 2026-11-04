@@ -1,0 +1,43 @@
+{
+  "code": "br-lgpd",
+  "name": "Lei Geral de Proteção de Dados Pessoais, Lei nº 13.709, de 14 de agosto de 2018 (Brazil)",
+  "short_name": "LGPD",
+  "applies_to": {"countries": ["BR"], "regions": []},
+  "status": "in_force",
+  "in_force_from": "2020-09-18",
+  "status_note": "Art. 65 put most of the law in force 24 months after publication, ANPD provisions from 2018-12-28 and the sanction articles 52 to 54 from 2021-08-01. Medida Provisória 959/2020 had tried to postpone the law, and its conversion law, Lei 14.058/2020, was published in the DOU on 2020-09-18 without that postponement. The 2020-09-18 date is inferred from those two texts. Neither states it in those words. The regulator's site now calls itself the Agência Nacional de Proteção de Dados (ANPD).",
+  "rights": [
+    {"right": "erasure", "citation": "LGPD Art. 18, VI", "summary": "The data subject may require elimination of personal data processed with their consent, except where Art. 16 allows the controller to keep it, for example to meet a legal obligation."},
+    {"right": "erasure", "citation": "LGPD Art. 18, IV", "summary": "The data subject may require anonymization, blocking or elimination of data that is unnecessary, excessive or processed in breach of the LGPD."},
+    {"right": "objection", "citation": "LGPD Art. 18, §2", "summary": "The data subject may object to processing carried out without consent under one of the other legal bases if it does not comply with the LGPD."},
+    {"right": "correction", "citation": "LGPD Art. 18, III", "summary": "The data subject may require correction of incomplete, inaccurate or out-of-date data."},
+    {"right": "access", "citation": "LGPD Art. 18, I and II, Art. 19", "summary": "The data subject may obtain confirmation that their data is processed and access to it, immediately in simplified form or within 15 days as a full declaration."}
+  ],
+  "deadline": {
+    "days": null,
+    "day_type": "calendar",
+    "basis": "days",
+    "extension_days": null,
+    "extension_note": "The LGPD sets no fixed deadline for elimination, correction or objection requests. Art. 18 §5 says requests are answered free of charge within the time limits and terms set by regulation, and as of 2026-10-21 the ANPD's list of regulations shows no regulation on data subject rights. If the controller cannot act immediately, it must reply saying it is not the controller (and naming the controller if possible) or giving the factual or legal reasons that prevent immediate action (Art. 18 §4). Only confirmation and access have a statutory period, 15 days for a full declaration (Art. 19, II). Small processing agents get double time limits for data subject requests once a specific regulation exists (Resolução CD/ANPD nº 2/2022, Art. 14, I). Ask for a reply within 15 days as a reasonable request, not a legal deadline.",
+    "citation": "LGPD Art. 18 §§3 to 5, Art. 19, II"
+  },
+  "regulators": [
+    {"country": "BR", "region": null, "name": "Agência Nacional de Proteção de Dados (ANPD)", "complaint_url": "https://www.gov.br/pt-br/servicos/abrir-requerimento-relacionado-a-lgpd", "note": "A data subject petition (petição de titular) is filed only through this gov.br service since 2025-01-01 and needs a gov.br login. It cannot be anonymous and must include proof of the prior attempt with the controller, such as a protocol number or emails. The content may be shared with the controller's DPO. The ANPD says petitions are analyzed in aggregate, not necessarily one by one, and estimates up to 30 business days for the service. Art. 18 §8 also lets data subjects go to consumer protection bodies."}
+  ],
+  "identity_verification": "The LGPD does not set an identity verification standard. Rights are exercised by express request of the data subject or a legally constituted representative to the processing agent (Art. 18 §3). A controller may reasonably ask for enough information to locate the data and confirm the requester, but no article fixes what it may demand.",
+  "authorized_agent": {"allowed": true, "citation": "LGPD Art. 18 §3", "note": "Requests may be made by a legally constituted representative (representante legalmente constituído). Attach a signed power of attorney (procuração). The law does not set its form."},
+  "templates": {"erasure": "lgpd-erasure", "followup": "followup-generic", "complaint": "regulator-complaint-generic"},
+  "special_channels": [],
+  "public_records_note": "There is no blanket public data exemption. Processing personal data \"cujo acesso é público\" must consider the purpose, good faith and public interest that justified making it available (Art. 7 §3). Consent is waived for data manifestly made public by the data subject, but the data subject's rights and the LGPD principles are preserved (Art. 7 §4), and waiver of consent does not release agents from guaranteeing data subject rights (Art. 7 §6). A people-search site using public records for profiling still faces Art. 18 requests, though it will argue legitimate interest. The law does not apply to processing for exclusively journalistic or artistic purposes (Art. 4, II, a).",
+  "sources": [
+    {"url": "https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709compilado.htm", "title": "Lei nº 13.709/2018, texto compilado (Planalto)", "accessed_on": "2026-10-21"},
+    {"url": "https://www.planalto.gov.br/ccivil_03/_ato2019-2022/2020/lei/L14058.htm", "title": "Lei nº 14.058/2020, conversion of MP 959/2020 (Planalto)", "accessed_on": "2026-10-21"},
+    {"url": "https://www.gov.br/anpd/pt-br/canais_atendimento/cidadao-titular-de-dados/denuncia-peticao-de-titular-referente-lgpd", "title": "Denúncia / Petição de Titular referente à LGPD (ANPD)", "accessed_on": "2026-10-21"},
+    {"url": "https://www.gov.br/pt-br/servicos/abrir-requerimento-relacionado-a-lgpd", "title": "Abrir requerimento relacionado à LGPD (gov.br)", "accessed_on": "2026-10-21"},
+    {"url": "https://www.gov.br/anpd/pt-br/acesso-a-informacao/institucional/atos-normativos/regulamentacoes_anpd", "title": "Regulamentações da ANPD", "accessed_on": "2026-10-21"},
+    {"url": "https://www.in.gov.br/en/web/dou/-/resolucao-cd/anpd-n-2-de-27-de-janeiro-de-2022-376562019", "title": "Resolução CD/ANPD nº 2, de 27 de janeiro de 2022 (DOU)", "accessed_on": "2026-10-21"}
+  ],
+  "verified": true,
+  "verified_on": "2026-10-21",
+  "verification_note": "Art. 4, 7, 16, 18, 19 and 65 were read in the Planalto compiled text. The absence of a rights regulation was checked against the ANPD's own list of regulations on 2026-10-21, so the deadline is null by design. The petition route was confirmed on the ANPD and gov.br service pages. The in-force date is inferred from Art. 65 and Lei 14.058/2020."
+}

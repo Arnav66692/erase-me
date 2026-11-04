@@ -1,0 +1,75 @@
+{
+  "id": "intelius",
+  "name": "Intelius (PeopleConnect suppression center)",
+  "domain": "intelius.com",
+  "category": "people_search",
+  "countries": [
+    "US"
+  ],
+  "priority": 1,
+  "cluster": "peopleconnect",
+  "covers": [
+    "truthfinder",
+    "instantcheckmate",
+    "ussearch",
+    "zabasearch",
+    "addresses"
+  ],
+  "search": {
+    "method": "site_search",
+    "url_template": null,
+    "fields": [],
+    "notes": "The suppression center finds the records itself after the email check."
+  },
+  "optout": {
+    "method": "web_form",
+    "url": "https://suppression.peopleconnect.us/login",
+    "email": null,
+    "requires": [
+      "email_verification"
+    ],
+    "fields_needed": [
+      "email",
+      "full_name",
+      "date_of_birth"
+    ],
+    "steps": [
+      "Open the PeopleConnect suppression center.",
+      "Enter an email address and open the verification link right away, since prior-art reports it expires in about 15 minutes.",
+      "Enter the full legal name and date of birth when asked.",
+      "Select each matching record and request suppression.",
+      "Complete any second code sent by email or phone."
+    ],
+    "expected_days": 10,
+    "notes": "PeopleConnect lists Intelius, TruthFinder, US Search and Instant Checkmate as its brands, and the 2026 California registry lists ZabaSearch and Addresses.com under Intelius, LLC. The PeopleConnect suppression center says it covers name-search results on the people search sites in the PeopleConnect family, not Classmates. Suppression does not remove the data from the original sources. Expected days follows identity-eraser, which reports about 72 hours and up to 10 business days."
+  },
+  "relist_risk": "medium",
+  "registries": {
+    "US-CA": true
+  },
+  "sources": [
+    {
+      "url": "https://suppression.peopleconnect.us/login",
+      "license": "official",
+      "attribution": "PeopleConnect suppression center"
+    },
+    {
+      "url": "https://peopleconnect.us/",
+      "license": "official",
+      "attribution": "PeopleConnect company site, brand list"
+    },
+    {
+      "url": "https://github.com/AKCodez/identity-eraser/blob/539e408fd49f9266b09c70abe22e67aff4207964/references/site-playbooks.md",
+      "license": "MIT",
+      "attribution": "identity-eraser by AKCodez, MIT License"
+    },
+    {
+      "url": "https://cppa.ca.gov/data_broker_registry/",
+      "license": "official",
+      "attribution": "California Privacy Protection Agency data broker registry, 2026 list fetched 2026-10-27"
+    }
+  ],
+  "verified": true,
+  "last_verified": "2026-10-27",
+  "verification_note": "Suppression center loaded on 2026-10-27, and its own terms text says it applies to people search sites in the PeopleConnect family. intelius.com/opt-out itself was bot-blocked."
+}

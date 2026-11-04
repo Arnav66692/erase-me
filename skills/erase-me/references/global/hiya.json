@@ -1,0 +1,53 @@
+{
+  "id": "hiya",
+  "name": "Hiya",
+  "domain": "hiya.com",
+  "category": "caller_id",
+  "countries": [
+    "*"
+  ],
+  "priority": 2,
+  "cluster": null,
+  "covers": [],
+  "search": {
+    "method": "manual",
+    "url_template": null,
+    "fields": [],
+    "notes": "Lookups only work inside the mobile app, so the agent cannot check whether the number is listed. Hiya also powers caller ID on some carrier and phone maker apps."
+  },
+  "optout": {
+    "method": "email",
+    "url": "https://www.hiya.com/legal/app-data-protection-and-privacy-policy",
+    "email": "dpo@hiya.com",
+    "requires": [
+      "email_verification"
+    ],
+    "fields_needed": [
+      "full_name",
+      "email",
+      "phone"
+    ],
+    "steps": [
+      "Draft a deletion request that names the phone number with country code and any name Hiya shows for it.",
+      "Send it to dpo@hiya.com, with support@hiya.com in copy.",
+      "Answer any identity check from the same email address.",
+      "Record the date sent and follow up after 30 days."
+    ],
+    "expected_days": 30,
+    "notes": "No public unlist form was found on 2026-10-27. The app privacy policy lists dpo@hiya.com and support@hiya.com and says Hiya may ask for more information to confirm identity."
+  },
+  "relist_risk": "medium",
+  "registries": {
+    "US-CA": false
+  },
+  "sources": [
+    {
+      "url": "https://www.hiya.com/legal/app-data-protection-and-privacy-policy",
+      "license": "official",
+      "attribution": "Hiya app privacy policy"
+    }
+  ],
+  "verified": true,
+  "last_verified": "2026-10-27",
+  "verification_note": "Privacy policy loaded on 2026-10-27. The guessed URL hiya.com/optout returned 404."
+}

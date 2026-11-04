@@ -1,0 +1,55 @@
+{
+  "id": "de-11880",
+  "name": "11880.com",
+  "domain": "11880.com",
+  "category": "directory",
+  "countries": [
+    "DE"
+  ],
+  "priority": 2,
+  "cluster": null,
+  "covers": [],
+  "search": {
+    "method": "url_template",
+    "url_template": "https://www.11880.com/suche/{first}-{last}/{city}",
+    "fields": [
+      "first",
+      "last",
+      "city"
+    ],
+    "notes": "Path pattern returned a no entry found page for a fake name. 11880 Internet Services also runs telefonbuch24.de and klicktel."
+  },
+  "optout": {
+    "method": "phone",
+    "url": "https://unternehmen.11880.com/faq",
+    "email": null,
+    "requires": [],
+    "fields_needed": [
+      "full_name",
+      "phone"
+    ],
+    "steps": [
+      "Contact the phone provider, for example Telekom Deutschland, and ask to delete the directory entry. 11880 says only the provider may change or delete entries.",
+      "For data 11880 adds from other sources, send a GDPR objection and erasure request to 11880 using the contact in its privacy policy."
+    ],
+    "expected_days": null,
+    "notes": "11880 says it receives subscriber directory data from Deutsche Telekom under the TKG and adds other sources. No removal time is stated."
+  },
+  "relist_risk": "medium",
+  "registries": {},
+  "sources": [
+    {
+      "url": "https://unternehmen.11880.com/faq",
+      "license": "official",
+      "attribution": "11880 FAQ, Wie kann ich einen Eintrag löschen"
+    },
+    {
+      "url": "https://unternehmen.11880.com/datenschutz",
+      "license": "official",
+      "attribution": "11880 Datenschutz"
+    }
+  ],
+  "verified": true,
+  "last_verified": "2026-10-21",
+  "verification_note": "11880 FAQ and privacy page loaded with HTTP 200 on 2026-10-21. The FAQ says entries are deleted only through the phone provider."
+}

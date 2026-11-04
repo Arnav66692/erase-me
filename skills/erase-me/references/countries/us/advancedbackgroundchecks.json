@@ -1,0 +1,61 @@
+{
+  "id": "advancedbackgroundchecks",
+  "name": "AdvancedBackgroundChecks",
+  "domain": "advancedbackgroundchecks.com",
+  "category": "people_search",
+  "countries": [
+    "US"
+  ],
+  "priority": 2,
+  "cluster": "tornado-alley",
+  "covers": [],
+  "search": {
+    "method": "search_engine",
+    "url_template": "https://www.google.com/search?q=site%3Aadvancedbackgroundchecks.com+%22{first}+{last}%22",
+    "fields": [
+      "first",
+      "last"
+    ],
+    "notes": "No site URL pattern was confirmed, so search Google for the name on this domain and open the listing in a browser."
+  },
+  "optout": {
+    "method": "web_form",
+    "url": "https://www.advancedbackgroundchecks.com/opt-out",
+    "email": null,
+    "requires": [
+      "captcha",
+      "email_verification"
+    ],
+    "fields_needed": [
+      "full_name",
+      "email"
+    ],
+    "steps": [
+      "Open the opt-out page, choose subject or authorized agent, and enter the name and email.",
+      "Open the emailed link within 24 hours.",
+      "Fill the form so it matches the record and submit.",
+      "Wait for the result email."
+    ],
+    "expected_days": 45,
+    "notes": "The page says a result email follows within 45 days. The site's notice also offers phone opt-out at (855) 240-6392 and says to refresh the request from time to time. The old /removal path returns 404. Operated by Mississippi Tornado Alley, LLC per the 2026 California registry, along with FastPeopleSearch, USPhonebook, SearchPeopleFree, SmartBackgroundChecks, CyberBackgroundChecks and AdvancedBackgroundChecks. Each site has its own opt-out."
+  },
+  "relist_risk": "high",
+  "registries": {
+    "US-CA": true
+  },
+  "sources": [
+    {
+      "url": "https://www.advancedbackgroundchecks.com/do-not-sell",
+      "license": "official",
+      "attribution": "AdvancedBackgroundChecks opt-out notice"
+    },
+    {
+      "url": "https://cppa.ca.gov/data_broker_registry/",
+      "license": "official",
+      "attribution": "California Privacy Protection Agency data broker registry, 2026 list fetched 2026-10-27"
+    }
+  ],
+  "verified": true,
+  "last_verified": "2026-10-27",
+  "verification_note": "Opt-out page and the notice that links to it loaded on 2026-10-27. The page includes a reCAPTCHA."
+}

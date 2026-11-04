@@ -1,0 +1,62 @@
+{
+  "id": "de-das-telefonbuch",
+  "name": "Das Telefonbuch (DTM Deutsche Tele Medien)",
+  "domain": "dastelefonbuch.de",
+  "category": "directory",
+  "countries": [
+    "DE"
+  ],
+  "priority": 1,
+  "cluster": null,
+  "covers": [
+    "de-das-oertliche"
+  ],
+  "search": {
+    "method": "url_template",
+    "url_template": "https://www.dastelefonbuch.de/Suche/{first}%20{last}/{city}",
+    "fields": [
+      "first",
+      "last",
+      "city"
+    ],
+    "notes": "Path pattern returned a results page for a fake name. Reverse search only finds people who agreed to Inverssuche. Results can also include social network and web hits."
+  },
+  "optout": {
+    "method": "email",
+    "url": "https://www.dastelefonbuch.de/Hilfe",
+    "email": "eintragsservice@dtme.de",
+    "requires": [
+      "id_upload"
+    ],
+    "fields_needed": [
+      "full_name",
+      "address_line",
+      "phone"
+    ],
+    "steps": [
+      "Email DTM Deutsche Tele Medien GmbH at eintragsservice@dtme.de, or use https://ihr-eintrag.dtme.de/, and ask to delete the private entry or to object to publication and to reverse search (Widerspruch gegen Veröffentlichung und Inverssuche).",
+      "Attach a copy of an ID card or passport. Black out everything except name, photo and address, and mark it with the word Kopie.",
+      "Or call DTM on 0800 3863 3436, or write to DTM Deutsche Tele Medien GmbH, Wiesenhüttenstraße 18, 60329 Frankfurt am Main.",
+      "Alternatively ask the phone provider directly (see de-teilnehmerverzeichnis-widerspruch)."
+    ],
+    "expected_days": null,
+    "notes": "Das Örtliche names DTM as the contact for entry changes, objection to publication and objection to reverse search, so one DTM request should cover both directories. No time is stated."
+  },
+  "relist_risk": "low",
+  "registries": {},
+  "sources": [
+    {
+      "url": "https://www.dastelefonbuch.de/Hilfe",
+      "license": "official",
+      "attribution": "Das Telefonbuch Hilfe, section 7.1"
+    },
+    {
+      "url": "https://www.dasoertliche.de/datenschutz",
+      "license": "official",
+      "attribution": "Das Örtliche Datenschutz, Widerspruch gegen Inverssuche"
+    }
+  ],
+  "verified": true,
+  "last_verified": "2026-10-21",
+  "verification_note": "Das Telefonbuch help page loaded with HTTP 200 on 2026-10-21 and describes deletion through DTM with an ID copy. dtme.de itself refused connections."
+}

@@ -1,0 +1,49 @@
+{
+  "code": "us-ca-ccpa",
+  "name": "California Consumer Privacy Act of 2018, as amended by the California Privacy Rights Act (Proposition 24), Cal. Civ. Code 1798.100 et seq., with the Delete Act (SB 362), Cal. Civ. Code 1798.99.80 et seq.",
+  "short_name": "CCPA",
+  "applies_to": {"countries": ["US"], "regions": ["US-CA"]},
+  "status": "in_force",
+  "in_force_from": "2020-01-01",
+  "status_note": "CPRA amendments operative 2023-01-01. Statute text checked is the CPPA-posted version effective 2026-01-01. The Delete Act accessible deletion mechanism (DROP) opened to consumers in January 2026, and data brokers must process DROP requests beginning 2026-08-01.",
+  "rights": [
+    {"right": "erasure", "citation": "Cal. Civ. Code 1798.105", "summary": "A consumer may ask a business to delete personal information the business collected from the consumer, subject to the exceptions in 1798.105(d)."},
+    {"right": "opt_out_sale", "citation": "Cal. Civ. Code 1798.120", "summary": "A consumer may direct a business that sells or shares their personal information to stop selling or sharing it."},
+    {"right": "correction", "citation": "Cal. Civ. Code 1798.106", "summary": "A consumer may ask a business to correct inaccurate personal information."},
+    {"right": "access", "citation": "Cal. Civ. Code 1798.110", "summary": "A consumer may ask a business what personal information it has collected about them."},
+    {"right": "erasure", "citation": "Cal. Civ. Code 1798.99.86", "summary": "Through the state DROP platform, a California resident can send one deletion request to every registered data broker, which must process it within 45 days and keep deleting new matching data at least every 45 days."}
+  ],
+  "deadline": {
+    "days": 45,
+    "day_type": "calendar",
+    "basis": "days",
+    "extension_days": 45,
+    "extension_note": "The business may extend once by an additional 45 days when reasonably necessary, if it notifies the consumer within the first 45 days and explains why, for a maximum of 90 calendar days. Receipt must be confirmed within 10 business days (11 CCR 7021(a)). The 45 days run from receipt, regardless of time needed to verify.",
+    "citation": "Cal. Civ. Code 1798.130(a)(2)(A), 11 CCR 7021(b)"
+  },
+  "regulators": [
+    {"country": "US", "region": "US-CA", "name": "California Privacy Protection Agency (CalPrivacy)", "complaint_url": "https://cppa.ca.gov/webapplications/complaint", "note": "CalPrivacy enforces the CCPA and the Delete Act. It does not represent individual consumers. The California Attorney General also enforces the CCPA."}
+  ],
+  "identity_verification": "The business may verify identity to a reasonable or reasonably high degree of certainty depending on the sensitivity of the data and the risk of harm from unauthorized deletion (11 CCR 7062(d)), for example by matching two or more data points it already holds. It may not require the consumer to create an account (Cal. Civ. Code 1798.130(a)(2)(A)). For DROP, CalPrivacy verifies California residency through the California Identity Gateway, and data brokers may not contact the consumer to verify a DROP request (11 CCR 7616(c), 7620(a)).",
+  "authorized_agent": {"allowed": true, "citation": "11 CCR 7063, 11 CCR 7621, Cal. Civ. Code 1798.99.86(b)(8)", "note": "For a direct request, the business may require proof that the consumer gave the agent signed permission, and may also ask the consumer to verify their own identity directly or confirm the permission directly. It may not make the consumer resubmit the request. These extra checks do not apply when the agent holds a power of attorney under Probate Code 4121 to 4130. For DROP, the agent may help only after the consumer's residency is verified, and the agent's full name and email must be disclosed in the consumer's DROP account before submitting."},
+  "templates": {"erasure": "ccpa-delete", "followup": "followup-generic", "complaint": "regulator-complaint-generic"},
+  "special_channels": [
+    {"id": "ca-drop", "name": "California Delete Request and Opt-out Platform (DROP)", "url": "https://consumer.drop.privacy.ca.gov/", "note": "Free, California residents only. One request reaches every registered data broker (over 600 per CalPrivacy). Brokers must access DROP at least every 45 days from 2026-08-01 and process requests within 45 days of receiving them (Cal. Civ. Code 1798.99.86(c)). Unverifiable matches are processed as an opt-out of sale or sharing. Status may take up to 90 days to appear. Requests may be amended no sooner than 45 days after submission (11 CCR 7620(d)). See references/drop-guide.md."}
+  ],
+  "public_records_note": "Personal information under the CCPA excludes publicly available information, defined as information lawfully made available from government records, information the business reasonably believes the consumer or widely distributed media lawfully made public, and information the consumer disclosed without restricting its audience (Cal. Civ. Code 1798.140(v)(2)). The 1798.105 deletion right also reaches only information the business collected from the consumer, so a direct CCPA delete request to a people-search site that compiles third-party data is weak. Use DROP for registered data brokers, which must delete all non-exempt personal information associated with a match, and the site's own opt-out form for listings. CalPrivacy states DROP does not cover first-party data, exempt data or publicly available data.",
+  "sources": [
+    {"url": "https://cppa.ca.gov/pdf/20260101_ccpa_statute.pdf", "title": "California Consumer Privacy Act of 2018, effective 01/01/2026 (CPPA posting)", "accessed_on": "2026-10-21"},
+    {"url": "https://cppa.ca.gov/regulations/pdf/ccpa_statute_eff_20260101.pdf", "title": "CCPA Regulations, 11 CCR 7000 et seq., effective 1/1/2026", "accessed_on": "2026-10-21"},
+    {"url": "https://cppa.ca.gov/regulations/pdf/data_broker_reg_delete_act_statute_eff_20260101.pdf", "title": "Delete Act, Cal. Civ. Code 1798.99.80 to 1798.99.89, effective January 1, 2026", "accessed_on": "2026-10-21"},
+    {"url": "https://cppa.ca.gov/regulations/pdf/data_broker_drop_reg.pdf", "title": "Data Broker Registration and Accessible Deletion Mechanism Regulations, 11 CCR 7600 to 7622", "accessed_on": "2026-10-21"},
+    {"url": "https://cppa.ca.gov/announcements/2025/20251113.html", "title": "California Approves Delete Act Regulations", "accessed_on": "2026-10-21"},
+    {"url": "https://cppa.ca.gov/data_brokers/", "title": "Information for Data Brokers", "accessed_on": "2026-10-21"},
+    {"url": "https://privacy.ca.gov/drop/", "title": "DROP, CalPrivacy", "accessed_on": "2026-10-21"},
+    {"url": "https://privacy.ca.gov/drop/how-drop-works/", "title": "How DROP works", "accessed_on": "2026-10-21"},
+    {"url": "https://privacy.ca.gov/drop/help-with-drop/", "title": "Help with DROP", "accessed_on": "2026-10-21"},
+    {"url": "https://cppa.ca.gov/webapplications/complaint", "title": "California Privacy Protection Agency Complaint Form", "accessed_on": "2026-10-21"}
+  ],
+  "verified": true,
+  "verified_on": "2026-10-21",
+  "verification_note": "All citations, deadlines and the DROP rules were read in the CPPA-hosted statute and regulation PDFs. leginfo.legislature.ca.gov blocked automated access, so the CPPA postings of the statute were used instead."
+}

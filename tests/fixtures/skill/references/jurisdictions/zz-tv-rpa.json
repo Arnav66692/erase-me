@@ -1,0 +1,32 @@
+{
+  "code": "zz-tv-rpa",
+  "name": "Testville Regional Privacy Act",
+  "short_name": "TRPA",
+  "applies_to": {"countries": [], "regions": ["ZZ-TV"]},
+  "status": "partial",
+  "in_force_from": "2025-07-01",
+  "status_note": "Only the opt-out right is in force.",
+  "rights": [
+    {"right": "opt_out_sale", "citation": "s. 4", "summary": "You can stop the sale of your data."}
+  ],
+  "deadline": {
+    "days": 10,
+    "day_type": "business",
+    "basis": "days",
+    "extension_days": 0,
+    "extension_note": "",
+    "citation": "s. 9"
+  },
+  "regulators": [
+    {"country": "ZZ", "region": "ZZ-TV", "name": "Testville Data Office", "complaint_url": "https://tdo.example.org/complain", "note": ""}
+  ],
+  "identity_verification": "",
+  "authorized_agent": {"allowed": false, "citation": "", "note": ""},
+  "templates": {"erasure": "tpa-erasure"},
+  "special_channels": [],
+  "public_records_note": "",
+  "sources": [],
+  "verified": false,
+  "verified_on": null,
+  "verification_note": "Waiting for the official text."
+}

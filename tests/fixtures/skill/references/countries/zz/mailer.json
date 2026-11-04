@@ -1,0 +1,32 @@
+{
+  "id": "mailer",
+  "name": "Testland Mailer Co",
+  "domain": "mailer.example.com",
+  "category": "marketing",
+  "countries": ["ZZ"],
+  "priority": 2,
+  "cluster": null,
+  "covers": [],
+  "search": {
+    "method": "none",
+    "url_template": null,
+    "fields": [],
+    "notes": "No public search."
+  },
+  "optout": {
+    "method": "postal",
+    "url": "",
+    "email": null,
+    "requires": [],
+    "fields_needed": ["full_name", "address"],
+    "steps": ["Print the letter.", "Mail it."],
+    "expected_days": null,
+    "notes": ""
+  },
+  "relist_risk": "low",
+  "registries": {},
+  "sources": [{"url": "https://mailer.example.com/privacy", "license": "official", "attribution": ""}],
+  "verified": true,
+  "last_verified": "2026-10-19",
+  "verification_note": ""
+}

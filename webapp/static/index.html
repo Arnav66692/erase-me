@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 fill=%27%230f0f0f%27/%3E%3Cpath d=%27M7 10h18M7 16h13M7 22h8%27 stroke=%27%23f4889a%27 stroke-width=%273%27/%3E%3C/svg%3E">
+  <meta name="description" content="Start and track privacy requests. Free local app and installable skill. Broker coverage is in development.">
+  <title>Erase Me</title>
+  <link rel="preload" href="/fonts/instrument-serif.ttf" as="font" type="font/ttf" crossorigin>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+  <script src="/hero.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div id="demo-banner" class="topbar" hidden><span class="topbar-tag">Demo</span><span>Listings and removal activity are simulated. No requests are sent to real sites.</span></div>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="/" aria-label="Erase Me home">
+        <svg class="brand-mark" viewBox="0 0 20 20" aria-hidden="true"><path d="M2 5h16M2 10h11M2 15h6"/></svg>
+        <span>Erase Me</span>
+      </a>
+      <nav class="header-actions" aria-label="Account">
+        <span id="mode-badge" class="mode-badge" hidden></span>
+        <button class="text-button" id="privacy-button" type="button">Privacy</button>
+        <button class="button button-ghost button-small" id="logout-button" type="button" hidden>Log out</button>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <div class="container stack-notices">
+      <div id="setup-banner" class="notice attention-notice" hidden></div>
+      <div id="page-error" class="notice error-notice" role="alert" hidden></div>
+    </div>
+
+    <section id="welcome-view" class="welcome-view">
+      <div class="hero">
+
+        <div class="container hero-inner">
+          <h1>Your life.<br>Your name.<br><mark>Your business.</mark></h1>
+          <p class="hero-lede">Start removal work on people-search sites. Keep a record of every request and every step still waiting on you.</p>
+          <div class="hero-actions">
+            <a class="button button-light" href="#signup-panel">Get started</a>
+            <a class="button button-ghost" href="https://github.com/Arnav66692/erase-me">Get the source</a>
+          </div>
+        </div>
+        <div class="container hero-facts" aria-label="What Erase Me does not do">
+          <span>No inbox access</span><span>No ID uploads</span><span>Nothing runs until you click</span><span>Runs on your computer</span>
+        </div>
+      </div>
+
+      <div class="light">
+        <section class="container framed start" id="start" aria-labelledby="start-heading">
+          <div class="start-copy">
+            <h2 id="start-heading">Privacy is a process.<br><span class="accent-text">Keep the receipts.</span></h2>
+            <p class="section-lede">The current local app can start People Data Labs email verification. Other broker routes are still being developed. No complete removal has been independently verified in the pilot.</p>
+            <ul class="fact-list">
+              <li><span class="fact-label">Stored</span><span>On the computer running this app.</span></li>
+              <li><span class="fact-label">Sent</span><span>Only the fields a removal form asks for.</span></li>
+              <li><span class="fact-label">Counted</span><span>A removal, once the listing is actually gone.</span></li>
+            </ul>
+          </div>
+
+          <div class="onboarding-column">
+            <section id="signup-panel" class="form-card" aria-labelledby="signup-heading">
+              <span class="form-kicker">Create your profile</span>
+              <h2 id="signup-heading">Make yourself harder to find.</h2>
+              <p class="form-description">Three details to get started. We ask for more only when we need a better match.</p>
+              <form id="signup-form">
+                <label for="signup-name">Full name</label>
+                <input id="signup-name" name="name" autocomplete="name" maxlength="120" placeholder="First and last name" required>
+                <div class="form-grid">
+                  <div><label for="signup-age">Age</label><input id="signup-age" name="age" type="number" min="18" max="120" inputmode="numeric" placeholder="18+" required></div>
+                  <div><label for="signup-email">Email</label><input id="signup-email" name="email" type="email" autocomplete="email" maxlength="254" placeholder="you@example.com" required></div>
+                </div>
+                <label class="checkbox-label" for="signup-consent"><input id="signup-consent" name="authorized" type="checkbox" required><span>I’m requesting removal of <strong>my own information</strong>. When I run a check, I authorize Erase Me to search for matches and submit supported broker forms using the details I provide.</span></label>
+                <details class="authorization-details"><summary>What this authorizes</summary><p id="authorization-statement">Run checks on demand and submit supported broker forms with your details. Broker verification emails go to the address you enter, and you complete any required email or portal steps. Erase Me does not connect to your inbox or schedule recurring checks. No ID uploads, and no deleting accounts on other sites.</p></details>
+                <button class="button button-primary button-full" type="submit">Get started</button>
+                <p class="form-error" id="signup-error" role="alert" hidden></p>
+              </form>
+              <p class="card-footnote">Use your own email address for broker replies. Complete broker verification steps when required. No ID uploads.</p>
+              <p class="login-switch">Already started? <button id="show-login" class="inline-button" type="button">Log in</button></p>
+            </section>
+
+            <section id="login-panel" class="form-card" aria-labelledby="login-heading" hidden>
+              <span class="form-kicker">Welcome back</span>
+              <h2 id="login-heading">Pick up where you left off.</h2>
+              <p class="form-description">Enter your email and we’ll send you a sign-in code.</p>
+              <form id="login-form">
+                <label for="login-email">Email</label>
+                <input id="login-email" name="email" type="email" autocomplete="email" maxlength="254" required>
+                <button class="button button-primary button-full" type="submit">Send sign-in code</button>
+                <p id="login-error" class="form-error" role="alert" hidden></p>
+              </form>
+              <p class="login-switch">New here? <button id="show-signup" class="inline-button" type="button">Get started</button></p>
+            </section>
+
+            <section id="verification-panel" class="form-card" aria-labelledby="verification-heading" hidden>
+              <span class="form-kicker">One quick check</span>
+              <h2 id="verification-heading">Check your inbox.</h2>
+              <p class="form-description">Enter the sign-in code sent to <strong id="verification-email"></strong>.</p>
+              <div id="demo-code-notice" class="notice demo-code" hidden>Demo code <strong id="demo-code"></strong></div>
+              <form id="verification-form">
+                <label for="verification-code">Verification code</label>
+                <input id="verification-code" class="code-input" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" placeholder="000000" required>
+                <button class="button button-primary button-full" type="submit">Verify email</button>
+                <p id="verification-error" class="form-error" role="alert" hidden></p>
+              </form>
+              <p class="login-switch"><button id="back-to-login" class="inline-button" type="button">Use a different email or request a new code</button></p>
+            </section>
+          </div>
+        </section>
+
+        <section class="container framed how" id="how" aria-labelledby="how-heading">
+          <div class="how-head">
+            <h2 id="how-heading">What happens when you<br>click <span class="accent-text">Run check</span></h2>
+            <p class="section-lede">One bounded batch, then it stops. Click again when you want the next check.</p>
+          </div>
+          <ol class="step-rows">
+            <li><span class="step-label">Find</span><div><h3>Search for your listings</h3><p>People-search sites and data brokers are checked for your name, age and city. A name alone never counts as a match.</p></div></li>
+            <li><span class="step-label">Request</span><div><h3>Ask each site to remove them</h3><p>Supported removal forms get only the fields they ask for. When a site emails you to confirm, you open that email yourself.</p></div></li>
+            <li><span class="step-label">Verify</span><div><h3>Check that the page is gone</h3><p>A request sent is not a removal. Erase Me re-opens the listing and counts it only when it is gone.</p></div></li>
+          </ol>
+        </section>
+      </div>
+    </section>
+
+    <section id="dashboard-view" class="dashboard-view" aria-labelledby="dashboard-heading" hidden>
+      <div class="dash-band">
+        <div class="container">
+          <div class="dashboard-header">
+            <div>
+              <p class="eyebrow">Dashboard</p>
+              <h1 id="dashboard-heading">Your listings</h1>
+              <p id="dashboard-greeting" class="dashboard-description"></p>
+            </div>
+            <div class="campaign-actions">
+              <span id="campaign-status" class="status-pill"></span>
+              <button id="pause-button" class="text-button" type="button">Pause checks</button>
+              <button id="refresh-button" class="button button-ghost" type="button" hidden>Refresh</button>
+              <button id="run-button" class="button button-light" type="button">Run check</button>
+            </div>
+          </div>
+          <div class="metrics" aria-label="Removal progress">
+            <div class="metric"><p>Found</p><strong id="count-found">0</strong><span>Listings that match you</span></div>
+            <div class="metric"><p>Requested</p><strong id="count-requested">0</strong><span>Removal work started</span></div>
+            <div class="metric metric-success"><p>Removed</p><strong id="count-removed">0</strong><span>Checked, then counted</span></div>
+            <div class="metric"><p>Needs you</p><strong id="count-blocked">0</strong><span>Blocked or uncertain</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="light dash-body">
+        <div class="container framed">
+          <p id="campaign-feedback" class="feedback" role="status" hidden></p>
+          <section id="reply-attention-panel" class="notice attention-notice reply-attention" aria-labelledby="reply-attention-heading" hidden>
+            <div><h2 id="reply-attention-heading">A broker reply needs attention</h2><ul id="reply-questions"></ul><p>Review the reply in your mailbox. No additional details are sent automatically.</p></div>
+          </section>
+          <section id="clarification-panel" class="clarification-panel" aria-labelledby="clarification-heading" hidden>
+            <div><span class="form-kicker">A better match</span><h2 id="clarification-heading">Help us find the right you.</h2><p id="clarification-prompt">A location helps us tell apart people with the same name.</p><ul id="additional-questions" hidden></ul></div>
+            <form id="profile-form">
+              <div class="location-fields">
+                <div><label for="profile-country">Country code</label><input id="profile-country" name="country" maxlength="2" pattern="[A-Za-z]{2}" placeholder="US" autocomplete="country" required></div>
+                <div><label for="profile-region">Region <span>optional</span></label><input id="profile-region" name="region" maxlength="12" placeholder="US-CA" autocomplete="address-level1"></div>
+                <div><label for="profile-city">City <span>optional</span></label><input id="profile-city" name="city" maxlength="120" placeholder="San Diego" autocomplete="address-level2"></div>
+              </div>
+              <button class="button button-primary" type="submit">Save location</button>
+              <p id="profile-error" class="form-error" role="alert" hidden></p>
+            </form>
+          </section>
+
+          <div class="dashboard-columns">
+            <section class="panel listings-panel" aria-labelledby="listings-heading">
+              <div class="panel-header">
+                <h2 id="listings-heading">Sites</h2>
+                <span id="listing-total" class="quiet-label"></span>
+              </div>
+              <div class="filters" role="group" aria-label="Filter sites">
+                <button type="button" class="filter-button selected" data-filter="all" aria-pressed="true">All</button>
+                <button type="button" class="filter-button" data-filter="pending" aria-pressed="false">In progress</button>
+                <button type="button" class="filter-button" data-filter="removed" aria-pressed="false">Removed</button>
+                <button type="button" class="filter-button" data-filter="blocked" aria-pressed="false">Needs you</button>
+              </div>
+              <div id="listing-items" class="listing-items"></div>
+              <div id="listings-empty" class="empty-state">
+                <svg viewBox="0 0 40 40" aria-hidden="true"><path d="M8 13h24M8 20h17M8 27h10"/></svg>
+                <h3>Your first check starts here.</h3>
+                <p>Once a site has been checked, its progress will appear here.</p>
+              </div>
+            </section>
+
+            <aside class="panel activity-panel" aria-labelledby="activity-heading">
+              <div class="panel-header"><h2 id="activity-heading">Activity</h2></div>
+              <ol id="activity-list" class="activity-list"></ol>
+              <p id="activity-empty" class="muted activity-empty">No updates yet. Each step is recorded as work begins.</p>
+              <div class="next-check">
+                <span id="next-check-label" class="quiet-label">CHECKS ON DEMAND</span>
+                <p id="next-check-date">Waiting for the first scan</p>
+                <small>Requests take time. A request sent is not yet a removal.</small>
+              </div>
+            </aside>
+          </div>
+
+          <div class="account-strip">
+            <span id="account-email"></span>
+            <button class="text-button" id="edit-location" type="button">Update location</button>
+            <button class="text-button danger-text" id="delete-account" type="button">Delete my account</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <a class="brand" href="/" aria-label="Erase Me home">
+        <svg class="brand-mark" viewBox="0 0 20 20" aria-hidden="true"><path d="M2 5h16M2 10h11M2 15h6"/></svg>
+        <span>Erase Me</span>
+      </a>
+      <p>Removal depends on each site. Public records and every copy of your information cannot be erased.</p>
+      <span class="footer-note"><a href="https://github.com/Arnav66692/erase-me">Open source, MIT</a>. <a href="https://github.com/Arnav66692/erase-me#claude-code-installation">Install the skill</a>.</span>
+    </div>
+  </footer>
+
+  <dialog id="privacy-dialog" aria-labelledby="privacy-heading">
+    <div class="dialog-body">
+      <span class="form-kicker">Your information</span>
+      <h2 id="privacy-heading">Where your data goes.</h2>
+      <p>Your profile and request history are stored on the computer running this app. If this app is hosted, that means the service’s server.</p>
+      <p>The local app has no inbox access. Supported broker forms receive the details needed for your request. Brokers may send verification emails directly to the address you enter, and you complete those steps yourself.</p>
+      <p>Demo mode uses synthetic listings and does not send removal requests. You can pause future work or delete your account and its stored history. Deleting your account does not recall requests already sent to other sites.</p>
+      <button class="button button-primary dialog-close" type="button">Got it</button>
+    </div>
+  </dialog>
+  <dialog id="delete-dialog" aria-labelledby="delete-heading">
+    <div class="dialog-body">
+      <span class="form-kicker">Delete account</span>
+      <h2 id="delete-heading">Delete your profile here.</h2>
+      <p>This deletes your profile and request history from this app and stops future work. Requests already sent to sites cannot be recalled.</p>
+      <p class="muted">This action cannot be undone.</p>
+      <div class="dialog-actions">
+        <button id="confirm-delete" class="button button-danger" type="button">Delete my account and history</button>
+        <button class="button button-secondary dialog-close" type="button">Keep my account</button>
+      </div>
+      <p id="delete-error" class="form-error" role="alert" hidden></p>
+    </div>
+  </dialog>
+</body>
+</html>

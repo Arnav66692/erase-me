@@ -1,0 +1,58 @@
+{
+  "id": "gb-peopletraceuk",
+  "name": "People Trace UK",
+  "domain": "peopletraceuk.com",
+  "category": "people_search",
+  "countries": [
+    "GB"
+  ],
+  "priority": 2,
+  "cluster": null,
+  "covers": [],
+  "search": {
+    "method": "manual",
+    "url_template": "https://www.peopletraceuk.com/",
+    "fields": [
+      "first",
+      "last",
+      "city"
+    ],
+    "notes": "The people search posts a form to Electoral_Roll_Search.asp, so there is no simple GET URL. Search by first name, surname and town on the home page."
+  },
+  "optout": {
+    "method": "web_form",
+    "url": "https://www.peopletraceuk.com/RequestRecordRemoval.asp",
+    "email": null,
+    "requires": [],
+    "fields_needed": [
+      "full_name",
+      "date_of_birth",
+      "email",
+      "phone",
+      "address_line",
+      "postcode"
+    ],
+    "steps": [
+      "Open the Record Removal page on peopletraceuk.com.",
+      "Enter full name and date of birth.",
+      "Enter the email address and phone number for contact.",
+      "Enter the flat number, building, street, town and postcode of the record.",
+      "Submit the form. Use one form per person and per address.",
+      "Watch for an identity check email and answer it."
+    ],
+    "expected_days": 7,
+    "notes": "The page says removals for an identified and verified data subject are completed within 5 working days, and that the site may contact the person to confirm identity. Data is based on the electoral roll, so also do gb-open-register."
+  },
+  "relist_risk": "medium",
+  "registries": {},
+  "sources": [
+    {
+      "url": "https://www.peopletraceuk.com/RequestRecordRemoval.asp",
+      "license": "official",
+      "attribution": "People Trace UK record removal page"
+    }
+  ],
+  "verified": true,
+  "last_verified": "2026-10-21",
+  "verification_note": "Removal page loaded with HTTP 200 on 2026-10-21 and describes the form and the 5 working day timeline."
+}

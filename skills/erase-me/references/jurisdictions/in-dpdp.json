@@ -1,0 +1,40 @@
+{
+  "code": "in-dpdp",
+  "name": "Digital Personal Data Protection Act, 2023 (22 of 2023), with the Digital Personal Data Protection Rules, 2025 (G.S.R. 846(E)) (India)",
+  "short_name": "DPDP Act",
+  "applies_to": {"countries": ["IN"], "regions": []},
+  "status": "not_in_force",
+  "in_force_from": "2027-05-13",
+  "status_note": "G.S.R. 843(E), dated 2025-11-13 and published in the Gazette of India Extraordinary of Thursday 13 November 2025, brought only s. 1(2), s. 2, s. 18 to 26, 35, 38 to 43 and s. 44(1) and (3) into force on publication. Section 6(9) and s. 27(1)(d) start one year after publication. Sections 3 to 5, 6(1) to (8) and (10), 7 to 17 (which include s. 12 correction and erasure and s. 13 grievance redressal), s. 27 except (1)(d), 28 to 34, 36, 37 and 44(2) start eighteen months after publication, which is 2027-05-13. Under the Rules (r. 1), rules 1, 2 and 17 to 21 apply from publication, rule 4 after one year, and rules 3, 5 to 16 (including rule 14 on rights), 22 and 23 after eighteen months. In force today: definitions, the Data Protection Board's establishment and structure (G.S.R. 844(E) established the Board from 2025-11-13 with its head office in the National Capital Region, and G.S.R. 845(E) fixed it at four members), and rule-making powers. No data principal right is enforceable under this Act on 2026-10-21. Section 43A of the Information Technology Act, 2000 stays in place until s. 44(2) commences, because s. 44(2) is what omits it.",
+  "rights": [
+    {"right": "erasure", "citation": "DPDP Act s. 12(1) and 12(3), DPDP Rules r. 14 (from 2027-05-13)", "summary": "A data principal may ask for erasure of personal data she gave consent to process, including data she volunteered under s. 7(a), and the fiduciary must erase it unless keeping it is needed for the specified purpose or to comply with law."},
+    {"right": "correction", "citation": "DPDP Act s. 12(1) and 12(2) (from 2027-05-13)", "summary": "A data principal may ask the fiduciary to correct inaccurate or misleading data, complete incomplete data and update it, for data processed on her consent."},
+    {"right": "access", "citation": "DPDP Act s. 11(1) (from 2027-05-13)", "summary": "A data principal may obtain from a fiduciary she gave consent to a summary of the data being processed and the identities of others it was shared with."}
+  ],
+  "deadline": {
+    "days": 90,
+    "day_type": "calendar",
+    "basis": "days",
+    "extension_days": 0,
+    "extension_note": "Not in force until 2027-05-13. Rule 14(3) requires each fiduciary to publish the period within which its grievance redressal system responds to data principals' grievances, which must be a reasonable period not exceeding ninety days. The gazetted English text of rule 14(3) is garbled and omits the words saying what is published. A corrigendum, G.S.R. 892(E) of 2025-12-10, was reported but not read. The Act sets no separate deadline for acting on an erasure request under s. 12(3), so the 90 days work as an outer limit once a request is pursued as a grievance under s. 13. The Rules provide no extension.",
+    "citation": "DPDP Act s. 13(2), DPDP Rules r. 14(3)"
+  },
+  "regulators": [
+    {"country": "IN", "region": null, "name": "Data Protection Board of India", "complaint_url": null, "note": "Established by G.S.R. 844(E) with effect from 2025-11-13. Its power to inquire into a data principal's complaint (s. 27(1)(b)) does not commence until 2027-05-13, and a data principal must first use the fiduciary's grievance redressal before approaching the Board (s. 13(3), also not yet in force). No official complaint portal was found. Whether a Chairperson and Members have been appointed could not be confirmed from a primary source."}
+  ],
+  "identity_verification": "From 2027-05-13, a data principal makes a request using the means and particulars the fiduciary publishes, such as a username or another identifier issued by the fiduciary (customer ID, application number, email address, mobile number or similar) needed to identify her under its terms of service (Rules r. 14(1), 14(2) and 14(5)). A data principal must give only verifiably authentic information when asking for correction or erasure (Act s. 15(e)).",
+  "authorized_agent": {"allowed": null, "citation": "DPDP Act s. 14, DPDP Rules r. 14(4)", "note": "The Act lets a data principal nominate another individual to exercise her rights only if she dies or becomes incapacitated. It says nothing about ordinary agents acting for a living, capable data principal. Not in force until 2027-05-13."},
+  "templates": {"erasure": "generic-erasure", "followup": "followup-generic", "complaint": "regulator-complaint-generic"},
+  "special_channels": [],
+  "public_records_note": "Even once in force, the Act will not apply to personal data \"made or caused to be made publicly available\" by the data principal herself or by any other person under a legal obligation in India to publish it (s. 3(c)(ii)). The erasure right in s. 12 also covers only data processed on the data principal's consent, including data she volunteered under s. 7(a). Together these leave the DPDP Act weak against people-search sites that scrape or buy third-party and public-record data without the person's consent.",
+  "sources": [
+    {"url": "https://egazette.gov.in/WriteReadData/2025/267647.pdf", "title": "G.S.R. 843(E), 13 November 2025, commencement of provisions of the DPDP Act (Gazette of India Extraordinary)", "accessed_on": "2026-10-21"},
+    {"url": "https://egazette.gov.in/WriteReadData/2025/267650.pdf", "title": "G.S.R. 846(E), 13 November 2025, Digital Personal Data Protection Rules, 2025 (Gazette of India Extraordinary)", "accessed_on": "2026-10-21"},
+    {"url": "https://egazette.gov.in/WriteReadData/2025/267648.pdf", "title": "G.S.R. 844(E), 13 November 2025, establishment of the Data Protection Board of India", "accessed_on": "2026-10-21"},
+    {"url": "https://egazette.gov.in/WriteReadData/2025/267649.pdf", "title": "G.S.R. 845(E), 13 November 2025, Data Protection Board to consist of four members", "accessed_on": "2026-10-21"},
+    {"url": "https://egazette.gov.in/WriteReadData/2023/248045.pdf", "title": "Digital Personal Data Protection Act, 2023 (No. 22 of 2023), Gazette of India Extraordinary, 11 August 2023", "accessed_on": "2026-10-21"}
+  ],
+  "verified": false,
+  "verified_on": "2026-10-21",
+  "verification_note": "Commencement, rights citations and the rule 14(3) period were read in the Gazette of India PDFs. Unconfirmed fields: (1) regulators[0].complaint_url is null because no official Board complaint portal was found and the Board's complaint function is not yet in force. (2) Whether the Board's Chairperson and Members have been appointed could not be confirmed on meity.gov.in, whose pages render only with JavaScript. (3) The corrigendum G.S.R. 892(E), which may change the rule 14(3) wording, was not read. (4) The commencement date assumes eighteen months run from the gazette date of 2025-11-13. The PDFs were digitally signed on 2025-11-14, so 2027-05-14 is possible if publication is counted from upload."
+}

@@ -1,0 +1,48 @@
+{
+  "id": "ca-cma-do-not-mail",
+  "name": "CMA Do Not Mail Service",
+  "domain": "thecma.ca",
+  "category": "marketing",
+  "countries": [
+    "CA"
+  ],
+  "priority": 3,
+  "cluster": null,
+  "covers": [],
+  "search": {
+    "method": "none",
+    "url_template": "",
+    "fields": [],
+    "notes": "Not a lookup site."
+  },
+  "optout": {
+    "method": "web_form",
+    "url": "https://cmadnm.cawebhosting.ca/submit.asp",
+    "email": null,
+    "requires": [],
+    "fields_needed": [
+      "full_name",
+      "address_line",
+      "postcode"
+    ],
+    "steps": [
+      "Open the CMA Do Not Mail registration form, linked from the CMA consumer page.",
+      "Enter the name and mailing address exactly as marketers use them.",
+      "Submit the form."
+    ],
+    "expected_days": null,
+    "notes": "Free for consumers. CMA members that send direct mail must screen against this list. It covers personally addressed marketing mail only, not non-members and not a company's own customer lists. The CMA does not own or rent consumer lists. A French form is at https://cmadnm.cawebhosting.ca/submit_fr.asp."
+  },
+  "relist_risk": "low",
+  "registries": {},
+  "sources": [
+    {
+      "url": "https://www.thecma.ca/resources/consumer-centre/get-less-print-mail",
+      "license": "official",
+      "attribution": "Canadian Marketing Association, Do Not Mail Service"
+    }
+  ],
+  "verified": true,
+  "last_verified": "2026-10-21",
+  "verification_note": "CMA consumer page and the linked registration form loaded with HTTP 200 on 2026-10-21. The page describes the free service and who must use it."
+}

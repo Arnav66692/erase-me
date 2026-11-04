@@ -1,0 +1,7 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>Synthetic privacy portal</title>
+<!-- Synthetic controls matching the publicly observed portal; no live script or network. -->
+<form id="portal"><label>Email <input id="pc-email-login-input" type="email"></label>
+<button id="email-login-submit" type="submit">Continue</button></form>
+<div role="alert" hidden>Email sent!</div>
+<script>document.querySelector('form').addEventListener('submit',e=>{e.preventDefault();document.querySelector('[role=alert]').hidden=false;});</script>
+</html>

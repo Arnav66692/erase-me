@@ -1,0 +1,65 @@
+{
+  "id": "spokeo",
+  "name": "Spokeo",
+  "domain": "spokeo.com",
+  "category": "people_search",
+  "countries": [
+    "US"
+  ],
+  "priority": 1,
+  "cluster": "spokeo",
+  "covers": [],
+  "search": {
+    "method": "url_template",
+    "url_template": "https://www.spokeo.com/{first}-{last}/{region_name}/{city}",
+    "fields": [
+      "first",
+      "last",
+      "region_name",
+      "city"
+    ],
+    "notes": "Pattern seen on the site with a made-up name on 2026-10-27. Drop the city part to search a whole state."
+  },
+  "optout": {
+    "method": "web_form",
+    "url": "https://www.spokeo.com/optout",
+    "email": null,
+    "requires": [
+      "listing_url",
+      "email_verification",
+      "captcha"
+    ],
+    "fields_needed": [
+      "listing_url",
+      "email"
+    ],
+    "steps": [
+      "Search the name and collect the URL of every matching listing.",
+      "Open the opt-out page and paste one listing URL.",
+      "Enter an email address, complete the captcha yourself and press Opt Out.",
+      "Click the link in the confirmation email.",
+      "Repeat for each listing URL."
+    ],
+    "expected_days": 2,
+    "notes": "Spokeo says each listing has its own URL and must be opted out one at a time, that requests take 24 to 48 hours, and that listings may reappear as new records arrive. Spokeo also owns ThatsThem and AnyWho per the California registry, and those need their own opt-outs. Privacy email from the page: privacy@spokeo.com."
+  },
+  "relist_risk": "high",
+  "registries": {
+    "US-CA": true
+  },
+  "sources": [
+    {
+      "url": "https://www.spokeo.com/optout",
+      "license": "official",
+      "attribution": "Spokeo opt-out page"
+    },
+    {
+      "url": "https://cppa.ca.gov/data_broker_registry/",
+      "license": "official",
+      "attribution": "California Privacy Protection Agency data broker registry, 2026 list fetched 2026-10-27"
+    }
+  ],
+  "verified": true,
+  "last_verified": "2026-10-27",
+  "verification_note": "Opt-out page loaded on 2026-10-27 and shows a reCAPTCHA."
+}

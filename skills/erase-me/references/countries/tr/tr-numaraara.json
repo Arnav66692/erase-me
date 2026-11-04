@@ -1,0 +1,57 @@
+{
+  "id": "tr-numaraara",
+  "name": "NumaraAra",
+  "domain": "numaraara.com",
+  "category": "caller_id",
+  "countries": [
+    "TR"
+  ],
+  "priority": 2,
+  "cluster": null,
+  "covers": [],
+  "search": {
+    "method": "url_template",
+    "url_template": "https://www.numaraara.com/telefon/{phone}",
+    "fields": [
+      "phone"
+    ],
+    "notes": "Per-number pages with user comments and a safety score. Use the national format with a leading 0 and digits only, for example 05XXXXXXXXX."
+  },
+  "optout": {
+    "method": "web_form",
+    "url": "https://www.numaraara.com/iletisim",
+    "email": "bilgi@numaraara.com",
+    "requires": [],
+    "fields_needed": [
+      "full_name",
+      "email",
+      "phone"
+    ],
+    "steps": [
+      "Open the NumaraAra contact page.",
+      "Enter name, email and phone.",
+      "Choose the subject Numara Silme Talebi (KVKK).",
+      "Write the number to delete in the message and cite KVKK Law No. 6698.",
+      "Tick the KVKK notice box and submit. The human may need to complete a bot check if one appears."
+    ],
+    "expected_days": 2,
+    "notes": "Türkçe özet. numaraara.com iletişim sayfasında Numara Silme Talebi (KVKK) konusunu seçip numaranızı yazın, talepler 24-48 saatte sonuçlanıyor. The contact page lists bilgi@numaraara.com and the KVKK notice lists destek@numaraara.com. The site says requests are completed in 24 to 48 hours and gives an average reply time of 3 business days."
+  },
+  "relist_risk": "medium",
+  "registries": {},
+  "sources": [
+    {
+      "url": "https://www.numaraara.com/iletisim",
+      "license": "official",
+      "attribution": "NumaraAra contact and KVKK request page"
+    },
+    {
+      "url": "https://www.numaraara.com/kvkk-aydinlatma-metni",
+      "license": "official",
+      "attribution": "NumaraAra KVKK notice"
+    }
+  ],
+  "verified": true,
+  "last_verified": "2026-10-21",
+  "verification_note": "Contact page and KVKK notice loaded with HTTP 200 on 2026-10-21 and describe the Numara Silme Talebi process and timing."
+}

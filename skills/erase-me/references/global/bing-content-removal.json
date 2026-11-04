@@ -1,0 +1,54 @@
+{
+  "id": "bing-content-removal",
+  "name": "Bing Content Removal Tool",
+  "domain": "bing.com",
+  "category": "search_engine",
+  "countries": [
+    "*"
+  ],
+  "priority": 2,
+  "cluster": "bing",
+  "covers": [],
+  "search": {
+    "method": "search_engine",
+    "url_template": "https://www.bing.com/search?q=%22{first}+{last}%22+{city}",
+    "fields": [
+      "first",
+      "last",
+      "city"
+    ],
+    "notes": "Search Bing for the name with a city to find results that still point to removed listings."
+  },
+  "optout": {
+    "method": "search_removal",
+    "url": "https://www.bing.com/webmasters/tools/contentremoval",
+    "email": null,
+    "requires": [
+      "account",
+      "listing_url"
+    ],
+    "fields_needed": [
+      "listing_url"
+    ],
+    "steps": [
+      "Confirm the listing page is gone or changed on the source site.",
+      "Open the Bing Content Removal Tool and sign in with a Microsoft account.",
+      "Choose page removal or outdated cache removal and paste the exact URL.",
+      "Submit and check the request status in the tool."
+    ],
+    "expected_days": null,
+    "notes": "For pages already removed or changed at the source. For live pages with private info in Europe use bing-eu-delisting. Elsewhere use bing-report-concern."
+  },
+  "relist_risk": "low",
+  "registries": {},
+  "sources": [
+    {
+      "url": "https://www.bing.com/webmasters/tools/contentremoval",
+      "license": "official",
+      "attribution": "Microsoft Bing"
+    }
+  ],
+  "verified": true,
+  "last_verified": "2026-10-27",
+  "verification_note": "Tool URL answered on 2026-10-27 and redirected to the Bing sign-in page for the content removal tool. The page behind sign-in was not viewed."
+}

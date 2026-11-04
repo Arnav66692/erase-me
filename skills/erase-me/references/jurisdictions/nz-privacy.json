@@ -1,0 +1,46 @@
+{
+  "code": "nz-privacy",
+  "name": "Privacy Act 2020 (Public Act 2020 No 31), with the information privacy principles in section 22",
+  "short_name": "Privacy Act 2020",
+  "applies_to": {"countries": ["NZ"], "regions": []},
+  "status": "partial",
+  "in_force_from": "2020-12-01",
+  "status_note": "No general right to erasure exists. The Act gives a right to request correction (IPP 7) and access (IPP 6), plus a duty not to keep information longer than needed (IPP 9) that individuals cannot enforce as a deletion right. OPC guidance says an agency may correct information by removing or deleting it, so a correction request is the closest route to removal. IPP 3A, which requires agencies that collect personal information from someone other than the individual to tell the individual, came into force in May 2026.",
+  "rights": [
+    {"right": "correction", "citation": "Privacy Act 2020 s 22, IPP 7, and Part 4 Subpart 2 (ss 59 to 65)", "summary": "An individual may ask an agency to correct personal information so it is accurate, up to date, complete and not misleading, and if the agency refuses, may have a statement of correction attached that the agency must pass on to everyone it disclosed the information to, as far as reasonably practicable."},
+    {"right": "access", "citation": "Privacy Act 2020 s 22, IPP 6, and Part 4 Subpart 1", "summary": "An individual may ask almost any agency for the personal information it holds about them, usually free of charge."},
+    {"right": "erasure", "citation": "Privacy Act 2020 s 22, IPP 9", "summary": "There is no individual right to erasure, but an agency must not keep personal information longer than needed for the purposes it may lawfully be used for, so a request can only ask it to meet that duty."}
+  ],
+  "deadline": {
+    "days": 20,
+    "day_type": "business",
+    "basis": "days",
+    "extension_days": null,
+    "extension_note": "OPC guidance says an agency has 20 working days after receiving a correction request to decide whether to make the correction and to tell the individual. The agency may extend the time limit, but must tell the individual within the 20 working days, give the reason, and say they can complain to OPC about the extension. The Act sets no fixed length for an extension. A request may be transferred to another agency within 10 working days, and an individual may ask for urgent handling with reasons. The 1993 to 2020 comparison table published by OPC places the decision on a correction request in s 63, the statement of correction in s 64, extensions in s 65, transfer in s 62 and urgency in s 60. For access requests the same 20 working day limit applies, with extensions in s 48.",
+    "citation": "Privacy Act 2020 ss 63 and 65 (per OPC), OPC guidance on responding to correction requests"
+  },
+  "regulators": [
+    {"country": "NZ", "region": null, "name": "Office of the Privacy Commissioner (OPC), Te Mana Matapono Matatapu", "complaint_url": "https://www.privacy.org.nz/your-rights/making-a-complaint-to-the-privacy-commissioner/", "note": "OPC will not accept a complaint unless the individual first tried to sort it out with the agency, preferably in writing. The complaint is made through an online self-assessment and form, with proof of the earlier contact, copies of correspondence, evidence of harm and the outcome wanted. The form cannot be saved part way. A non-lawyer representative needs a signed representative authority form. OPC points people to Netsafe for harmful posts by others online."}
+  ],
+  "identity_verification": "OPC guidance says an agency should verify that the requester is the individual concerned or an authorised representative before releasing information, and must not release information if it has reasonable grounds to believe the request is made under threat of harm. The OPC comparison table places these precautions in s 57. The Act text itself was not read for this field.",
+  "authorized_agent": {"allowed": true, "citation": "OPC guidance on asking for your information and on responding to requests", "note": "OPC says a person may ask for another person's information when acting on their behalf with written permission, and that agencies should check the requester is an authorised representative. For complaints to OPC, a representative other than a lawyer must file the OPC representative authority form. The statutory definition of representative was not read."},
+  "templates": {"erasure": "generic-erasure", "followup": "followup-generic", "complaint": "regulator-complaint-generic"},
+  "special_channels": [],
+  "public_records_note": "An agency may use or disclose personal information for a new purpose if it believes on reasonable grounds that the source is a publicly available publication and that, in the circumstances, it would not be unfair or unreasonable to do so (IPP 10(1)(d), IPP 11(1)(d)). People-search sites that compile public records may rely on these exceptions, but the not unfair or unreasonable test leaves room to argue a specific listing. The exceptions do not remove the IPP 7 correction right or IPP 9 retention duty. Under IPP 3A an agency that collects information about someone from another source must take reasonable steps to tell them, including who holds it and their rights to access and correction.",
+  "sources": [
+    {"url": "https://www.privacy.org.nz/privacy-principles/7/", "title": "OPC, Principle 7, Correction of personal information, with statutory text", "accessed_on": "2026-10-21"},
+    {"url": "https://www.privacy.org.nz/privacy-principles/9/", "title": "OPC, Principle 9, Retention of personal information, with statutory text", "accessed_on": "2026-10-21"},
+    {"url": "https://www.privacy.org.nz/privacy-principles/10/", "title": "OPC, Principle 10, Limits on use, with statutory text", "accessed_on": "2026-10-21"},
+    {"url": "https://www.privacy.org.nz/privacy-principles/11/", "title": "OPC, Principle 11, Limits on disclosure, with statutory text", "accessed_on": "2026-10-21"},
+    {"url": "https://www.privacy.org.nz/privacy-principles/3a/", "title": "OPC, Principle 3A, Collection from another source, in force May 2026", "accessed_on": "2026-10-21"},
+    {"url": "https://www.privacy.org.nz/your-rights/correct-your-information/", "title": "OPC, Correct your information", "accessed_on": "2026-10-21"},
+    {"url": "https://www.privacy.org.nz/your-rights/ask-for-your-information/", "title": "OPC, Ask for your information", "accessed_on": "2026-10-21"},
+    {"url": "https://www.privacy.org.nz/responsibilities/poupou-matatapu-doing-privacy-well/responding-to-requests-and-complaints-well/", "title": "OPC, Poupou Matatapu, Responding to requests and complaints well", "accessed_on": "2026-10-21"},
+    {"url": "https://www.privacy.org.nz/resources-and-learning/a-z-topics/protecting-children-and-young-peoples-privacy/childrens-privacy-guidance-for-the-education-sector/chapter-13-managing-information-requests/", "title": "OPC, Chapter 13 Managing information requests (sections 58 to 65 and step deadlines)", "accessed_on": "2026-10-21"},
+    {"url": "https://www.privacy.org.nz/assets/DOCUMENTS/20250603-Comparing-the-Privacy-Acts-1993-and-2020-A1084553.pdf", "title": "OPC, Comparing the Privacy Acts 1993 and 2020 (section table)", "accessed_on": "2026-10-21"},
+    {"url": "https://www.privacy.org.nz/your-rights/making-a-complaint-to-the-privacy-commissioner/", "title": "OPC, Complain to the Privacy Commissioner", "accessed_on": "2026-10-21"}
+  ],
+  "verified": false,
+  "verified_on": "2026-10-21",
+  "verification_note": "legislation.govt.nz returned an AWS WAF bot challenge to every request, so the Act itself was not read. Not bypassed. IPP 3A, 7, 9, 10 and 11 text, the 20 working day deadline, the extension rule and the complaint process were confirmed on privacy.org.nz, the regulator's own site. Unconfirmed: (1) the exact sections holding the 20 working day correction deadline and the extension rule, which come from the OPC 1993 to 2020 comparison table (ss 63 and 65) and not from the statute, (2) s 57 for identity precautions, from the same table, (3) in_force_from 2020-12-01, which was not confirmed from any source fetched today. Recheck against legislation.govt.nz in a normal browser."
+}

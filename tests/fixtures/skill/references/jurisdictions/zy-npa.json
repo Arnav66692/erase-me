@@ -1,0 +1,34 @@
+{
+  "code": "zy-npa",
+  "name": "Notyetland Personal Data Act",
+  "short_name": "NPA",
+  "applies_to": {"countries": ["ZY"], "regions": []},
+  "status": "not_in_force",
+  "in_force_from": "2027-05-13",
+  "status_note": "Erasure provisions start later.",
+  "rights": [
+    {"right": "erasure", "citation": "s. 12", "summary": "You will be able to ask for deletion."}
+  ],
+  "deadline": {
+    "days": 90,
+    "day_type": "calendar",
+    "basis": "days",
+    "extension_days": null,
+    "extension_note": "",
+    "citation": "s. 13"
+  },
+  "regulators": [
+    {"country": "ZY", "region": null, "name": "Notyetland Data Board", "complaint_url": "https://board.example.net/", "note": ""}
+  ],
+  "identity_verification": "",
+  "authorized_agent": {"allowed": true, "citation": "s. 14", "note": ""},
+  "templates": {"erasure": "tpa-erasure"},
+  "special_channels": [
+    {"id": "zy-portal", "name": "Notyetland Portal", "url": "https://portal.example.net/", "note": ""}
+  ],
+  "public_records_note": "",
+  "sources": [{"url": "https://gazette.example.net/npa", "title": "Gazette", "accessed_on": "2026-10-21"}],
+  "verified": true,
+  "verified_on": "2026-10-21",
+  "verification_note": ""
+}

@@ -1,0 +1,47 @@
+{
+  "id": "ca-dncl",
+  "name": "National Do Not Call List (DNCL)",
+  "domain": "lnnte-dncl.gc.ca",
+  "category": "marketing",
+  "countries": [
+    "CA"
+  ],
+  "priority": 2,
+  "cluster": null,
+  "covers": [],
+  "search": {
+    "method": "none",
+    "url_template": "",
+    "fields": [],
+    "notes": "DNCL is a do-not-call register run for the CRTC, not a lookup site."
+  },
+  "optout": {
+    "method": "web_form",
+    "url": "https://www.lnnte-dncl.gc.ca/en/Consumer/Register-your-number",
+    "email": null,
+    "requires": [],
+    "fields_needed": [
+      "phone"
+    ],
+    "steps": [
+      "Open Register your number on the DNCL site and follow the steps.",
+      "Or call 1-866-580-3625 from the number to be registered. TTY users call 1-888-362-5889.",
+      "Keep the Registration Results confirmation.",
+      "Allow 31 days for telemarketers to update their lists."
+    ],
+    "expected_days": 31,
+    "notes": "Registration is permanent. It reduces telemarketing calls only and does not remove any directory listing. Charities and companies with an existing business relationship may still call. Business numbers cannot be registered."
+  },
+  "relist_risk": "low",
+  "registries": {},
+  "sources": [
+    {
+      "url": "https://www.lnnte-dncl.gc.ca/en/Consumer/Frequently-Asked-Questions",
+      "license": "official",
+      "attribution": "National DNCL consumer FAQ"
+    }
+  ],
+  "verified": true,
+  "last_verified": "2026-10-21",
+  "verification_note": "DNCL register page and consumer FAQ loaded with HTTP 200 on 2026-10-21. The FAQ describes online and phone registration and the 31 day period."
+}

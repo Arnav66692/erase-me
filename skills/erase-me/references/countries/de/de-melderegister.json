@@ -1,0 +1,59 @@
+{
+  "id": "de-melderegister",
+  "name": "Melderegister (resident registration office)",
+  "domain": "gesetze-im-internet.de",
+  "category": "directory",
+  "countries": [
+    "DE"
+  ],
+  "priority": 2,
+  "cluster": null,
+  "covers": [],
+  "search": {
+    "method": "none",
+    "url_template": "",
+    "fields": [],
+    "notes": "Anyone can ask a German registration office for a simple register disclosure (einfache Melderegisterauskunft) with name, doctorate and current address under section 44 BMG."
+  },
+  "optout": {
+    "method": "legal_request",
+    "url": "https://www.gesetze-im-internet.de/bmg/__51.html",
+    "email": null,
+    "requires": [],
+    "fields_needed": [
+      "full_name",
+      "address_line",
+      "date_of_birth"
+    ],
+    "steps": [
+      "If there are facts showing a risk to life, health, personal freedom or similar interests, for example threats, insults or stalking, apply to the local registration office (Meldebehörde) for an Auskunftssperre under section 51 BMG. It is free.",
+      "Attach evidence such as police reports or messages.",
+      "Separately, object under section 50(5) BMG to disclosure to parties before elections and to disclosure of anniversary data to press and officials. This is free and the office must set a transfer block.",
+      "Ask the office for written confirmation."
+    ],
+    "expected_days": null,
+    "notes": "This is per municipality. The section 51 block needs real facts of danger and is not granted on request alone. Section 50(3) on address book publishers has been repealed, so old forms that list it are out of date. No processing time is set in the law."
+  },
+  "relist_risk": "low",
+  "registries": {},
+  "sources": [
+    {
+      "url": "https://www.gesetze-im-internet.de/bmg/__51.html",
+      "license": "official",
+      "attribution": "Bundesmeldegesetz section 51"
+    },
+    {
+      "url": "https://www.gesetze-im-internet.de/bmg/__50.html",
+      "license": "official",
+      "attribution": "Bundesmeldegesetz section 50"
+    },
+    {
+      "url": "https://www.gesetze-im-internet.de/bmg/__44.html",
+      "license": "official",
+      "attribution": "Bundesmeldegesetz section 44"
+    }
+  ],
+  "verified": true,
+  "last_verified": "2026-10-21",
+  "verification_note": "BMG sections 44, 50 and 51 loaded with HTTP 200 on gesetze-im-internet.de on 2026-10-21. No municipal application page was checked, so the steps follow the statute."
+}

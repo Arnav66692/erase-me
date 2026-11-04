@@ -1,0 +1,52 @@
+{
+  "id": "truecaller",
+  "name": "Truecaller",
+  "domain": "truecaller.com",
+  "category": "caller_id",
+  "countries": [
+    "*"
+  ],
+  "priority": 1,
+  "cluster": null,
+  "covers": [],
+  "search": {
+    "method": "manual",
+    "url_template": null,
+    "fields": [],
+    "notes": "Lookups only work inside the mobile app, so the agent cannot check whether the number is listed. The web search at truecaller.com needs a sign-in."
+  },
+  "optout": {
+    "method": "web_form",
+    "url": "https://www.truecaller.com/unlisting",
+    "email": null,
+    "requires": [
+      "captcha"
+    ],
+    "fields_needed": [
+      "phone"
+    ],
+    "steps": [
+      "If the person uses the Truecaller app, deactivate the account in the app settings first.",
+      "Open the unlisting page and choose No, I want to unlist.",
+      "Enter the phone number with its country code.",
+      "Complete the captcha yourself and confirm.",
+      "Wait up to 24 hours, then ask a friend with the app to check the number."
+    ],
+    "expected_days": 1,
+    "notes": "Truecaller says unlisting cannot be reversed and can take up to 24 hours. It removes the number from search in the app. Names other users saved for the number may still be in their own phones."
+  },
+  "relist_risk": "medium",
+  "registries": {
+    "US-CA": false
+  },
+  "sources": [
+    {
+      "url": "https://www.truecaller.com/unlisting",
+      "license": "official",
+      "attribution": "Truecaller"
+    }
+  ],
+  "verified": true,
+  "last_verified": "2026-10-27",
+  "verification_note": "Unlisting page loaded on 2026-10-27 and shows a reCAPTCHA."
+}

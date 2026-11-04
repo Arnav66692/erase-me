@@ -1,0 +1,58 @@
+{
+  "id": "canada411",
+  "name": "Canada411",
+  "domain": "canada411.ca",
+  "category": "directory",
+  "countries": [
+    "CA"
+  ],
+  "priority": 1,
+  "cluster": null,
+  "covers": [],
+  "search": {
+    "method": "url_template",
+    "url_template": "https://www.canada411.ca/search/?stype=si&what={first}+{last}&where={city}+{region}",
+    "fields": [
+      "first",
+      "last",
+      "city",
+      "region"
+    ],
+    "notes": "Reverse phone lookup uses https://www.canada411.ca/search/?stype=re&what={phone}. Canada411 also has reverse address and postal code search. The French site is fr.canada411.ca with the same data."
+  },
+  "optout": {
+    "method": "web_form",
+    "url": "https://www.canada411.ca/help.html?key=faq",
+    "email": null,
+    "requires": [
+      "captcha"
+    ],
+    "fields_needed": [
+      "full_name",
+      "email",
+      "phone"
+    ],
+    "steps": [
+      "Open the Canada411 FAQ and choose How do I remove my listing.",
+      "Click the link for removal from the Canada411 web site only. A Listing removal form opens.",
+      "Enter full name, email and the listed phone number, and pick a reason such as Security or privacy issues.",
+      "Type the characters from the picture. The human must do this step.",
+      "Submit the form.",
+      "To also leave the print directory and Directory Assistance, the account holder asks the local phone company for an unlisted number (see ca-phone-unlisted)."
+    ],
+    "expected_days": 2,
+    "notes": "Canada411 says web-only removal is effective within two working days. Listings come from phone company records for published numbers. Unlisted numbers and cell numbers are not shown. If the number stays published with the phone company, it can reach other directories."
+  },
+  "relist_risk": "medium",
+  "registries": {},
+  "sources": [
+    {
+      "url": "https://www.canada411.ca/help.html?key=faq",
+      "license": "official",
+      "attribution": "Canada411 FAQ, How do I remove my listing"
+    }
+  ],
+  "verified": true,
+  "last_verified": "2026-10-21",
+  "verification_note": "Canada411 FAQ loaded with HTTP 200 on 2026-10-21 and contains the Listing removal form text and the two working day timeline. The fake name search URL also returned HTTP 200."
+}

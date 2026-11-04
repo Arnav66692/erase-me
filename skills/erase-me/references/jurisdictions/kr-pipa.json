@@ -1,0 +1,49 @@
+{
+  "code": "kr-pipa",
+  "name": "Personal Information Protection Act (Act No. 10465 of 2011, gaein jeongbo boho beop), as amended, with its Enforcement Decree",
+  "short_name": "PIPA",
+  "applies_to": {"countries": ["KR"], "regions": []},
+  "status": "in_force",
+  "in_force_from": "2011-09-30",
+  "status_note": "The Act was promulgated 2011-03-29 and took effect six months later. Text checked is the version in force from 2026-09-11 (Act No. 21445, amended 2026-03-10) and the Enforcement Decree in force from 2026-09-11 (Presidential Decree No. 36671). The English versions posted by PIPC date from 2023 and were not relied on.",
+  "rights": [
+    {"right": "erasure", "citation": "PIPA Art. 36(1) to (3), Enforcement Decree Art. 43", "summary": "A data subject may ask a processor to correct or delete their personal information, and the processor must investigate and delete it so it cannot be recovered, unless another law names that information as something to be collected."},
+    {"right": "objection", "citation": "PIPA Art. 37(1) to (5), Enforcement Decree Art. 44", "summary": "A data subject may ask a processor to stop processing their personal information or withdraw consent, and after stopping the processor must destroy the information without delay unless a listed ground for refusal applies."},
+    {"right": "correction", "citation": "PIPA Art. 36(1) and (2)", "summary": "A data subject may ask a processor to correct their personal information."},
+    {"right": "access", "citation": "PIPA Art. 35, Enforcement Decree Art. 41", "summary": "A data subject may ask a processor to let them see the personal information it processes about them."},
+    {"right": "access", "citation": "PIPA Art. 20(1)", "summary": "When a processor handles personal information collected from someone other than the data subject, it must on request immediately tell the data subject the source, the purpose, and that they may demand suspension under Art. 37."}
+  ],
+  "deadline": {
+    "days": 10,
+    "day_type": "calendar",
+    "basis": "days",
+    "extension_days": null,
+    "extension_note": "The Act says without delay (jiche eopsi). The Enforcement Decree requires the processor to send its result notice within 10 days of receiving a correction or deletion request (Art. 43(3)) or a suspension request (Art. 44(2)), using the PIPC form, and to give reasons and the way to object when it refuses. No extension is provided for these two requests. For access, the deadline is also 10 days (Decree Art. 41(4) and (5)), and Art. 35(3) lets the processor postpone access for a justifiable reason if it explains the reason. A processor that received the data from another processor may forward a deletion request to the source and act on the result (Decree Art. 43(2)).",
+    "citation": "PIPA Art. 36(2), Art. 37(2), Enforcement Decree Art. 43(3), Art. 44(2)"
+  },
+  "regulators": [
+    {"country": "KR", "region": null, "name": "Personal Information Protection Commission (PIPC), via the Personal Information Infringement Report Center run by the Korea Internet and Security Agency (KISA)", "complaint_url": "https://privacy.kisa.or.kr/counsel/privacy/report_step00.do", "note": "Anyone whose rights or interests were infringed by a processor may report it to PIPC (PIPA Art. 62). PIPC designated KISA to run the Report Center (call 118, email 118@kisa.or.kr). Reports are fact-checked and may lead to recommendations, administrative measures, criminal referral, or transfer to dispute mediation. Reports about banks, insurers and credit information companies go to the Financial Services Commission instead."},
+    {"country": "KR", "region": null, "name": "Personal Information Dispute Mediation Committee (PIPA Art. 40)", "complaint_url": "https://www.kopico.go.kr/", "note": "Free mediation set up under PIPC. Applications can ask for deletion, correction or suspension as well as damages, online or in writing, in person or by proxy. A mediation both sides accept has the effect of a court settlement and can be enforced. Phone 1833-6972."}
+  ],
+  "identity_verification": "The processor must confirm that the requester is the data subject or a proper agent (Enforcement Decree Art. 46(1)). During its investigation it may ask the data subject for evidence needed to confirm what should be corrected or deleted (PIPA Art. 36(5)). Request methods must be no harder than the way the data was collected, must include easy channels such as writing, phone, email or the internet, and must be posted on the website if the processor runs one (Decree Art. 41(2) applied by Art. 43(1) and 44(1), PIPA Art. 38(4)). Fees are limited to actual cost and may not be charged when the request arose from the processor's own fault (Decree Art. 47).",
+  "authorized_agent": {"allowed": true, "citation": "PIPA Art. 38(1) and (2), Enforcement Decree Art. 45", "note": "A legal representative or a person the data subject has delegated may make access, deletion, correction and suspension requests. The agent must submit a power of attorney in the form PIPC prescribes. Legal representatives of children under 14 may also make requests for the child."},
+  "templates": {"erasure": "generic-erasure", "followup": "followup-generic", "complaint": "regulator-complaint-generic"},
+  "special_channels": [
+    {"id": "kr-self-post-access-restriction", "name": "Right to request access restriction for self-posted content (PIPC guidebook, December 2024)", "url": "https://www.pipc.go.kr/np/cop/bbs/selectBoardArticle.do?bbsId=BS217&mCode=D010030000&nttId=10895", "note": "Covers only posts, photos and videos the person posted online themselves and can no longer delete. The board operator is asked to hide the post from others. It is a PIPC guidebook, not a statute, and does not reach listings a people-search site compiled from other sources."}
+  ],
+  "public_records_note": "PIPA has no general exemption for publicly available personal information. Art. 58(1) removes Chapters 3 to 8, which include the Art. 35 to 37 rights, only for national security analysis and for personal information collected or used by the press, religious bodies and political parties for their own purposes such as reporting. Art. 36(1) blocks deletion only where another law names the information as something to be collected. A people-search site that compiles data from other sources must on request reveal its source under Art. 20(1), and processors handling data on 1,000,000 or more people (or sensitive or unique identifying data on 50,000 or more) must notify people of the source within three months even without a request (Art. 20(2), Decree Art. 15-2). Note that Art. 36(1) is worded for a data subject who has accessed their data under Art. 35, so a deletion request can also cite Art. 37 suspension, which has no such wording.",
+  "sources": [
+    {"url": "https://www.law.go.kr/LSW/lsInfoP.do?lsiSeq=283839&efYd=20260911", "title": "Personal Information Protection Act, Act No. 21445, in force 2026-09-11 (Korean Law Information Center)", "accessed_on": "2026-10-21"},
+    {"url": "https://www.law.go.kr/LSW/lsInfoP.do?lsiSeq=289537&efYd=20260911", "title": "Enforcement Decree of the PIPA, Presidential Decree No. 36671, in force 2026-09-11 (Korean Law Information Center)", "accessed_on": "2026-10-21"},
+    {"url": "https://www.pipc.go.kr/eng/user/lgp/ntp/reportingInfringement.do", "title": "PIPC, Reporting on Infringement of Personal Information", "accessed_on": "2026-10-21"},
+    {"url": "https://www.pipc.go.kr/eng/user/lgp/ntp/dpm/introduction.do", "title": "PIPC, Personal Information Dispute Mediation", "accessed_on": "2026-10-21"},
+    {"url": "https://www.pipc.go.kr/eng/user/lgp/ntp/requestAccess.do", "title": "PIPC, Request for Access to Personal Information", "accessed_on": "2026-10-21"},
+    {"url": "https://www.pipc.go.kr/eng/user/lgp/law/lawsRegulations.do", "title": "PIPC English laws and regulations list", "accessed_on": "2026-10-21"},
+    {"url": "https://www.pipc.go.kr/np/cop/bbs/selectBoardArticle.do?bbsId=BS217&mCode=D010030000&nttId=10895", "title": "PIPC, Guidebook on the right to request access restriction for self-posted internet content (2024.12)", "accessed_on": "2026-10-21"},
+    {"url": "https://privacy.kisa.or.kr/counsel/privacy/report_step00.do", "title": "KISA Personal Information Infringement Report Center, file a report", "accessed_on": "2026-10-21"},
+    {"url": "https://www.kopico.go.kr/", "title": "Personal Information Dispute Mediation Committee", "accessed_on": "2026-10-21"}
+  ],
+  "verified": true,
+  "verified_on": "2026-10-21",
+  "verification_note": "Articles 20, 35 to 38, 40, 58 and 62 of the Act and Articles 15-2, 41 and 43 to 47 of the Enforcement Decree were read in Korean on law.go.kr in the versions in force from 2026-09-11. The 10-day rule is in the Decree, not the Act. Day counting as calendar days follows the plain wording of 10 days and was not separately confirmed in a statute on computing time. The self-posted content guidebook was confirmed only as a PIPC posting with a one-line description, the PDF was not read."
+}

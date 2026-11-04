@@ -1,0 +1,93 @@
+{
+  "code": "us-ky-kcdpa",
+  "name": "Kentucky Consumer Data Protection Act, KRS 367.3611 to 367.3629",
+  "short_name": "KCDPA",
+  "applies_to": {
+    "countries": [
+      "US"
+    ],
+    "regions": [
+      "US-KY"
+    ]
+  },
+  "status": "in_force",
+  "in_force_from": "2026-01-01",
+  "status_note": "Created by 2024 Ky. Acts ch. 72 (HB 15), effective 2026-01-01. The Attorney General's Office of Data Privacy enforces it, gives 30 days to cure after a notice of violation, and may seek up to 7,500 dollars per violation according to the AG. The definitions section is marked effective until July 1, 2027 because of a 2026 amendment, which secondary sources describe as adding automated content recognition data to sensitive data.",
+  "rights": [
+    {
+      "right": "erasure",
+      "citation": "KRS 367.3615(2)(c)",
+      "summary": "A consumer may ask a controller to delete personal data provided by or obtained about the consumer."
+    },
+    {
+      "right": "opt_out_sale",
+      "citation": "KRS 367.3615(2)(e)",
+      "summary": "A consumer may opt out of processing for targeted advertising, sale of personal data or certain profiling."
+    },
+    {
+      "right": "correction",
+      "citation": "KRS 367.3615(2)(b)",
+      "summary": "A consumer may ask a controller to correct inaccuracies in their personal data."
+    },
+    {
+      "right": "access",
+      "citation": "KRS 367.3615(2)(a)",
+      "summary": "A consumer may confirm whether a controller processes their personal data and access it."
+    }
+  ],
+  "deadline": {
+    "days": 45,
+    "day_type": "calendar",
+    "basis": "days",
+    "extension_days": 45,
+    "extension_note": "The controller must respond without undue delay and in all cases within 45 days of receipt. It may extend once by 45 more days when reasonably necessary given the complexity and number of requests, if it tells the consumer of the extension and the reason within the first 45 days. A refusal must come no later than 45 days after receipt with the justification and appeal instructions (367.3615(3)(b)). Appeal: the controller must answer in writing within 60 days of receiving the appeal, and if it denies the appeal it must give an online mechanism, if available, or other method to complain to the Attorney General (367.3615(4)).",
+    "citation": "KRS 367.3615(3)(a), 367.3615(3)(b), 367.3615(4)"
+  },
+  "regulators": [
+    {
+      "country": "US",
+      "region": "US-KY",
+      "name": "Kentucky Attorney General, Office of Data Privacy",
+      "complaint_url": "https://kyoag.highq.com/kyoag/renderSmartForm.action?formId=dc0f5031-93d0-4d3a-bfb0-e2bf5f5a782a",
+      "note": "This is the complaint form linked from the AG's KCDPA page (https://www.ag.ky.gov/about/Office-Divisions/ODP/KCDPA/Pages/default.aspx), which says consumers can complain if a controller declines an appeal or violates any other KCDPA right."
+    }
+  ],
+  "identity_verification": "The controller must comply only with an authenticated request. If it cannot authenticate the request with commercially reasonable efforts it need not comply and may ask for additional information reasonably necessary to authenticate the consumer and the request (367.3615(3)(d)). It may not require a new account but may require use of an existing account (367.3617). Responses are free up to twice a year per consumer (367.3615(3)(c)).",
+  "authorized_agent": {
+    "allowed": null,
+    "citation": "KRS 367.3615(1)",
+    "note": "The KCDPA has no authorized agent provision. Only a child's parent or legal guardian may invoke rights for another person. The consumer should send the deletion request personally."
+  },
+  "templates": {
+    "erasure": "us-state-delete",
+    "followup": "followup-generic",
+    "complaint": "regulator-complaint-generic"
+  },
+  "special_channels": [],
+  "public_records_note": "Personal data excludes publicly available information. The statute says \"Personal data does not include de-identified data or publicly available information\" (367.3611(19)). Publicly available information means information lawfully made available through federal, state, or local government records, or information a business has a reasonable basis to believe is lawfully made available to the general public through widely distributed media, by the consumer, or by a person to whom the consumer disclosed it, unless the consumer restricted it to a specific audience (367.3611(26)). A people-search site can decline to delete data drawn from public records. For data obtained from a source other than the consumer, the controller may keep a minimal suppression record or opt the consumer out of non-exempt processing (367.3615(3)(e)). No Kentucky data broker registry was identified.",
+  "sources": [
+    {
+      "url": "https://apps.legislature.ky.gov/LAW/STATUTES/statute.aspx?id=55838",
+      "title": "KRS 367.3615, Kentucky Legislature",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://apps.legislature.ky.gov/LAW/STATUTES/statute.aspx?id=55836",
+      "title": "KRS 367.3611, Kentucky Legislature",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://apps.legislature.ky.gov/LAW/STATUTES/statute.aspx?id=55839",
+      "title": "KRS 367.3617, Kentucky Legislature",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://www.ag.ky.gov/about/Office-Divisions/ODP/KCDPA/Pages/default.aspx",
+      "title": "Rights of Kentuckians under the Kentucky Consumer Data Protection Act, Kentucky Attorney General",
+      "accessed_on": "2026-10-21"
+    }
+  ],
+  "verified": true,
+  "verified_on": "2026-10-21",
+  "verification_note": "All required fields were read today in the KRS sections on apps.legislature.ky.gov and on the AG's KCDPA page. Authorized agent is null because the statute does not address agents."
+}

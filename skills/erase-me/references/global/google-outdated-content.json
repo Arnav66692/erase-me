@@ -1,0 +1,50 @@
+{
+  "id": "google-outdated-content",
+  "name": "Google Refresh Outdated Content tool",
+  "domain": "google.com",
+  "category": "search_engine",
+  "countries": [
+    "*"
+  ],
+  "priority": 2,
+  "cluster": "google",
+  "covers": [],
+  "search": {
+    "method": "none",
+    "url_template": null,
+    "fields": [],
+    "notes": "Use after a site has removed a listing but Google still shows the old title or snippet."
+  },
+  "optout": {
+    "method": "search_removal",
+    "url": "https://search.google.com/search-console/remove-outdated-content",
+    "email": null,
+    "requires": [
+      "account",
+      "listing_url"
+    ],
+    "fields_needed": [
+      "listing_url"
+    ],
+    "steps": [
+      "Confirm the listing page is gone or changed on the source site.",
+      "Sign in with any Google Account and open the Refresh Outdated Content tool.",
+      "Paste the exact URL of the old result and submit a refresh request.",
+      "Check the request status on the same page."
+    ],
+    "expected_days": null,
+    "notes": "Only works when the source page is already removed or changed. It does not remove live pages."
+  },
+  "relist_risk": "low",
+  "registries": {},
+  "sources": [
+    {
+      "url": "https://support.google.com/websearch/answer/6349986?hl=en",
+      "license": "official",
+      "attribution": "Google Search Help"
+    }
+  ],
+  "verified": true,
+  "last_verified": "2026-10-27",
+  "verification_note": "Help page loaded on 2026-10-27 and links to the tool. The tool URL redirects to Google sign-in."
+}

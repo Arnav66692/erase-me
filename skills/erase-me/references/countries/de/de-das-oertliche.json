@@ -1,0 +1,54 @@
+{
+  "id": "de-das-oertliche",
+  "name": "Das Örtliche",
+  "domain": "dasoertliche.de",
+  "category": "directory",
+  "countries": [
+    "DE"
+  ],
+  "priority": 1,
+  "cluster": "de-das-telefonbuch",
+  "covers": [],
+  "search": {
+    "method": "url_template",
+    "url_template": "https://www.dasoertliche.de/?form_name=search_nat&kw={first}+{last}&ci={city}",
+    "fields": [
+      "first",
+      "last",
+      "city"
+    ],
+    "notes": "GET form with kw for name and ci for town or postcode. A no-match search returns HTTP 410 with a no results message. Reverse search (Rückwärtssuche) also exists."
+  },
+  "optout": {
+    "method": "email",
+    "url": "https://www.dasoertliche.de/datenschutz",
+    "email": "eintragsservice@dtme.de",
+    "requires": [
+      "id_upload"
+    ],
+    "fields_needed": [
+      "full_name",
+      "address_line",
+      "phone"
+    ],
+    "steps": [
+      "Send the request to DTM as in de-das-telefonbuch, at eintragsservice@dtme.de, by phone on 0800 3863 3436, by fax on 0800 222 14 14 or by post.",
+      "Ask for deletion of the entry, objection to publication and objection to reverse search.",
+      "To leave every public directory at once, object through the phone provider (see de-teilnehmerverzeichnis-widerspruch)."
+    ],
+    "expected_days": null,
+    "notes": "Das Örtliche says it keeps entries until the phone companies send an update saying the entry should no longer be published. ID copy requirement comes from the Das Telefonbuch help page for DTM requests."
+  },
+  "relist_risk": "low",
+  "registries": {},
+  "sources": [
+    {
+      "url": "https://www.dasoertliche.de/datenschutz",
+      "license": "official",
+      "attribution": "Das Örtliche Datenschutz"
+    }
+  ],
+  "verified": true,
+  "last_verified": "2026-10-21",
+  "verification_note": "Das Örtliche privacy page loaded with HTTP 200 on 2026-10-21 and names DTM channels for objection to publication and reverse search."
+}

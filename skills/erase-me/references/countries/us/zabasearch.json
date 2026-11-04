@@ -1,0 +1,59 @@
+{
+  "id": "zabasearch",
+  "name": "ZabaSearch",
+  "domain": "zabasearch.com",
+  "category": "people_search",
+  "countries": [
+    "US"
+  ],
+  "priority": 3,
+  "cluster": "peopleconnect",
+  "covers": [],
+  "search": {
+    "method": "search_engine",
+    "url_template": "https://www.google.com/search?q=site%3Azabasearch.com+%22{first}+{last}%22",
+    "fields": [
+      "first",
+      "last"
+    ],
+    "notes": "No site URL pattern was confirmed, so search Google for the name on this domain and open the listing in a browser."
+  },
+  "optout": {
+    "method": "web_form",
+    "url": "https://suppression.peopleconnect.us/login",
+    "email": null,
+    "requires": [
+      "email_verification"
+    ],
+    "fields_needed": [
+      "email",
+      "full_name",
+      "date_of_birth"
+    ],
+    "steps": [
+      "Use the intelius parent opt-out, which is the PeopleConnect suppression center.",
+      "Recheck ZabaSearch after 10 days."
+    ],
+    "expected_days": 10,
+    "notes": "PeopleConnect lists Intelius, TruthFinder, US Search and Instant Checkmate as its brands, and the 2026 California registry lists ZabaSearch and Addresses.com under Intelius, LLC. The PeopleConnect suppression center says it covers name-search results on the people search sites in the PeopleConnect family, not Classmates. No separate ZabaSearch opt-out URL was found in MIT prior art, and zabasearch.com was bot-blocked."
+  },
+  "relist_risk": "medium",
+  "registries": {
+    "US-CA": true
+  },
+  "sources": [
+    {
+      "url": "https://suppression.peopleconnect.us/login",
+      "license": "official",
+      "attribution": "PeopleConnect suppression center"
+    },
+    {
+      "url": "https://cppa.ca.gov/data_broker_registry/",
+      "license": "official",
+      "attribution": "California Privacy Protection Agency data broker registry, 2026 list fetched 2026-10-27"
+    }
+  ],
+  "verified": false,
+  "last_verified": null,
+  "verification_note": "zabasearch.com bot-blocked on 2026-10-27 (Cloudflare challenge page). Opt-out points at the PeopleConnect suppression center, which loaded that day. Coverage of ZabaSearch is inferred from the California registry, not stated by the site."
+}

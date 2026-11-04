@@ -1,0 +1,512 @@
+{
+  "code": "eu-gdpr",
+  "name": "Regulation (EU) 2016/679, General Data Protection Regulation",
+  "short_name": "GDPR",
+  "applies_to": {
+    "countries": [
+      "AT",
+      "BE",
+      "BG",
+      "HR",
+      "CY",
+      "CZ",
+      "DK",
+      "EE",
+      "FI",
+      "FR",
+      "DE",
+      "GR",
+      "HU",
+      "IE",
+      "IT",
+      "LV",
+      "LT",
+      "LU",
+      "MT",
+      "NL",
+      "PL",
+      "PT",
+      "RO",
+      "SK",
+      "SI",
+      "ES",
+      "SE",
+      "IS",
+      "LI",
+      "NO"
+    ],
+    "regions": []
+  },
+  "status": "in_force",
+  "in_force_from": "2018-05-25",
+  "status_note": "Applies from 25 May 2018 in the 27 EU member states (Art. 99(2)). Incorporated into the EEA Agreement for Iceland, Liechtenstein and Norway by EEA Joint Committee Decision No 154/2018 of 6 July 2018. The exact EEA entry-into-force date was not confirmed from a primary source today.",
+  "rights": [
+    {
+      "right": "erasure",
+      "citation": "Art. 17",
+      "summary": "The data subject can obtain erasure without undue delay where a listed ground applies, for example the data are no longer necessary, consent is withdrawn, the person objects under Art. 21, or the processing is unlawful."
+    },
+    {
+      "right": "objection",
+      "citation": "Art. 21",
+      "summary": "The data subject can object to processing based on legitimate interests or public interest, and the controller must stop unless it shows compelling legitimate grounds, and can object to direct marketing at any time without conditions."
+    },
+    {
+      "right": "delisting",
+      "citation": "Art. 17 and Art. 21, CJEU C-131/12 Google Spain (13 May 2014)",
+      "summary": "A search engine operator is a controller and can be required to remove links from results for a search on a person's name, even when the publication on the source page is lawful, unless the public interest in access prevails, for example because of the person's role in public life."
+    },
+    {
+      "right": "access",
+      "citation": "Art. 15",
+      "summary": "The data subject can obtain confirmation of whether their data are processed, a copy, and information on the source."
+    },
+    {
+      "right": "correction",
+      "citation": "Art. 16",
+      "summary": "The data subject can have inaccurate personal data corrected without undue delay."
+    }
+  ],
+  "deadline": {
+    "days": 30,
+    "day_type": "calendar",
+    "basis": "one_month",
+    "extension_days": 60,
+    "extension_note": "The controller must act without undue delay and within one month of receipt. It may extend by two further months where necessary given complexity and number of requests, but must tell the data subject within the first month and give reasons. If it will not act, it must say so within one month and mention the right to complain and seek a judicial remedy (Art. 12(4)).",
+    "citation": "Art. 12(3)"
+  },
+  "regulators": [
+    {
+      "country": "AT",
+      "region": null,
+      "name": "Österreichische Datenschutzbehörde (DSB)",
+      "complaint_url": "https://dsb.gv.at/eingabe-an-die-dsb/beschwerde",
+      "note": "Complaint page loaded on 2026-10-21. Complaints about Parliament go to the Parlamentarisches Datenschutzkomitee instead."
+    },
+    {
+      "country": "BE",
+      "region": null,
+      "name": "Autorité de protection des données / Gegevensbeschermingsautoriteit (APD-GBA)",
+      "complaint_url": "https://www.autoriteprotectiondonnees.be/citoyen/vie-privee/que-faire-en-cas-d-abus-",
+      "note": "Complaint page URL taken from the authority's own domain via search index. The page could not be loaded on 2026-10-21 (site showed a maintenance page). Confirm before relying on it. APD recommends contacting the organisation first, then mediation, then a formal complaint on its form."
+    },
+    {
+      "country": "BG",
+      "region": null,
+      "name": "Commission for Personal Data Protection (CPDP)",
+      "complaint_url": "https://cpdp.bg/%d0%bf%d0%be%d0%b4%d0%b0%d0%b2%d0%b0%d0%bd%d0%b5-%d0%bd%d0%b0-%d0%b6%d0%b0%d0%bb%d0%b1%d0%b8-%d0%b8-%d1%81%d0%b8%d0%b3%d0%bd%d0%b0%d0%bb%d0%b8-%d0%b4%d0%be-%d0%ba%d0%b7%d0%bb%d0%b4/",
+      "note": "Complaint page loaded on 2026-10-21."
+    },
+    {
+      "country": "HR",
+      "region": null,
+      "name": "Agencija za zaštitu osobnih podataka (AZOP)",
+      "complaint_url": "https://azop.hr/prava-ispitanika/",
+      "note": "Complaint page loaded on 2026-10-21. The page directs data subjects to file a request to establish a violation of rights (zahtjev za utvrđivanje povrede prava)."
+    },
+    {
+      "country": "CY",
+      "region": null,
+      "name": "Office of the Commissioner for Personal Data Protection",
+      "complaint_url": "https://www.gov.cy/service/ypovoli-paraponou-pou-afora-paraviasi-dedomenon-prosoikou-charaktira/",
+      "note": "Complaint page loaded on 2026-10-21."
+    },
+    {
+      "country": "CZ",
+      "region": null,
+      "name": "Úřad pro ochranu osobních údajů (ÚOOÚ)",
+      "complaint_url": "https://uoou.gov.cz/verejnost/stiznost-na-spravce-nebo-zpracovatele",
+      "note": "Complaint page loaded on 2026-10-21."
+    },
+    {
+      "country": "DK",
+      "region": null,
+      "name": "Datatilsynet",
+      "complaint_url": "https://www.datatilsynet.dk/borger/klage/saadan-klager-du",
+      "note": "Complaint page loaded on 2026-10-21."
+    },
+    {
+      "country": "EE",
+      "region": null,
+      "name": "Andmekaitse Inspektsioon (Estonian Data Protection Inspectorate)",
+      "complaint_url": "https://www.aki.ee/meist/vota-uhendust/kaebus-isikuandmete-kaitse-asjas",
+      "note": "Complaint page loaded on 2026-10-21."
+    },
+    {
+      "country": "FI",
+      "region": null,
+      "name": "Office of the Data Protection Ombudsman (Tietosuojavaltuutetun toimisto)",
+      "complaint_url": "https://tietosuoja.fi/en/notification-to-the-data-protection-ombudsman",
+      "note": "Complaint page URL taken from the authority's own domain via search index. The page could not be loaded on 2026-10-21 (bot verification page, not bypassed). Confirm before relying on it."
+    },
+    {
+      "country": "FR",
+      "region": null,
+      "name": "Commission Nationale de l'Informatique et des Libertés (CNIL)",
+      "complaint_url": "https://www.cnil.fr/fr/adresser-une-plainte",
+      "note": "Complaint page URL taken from the authority's own domain via search index. The page could not be loaded on 2026-10-21 (site returned 503 maintenance). Confirm before relying on it."
+    },
+    {
+      "country": "DE",
+      "region": null,
+      "name": "Der Bundesbeauftragte für den Datenschutz und die Informationsfreiheit (BfDI), with the 16 state (Länder) data protection authorities",
+      "complaint_url": "https://www.bfdi.bund.de/EN/Service/Anschriften/Laender/Laender-node.html",
+      "note": "Complaint page loaded on 2026-10-21. Complaint competence is split. For private companies such as people-search sites, the state authority where the company is based is usually competent. This BfDI page lists the state authorities."
+    },
+    {
+      "country": "GR",
+      "region": null,
+      "name": "Hellenic Data Protection Authority (Αρχή Προστασίας Δεδομένων Προσωπικού Χαρακτήρα)",
+      "complaint_url": "https://www.dpa.gr/en/individuals/complaint-to-the-hellenic-dpa",
+      "note": "Complaint page URL taken from the authority's own domain via search index. The page could not be loaded on 2026-10-21 (connection failed). Confirm before relying on it. Complaints are filed through the authority's online portal or by email."
+    },
+    {
+      "country": "HU",
+      "region": null,
+      "name": "Nemzeti Adatvédelmi és Információszabadság Hatóság (NAIH)",
+      "complaint_url": "https://www.naih.hu/adatkezeles-erintettjekent-fordulok-a-hatosaghoz/vizsgalati-eljaras-gdpr",
+      "note": "Complaint page loaded on 2026-10-21. This page covers an investigation on complaint. NAIH also runs a separate data protection authority procedure on the data subject's request."
+    },
+    {
+      "country": "IE",
+      "region": null,
+      "name": "Data Protection Commission (DPC)",
+      "complaint_url": "https://www.dataprotection.ie/en/individuals/exercising-your-rights/raising-concern-commission",
+      "note": "Complaint page loaded on 2026-10-21."
+    },
+    {
+      "country": "IT",
+      "region": null,
+      "name": "Garante per la protezione dei dati personali",
+      "complaint_url": "https://www.garanteprivacy.it/home/diritti/come-agire-per-tutelare-i-tuoi-dati-personali",
+      "note": "Complaint page loaded on 2026-10-21."
+    },
+    {
+      "country": "LV",
+      "region": null,
+      "name": "Datu valsts inspekcija (Data State Inspectorate)",
+      "complaint_url": "https://www.dvi.gov.lv/lv/iesniegumu-paraugi",
+      "note": "Complaint page URL taken from the authority's own domain via search index. The page could not be loaded on 2026-10-21 (connection failed). Confirm before relying on it. Complaints must be signed with a secure e-signature or handwritten."
+    },
+    {
+      "country": "LT",
+      "region": null,
+      "name": "Valstybinė duomenų apsaugos inspekcija (State Data Protection Inspectorate)",
+      "complaint_url": "https://vdai.lrv.lt/lt/veiklos-sritys-1/skundu-nagrinejimas/",
+      "note": "Complaint page URL taken from the authority's own domain via search index. The page could not be loaded on 2026-10-21 (bot verification page, not bypassed). Confirm before relying on it."
+    },
+    {
+      "country": "LU",
+      "region": null,
+      "name": "Commission Nationale pour la Protection des Données (CNPD)",
+      "complaint_url": "https://cnpd.public.lu/en/particuliers/faire-valoir/formulaire-plainte.html",
+      "note": "Complaint page loaded on 2026-10-21."
+    },
+    {
+      "country": "MT",
+      "region": null,
+      "name": "Office of the Information and Data Protection Commissioner (IDPC)",
+      "complaint_url": "https://idpc.org.mt/file-a-complaint/",
+      "note": "Complaint page loaded on 2026-10-21."
+    },
+    {
+      "country": "NL",
+      "region": null,
+      "name": "Autoriteit Persoonsgegevens (AP)",
+      "complaint_url": "https://autoriteitpersoonsgegevens.nl/en/submitting-a-tip-off-or-a-complaint-to-the-ap",
+      "note": "Complaint page URL taken from the authority's own domain via search index. The page could not be loaded on 2026-10-21 (connection failed). Confirm before relying on it."
+    },
+    {
+      "country": "PL",
+      "region": null,
+      "name": "Urząd Ochrony Danych Osobowych (UODO)",
+      "complaint_url": "https://uodo.gov.pl/pl/492/2464",
+      "note": "Complaint page URL taken from the authority's own domain via search index. The page could not be loaded on 2026-10-21 (page returned HTTP 500, although the link appeared on the UODO homepage loaded the same day). Confirm before relying on it."
+    },
+    {
+      "country": "PT",
+      "region": null,
+      "name": "Comissão Nacional de Proteção de Dados (CNPD)",
+      "complaint_url": "https://www.cnpd.pt/cidadaos/participacoes/",
+      "note": "Complaint page loaded on 2026-10-21."
+    },
+    {
+      "country": "RO",
+      "region": null,
+      "name": "Autoritatea Națională de Supraveghere a Prelucrării Datelor cu Caracter Personal (ANSPDCP)",
+      "complaint_url": "https://www.dataprotection.ro/?page=Plangeri_pagina_principala",
+      "note": "Complaint page loaded on 2026-10-21."
+    },
+    {
+      "country": "SK",
+      "region": null,
+      "name": "Úrad na ochranu osobných údajov Slovenskej republiky",
+      "complaint_url": "https://dataprotection.gov.sk/sk/ine/vyhladavanie-sluzby-formulara-elektronicku-komunikaciu/podavanie-navrhu-zacatie-konania/",
+      "note": "Complaint page loaded on 2026-10-21. A data subject files a motion to start proceedings (návrh na začatie konania)."
+    },
+    {
+      "country": "SI",
+      "region": null,
+      "name": "Informacijski pooblaščenec (Information Commissioner of the Republic of Slovenia)",
+      "complaint_url": "https://www.ip-rs.si/varstvo-osebnih-podatkov/pravice-posameznika/vlo%C5%BEitev-prijave",
+      "note": "Complaint page loaded on 2026-10-21."
+    },
+    {
+      "country": "ES",
+      "region": null,
+      "name": "Agencia Española de Protección de Datos (AEPD)",
+      "complaint_url": "https://sedeaepd.gob.es/sede-electronica-web/vistas/infoSede/tramitesCiudadanoReclamaciones.jsf",
+      "note": "Complaint page loaded on 2026-10-21. AEPD has a specific claim model for a controller that ignored a rights request."
+    },
+    {
+      "country": "SE",
+      "region": null,
+      "name": "Integritetsskyddsmyndigheten (IMY)",
+      "complaint_url": "https://www.imy.se/privatperson/utfora-arenden/lamna-ett-klagomal/",
+      "note": "Complaint page loaded on 2026-10-21."
+    },
+    {
+      "country": "IS",
+      "region": null,
+      "name": "Persónuvernd (Icelandic Data Protection Authority)",
+      "complaint_url": "https://island.is/kvortun-til-personuverndar",
+      "note": "Complaint page loaded on 2026-10-21."
+    },
+    {
+      "country": "LI",
+      "region": null,
+      "name": "Datenschutzstelle Liechtenstein",
+      "complaint_url": "https://www.datenschutzstelle.li/datenschutz/themen-z/beschwerderecht",
+      "note": "Complaint page URL taken from the authority's own domain via search index. The page could not be loaded on 2026-10-21 (site showed a maintenance page). Confirm before relying on it."
+    },
+    {
+      "country": "NO",
+      "region": null,
+      "name": "Datatilsynet",
+      "complaint_url": "https://www.datatilsynet.no/om-datatilsynet/kontakt-oss/klage-til-datatilsynet/",
+      "note": "Complaint page loaded on 2026-10-21."
+    }
+  ],
+  "identity_verification": "Where the controller has reasonable doubts about the requester's identity, it may ask for additional information necessary to confirm it (Art. 12(6)). The EDPB says verification must be proportionate and that asking for a copy of an ID card is often excessive (EDPB Guidelines 01/2022, section 3.3).",
+  "authorized_agent": {
+    "allowed": true,
+    "citation": "EDPB Guidelines 01/2022 on the right of access, paras 80 and 81, GDPR Art. 80",
+    "note": "The GDPR does not regulate representation directly. The EDPB says a third party, such as a proxy or a legal guardian of a minor, may make a request on behalf of the data subject, that national rules on powers of attorney apply, and that the controller may verify the authorisation. A data subject may also mandate a qualifying not-for-profit body to lodge a complaint for them (Art. 80(1))."
+  },
+  "templates": {
+    "erasure": "gdpr-erasure",
+    "objection": "gdpr-objection",
+    "followup": "followup-generic",
+    "complaint": "regulator-complaint-generic"
+  },
+  "special_channels": [
+    {
+      "id": "google-eu-delisting",
+      "name": "Google personal information removal request under European privacy law",
+      "url": "https://reportcontent.google.com/forms/rtbf",
+      "note": "Google's Right to be Forgotten overview links to this form and says it delists URLs from results for countries that apply European data protection law. Delisting is not applied outside the EU."
+    },
+    {
+      "id": "bing-eu-delisting",
+      "name": "Bing request form to block search results in Europe",
+      "url": "https://www.bing.com/webmaster/tools/eu-privacy-request",
+      "note": "For European residents. The country list includes EU and EEA states, Switzerland and the United Kingdom. Asks for legal name, search names, country, exact URLs, role in public life, and a signed statement. Supporting documents can be attached."
+    }
+  ],
+  "public_records_note": "The GDPR has no general exemption for publicly available personal data. A people-search site that compiles public data is still a controller and must have a legal basis, usually legitimate interests under Art. 6(1)(f), which an Art. 21 objection directly challenges. Erasure can be refused where processing is necessary for freedom of expression and information, a legal obligation, public interest archiving, or legal claims (Art. 17(3)), and member states set their own journalistic and expression exemptions under Art. 85. The Google Spain ruling allows delisting from name searches even when the source page stays lawful.",
+  "sources": [
+    {
+      "url": "https://publications.europa.eu/resource/celex/32016R0679",
+      "title": "Regulation (EU) 2016/679, Official Journal L 119, 4.5.2016 (Publications Office, CELEX 32016R0679)",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://publications.europa.eu/resource/celex/62012CJ0131",
+      "title": "Judgment of the Court (Grand Chamber) of 13 May 2014, Case C-131/12, Google Spain",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://publications.europa.eu/resource/celex/22018D1022",
+      "title": "Decision of the EEA Joint Committee No 154/2018 of 6 July 2018",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://www.edpb.europa.eu/about-edpb/about-edpb/members_en",
+      "title": "EDPB members",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://www.edpb.europa.eu/system/files/2023-04/edpb_guidelines_202201_data_subject_rights_access_v2_en.pdf",
+      "title": "EDPB Guidelines 01/2022 on data subject rights, Right of access, version 2.1",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://support.google.com/legal/answer/10769224",
+      "title": "Google, Right to be Forgotten Overview",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://reportcontent.google.com/forms/rtbf",
+      "title": "Google, Report content (Right to be Forgotten form)",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://www.bing.com/webmaster/tools/eu-privacy-request",
+      "title": "Bing, Request Form to Block Search Results in Europe",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://dsb.gv.at/eingabe-an-die-dsb/beschwerde",
+      "title": "AT complaint page, Österreichische Datenschutzbehörde (DSB)",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://www.autoriteprotectiondonnees.be/citoyen/vie-privee/que-faire-en-cas-d-abus-",
+      "title": "BE complaint page, Autorité de protection des données / Gegevensbeschermingsautoriteit (APD-GBA)",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://cpdp.bg/%d0%bf%d0%be%d0%b4%d0%b0%d0%b2%d0%b0%d0%bd%d0%b5-%d0%bd%d0%b0-%d0%b6%d0%b0%d0%bb%d0%b1%d0%b8-%d0%b8-%d1%81%d0%b8%d0%b3%d0%bd%d0%b0%d0%bb%d0%b8-%d0%b4%d0%be-%d0%ba%d0%b7%d0%bb%d0%b4/",
+      "title": "BG complaint page, Commission for Personal Data Protection (CPDP)",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://azop.hr/prava-ispitanika/",
+      "title": "HR complaint page, Agencija za zaštitu osobnih podataka (AZOP)",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://www.gov.cy/service/ypovoli-paraponou-pou-afora-paraviasi-dedomenon-prosoikou-charaktira/",
+      "title": "CY complaint page, Office of the Commissioner for Personal Data Protection",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://uoou.gov.cz/verejnost/stiznost-na-spravce-nebo-zpracovatele",
+      "title": "CZ complaint page, Úřad pro ochranu osobních údajů (ÚOOÚ)",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://www.datatilsynet.dk/borger/klage/saadan-klager-du",
+      "title": "DK complaint page, Datatilsynet",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://www.aki.ee/meist/vota-uhendust/kaebus-isikuandmete-kaitse-asjas",
+      "title": "EE complaint page, Andmekaitse Inspektsioon (Estonian Data Protection Inspectorate)",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://tietosuoja.fi/en/notification-to-the-data-protection-ombudsman",
+      "title": "FI complaint page, Office of the Data Protection Ombudsman (Tietosuojavaltuutetun toimisto)",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://www.cnil.fr/fr/adresser-une-plainte",
+      "title": "FR complaint page, Commission Nationale de l'Informatique et des Libertés (CNIL)",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://www.bfdi.bund.de/EN/Service/Anschriften/Laender/Laender-node.html",
+      "title": "DE complaint page, Der Bundesbeauftragte für den Datenschutz und die Informationsfreiheit (BfDI), with the 16 state (Länder) data protection authorities",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://www.dpa.gr/en/individuals/complaint-to-the-hellenic-dpa",
+      "title": "GR complaint page, Hellenic Data Protection Authority (Αρχή Προστασίας Δεδομένων Προσωπικού Χαρακτήρα)",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://www.naih.hu/adatkezeles-erintettjekent-fordulok-a-hatosaghoz/vizsgalati-eljaras-gdpr",
+      "title": "HU complaint page, Nemzeti Adatvédelmi és Információszabadság Hatóság (NAIH)",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://www.dataprotection.ie/en/individuals/exercising-your-rights/raising-concern-commission",
+      "title": "IE complaint page, Data Protection Commission (DPC)",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://www.garanteprivacy.it/home/diritti/come-agire-per-tutelare-i-tuoi-dati-personali",
+      "title": "IT complaint page, Garante per la protezione dei dati personali",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://www.dvi.gov.lv/lv/iesniegumu-paraugi",
+      "title": "LV complaint page, Datu valsts inspekcija (Data State Inspectorate)",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://vdai.lrv.lt/lt/veiklos-sritys-1/skundu-nagrinejimas/",
+      "title": "LT complaint page, Valstybinė duomenų apsaugos inspekcija (State Data Protection Inspectorate)",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://cnpd.public.lu/en/particuliers/faire-valoir/formulaire-plainte.html",
+      "title": "LU complaint page, Commission Nationale pour la Protection des Données (CNPD)",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://idpc.org.mt/file-a-complaint/",
+      "title": "MT complaint page, Office of the Information and Data Protection Commissioner (IDPC)",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://autoriteitpersoonsgegevens.nl/en/submitting-a-tip-off-or-a-complaint-to-the-ap",
+      "title": "NL complaint page, Autoriteit Persoonsgegevens (AP)",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://uodo.gov.pl/pl/492/2464",
+      "title": "PL complaint page, Urząd Ochrony Danych Osobowych (UODO)",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://www.cnpd.pt/cidadaos/participacoes/",
+      "title": "PT complaint page, Comissão Nacional de Proteção de Dados (CNPD)",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://www.dataprotection.ro/?page=Plangeri_pagina_principala",
+      "title": "RO complaint page, Autoritatea Națională de Supraveghere a Prelucrării Datelor cu Caracter Personal (ANSPDCP)",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://dataprotection.gov.sk/sk/ine/vyhladavanie-sluzby-formulara-elektronicku-komunikaciu/podavanie-navrhu-zacatie-konania/",
+      "title": "SK complaint page, Úrad na ochranu osobných údajov Slovenskej republiky",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://www.ip-rs.si/varstvo-osebnih-podatkov/pravice-posameznika/vlo%C5%BEitev-prijave",
+      "title": "SI complaint page, Informacijski pooblaščenec (Information Commissioner of the Republic of Slovenia)",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://sedeaepd.gob.es/sede-electronica-web/vistas/infoSede/tramitesCiudadanoReclamaciones.jsf",
+      "title": "ES complaint page, Agencia Española de Protección de Datos (AEPD)",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://www.imy.se/privatperson/utfora-arenden/lamna-ett-klagomal/",
+      "title": "SE complaint page, Integritetsskyddsmyndigheten (IMY)",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://island.is/kvortun-til-personuverndar",
+      "title": "IS complaint page, Persónuvernd (Icelandic Data Protection Authority)",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://www.datenschutzstelle.li/datenschutz/themen-z/beschwerderecht",
+      "title": "LI complaint page, Datenschutzstelle Liechtenstein",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://www.datatilsynet.no/om-datatilsynet/kontakt-oss/klage-til-datatilsynet/",
+      "title": "NO complaint page, Datatilsynet",
+      "accessed_on": "2026-10-21"
+    }
+  ],
+  "verified": false,
+  "verified_on": "2026-10-21",
+  "verification_note": "Rights, citations, the one-month deadline, the Google Spain ruling and the list of authorities were confirmed from the Official Journal text, the CJEU judgment and the EDPB members page. Not confirmed: the complaint page URLs for BE, FI, FR, GR, LV, LT, NL, PL, LI could not be loaded today (maintenance, bot checks or connection failures), so those URLs come from the authorities' own domains via search index only. The EEA entry-into-force date was not confirmed. Mark verified true once those pages are loaded and checked."
+}

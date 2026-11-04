@@ -1,0 +1,88 @@
+{
+  "code": "us-tn-tipa",
+  "name": "Tennessee Information Protection Act, 2023 Tenn. Pub. Acts ch. 408 (H.B. 1181), codified at Tenn. Code Ann. 47-18-3301 et seq.",
+  "short_name": "TIPA",
+  "applies_to": {
+    "countries": [
+      "US"
+    ],
+    "regions": [
+      "US-TN"
+    ]
+  },
+  "status": "in_force",
+  "in_force_from": "2025-07-01",
+  "status_note": "The act takes effect July 1, 2025 (Pub. Ch. 408, Section 6). The enacted bill numbers its sections 47-18-3201 to 47-18-3215, while the Attorney General cites the codified law as Tenn. Code Ann. 47-18-3301 et seq. The citations below use the enacted section numbers. The Attorney General has exclusive enforcement authority and must give 60 days to cure before acting, according to its 2025 guidance. TIPA uses the term personal information rather than personal data.",
+  "rights": [
+    {
+      "right": "erasure",
+      "citation": "Pub. Ch. 408 (2023), Sec. 2, enacting Tenn. Code Ann. 47-18-3203(a)(2)(C) (codified in 47-18-3301 et seq.)",
+      "summary": "A consumer may ask a controller to delete personal information provided by or obtained about the consumer, except aggregate or de-identified data not linked to them."
+    },
+    {
+      "right": "opt_out_sale",
+      "citation": "Pub. Ch. 408 (2023), 47-18-3203(a)(2)(E) as enacted",
+      "summary": "A consumer may opt out of the sale of personal information, targeted advertising, or certain profiling."
+    },
+    {
+      "right": "correction",
+      "citation": "Pub. Ch. 408 (2023), 47-18-3203(a)(2)(B) as enacted",
+      "summary": "A consumer may ask a controller to correct inaccuracies in their personal information."
+    },
+    {
+      "right": "access",
+      "citation": "Pub. Ch. 408 (2023), 47-18-3203(a)(2)(A) as enacted",
+      "summary": "A consumer may confirm whether a controller processes their personal information and access it."
+    }
+  ],
+  "deadline": {
+    "days": 45,
+    "day_type": "calendar",
+    "basis": "days",
+    "extension_days": 45,
+    "extension_note": "The controller must respond without undue delay and in all cases within 45 days of receipt. It may extend once by 45 more days when reasonably necessary given the complexity and number of requests, if it tells the consumer of the extension and the reason within the first 45 days. A refusal must come within 45 days with the justification and appeal instructions. Appeal: the appeal process must be conspicuous and free, and the controller must answer in writing within 60 days of receiving the appeal. If it denies the appeal it must give an online mechanism, if available, or other method to submit a complaint to the Attorney General and Reporter (47-18-3203(c) as enacted).",
+    "citation": "Pub. Ch. 408 (2023), 47-18-3203(b)(1), (b)(2) and (c) as enacted"
+  },
+  "regulators": [
+    {
+      "country": "US",
+      "region": "US-TN",
+      "name": "Tennessee Attorney General and Reporter, Division of Consumer Affairs",
+      "complaint_url": "https://www.tn.gov/attorneygeneral/working-for-tennessee/consumer/file-a-complaint.html",
+      "note": "The AG's 2025-04-30 TIPA guidance says consumers can report suspected TIPA violations through the Division of Consumer Affairs complaint portal. The page's online form is at https://agtnprod.powerappsportals.us/DCA/, and complaints may also go by mail, fax or email to consumer.affairs@ag.tn.gov."
+    }
+  ],
+  "identity_verification": "The controller must comply only with an authenticated request. If it cannot authenticate the request with commercially reasonable efforts, it need not comply and may ask for additional information reasonably necessary to authenticate the consumer and the request (47-18-3203(b)(4) as enacted). Responses are free up to twice a year, and the controller may charge a fee or decline requests that are manifestly unfounded, technically infeasible, excessive or repetitive (47-18-3203(b)(3) as enacted).",
+  "authorized_agent": {
+    "allowed": null,
+    "citation": "Pub. Ch. 408 (2023), 47-18-3203(a)(1) as enacted",
+    "note": "No authorized agent provision was found in the enacted text. Only a known child's parent or legal guardian may invoke rights for another person. The consumer should send the deletion request personally."
+  },
+  "templates": {
+    "erasure": "us-state-delete",
+    "followup": "followup-generic",
+    "complaint": "regulator-complaint-generic"
+  },
+  "special_channels": [],
+  "public_records_note": "Personal information excludes publicly available information. The act says personal information \"Does not include information that is: (i) Publicly available information\" (47-18-3201 as enacted). Publicly available information means information lawfully made available through federal, state, or local government records, or information a business has a reasonable basis to believe is lawfully made available to the general public through widely distributed media, by the consumer, or by a person to whom the consumer disclosed it, unless the consumer restricted it to a specific audience. A people-search site can decline to delete data drawn from public records. For data obtained from a source other than the consumer, the controller may comply by keeping a minimal suppression record and not using it, or by opting the consumer out of non-exempt processing (47-18-3203(a)(2)(C) as enacted). No Tennessee data broker registry was identified.",
+  "sources": [
+    {
+      "url": "https://publications.tnsosfiles.com/acts/113/pub/pc0408.pdf",
+      "title": "Public Chapter No. 408 (H.B. 1181), Tennessee Information Protection Act, Tennessee Secretary of State",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://www.tn.gov/attorneygeneral/news/2025/4/30/pr25-25.html",
+      "title": "TN Attorney General's Office Provides Helpful Tips and Guidelines Regarding the Tennessee Information Protection Act",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://www.tn.gov/attorneygeneral/working-for-tennessee/consumer/file-a-complaint.html",
+      "title": "File a Complaint, Tennessee Attorney General",
+      "accessed_on": "2026-10-21"
+    }
+  ],
+  "verified": false,
+  "verified_on": "2026-10-21",
+  "verification_note": "Rights, deadline, appeal, authentication and publicly available information rules were read today in the enacted Public Chapter 408 published by the Secretary of State, and the complaint route on the AG site. Two gaps remain. First, the codified section numbers could not be confirmed from a primary source, because the enacted act numbers the sections 47-18-3201 et seq. while the AG cites 47-18-3301 et seq., and the official Tennessee Code is hosted by a commercial publisher that was not fetched. Second, later amendments to TIPA, if any, were not checked."
+}

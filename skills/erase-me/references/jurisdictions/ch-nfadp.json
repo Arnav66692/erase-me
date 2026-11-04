@@ -1,0 +1,115 @@
+{
+  "code": "ch-nfadp",
+  "name": "Federal Act on Data Protection of 25 September 2020 (FADP, SR 235.1) and Data Protection Ordinance (DPO, SR 235.11)",
+  "short_name": "nFADP",
+  "applies_to": {
+    "countries": [
+      "CH"
+    ],
+    "regions": []
+  },
+  "status": "in_force",
+  "in_force_from": "2023-09-01",
+  "status_note": "The revised FADP and the DPO apply from 1 September 2023. Fedlex English texts are informal translations without legal force. The German, French and Italian texts are authoritative.",
+  "rights": [
+    {
+      "right": "erasure",
+      "citation": "FADP Art. 32(2)(c) with Art. 30(2)(b)",
+      "summary": "Processing against the data subject's express wishes breaches their personality rights unless justified by consent, an overriding interest or law, and the data subject may claim deletion or destruction of the data, in court if the controller refuses."
+    },
+    {
+      "right": "objection",
+      "citation": "FADP Art. 30(2)(b), Art. 32(2)(a) and (b)",
+      "summary": "The data subject can expressly object to processing, and may ask that a specific processing or disclosure to third parties be prohibited."
+    },
+    {
+      "right": "access",
+      "citation": "FADP Art. 25, DPO Art. 16 to 18",
+      "summary": "Any person can ask a controller whether their data is processed, the data itself, its purpose and its source."
+    },
+    {
+      "right": "correction",
+      "citation": "FADP Art. 32(1)",
+      "summary": "The data subject can ask for incorrect data to be corrected."
+    }
+  ],
+  "deadline": {
+    "days": 30,
+    "day_type": "calendar",
+    "basis": "days",
+    "extension_days": null,
+    "extension_note": "The 30-day deadline is for access requests (FADP Art. 25(7), DPO Art. 18). If the controller cannot meet it, it must say so and say how long it will take. The FADP sets no fixed deadline for deletion or objection. Use 30 days only as a follow-up point for those, not as a legal deadline. If the controller refuses, the remedy is a civil action under Art. 32(2).",
+    "citation": "FADP Art. 25(7), DPO Art. 18"
+  },
+  "regulators": [
+    {
+      "country": "CH",
+      "region": null,
+      "name": "Federal Data Protection and Information Commissioner (FDPIC / EDÖB / PFPDT)",
+      "complaint_url": "https://www.edoeb.admin.ch/en/submitting-a-complaint",
+      "note": "The FDPIC opens an investigation on a report when there are sufficient indications of a violation (FADP Art. 49) and tells a reporting data subject about the steps taken. It does not exercise rights on the person's behalf or settle individual disputes, which go to the civil courts. It asks people not to send ID copies with a complaint."
+    }
+  ],
+  "identity_verification": "The controller must take appropriate measures to identify the data subject, who must cooperate (DPO Art. 16(5)). Requests for access must be in writing unless the controller agrees to a verbal request (DPO Art. 16(1)).",
+  "authorized_agent": {
+    "allowed": null,
+    "citation": "",
+    "note": "The FADP and DPO texts read do not regulate representation. Swiss civil law generally allows acting through a representative with a written power of attorney, but that was not confirmed from a primary source today."
+  },
+  "templates": {
+    "erasure": "gdpr-erasure",
+    "objection": "gdpr-objection",
+    "followup": "followup-generic",
+    "complaint": "regulator-complaint-generic"
+  },
+  "special_channels": [
+    {
+      "id": "bing-eu-delisting",
+      "name": "Bing request form to block search results in Europe",
+      "url": "https://www.bing.com/webmaster/tools/eu-privacy-request",
+      "note": "The country list on the form includes Switzerland."
+    },
+    {
+      "id": "google-eu-delisting",
+      "name": "Google personal information removal request under European privacy law",
+      "url": "https://reportcontent.google.com/forms/rtbf",
+      "note": "Google's overview speaks of countries that apply European data protection law. Whether it covers Switzerland was not stated, so check the form's country list."
+    }
+  ],
+  "public_records_note": "In general no breach of personality rights arises where the data subject made the data generally accessible and did not explicitly prohibit processing (FADP Art. 30(3)). An explicit objection removes that safe harbour, because processing against the person's express wishes is a breach unless justified (Art. 30(2)(b), Art. 31). A people-search site may claim an overriding interest, so the request should state the objection clearly. Data processed for publication in the editorial section of a periodical medium has a specific justification (Art. 31(2)(d)).",
+  "sources": [
+    {
+      "url": "https://www.fedlex.admin.ch/filestore/fedlex.data.admin.ch/eli/cc/2022/491/20230901/en/pdf-a/fedlex-data-admin-ch-eli-cc-2022-491-20230901-en-pdf-a.pdf",
+      "title": "Federal Act on Data Protection (FADP), SR 235.1, status 1 September 2023, English translation",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://www.fedlex.admin.ch/filestore/fedlex.data.admin.ch/eli/cc/2022/568/20230901/en/pdf-a/fedlex-data-admin-ch-eli-cc-2022-568-20230901-en-pdf-a.pdf",
+      "title": "Data Protection Ordinance (DPO), SR 235.11, status 1 September 2023, English translation",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://www.edoeb.admin.ch/en/submitting-a-complaint",
+      "title": "FDPIC, Submitting a complaint to the FDPIC",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://www.edoeb.admin.ch/en/reporting-portals",
+      "title": "FDPIC, Reporting portals",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://www.bing.com/webmaster/tools/eu-privacy-request",
+      "title": "Bing, Request Form to Block Search Results in Europe",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://support.google.com/legal/answer/10769224",
+      "title": "Google, Right to be Forgotten Overview",
+      "accessed_on": "2026-10-21"
+    }
+  ],
+  "verified": false,
+  "verified_on": "2026-10-21",
+  "verification_note": "Rights, the 30-day access deadline and the regulator were confirmed from Fedlex texts and the FDPIC site. Unconfirmed: the authorized agent rule (FADP is silent and the Civil Code or Code of Obligations was not checked). The Fedlex versions read are status 1 September 2023, and later consolidated versions were not compared. The erasure deadline is not fixed by law, as stated in the deadline note."
+}

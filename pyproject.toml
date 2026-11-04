@@ -1,0 +1,16 @@
+# Dev configuration only. The Erase Me engine has no runtime dependencies.
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["skills/erase-me/scripts", "tools"]
+markers = [
+    "realdata: validates the real skills/erase-me references and templates (may fail while data is being written)",
+]
+addopts = "-ra"
+
+[tool.coverage.run]
+source = ["skills/erase-me/scripts/erase_me"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false

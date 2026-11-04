@@ -1,0 +1,53 @@
+{
+  "id": "eyecon",
+  "name": "Eyecon",
+  "domain": "eyecon-app.com",
+  "category": "caller_id",
+  "countries": [
+    "*"
+  ],
+  "priority": 2,
+  "cluster": null,
+  "covers": [],
+  "search": {
+    "method": "manual",
+    "url_template": null,
+    "fields": [],
+    "notes": "Lookups only work inside the mobile app, so the agent cannot check whether the number is listed."
+  },
+  "optout": {
+    "method": "email",
+    "url": "https://www.eyecon-app.com/privacy-policy/",
+    "email": "privacy@instabridge.com",
+    "requires": [
+      "email_verification"
+    ],
+    "fields_needed": [
+      "full_name",
+      "email",
+      "phone"
+    ],
+    "steps": [
+      "Draft an erasure request that names the phone number with country code and asks Eyecon to remove the name and photo shown for it.",
+      "Send it to privacy@instabridge.com, with support@eyecon-app.com in copy.",
+      "Answer any identity check from the same email address.",
+      "Record the date sent and follow up after 30 days."
+    ],
+    "expected_days": 30,
+    "notes": "No public unlist page was found on 2026-10-27. Eyecon is run by Instabridge Sweden AB, and the privacy policy lists privacy@instabridge.com and support@eyecon-app.com as contacts. A GDPR erasure letter fits since the controller is in Sweden."
+  },
+  "relist_risk": "medium",
+  "registries": {
+    "US-CA": false
+  },
+  "sources": [
+    {
+      "url": "https://www.eyecon-app.com/privacy-policy/",
+      "license": "official",
+      "attribution": "Eyecon privacy policy"
+    }
+  ],
+  "verified": true,
+  "last_verified": "2026-10-27",
+  "verification_note": "Privacy policy text read through the site's own WordPress API on 2026-10-27. The guessed URL eyecon-app.com/unlist did not respond."
+}

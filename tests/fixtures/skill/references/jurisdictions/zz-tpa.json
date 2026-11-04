@@ -1,0 +1,37 @@
+{
+  "code": "zz-tpa",
+  "name": "Testland Privacy Act 2020",
+  "short_name": "TPA",
+  "applies_to": {"countries": ["ZZ"], "regions": []},
+  "status": "in_force",
+  "in_force_from": "2020-01-01",
+  "status_note": "",
+  "rights": [
+    {"right": "erasure", "citation": "s. 17", "summary": "You can ask for your data to be deleted."},
+    {"right": "objection", "citation": "s. 21", "summary": "You can object to processing."}
+  ],
+  "deadline": {
+    "days": 30,
+    "day_type": "calendar",
+    "basis": "one_month",
+    "extension_days": 60,
+    "extension_note": "Two further months for complex requests.",
+    "citation": "s. 12(3)"
+  },
+  "regulators": [
+    {"country": "ZZ", "region": "ZZ-TV", "name": "Testville Data Office", "complaint_url": "https://tdo.example.org/complain", "note": ""},
+    {"country": "ZZ", "region": null, "name": "Testland Privacy Authority", "complaint_url": "https://tpa.example.org/complaints", "note": ""},
+    {"country": "*", "region": null, "name": "Fallback Privacy Board", "complaint_url": "https://fallback.example.org/", "note": ""}
+  ],
+  "identity_verification": "The recipient may ask for a copy of an ID document.",
+  "authorized_agent": {"allowed": true, "citation": "s. 30", "note": ""},
+  "templates": {"erasure": "tpa-erasure", "followup": "followup-generic", "complaint": "regulator-complaint-generic"},
+  "special_channels": [
+    {"id": "zz-drop", "name": "Testland Deletion Portal", "url": "https://drop.example.org/start", "note": "One request reaches every registered broker.", "channel": "drop"}
+  ],
+  "public_records_note": "Court records stay public.",
+  "sources": [{"url": "https://law.example.org/tpa", "title": "Testland Privacy Act text", "accessed_on": "2026-10-21"}],
+  "verified": true,
+  "verified_on": "2026-10-21",
+  "verification_note": ""
+}

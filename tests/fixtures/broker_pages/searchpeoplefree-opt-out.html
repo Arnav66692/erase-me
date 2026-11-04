@@ -1,0 +1,19 @@
+<!doctype html>
+<meta charset="utf-8">
+<!-- Synthetic reconstruction of public form structure observed 2026-10-28.
+No JavaScript POST handler is installed: this fixture must never send a request. -->
+<style>.d-none { display: none; }</style>
+<div id="o_fail" class="alert d-none"></div>
+<div id="o_success" class="alert d-none">Synthetic email-validated state</div>
+<div id="o_container">
+  <form id="o_form">
+    <input type="text" id="o_first">
+    <input type="text" id="o_middle">
+    <input type="text" id="o_last">
+    <input type="email" id="o_email">
+    <input type="checkbox" id="o_terms">
+    <div class="cf-turnstile"><input type="hidden" name="cf-turnstile-response"></div>
+    <div id="o_success_sent" class="alert d-none">Synthetic sending state</div>
+    <button type="submit" id="o_submit">Start</button>
+  </form>
+</div>

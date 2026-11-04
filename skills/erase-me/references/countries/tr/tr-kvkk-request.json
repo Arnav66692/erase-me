@@ -1,0 +1,65 @@
+{
+  "id": "tr-kvkk-request",
+  "name": "KVKK request to any Turkish site (Article 11 and 13)",
+  "domain": "kvkk.gov.tr",
+  "category": "legal_route",
+  "countries": [
+    "TR"
+  ],
+  "priority": 1,
+  "cluster": null,
+  "covers": [],
+  "search": {
+    "method": "none",
+    "url_template": "",
+    "fields": [],
+    "notes": "A generic legal channel for any Turkish data controller that shows the person's data, including sites with no removal form."
+  },
+  "optout": {
+    "method": "legal_request",
+    "url": "https://www.kvkk.gov.tr/Icerik/6938/Kurumumuza-Yapilan-Sikayetlerin-Usul-Sartlarina-Iliskin-Kamuoyu-Duyurusu",
+    "email": null,
+    "requires": [
+      "id_upload"
+    ],
+    "fields_needed": [
+      "full_name",
+      "national_id",
+      "address_line",
+      "email",
+      "listing_urls"
+    ],
+    "steps": [
+      "Find the site's data controller name and its contact or KEP address in its KVKK aydınlatma metni or contact page.",
+      "Draft a request under Law No. 6698, Article 11, asking for deletion of the personal data and removal of the page. Include full name, T.C. identity number, notification address, email if any, the listing URLs and the request itself.",
+      "Send it in a way KVKK accepts. That means a signed letter, KEP, secure e-signature, mobile signature, an email address the person already registered with that controller, or the controller's own request form or app.",
+      "Keep proof of sending, such as the PTT receipt or KEP delivery record.",
+      "Wait 30 days for the controller to answer.",
+      "If the request is refused, the answer is inadequate or there is no answer, file a complaint with the KVK Board at https://sikayet.kvkk.gov.tr or through e-Devlet, within 30 days of learning the answer and in any case within 60 days of the request. Attach the request, the proof of sending and any answer."
+    ],
+    "expected_days": 30,
+    "notes": "Türkçe özet. Herhangi bir Türk sitesinden kişisel veri sildirmek için önce veri sorumlusuna KVKK 11. madde kapsamında yazılı olarak veya KEP ile başvurun, 30 gün içinde cevap gelmezse ya da cevap yetersizse sikayet.kvkk.gov.tr üzerinden Kurul'a şikâyet edin. A plain email from an address the controller has never seen may not count as a valid application. A complaint straight to the Board without first applying to the controller is not accepted. The T.C. identity number is listed by KVKK as part of a complete application, so the person must decide whether to give it."
+  },
+  "relist_risk": "unknown",
+  "registries": {},
+  "sources": [
+    {
+      "url": "https://www.kvkk.gov.tr/Icerik/2063/Sikayet-Hakki",
+      "license": "official",
+      "attribution": "KVKK, Şikayet Hakkı"
+    },
+    {
+      "url": "https://www.kvkk.gov.tr/Icerik/6938/Kurumumuza-Yapilan-Sikayetlerin-Usul-Sartlarina-Iliskin-Kamuoyu-Duyurusu",
+      "license": "official",
+      "attribution": "KVKK public notice on complaint procedure requirements"
+    },
+    {
+      "url": "https://sikayet.kvkk.gov.tr/",
+      "license": "official",
+      "attribution": "KVKK complaint module"
+    }
+  ],
+  "verified": true,
+  "last_verified": "2026-10-21",
+  "verification_note": "KVKK Şikayet Hakkı page and the procedure notice loaded with HTTP 200 on 2026-10-21. They describe the 30 day controller deadline, the accepted application methods and the 30 and 60 day complaint windows. sikayet.kvkk.gov.tr loaded but its content is a JavaScript app."
+}

@@ -1,0 +1,22 @@
+<!doctype html>
+<meta charset="utf-8">
+<!-- Synthetic reconstruction of public form structure observed 2026-10-28.
+No broker scripts, identifiers, personal data, live CAPTCHA keys, or tokens. -->
+<form method="post" action="/remove">
+  <select name="requester_type" id="requester_type">
+    <option value="subject">Subject</option>
+    <option value="agent">Authorized agent</option>
+  </select>
+  <input type="text" id="subject_fn" name="subject_fn" required>
+  <input type="text" id="subject_mn" name="subject_mn">
+  <input type="text" id="subject_ln" name="subject_ln" required>
+  <input type="email" id="subject_email" name="subject_email" required>
+  <div hidden>
+    <input type="text" id="agent_fn" name="agent_fn">
+    <input type="text" id="agent_ln" name="agent_ln">
+    <input type="email" id="agent_email" name="agent_email">
+  </div>
+  <input type="checkbox" id="confirm_authorize" name="confirm_authorize" required>
+  <div class="g-recaptcha"><textarea id="g-recaptcha-response" name="g-recaptcha-response" hidden></textarea></div>
+  <button type="submit">Submit</button>
+</form>

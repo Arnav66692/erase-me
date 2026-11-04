@@ -1,0 +1,60 @@
+{
+  "id": "cyberbackgroundchecks",
+  "name": "CyberBackgroundChecks",
+  "domain": "cyberbackgroundchecks.com",
+  "category": "people_search",
+  "countries": [
+    "US"
+  ],
+  "priority": 2,
+  "cluster": "tornado-alley",
+  "covers": [],
+  "search": {
+    "method": "search_engine",
+    "url_template": "https://www.google.com/search?q=site%3Acyberbackgroundchecks.com+%22{first}+{last}%22",
+    "fields": [
+      "first",
+      "last"
+    ],
+    "notes": "No site URL pattern was confirmed, so search Google for the name on this domain and open the listing in a browser."
+  },
+  "optout": {
+    "method": "web_form",
+    "url": "https://www.cyberbackgroundchecks.com/removal",
+    "email": null,
+    "requires": [
+      "captcha",
+      "email_verification"
+    ],
+    "fields_needed": [
+      "full_name",
+      "email"
+    ],
+    "steps": [
+      "Open the removal page, enter the name and email and complete the captcha yourself.",
+      "Open the emailed link and fill the form so it matches the record.",
+      "Keep the confirmation email."
+    ],
+    "expected_days": 3,
+    "notes": "nulltrace marks a captcha. The email link flow is assumed from sister sites run by the same operator, not confirmed. Operated by Mississippi Tornado Alley, LLC per the 2026 California registry, along with FastPeopleSearch, USPhonebook, SearchPeopleFree, SmartBackgroundChecks, CyberBackgroundChecks and AdvancedBackgroundChecks. Each site has its own opt-out."
+  },
+  "relist_risk": "medium",
+  "registries": {
+    "US-CA": true
+  },
+  "sources": [
+    {
+      "url": "https://github.com/4x3/nulltrace/blob/7fd59edc097c70788dd79e5ab4c31c62cdaa8fe7/source/internal/broker/data/webforms.yaml",
+      "license": "MIT",
+      "attribution": "nulltrace by 4x3, MIT License"
+    },
+    {
+      "url": "https://cppa.ca.gov/data_broker_registry/",
+      "license": "official",
+      "attribution": "California Privacy Protection Agency data broker registry, 2026 list fetched 2026-10-27"
+    }
+  ],
+  "verified": false,
+  "last_verified": null,
+  "verification_note": "Bot-blocked on 2026-10-27 (Cloudflare managed challenge), URL from nulltrace."
+}

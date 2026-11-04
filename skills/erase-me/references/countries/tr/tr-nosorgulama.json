@@ -1,0 +1,56 @@
+{
+  "id": "tr-nosorgulama",
+  "name": "No Sorgulama (nosorgulama.com.tr)",
+  "domain": "nosorgulama.com.tr",
+  "category": "caller_id",
+  "countries": [
+    "TR"
+  ],
+  "priority": 3,
+  "cluster": null,
+  "covers": [],
+  "search": {
+    "method": "url_template",
+    "url_template": "https://www.nosorgulama.com.tr/telefon/{phone}/",
+    "fields": [
+      "phone"
+    ],
+    "notes": "Per-number pages with user comments. Comments may include a commenter's name. Use the national format with a leading 0 and digits only, for example 05XXXXXXXXX."
+  },
+  "optout": {
+    "method": "web_form",
+    "url": "https://www.nosorgulama.com.tr/iletisim",
+    "email": null,
+    "requires": [],
+    "fields_needed": [
+      "full_name",
+      "email",
+      "phone"
+    ],
+    "steps": [
+      "Open the contact page.",
+      "Choose the subject Profilim kaldırılsın.",
+      "Enter full name, email and the number concerned.",
+      "Write a message asking for removal under KVKK Law No. 6698 and submit."
+    ],
+    "expected_days": 3,
+    "notes": "Türkçe özet. nosorgulama.com.tr iletişim formunda Profilim kaldırılsın seçeneğini seçerek kaldırma talebi gönderin. The site says messages are answered within 3 business days and removal requests get priority. Its KVKK notice says comments stay online unless a removal request is made. A different site, nosorgulama.com, uses a similar name."
+  },
+  "relist_risk": "medium",
+  "registries": {},
+  "sources": [
+    {
+      "url": "https://www.nosorgulama.com.tr/iletisim",
+      "license": "official",
+      "attribution": "No Sorgulama contact page"
+    },
+    {
+      "url": "https://www.nosorgulama.com.tr/kvkk",
+      "license": "official",
+      "attribution": "No Sorgulama KVKK notice"
+    }
+  ],
+  "verified": true,
+  "last_verified": "2026-10-21",
+  "verification_note": "Contact page and KVKK notice loaded with HTTP 200 on 2026-10-21 and describe the Profilim kaldirilsin request."
+}

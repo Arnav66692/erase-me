@@ -1,0 +1,42 @@
+{
+  "code": "za-popia",
+  "name": "Protection of Personal Information Act 4 of 2013 (South Africa), with the Regulations relating to the Protection of Personal Information, 2018 (GN R1383, GG 42110)",
+  "short_name": "POPIA",
+  "applies_to": {"countries": ["ZA"], "regions": []},
+  "status": "in_force",
+  "in_force_from": "2020-07-01",
+  "status_note": "Proclamation R21 of 2020 (GG 43461) brought sections 2 to 38, 55 to 109, 111 and 114(1) to (3) into force on 2020-07-01, and sections 110 and 114(4) on 2021-06-30. Processing had to conform within one year of commencement (s. 114(1)), so full compliance was due by 2021-07-01.",
+  "rights": [
+    {"right": "erasure", "citation": "POPIA s. 24(1)(a) and (b)", "summary": "A data subject may ask a responsible party to delete personal information that is inaccurate, irrelevant, excessive, out of date, incomplete, misleading or obtained unlawfully, or to destroy or delete a record it is no longer authorised to keep under s. 14."},
+    {"right": "objection", "citation": "POPIA s. 11(3)(a) and (b), s. 11(4)", "summary": "A data subject may object at any time, on reasonable grounds about their particular situation, to processing based on legitimate interests or public law duties, and at any time to direct marketing, after which the responsible party may no longer process the information."},
+    {"right": "correction", "citation": "POPIA s. 24(1)(a)", "summary": "A data subject may ask for correction of personal information that is inaccurate, out of date, incomplete or misleading."},
+    {"right": "access", "citation": "POPIA s. 23", "summary": "A data subject may ask whether a responsible party holds their personal information and request a record or description of it."}
+  ],
+  "deadline": {
+    "days": null,
+    "day_type": "calendar",
+    "basis": "days",
+    "extension_days": null,
+    "extension_note": "POPIA sets no fixed number of days. On receiving a s. 24(1) request the responsible party must, as soon as reasonably practicable, correct, destroy or delete the information, give credible evidence supporting it, or, if no agreement is reached and the data subject asks, attach a note that a correction was requested (s. 24(2)). It must then notify the data subject of the action taken (s. 24(4)). The 2018 Regulations prescribe Form 2 for the request (reg. 3) and Form 1 for objections (reg. 2), but no response time. Ask for a reply within 30 days as a reasonable period, not a legal deadline.",
+    "citation": "POPIA s. 24(2) and 24(4)"
+  },
+  "regulators": [
+    {"country": "ZA", "region": null, "name": "Information Regulator (South Africa)", "complaint_url": "https://eservices.inforegulator.org.za/complaints/default.aspx", "note": "Any person may complain to the Regulator about interference with the protection of personal information (s. 74(1)). Complaints must be in writing, and the Regulator must help a person put a complaint in writing (s. 75). The online POPIA Complaints Management System needs an eServices account. The Regulations prescribe Part I of Form 5 for complaints (reg. 7), which can also be submitted by email or in person. The Regulator lists failure to respond to a correction, deletion or objection request as a reportable complaint."}
+  ],
+  "identity_verification": "POPIA sets no verification standard for deletion requests. Form 2 asks for the data subject's name, unique identifier or identity number, address and contact details, the information to be corrected or deleted and detailed reasons, and allows affidavits or other evidence to be attached. It must be signed.",
+  "authorized_agent": {"allowed": null, "citation": "POPIA s. 24, Regulations 2018 reg. 3 and Form 2", "note": "The Act and Form 2 speak only of the data subject, apart from a competent person acting for a child. They do not say whether an agent may file for an adult. Complaints are different: any person may complain to the Regulator under s. 74(1), and the Regulator asks for proof of authority when someone lodges on another's behalf."},
+  "templates": {"erasure": "generic-erasure", "followup": "followup-generic", "complaint": "regulator-complaint-generic"},
+  "special_channels": [],
+  "public_records_note": "A public record is \"a record that is accessible in the public domain and which is in the possession of or under the control of a public body\" (s. 1). Information may be collected from a source other than the data subject if it \"is contained in or derived from a public record\" (s. 12(2)(a)), and further processing of such information is treated as compatible with the original purpose (s. 15(3)(b)). These provisions ease collection and reuse but do not remove the s. 24 deletion right or the s. 11(3)(a) objection right, so a people-search site relying on legitimate interests (s. 11(1)(f)) can still receive an objection.",
+  "sources": [
+    {"url": "https://inforegulator.org.za/wp-content/uploads/2020/07/InfoRegSA-act-2013-004.pdf", "title": "Protection of Personal Information Act 4 of 2013 (GG 37067), Information Regulator copy", "accessed_on": "2026-10-21"},
+    {"url": "https://inforegulator.org.za/wp-content/uploads/2020/07/20200622-gg43461-rg11136-pr21-POPIAsections.pdf", "title": "Proclamation R21 of 2020, commencement of certain sections of POPIA (GG 43461)", "accessed_on": "2026-10-21"},
+    {"url": "https://inforegulator.org.za/wp-content/uploads/2020/07/20181214-gg42110-rg10897-gon1383-POPIA-Regulations-1.pdf", "title": "Regulations relating to the Protection of Personal Information, 2018 (GG 42110, GN R1383)", "accessed_on": "2026-10-21"},
+    {"url": "https://inforegulator.org.za/complaints/", "title": "Complaints, Information Regulator", "accessed_on": "2026-10-21"},
+    {"url": "https://inforegulator.org.za/popia/", "title": "POPIA forms and guidance, Information Regulator", "accessed_on": "2026-10-21"},
+    {"url": "https://eservices.inforegulator.org.za/complaints/default.aspx", "title": "POPIA Complaints Management System, Information Regulator eServices", "accessed_on": "2026-10-21"}
+  ],
+  "verified": true,
+  "verified_on": "2026-10-21",
+  "verification_note": "Sections 1, 5, 11, 12, 15, 23, 24, 74, 75 and 114 were read in the Act as published on the Regulator's site, and commencement in Proclamation R21. The deadline field is null on purpose because s. 24(2) sets no number of days. The complaint system and forms were confirmed on inforegulator.org.za. The Regulator's POPIA page gives a complaints email ending in .co.za, which looks like a typo for the .org.za domain, so it is left out here."
+}

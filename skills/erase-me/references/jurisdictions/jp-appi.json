@@ -1,0 +1,46 @@
+{
+  "code": "jp-appi",
+  "name": "Act on the Protection of Personal Information (Act No. 57 of 2003, kojin joho no hogo ni kansuru horitsu), as amended",
+  "short_name": "APPI",
+  "applies_to": {"countries": ["JP"], "regions": []},
+  "status": "in_force",
+  "in_force_from": "2005-04-01",
+  "status_note": "The Act came fully into force on 2005-04-01. The 2020 amendment, which widened the suspension of use and erasure right in Art. 35(5), took full effect on 2022-04-01. Article numbers here follow the current numbering used in the PPC General Guidelines revised 2026-06-14. A further amendment act was promulgated on 2026-07-17 and takes effect on a date set by Cabinet Order within two years of promulgation. It adds new Art. 35 paragraphs on specified biometric data and on data of persons under 16. Those paragraphs are not in force on 2026-10-21.",
+  "rights": [
+    {"right": "erasure", "citation": "APPI Art. 35(1) and (2)", "summary": "A person may ask a business to stop using or to erase their retained personal data when it is used beyond the stated purpose (Art. 18), used in an improper way that may encourage illegal or unjust acts (Art. 19), or was obtained by deception or other wrongful means (Art. 20)."},
+    {"right": "erasure", "citation": "APPI Art. 35(5) and (6)", "summary": "A person may ask a business to stop using, erase, or stop providing to third parties their retained personal data when the business no longer needs it, when a reportable leak has occurred, or when the handling may harm the person's rights or legitimate interests."},
+    {"right": "opt_out_sale", "citation": "APPI Art. 35(3) and (4), Art. 27(2)", "summary": "A person may ask a business to stop providing their retained personal data to third parties when it is provided without consent in breach of Art. 27(1) or Art. 28, and a business that sells data to third parties under the Art. 27(2) opt-out system must stop on the person's request."},
+    {"right": "correction", "citation": "APPI Art. 34", "summary": "A person may ask a business to correct, add to or delete retained personal data that is not true."},
+    {"right": "access", "citation": "APPI Art. 33", "summary": "A person may ask a business to disclose the retained personal data that identifies them."}
+  ],
+  "deadline": {
+    "days": null,
+    "day_type": "calendar",
+    "basis": "days",
+    "extension_days": null,
+    "extension_note": "The Act sets no fixed number of days. When a request is found to have grounds, the business must act without delay (chitai naku) under Art. 35(2), (4) and (6), and must notify the person without delay of what it did or that it decided not to act under Art. 35(7). Separately, Art. 39 bars a lawsuit or a provisional disposition on an Art. 33, 34 or 35 request until two weeks after the out-of-court request reached the business, unless the business refused it. Ask for a reply within 14 days so that the Art. 39 waiting period and the reply window line up. This is a practical request, not a legal deadline.",
+    "citation": "APPI Art. 35(2), (4), (6) and (7), Art. 39"
+  },
+  "regulators": [
+    {"country": "JP", "region": null, "name": "Personal Information Protection Commission (PPC), Kojin Joho Hogo Iinkai", "complaint_url": "https://www.ppc.go.jp/personalinfo/pipldial/", "note": "Complaints go through the PPC Consultation Dial (kojin joho hogo ho sodan dial), phone only, 03-6457-9849, Japanese only, weekdays 9:30 to 17:30. The PPC does not take complaints by email, letter or in person. It gives advice toward a negotiated solution, can hold a complaint as information where a breach seems clear, and can offer mediation (assen) for complaints against private businesses. An English inquiry page exists at https://www.ppc.go.jp/en/contactus/piinquiry/ and points complainants first to the business itself, accredited personal information protection organizations, or local consumer centers."}
+  ],
+  "identity_verification": "A business may set how it receives requests, including how it confirms that the requester is the person or a proper agent (Art. 37(1), Cabinet Order Art. 12). It must not impose an excessive burden (Art. 37(4)) and should not ask for more information than the personal data it already holds. PPC examples include a copy of an official ID such as a driver's license sent by post with the reply going by registered mail to the address on that ID, a pre-registered ID and password online, or a callback by phone. If the business has set no method, requests in any form must be accepted. The business may also ask for details needed to locate the data (Art. 37(2)). Fees may be charged only for notice of purpose of use or disclosure (Art. 38), not for suspension of use or erasure.",
+  "authorized_agent": {"allowed": true, "citation": "APPI Art. 37(3), Cabinet Order Art. 13", "note": "Requests may be made through a legal representative of a minor or adult ward, or through an agent the person has authorized to make the request. PPC guidance says the business may ask for identity documents of both the person and the agent, plus a letter of authorization (inin jo)."},
+  "templates": {"erasure": "generic-erasure", "followup": "followup-generic", "complaint": "regulator-complaint-generic"},
+  "special_channels": [],
+  "public_records_note": "The APPI has no general exemption for publicly available data from the Art. 35 rights. Chapter IV duties do not apply to news organizations for reporting, professional writers for writing, religious bodies or political bodies for their own activities (Art. 57(1)). PPC General Guidelines give, as an example of improper use banned by Art. 19, compiling personal data scattered in court notices such as bankruptcy notices in the Official Gazette into a database and publishing it online when unlawful discrimination by many people is foreseeable. A people-search site doing similar compilation is exposed to an Art. 35(1) request on Art. 19 grounds, and to an Art. 35(5) request when the listing may harm the person's rights or legitimate interests. Data a business received from another business under the Art. 27(2) opt-out system may not be passed on again under that system (Art. 27(2) proviso).",
+  "sources": [
+    {"url": "https://www.ppc.go.jp/files/pdf/260614_guidelines01.pdf", "title": "PPC Guidelines on the APPI (General Rules), revised 2026-06-14, quoting Arts. 19, 27, 33 to 39 and 57 and Cabinet Order Arts. 12 and 13", "accessed_on": "2026-10-21"},
+    {"url": "https://www.ppc.go.jp/personalinfo/legal/", "title": "PPC laws and guidelines page", "accessed_on": "2026-10-21"},
+    {"url": "https://www.ppc.go.jp/files/pdf/261001_houritsu_shinkyu.pdf", "title": "APPI comparison table for the version in force 2026-10-01", "accessed_on": "2026-10-21"},
+    {"url": "https://www.ppc.go.jp/personalinfo/legal/r8kaiseihogohou/", "title": "PPC page on the 2026 amendment to the APPI", "accessed_on": "2026-10-21"},
+    {"url": "https://www.ppc.go.jp/files/pdf/260717_houritsu.pdf", "title": "2026 APPI amendment act, supplementary provisions Art. 1 on commencement", "accessed_on": "2026-10-21"},
+    {"url": "https://www.ppc.go.jp/files/pdf/260717_sinkyutaisyohyo.pdf", "title": "2026 APPI amendment comparison table, Art. 35", "accessed_on": "2026-10-21"},
+    {"url": "https://www.ppc.go.jp/files/pdf/230401_personal_development.pdf", "title": "PPC history of the APPI enactment and amendments", "accessed_on": "2026-10-21"},
+    {"url": "https://www.ppc.go.jp/personalinfo/pipldial/", "title": "PPC Consultation Dial", "accessed_on": "2026-10-21"},
+    {"url": "https://www.ppc.go.jp/en/contactus/piinquiry/", "title": "PPC Inquiry Line for the APPI (English)", "accessed_on": "2026-10-21"}
+  ],
+  "verified": true,
+  "verified_on": "2026-10-21",
+  "verification_note": "Article text was read in the PPC General Guidelines (revised 2026-06-14), which reproduce the statute verbatim. The Japanese Law Translation site was down for maintenance and e-Gov returned 403, so the statute itself was not read on those sites. The PPC English translations on ppc.go.jp use the old pre-2022 numbering (for example old Art. 30 and 34) and were not relied on. The 14-day reply request is a drafting choice tied to Art. 39, not a statutory deadline."
+}

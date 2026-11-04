@@ -1,0 +1,88 @@
+{
+  "code": "us-nj-njdpa",
+  "name": "New Jersey Data Privacy Act, P.L.2023, c.266, N.J.S.A. 56:8-166.4 et seq., as amended by P.L.2025, c.367",
+  "short_name": "NJDPA",
+  "applies_to": {
+    "countries": [
+      "US"
+    ],
+    "regions": [
+      "US-NJ"
+    ]
+  },
+  "status": "in_force",
+  "in_force_from": "2025-01-15",
+  "status_note": "Approved 2024-01-16 and effective on the 365th day after enactment (section 17), which is 2025-01-15. P.L.2025, c.367, approved 2026-01-20 and effective immediately, rewrote the definitions (C.56:8-166.4) and exemptions (C.56:8-166.13) but did not change the rights, deadline or appeal sections. The Division of Consumer Affairs proposed implementing rules (N.J.A.C. 13:45L) in 2025, and their adoption status could not be confirmed. Secondary sources report a 2026 amendment barring sale of sensitive data and a separate data broker registration law starting in 2027, and neither was read.",
+  "rights": [
+    {
+      "right": "erasure",
+      "citation": "N.J.S.A. 56:8-166.10(a)(3)",
+      "summary": "A consumer may have a controller delete personal data concerning the consumer."
+    },
+    {
+      "right": "opt_out_sale",
+      "citation": "N.J.S.A. 56:8-166.10(a)(5)",
+      "summary": "A consumer may opt out of processing for targeted advertising, sale of personal data or certain profiling."
+    },
+    {
+      "right": "correction",
+      "citation": "N.J.S.A. 56:8-166.10(a)(2)",
+      "summary": "A consumer may have a controller correct inaccuracies in their personal data."
+    },
+    {
+      "right": "access",
+      "citation": "N.J.S.A. 56:8-166.10(a)(1)",
+      "summary": "A consumer may confirm whether a controller processes their personal data and access it."
+    }
+  ],
+  "deadline": {
+    "days": 45,
+    "day_type": "calendar",
+    "basis": "days",
+    "extension_days": 45,
+    "extension_note": "A controller that receives a verified request must respond within 45 days of receipt. It may extend by 45 more days where reasonably necessary given the complexity and number of requests, if it tells the consumer of the extension and the reason within the first 45 days. A refusal must come within 45 days with the justification and appeal instructions (166.7(c)). Appeal: the controller must answer an appeal in writing not later than 45 days after receipt, and if it denies the appeal it must give an online mechanism, if available, or other method to complain to the Division of Consumer Affairs (166.7(f)).",
+    "citation": "N.J.S.A. 56:8-166.7(a), 56:8-166.7(c), 56:8-166.7(f)"
+  },
+  "regulators": [
+    {
+      "country": "US",
+      "region": "US-NJ",
+      "name": "New Jersey Division of Consumer Affairs, Office of the Attorney General",
+      "complaint_url": "https://njconsumeraffairs.nj.gov/file-a-complaint/",
+      "note": "The statute names the Division of Consumer Affairs as the place to complain after a denied appeal (166.7(f)). The Division's online complaint portal has no privacy category, so choose General Consumer Complaint. The Division's NJDPA FAQ page at njconsumeraffairs.gov was behind a CAPTCHA today and could not be read."
+    }
+  ],
+  "identity_verification": "If a controller cannot authenticate a request with commercially reasonable efforts it need not act, and must tell the consumer it cannot authenticate the request until the consumer provides additional information reasonably necessary to authenticate them (166.7(e)). Opt-out requests need no authentication, though a controller may deny one it documents as fraudulent (166.7(e)). Responses are free once per consumer in any 12-month period (166.7(d)).",
+  "authorized_agent": {
+    "allowed": false,
+    "citation": "N.J.S.A. 56:8-166.11(a)",
+    "note": "A consumer may designate an authorized agent, including through a browser setting or global device setting, only to opt out of processing and sale of personal data. The statute gives agents no role in deletion requests, so the consumer should send the deletion request personally."
+  },
+  "templates": {
+    "erasure": "us-state-delete",
+    "followup": "followup-generic",
+    "complaint": "regulator-complaint-generic"
+  },
+  "special_channels": [],
+  "public_records_note": "Personal data excludes publicly available information. The law says \"Personal data\" \"shall not include de-identified data or publicly available information\" (C.56:8-166.4, as amended by P.L.2025, c.367). Publicly available information means information lawfully made available from federal, State, or local government records or widely distributed media, or information a controller has a reasonable basis to believe a consumer has lawfully made available to the general public and has not restricted to a specific audience. A people-search site can decline to delete data drawn from public records. For data lawfully obtained from a source other than the consumer, the controller complies either by keeping a minimal suppression record or by deleting the data (166.10(b)). Unlike Texas or Virginia, New Jersey gives no option to opt the consumer out instead of deleting.",
+  "sources": [
+    {
+      "url": "https://pub.njleg.gov/Bills/2022/PL23/266_.HTM",
+      "title": "P.L.2023, Chapter 266, New Jersey Legislature",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://pub.njleg.gov/Bills/2024/PL25/367_.HTM",
+      "title": "P.L.2025, Chapter 367, New Jersey Legislature",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://njconsumeraffairs.nj.gov/file-a-complaint/",
+      "title": "File a Complaint, New Jersey Division of Consumer Affairs portal",
+      "accessed_on": "2026-10-21"
+    }
+  ],
+  "verified": false,
+  "verified_on": "2026-10-21",
+  "verification_note": "Rights citations, deadline, appeal, agent and publicly available information rules were read today in the chaptered law P.L.2023, c.266 and its amendment P.L.2025, c.367 on pub.njleg.gov. No consolidated current statute text was available, and at least one further 2026 amendment reported by secondary sources (a ban on selling sensitive data) was not read, so the deadline is confirmed only against the chaptered text. The complaint portal was read, but the Division's NJDPA FAQ, which would confirm that this portal is the intended route for privacy complaints, was blocked by a CAPTCHA. The status of the proposed N.J.A.C. 13:45L rules is unconfirmed."
+}

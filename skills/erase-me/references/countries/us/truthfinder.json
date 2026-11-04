@@ -1,0 +1,69 @@
+{
+  "id": "truthfinder",
+  "name": "TruthFinder",
+  "domain": "truthfinder.com",
+  "category": "people_search",
+  "countries": [
+    "US"
+  ],
+  "priority": 2,
+  "cluster": "peopleconnect",
+  "covers": [],
+  "search": {
+    "method": "search_engine",
+    "url_template": "https://www.google.com/search?q=site%3Atruthfinder.com+%22{first}+{last}%22",
+    "fields": [
+      "first",
+      "last"
+    ],
+    "notes": "No site URL pattern was confirmed, so search Google for the name on this domain and open the listing in a browser."
+  },
+  "optout": {
+    "method": "web_form",
+    "url": "https://www.truthfinder.com/opt-out/",
+    "email": null,
+    "requires": [
+      "email_verification"
+    ],
+    "fields_needed": [
+      "full_name",
+      "email"
+    ],
+    "steps": [
+      "Run the intelius parent opt-out first, which uses the PeopleConnect suppression center.",
+      "If a TruthFinder listing is still visible after 10 days, open this opt-out page and follow its steps.",
+      "Click the link in any confirmation email."
+    ],
+    "expected_days": 10,
+    "notes": "PeopleConnect lists Intelius, TruthFinder, US Search and Instant Checkmate as its brands, and the 2026 California registry lists ZabaSearch and Addresses.com under Intelius, LLC. The PeopleConnect suppression center says it covers name-search results on the people search sites in the PeopleConnect family, not Classmates."
+  },
+  "relist_risk": "medium",
+  "registries": {
+    "US-CA": true
+  },
+  "sources": [
+    {
+      "url": "https://github.com/4x3/nulltrace/blob/7fd59edc097c70788dd79e5ab4c31c62cdaa8fe7/source/internal/broker/data/webforms.yaml",
+      "license": "MIT",
+      "attribution": "nulltrace by 4x3, MIT License"
+    },
+    {
+      "url": "https://github.com/stephenlthorn/auto-identity-remove/blob/99fb638d31ff5f5d1af497ac3440943622a0c448/brokers.js",
+      "license": "MIT",
+      "attribution": "auto-identity-remove by stephenlthorn, MIT License"
+    },
+    {
+      "url": "https://peopleconnect.us/",
+      "license": "official",
+      "attribution": "PeopleConnect company site, brand list"
+    },
+    {
+      "url": "https://cppa.ca.gov/data_broker_registry/",
+      "license": "official",
+      "attribution": "California Privacy Protection Agency data broker registry, 2026 list fetched 2026-10-27"
+    }
+  ],
+  "verified": false,
+  "last_verified": null,
+  "verification_note": "Bot-blocked on 2026-10-27 (Cloudflare challenge page), URL from nulltrace and auto-identity-remove."
+}

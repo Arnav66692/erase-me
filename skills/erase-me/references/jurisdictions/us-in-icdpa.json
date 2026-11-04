@@ -1,0 +1,88 @@
+{
+  "code": "us-in-icdpa",
+  "name": "Indiana Consumer Data Protection Act, Ind. Code 24-15",
+  "short_name": "ICDPA",
+  "applies_to": {
+    "countries": [
+      "US"
+    ],
+    "regions": [
+      "US-IN"
+    ]
+  },
+  "status": "in_force",
+  "in_force_from": "2026-01-01",
+  "status_note": "Enacted by P.L.94-2023 (SEA 5). The Attorney General says the law took effect January 1, 2026 and enforces it, with a notice and cure step before suit (IC 24-15-10). IC 24-15-1-1 was amended by P.L.236-2025. The text used here is the Indiana Code 2026 edition.",
+  "rights": [
+    {
+      "right": "erasure",
+      "citation": "Ind. Code 24-15-3-1(b)(3)",
+      "summary": "A consumer may ask a controller to delete personal data provided by or obtained about the consumer."
+    },
+    {
+      "right": "opt_out_sale",
+      "citation": "Ind. Code 24-15-3-1(b)(5)",
+      "summary": "A consumer may opt out of processing for targeted advertising, sale of personal data or certain profiling."
+    },
+    {
+      "right": "correction",
+      "citation": "Ind. Code 24-15-3-1(b)(2)",
+      "summary": "A consumer may correct inaccuracies in personal data that the consumer previously provided to the controller."
+    },
+    {
+      "right": "access",
+      "citation": "Ind. Code 24-15-3-1(b)(1), (b)(4)",
+      "summary": "A consumer may confirm processing, access their data, and get a copy or representative summary of data they provided, once per 12 months."
+    }
+  ],
+  "deadline": {
+    "days": 45,
+    "day_type": "calendar",
+    "basis": "days",
+    "extension_days": 45,
+    "extension_note": "The controller must respond without undue delay and not later than 45 days after receipt. It may extend once by 45 more days when reasonably necessary given the complexity and number of requests, if it tells the consumer of the extension and the reason within the first 45 days. A refusal must come within 45 days with the justification and appeal instructions (24-15-3-1(c)(2)). Appeal: the controller must answer in writing not later than 60 days after receiving the appeal, and if it denies the appeal it must give an online mechanism, if available, or other method to complain to the Attorney General (24-15-3-1(d)).",
+    "citation": "Ind. Code 24-15-3-1(c)(1), 24-15-3-1(c)(2), 24-15-3-1(d)"
+  },
+  "regulators": [
+    {
+      "country": "US",
+      "region": "US-IN",
+      "name": "Indiana Attorney General, Consumer Protection Division",
+      "complaint_url": "https://inoag.my.site.com/CDPA/s/",
+      "note": "This is the Consumer Data Privacy Act (CDPA) Complaint form linked from https://www.in.gov/attorneygeneral/consumer-protection-division/file-a-complaint/. The AG's CDPA Consumer Bill of Rights invites consumers to file a complaint if a business violates the law."
+    }
+  ],
+  "identity_verification": "The controller must comply only with an authenticated request. If it cannot authenticate the request with commercially reasonable efforts it need not comply and may ask for additional information reasonably necessary to authenticate the consumer and the request (24-15-3-1(c)(4)). It may not require a new account but may require use of an existing account (24-15-4-5). Responses are free once a year per consumer (24-15-3-1(c)(3)).",
+  "authorized_agent": {
+    "allowed": null,
+    "citation": "Ind. Code 24-15-3-1(a)",
+    "note": "The Indiana act has no authorized agent provision. Only a known child's parent or legal guardian may invoke rights for another person. The consumer should send the deletion request personally."
+  },
+  "templates": {
+    "erasure": "us-state-delete",
+    "followup": "followup-generic",
+    "complaint": "regulator-complaint-generic"
+  },
+  "special_channels": [],
+  "public_records_note": "Personal data excludes de-identified data, aggregate data and publicly available information. The code says the term \"does not include\" \"(3) publicly available information\" (24-15-2-19(b)). Publicly available information means information lawfully made available through federal, state, or local government records, or information a business has a reasonable basis to believe is lawfully made available to the general public through widely distributed media, by the consumer, or by a person to whom the consumer disclosed it, unless the consumer restricted it to a specific audience (24-15-2-26). A people-search site can decline to delete data drawn from public records. For data obtained from a source other than the consumer, the controller complies by keeping a record of the request and the minimum data needed to keep the data deleted, and not using it otherwise (24-15-3-1(c)(5)). Indiana has no opt-out alternative. No Indiana data broker registry was identified.",
+  "sources": [
+    {
+      "url": "https://iga.in.gov/ic/2026/Title_24.pdf",
+      "title": "Indiana Code 2026, Title 24, Indiana General Assembly",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://www.in.gov/attorneygeneral/consumer-protection-division/file-a-complaint/",
+      "title": "File a Complaint, Indiana Attorney General Consumer Protection Division",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://www.in.gov/attorneygeneral/files/Indiana-Consumer-Data-Protection-Consumer-Bill-of-Rights_Web.pdf",
+      "title": "Indiana Consumer Data Protection Bill of Rights, Indiana Attorney General",
+      "accessed_on": "2026-10-21"
+    }
+  ],
+  "verified": true,
+  "verified_on": "2026-10-21",
+  "verification_note": "All required fields were read today in the Indiana Code 2026 edition PDF from the General Assembly and on the Attorney General's site. The effective date comes from the AG Bill of Rights. Authorized agent is null because the statute does not address agents."
+}

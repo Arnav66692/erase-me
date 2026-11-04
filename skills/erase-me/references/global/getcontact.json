@@ -1,0 +1,51 @@
+{
+  "id": "getcontact",
+  "name": "GetContact",
+  "domain": "getcontact.com",
+  "category": "caller_id",
+  "countries": [
+    "*"
+  ],
+  "priority": 1,
+  "cluster": null,
+  "covers": [],
+  "search": {
+    "method": "manual",
+    "url_template": null,
+    "fields": [],
+    "notes": "Lookups only work inside the mobile app, so the agent cannot check whether the number is listed. Tags other users gave the number are only visible in the app."
+  },
+  "optout": {
+    "method": "web_form",
+    "url": "https://getcontact.com/en/manage",
+    "email": "support@getcontact.com",
+    "requires": [
+      "phone_call"
+    ],
+    "fields_needed": [
+      "phone"
+    ],
+    "steps": [
+      "Open the Manage Your Privacy Profile page on a device that can receive messages for the number.",
+      "Verify the number with the code sent to the phone.",
+      "Turn off the profile or hide the tags, and request deletion if offered.",
+      "If the page does not offer removal, email support@getcontact.com from the person's address and ask to delete the number and its tags."
+    ],
+    "expected_days": 30,
+    "notes": "Verification is a code sent to the phone, not a voice call. The privacy policy says account deletion aims to finish within 30 days. The policy also names support@getcontact.com and the in-app Privacy Management Centre for privacy requests."
+  },
+  "relist_risk": "medium",
+  "registries": {
+    "US-CA": false
+  },
+  "sources": [
+    {
+      "url": "https://getcontact.com/en/privacy",
+      "license": "official",
+      "attribution": "GetContact privacy policy"
+    }
+  ],
+  "verified": true,
+  "last_verified": "2026-10-27",
+  "verification_note": "Manage page and privacy policy loaded on 2026-10-27. The manage page loads a phone verification widget, the steps after verification were not viewed."
+}

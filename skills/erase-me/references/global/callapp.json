@@ -1,0 +1,51 @@
+{
+  "id": "callapp",
+  "name": "CallApp",
+  "domain": "callapp.com",
+  "category": "caller_id",
+  "countries": [
+    "*"
+  ],
+  "priority": 2,
+  "cluster": null,
+  "covers": [],
+  "search": {
+    "method": "manual",
+    "url_template": null,
+    "fields": [],
+    "notes": "Lookups only work inside the mobile app, so the agent cannot check whether the number is listed."
+  },
+  "optout": {
+    "method": "web_form",
+    "url": "https://callapp.com/how-to/unlist-phone-number",
+    "email": null,
+    "requires": [
+      "email_verification"
+    ],
+    "fields_needed": [
+      "phone",
+      "email"
+    ],
+    "steps": [
+      "Open the CallApp unlist page.",
+      "Type the phone number with country code and press Unlist.",
+      "Wait for the unlisting confirmation email and follow its link."
+    ],
+    "expected_days": 7,
+    "notes": "The page says the confirmation email arrives in the next few days. Expected days is an estimate."
+  },
+  "relist_risk": "medium",
+  "registries": {
+    "US-CA": false
+  },
+  "sources": [
+    {
+      "url": "https://callapp.com/how-to/unlist-phone-number",
+      "license": "official",
+      "attribution": "CallApp"
+    }
+  ],
+  "verified": true,
+  "last_verified": "2026-10-27",
+  "verification_note": "Unlist page loaded on 2026-10-27."
+}

@@ -1,0 +1,32 @@
+{
+  "id": "peoplefind-lite",
+  "name": "PeopleFind Lite",
+  "domain": "lite.peoplefind.example.com",
+  "category": "people_search",
+  "countries": ["ZZ"],
+  "priority": 1,
+  "cluster": "peoplefind",
+  "covers": [],
+  "search": {
+    "method": "url_template",
+    "url_template": "https://lite.peoplefind.example.com/name/{full}",
+    "fields": ["full"],
+    "notes": ""
+  },
+  "optout": {
+    "method": "web_form",
+    "url": "https://lite.peoplefind.example.com/optout",
+    "email": null,
+    "requires": ["captcha"],
+    "fields_needed": ["listing_url"],
+    "steps": ["Use the PeopleFind opt-out instead."],
+    "expected_days": 7,
+    "notes": ""
+  },
+  "relist_risk": "high",
+  "registries": {},
+  "sources": [{"url": "https://lite.peoplefind.example.com/", "license": "own-research", "attribution": ""}],
+  "verified": true,
+  "last_verified": "2026-10-21",
+  "verification_note": ""
+}

@@ -1,0 +1,74 @@
+{
+  "id": "whitepages",
+  "name": "Whitepages",
+  "domain": "whitepages.com",
+  "category": "people_search",
+  "countries": [
+    "US"
+  ],
+  "priority": 1,
+  "cluster": null,
+  "covers": [],
+  "search": {
+    "method": "url_template",
+    "url_template": "https://www.whitepages.com/name/{first}-{last}/{region}",
+    "fields": [
+      "first",
+      "last",
+      "region"
+    ],
+    "notes": "Pattern from auto-identity-remove. The site served a bot challenge on 2026-10-27 so it was not confirmed."
+  },
+  "optout": {
+    "method": "web_form",
+    "url": "https://www.whitepages.com/suppression-requests",
+    "email": null,
+    "requires": [
+      "listing_url",
+      "phone_call"
+    ],
+    "fields_needed": [
+      "listing_url",
+      "full_name",
+      "phone"
+    ],
+    "steps": [
+      "Find the listing and copy its URL.",
+      "Open the suppression request page and paste the URL.",
+      "Confirm the record, pick a reason and enter a working phone number.",
+      "Answer the automated call and enter the code shown on screen. The person must do this step.",
+      "Repeat for 411.com, which uses the same data but a separate opt-out."
+    ],
+    "expected_days": null,
+    "notes": "Prior-art sources disagree. identity-eraser describes a phone call with an on-screen code, nulltrace records a captcha and an email confirmation. Expect either."
+  },
+  "relist_risk": "medium",
+  "registries": {
+    "US-CA": true
+  },
+  "sources": [
+    {
+      "url": "https://github.com/4x3/nulltrace/blob/7fd59edc097c70788dd79e5ab4c31c62cdaa8fe7/source/internal/broker/data/webforms.yaml",
+      "license": "MIT",
+      "attribution": "nulltrace by 4x3, MIT License"
+    },
+    {
+      "url": "https://github.com/AKCodez/identity-eraser/blob/539e408fd49f9266b09c70abe22e67aff4207964/references/site-playbooks.md",
+      "license": "MIT",
+      "attribution": "identity-eraser by AKCodez, MIT License"
+    },
+    {
+      "url": "https://github.com/stephenlthorn/auto-identity-remove/blob/99fb638d31ff5f5d1af497ac3440943622a0c448/brokers.js",
+      "license": "MIT",
+      "attribution": "auto-identity-remove by stephenlthorn, MIT License"
+    },
+    {
+      "url": "https://cppa.ca.gov/data_broker_registry/",
+      "license": "official",
+      "attribution": "California Privacy Protection Agency data broker registry, 2026 list fetched 2026-10-27"
+    }
+  ],
+  "verified": false,
+  "last_verified": null,
+  "verification_note": "Bot-blocked on 2026-10-27 (Cloudflare challenge page), URL from nulltrace, identity-eraser and auto-identity-remove."
+}

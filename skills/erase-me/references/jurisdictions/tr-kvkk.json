@@ -1,0 +1,118 @@
+{
+  "code": "tr-kvkk",
+  "name": "Kişisel Verilerin Korunması Kanunu, Law No. 6698 on the Protection of Personal Data",
+  "short_name": "KVKK",
+  "applies_to": {
+    "countries": [
+      "TR"
+    ],
+    "regions": []
+  },
+  "status": "in_force",
+  "in_force_from": "2016-10-07",
+  "status_note": "Published in the Official Gazette on 7 April 2016 (No. 29677). Articles 11, 13 and 14 entered into force six months after publication (Art. 32(1)(a)), which is 7 October 2016 by calculation. Law No. 7499 of 2 March 2024 amended other articles, including Art. 9 on transfers abroad, and did not change Arts. 11, 13 or 14 in the consolidated text read.",
+  "rights": [
+    {
+      "right": "erasure",
+      "citation": "Art. 11(1)(e), Art. 7",
+      "summary": "A person can ask the controller to delete or destroy their personal data once the reasons for processing no longer exist."
+    },
+    {
+      "right": "correction",
+      "citation": "Art. 11(1)(d)",
+      "summary": "A person can ask for incomplete or inaccurate data to be corrected."
+    },
+    {
+      "right": "access",
+      "citation": "Art. 11(1)(a) to (ç)",
+      "summary": "A person can learn whether their data is processed, the purpose, and the third parties it was transferred to."
+    },
+    {
+      "right": "objection",
+      "citation": "Art. 11(1)(g)",
+      "summary": "A person can object to a result against them that arises solely from automated analysis of their data."
+    },
+    {
+      "right": "delisting",
+      "citation": "Art. 7, Art. 11(1)(e), Board Decision 2020/481 of 23 June 2020",
+      "summary": "The Board treats search engines as controllers and accepts requests to remove name-search results under the right to be forgotten, after a balancing test, with the person applying to the search engine first."
+    }
+  ],
+  "deadline": {
+    "days": 30,
+    "day_type": "calendar",
+    "basis": "days",
+    "extension_days": null,
+    "extension_note": "The controller must conclude the request as soon as possible and within 30 days at the latest, free of charge unless the action has an extra cost under the Board's tariff. There is no extension. A Board complaint is possible only after applying to the controller, within 30 days of learning the controller's answer and in any case within 60 days of the application date (Art. 14(1) and (2)). The Board's silence for 60 days after a complaint counts as rejection (Art. 15(4)).",
+    "citation": "Art. 13(2), Communiqué on Application Procedures Art. 6(5)"
+  },
+  "regulators": [
+    {
+      "country": "TR",
+      "region": null,
+      "name": "Kişisel Verileri Koruma Kurulu and Kurumu (Personal Data Protection Board and Authority, KVKK)",
+      "complaint_url": "https://sikayet.kvkk.gov.tr/",
+      "note": "Online complaint module linked from kvkk.gov.tr. Complaints must meet the petition rules in Law No. 3071 Art. 6 (Art. 15(2)). Explained at https://www.kvkk.gov.tr/Icerik/2063/Sikayet-Hakki"
+    }
+  ],
+  "identity_verification": "The application must include name and surname, a signature if written, the T.C. identity number (or nationality and passport number for foreigners), a notification address, and the subject of the request. It may be sent in writing, by registered electronic mail (KEP), with a secure electronic or mobile signature, from an email address already registered with the controller, or through the controller's own application tool (Communiqué Art. 5(1) and (2)). The Board found in decision 2019/296 that a controller could not insist only on notarised or e-signed applications.",
+  "authorized_agent": {
+    "allowed": null,
+    "citation": "",
+    "note": "The law and Communiqué read do not regulate applications through a representative. Representation by a lawyer or under a power of attorney was not confirmed from a primary source today."
+  },
+  "templates": {
+    "erasure": "kvkk-erasure",
+    "followup": "followup-generic",
+    "complaint": "regulator-complaint-generic"
+  },
+  "special_channels": [
+    {
+      "id": "google-eu-delisting",
+      "name": "Google personal information removal request",
+      "url": "https://reportcontent.google.com/forms/rtbf",
+      "note": "Google's Right to be Forgotten overview names Turkey as a country with a similar law and allows a request explaining why local law requires delisting. Under Board Decision 2020/481 the person must apply to the search engine first, then may complain to the Board."
+    }
+  ],
+  "public_records_note": "Art. 11 rights do not apply to processing of personal data that the person made public themselves (Art. 28(2)(b)), and data made public by the person is also a legal basis for processing (Art. 5(2)(d)). A people-search site may rely on this for data the person posted publicly, so the request should point to data the person did not make public or that is used beyond the purpose of its publication. Processing for artistic, historical, literary, scientific or freedom of expression purposes is outside the law if it does not violate privacy or personality rights (Art. 28(1)(c)).",
+  "sources": [
+    {
+      "url": "https://www.mevzuat.gov.tr/mevzuatmetin/1.5.6698.pdf",
+      "title": "Law No. 6698, Kişisel Verilerin Korunması Kanunu, consolidated text, mevzuat.gov.tr",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://www.mevzuat.gov.tr/File/GeneratePdf?mevzuatNo=24455&mevzuatTur=Teblig&mevzuatTertip=5",
+      "title": "Veri Sorumlusuna Başvuru Usul ve Esasları Hakkında Tebliğ (Communiqué on Application Procedures to the Controller)",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://www.kvkk.gov.tr/Icerik/2063/Sikayet-Hakki",
+      "title": "KVKK, Şikayet Hakkı",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://www.kvkk.gov.tr/Icerik/2062/Basvuru-Hakki",
+      "title": "KVKK, Başvuru Hakkı",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://sikayet.kvkk.gov.tr/",
+      "title": "KVKK Şikayet Modülü",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://www.kvkk.gov.tr/Icerik/6776/2020-481",
+      "title": "Board Decision 2020/481 of 23 June 2020 on removing name-search results from search engine indexes",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://support.google.com/legal/answer/10769224",
+      "title": "Google, Right to be Forgotten Overview",
+      "accessed_on": "2026-10-21"
+    }
+  ],
+  "verified": false,
+  "verified_on": "2026-10-21",
+  "verification_note": "Rights, the 30-day deadline, the Board complaint route and the application format were confirmed from the official law text, the Communiqué and kvkk.gov.tr. Unconfirmed: the authorized agent rule. The Board decision 2019/296 point comes from a search result summary on kvkk.gov.tr and was not opened. The in_force_from date is calculated from Art. 32, not read from a separate notice."
+}

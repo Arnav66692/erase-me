@@ -1,0 +1,98 @@
+{
+  "code": "us-or-ocpa",
+  "name": "Oregon Consumer Privacy Act, ORS 646A.570 to 646A.589",
+  "short_name": "OCPA",
+  "applies_to": {
+    "countries": [
+      "US"
+    ],
+    "regions": [
+      "US-OR"
+    ]
+  },
+  "status": "in_force",
+  "in_force_from": "2024-07-01",
+  "status_note": "In effect since 2024-07-01 per the Oregon Department of Justice. The Attorney General enforces the OCPA (646A.589). The 2026 table of ORS sections amended in the 2026 session lists no change to 646A.570 to 646A.589. Oregon also runs a data broker registry under ORS 646A.593, kept by the Department of Consumer and Business Services, Division of Financial Regulation.",
+  "rights": [
+    {
+      "right": "erasure",
+      "citation": "ORS 646A.574(1)(c)",
+      "summary": "A consumer may require a controller to delete personal data about them, including data they provided, data obtained from another source, and derived data."
+    },
+    {
+      "right": "opt_out_sale",
+      "citation": "ORS 646A.574(1)(d)(B)",
+      "summary": "A consumer may opt out of a controller selling their personal data."
+    },
+    {
+      "right": "correction",
+      "citation": "ORS 646A.574(1)(b)",
+      "summary": "A consumer may require a controller to correct inaccuracies in personal data about them."
+    },
+    {
+      "right": "access",
+      "citation": "ORS 646A.574(1)(a)",
+      "summary": "A consumer may obtain confirmation of processing, the categories processed, a copy of their data and, at the controller's option, a list of specific third parties that received it."
+    }
+  ],
+  "deadline": {
+    "days": 45,
+    "day_type": "calendar",
+    "basis": "days",
+    "extension_days": 45,
+    "extension_note": "The controller must respond without undue delay and not later than 45 days after receiving the request. It may extend by 45 more days if reasonably necessary given the complexity and number of requests, and must notify the consumer with the reason within the first 45 days. A refusal must come within 45 days with the justification and appeal instructions (646A.576(5)(b)). Appeal: the controller must approve or deny an appeal within 45 days of receiving it, with no extension, and if it denies the appeal the notice must tell the consumer how to contact the Attorney General to complain (646A.576(6)(d)).",
+    "citation": "ORS 646A.576(5)(a), 646A.576(5)(b), 646A.576(6)(d)"
+  },
+  "regulators": [
+    {
+      "country": "US",
+      "region": "US-OR",
+      "name": "Oregon Department of Justice, Consumer Protection Section",
+      "complaint_url": "https://www.doj.state.or.us/consumer-protection/id-theft-data-breaches/privacy/",
+      "note": "The DOJ privacy page's Complaint Form button opens https://app.smartsheetgov.com/b/form/02fff1dd26bd4dc19a7297e83012eb4e. The DOJ says it does not represent individuals but uses complaints to find patterns and targets. General consumer complaints go to https://justice.oregon.gov/consumercomplaints/."
+    }
+  ],
+  "identity_verification": "If the controller cannot authenticate the request with commercially reasonable methods without more information, it must notify the consumer and need not act until the consumer provides what is necessary (646A.576(5)(d)). Opt-out requests must be honored without authentication, though the controller may ask for information needed to identify the consumer and may deny a request it documents as fraudulent (646A.576(5)(e)). No account may be required, but an existing account may be used (646A.576(2)). One free request per 12 months, and a later request made to check that data was corrected or deleted is also free (646A.576(5)(c)).",
+  "authorized_agent": {
+    "allowed": false,
+    "citation": "ORS 646A.576(3), 646A.576(4)",
+    "note": "A consumer may designate an authorized agent, including through a browser setting or global device setting, only to opt out of processing under 646A.574(1)(d). A parent or legal guardian may exercise all rights for a child, and a guardian or conservator may do so for a protected person (646A.576(3)). Otherwise the consumer should send the deletion request personally."
+  },
+  "templates": {
+    "erasure": "us-state-delete",
+    "followup": "followup-generic",
+    "complaint": "regulator-complaint-generic"
+  },
+  "special_channels": [],
+  "public_records_note": "Oregon excludes public data from personal data in different words. Personal data \"does not include deidentified data\" or data that \"Is lawfully available through federal, state or local government records or through widely distributed media\", or data a controller reasonably has understood to have been lawfully made available to the public by a consumer (646A.570(13)(b)). A people-search site can decline to delete government record data. Oregon's deletion right expressly covers data obtained from another source and derived data (646A.574(1)(c)). A controller that got data from someone other than the consumer may comply by deleting it while keeping a minimal suppression record, or by opting the consumer out of non-exempt processing (646A.576(7)). Data broker registry: brokers must register with the Department of Consumer and Business Services and declare whether residents may opt out, which activities, the method, and whether an agent may act (646A.593(3)(c)). The DFR consumer page explains how to search the DCBS license lookup with Profession \"DFR-Data Broker\" to find each broker's opt-out method. Brokers dealing only in government record information need not register (646A.593(2)(b)(C)).",
+  "sources": [
+    {
+      "url": "https://www.oregonlegislature.gov/bills_laws/ors/ors646A.html",
+      "title": "ORS Chapter 646A, 2025 edition, Oregon Legislature",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://www.oregonlegislature.gov/bills_laws/lawsstatutes/2026OrLawAR.pdf",
+      "title": "ORS sections amended or repealed, 2026 regular session",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://www.doj.state.or.us/consumer-protection/id-theft-data-breaches/privacy/",
+      "title": "Privacy, Oregon Department of Justice",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://justice.oregon.gov/consumercomplaints/",
+      "title": "Consumer Complaint, Oregon Department of Justice",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://dfr.oregon.gov/financial/protect/pages/consumer-privacy-resources.aspx",
+      "title": "Consumer privacy resources, Oregon Division of Financial Regulation",
+      "accessed_on": "2026-10-21"
+    }
+  ],
+  "verified": true,
+  "verified_on": "2026-10-21",
+  "verification_note": "All required fields were read today in the 2025 edition of ORS chapter 646A on the Oregon Legislature site, and the 2026 amendment table shows no change to the OCPA. The complaint route was read on the DOJ site. The DFR page says brokers must offer an opt-out, but the statute only requires a declaration of whether they do, and this file follows the statute."
+}

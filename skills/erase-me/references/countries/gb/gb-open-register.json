@@ -1,0 +1,55 @@
+{
+  "id": "gb-open-register",
+  "name": "Open electoral register opt-out (local council)",
+  "domain": "gov.uk",
+  "category": "directory",
+  "countries": [
+    "GB"
+  ],
+  "priority": 1,
+  "cluster": null,
+  "covers": [],
+  "search": {
+    "method": "none",
+    "url_template": "",
+    "fields": [],
+    "notes": "The open register is sold to any buyer and feeds UK people-search sites such as 192.com and ukphonebook.com. It cannot be searched online by the public."
+  },
+  "optout": {
+    "method": "web_form",
+    "url": "https://www.gov.uk/electoral-register/opt-out-of-the-open-register",
+    "email": null,
+    "requires": [],
+    "fields_needed": [
+      "full_name",
+      "address_line",
+      "postcode"
+    ],
+    "steps": [
+      "Use the GOV.UK register to vote service at https://www.gov.uk/register-to-vote and choose to opt out of the open register. GOV.UK says this works even if the person is already registered.",
+      "Or contact the electoral registration office of the person's local council, found at https://www.gov.uk/contact-electoral-registration-office, and ask to be removed from the open register.",
+      "In Northern Ireland contact the Electoral Office for Northern Ireland instead. Overseas voters contact the office that confirmed their overseas registration.",
+      "Keep the confirmation from the council.",
+      "Each time the person registers at a new address, choose the open register opt-out again on that application."
+    ],
+    "expected_days": null,
+    "notes": "This is handled per council, not by one national office. Opting out does not affect the right to vote. The full register still exists and is used for elections, crime prevention, credit checks and jury summoning, and nobody can opt out of it. Only anonymous registration removes a person from both versions. GOV.UK gives no processing time. Copies of the open register bought before the opt-out may still be in use, so remove each people-search listing as well."
+  },
+  "relist_risk": "low",
+  "registries": {},
+  "sources": [
+    {
+      "url": "https://www.gov.uk/electoral-register/opt-out-of-the-open-register",
+      "license": "official",
+      "attribution": "GOV.UK, the electoral register and the open register"
+    },
+    {
+      "url": "https://ico.org.uk/for-the-public/your-data-and-elections/electoral-register/",
+      "license": "official",
+      "attribution": "ICO guidance on the electoral register, linked from GOV.UK"
+    }
+  ],
+  "verified": true,
+  "last_verified": "2026-10-21",
+  "verification_note": "GOV.UK opt-out page loaded with HTTP 200 on 2026-10-21 and lists the online and council routes."
+}

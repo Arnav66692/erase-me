@@ -1,0 +1,32 @@
+{
+  "id": "oldbook",
+  "name": "OldBook Directory",
+  "domain": "oldbook.example.com",
+  "category": "directory",
+  "countries": ["ZZ"],
+  "priority": 3,
+  "cluster": null,
+  "covers": [],
+  "search": {
+    "method": "url_template",
+    "url_template": "https://oldbook.example.com/phone/{phone}",
+    "fields": ["phone"],
+    "notes": ""
+  },
+  "optout": {
+    "method": "email",
+    "url": "",
+    "email": "privacy@oldbook.example.com",
+    "requires": ["id_upload"],
+    "fields_needed": ["full_name", "phone"],
+    "steps": ["Send the drafted letter by email.", "Attach a redacted ID if asked."],
+    "expected_days": 30,
+    "notes": ""
+  },
+  "relist_risk": "unknown",
+  "registries": {},
+  "sources": [{"url": "https://oldbook.example.com/privacy", "license": "official", "attribution": ""}],
+  "verified": true,
+  "last_verified": "2026-10-20",
+  "verification_note": ""
+}

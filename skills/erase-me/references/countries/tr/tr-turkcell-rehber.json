@@ -1,0 +1,47 @@
+{
+  "id": "tr-turkcell-rehber",
+  "name": "Turkcell Rehber and Bilinmeyen Numaralar",
+  "domain": "turkcell.com.tr",
+  "category": "caller_id",
+  "countries": [
+    "TR"
+  ],
+  "priority": 1,
+  "cluster": null,
+  "covers": [],
+  "search": {
+    "method": "none",
+    "url_template": "",
+    "fields": [],
+    "notes": "Turkcell's paid lookup (SMS to 2200 or a call to 11832) returns the name for a number, but only for subscribers listed in Turkcell Rehber. Licensed 118xx directory services also query operator databases."
+  },
+  "optout": {
+    "method": "phone",
+    "url": "https://www.turkcell.com.tr/servisler/arama-fatura-tl/bilinmeyen-numaralar",
+    "email": null,
+    "requires": [],
+    "fields_needed": [
+      "phone"
+    ],
+    "steps": [
+      "From the Turkcell line, send an SMS with the text REHBER to 2200 to check whether the number is listed.",
+      "Send an SMS with the text REHBER IPTAL to 2200 to leave Turkcell Rehber.",
+      "Keep the reply SMS as evidence.",
+      "Repeat for every Turkcell line the person owns."
+    ],
+    "expected_days": null,
+    "notes": "Türkçe özet. Turkcell hattınızdan 2200'e REHBER IPTAL yazıp gönderin, numaranız Bilinmeyen Numaralar sorgusunda görünmez. Method is phone because the opt-out is an SMS. It must be sent from the person's own line, so the human does this. Turkcell does not state how long removal takes. This covers Turkcell's own lookup and likely the licensed 118xx services that use the Turkcell directory, but that second point was not confirmed."
+  },
+  "relist_risk": "low",
+  "registries": {},
+  "sources": [
+    {
+      "url": "https://www.turkcell.com.tr/servisler/arama-fatura-tl/bilinmeyen-numaralar",
+      "license": "official",
+      "attribution": "Turkcell, Bilinmeyen Numaralar"
+    }
+  ],
+  "verified": true,
+  "last_verified": "2026-10-21",
+  "verification_note": "Turkcell Bilinmeyen Numaralar page loaded with HTTP 200 on 2026-10-21 and WebFetch read the REHBER IPTAL to 2200 instruction from it."
+}

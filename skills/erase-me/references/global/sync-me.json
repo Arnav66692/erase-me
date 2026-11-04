@@ -1,0 +1,52 @@
+{
+  "id": "sync-me",
+  "name": "Sync.ME",
+  "domain": "sync.me",
+  "category": "caller_id",
+  "countries": [
+    "*"
+  ],
+  "priority": 2,
+  "cluster": null,
+  "covers": [],
+  "search": {
+    "method": "manual",
+    "url_template": null,
+    "fields": [],
+    "notes": "Lookups only work inside the mobile app, so the agent cannot check whether the number is listed."
+  },
+  "optout": {
+    "method": "web_form",
+    "url": "https://sync.me/unsubscribe/",
+    "email": null,
+    "requires": [
+      "captcha"
+    ],
+    "fields_needed": [
+      "full_name",
+      "email",
+      "phone"
+    ],
+    "steps": [
+      "Open the Sync.ME opt-out page.",
+      "Enter the name, email and phone number with country code.",
+      "Complete the captcha yourself and press Send."
+    ],
+    "expected_days": 1,
+    "notes": "The page says information is removed within 24 hours. The old opt-out address sync.me/optout redirects here."
+  },
+  "relist_risk": "medium",
+  "registries": {
+    "US-CA": false
+  },
+  "sources": [
+    {
+      "url": "https://sync.me/unsubscribe/",
+      "license": "official",
+      "attribution": "Sync.ME"
+    }
+  ],
+  "verified": true,
+  "last_verified": "2026-10-27",
+  "verification_note": "Opt-out page loaded on 2026-10-27 and includes a captcha widget."
+}

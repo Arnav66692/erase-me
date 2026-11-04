@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:">
+<meta name="robots" content="noindex, nofollow">
+<title>Exposure map, private</title>
+<!--
+  Erase Me report template. The engine fills five placeholders and escapes every value.
+  Expected row markup, so the CSS below lines up:
+    summary_rows  <tr><th scope="row">Found</th><td class="num">23</td></tr>
+    laws_rows     <tr><td>GDPR</td><td>Art. 17</td><td>30 days</td><td>Regulator</td><td><span class="flag">unverified</span></td></tr>
+    item_rows     <tr data-status="removed"><td>Site</td><td>channel</td><td><span class="status status-removed">removed</span></td><td class="date">2026-11-20</td><td class="url"><a href="...">...</a></td></tr>
+  A header row may use <th>. Any number of columns works.
+-->
+<style>
+  :root {
+    --paper: #ECEEF2;
+    --sheet: #F7F8FA;
+    --ink: #1F2126;
+    --lead: #5E626B;
+    --rule: rgba(31, 33, 38, 0.14);
+    --graphite: #2B2E34;
+    --pearl: #EC8497;
+    --pearl-ink: #9E3549;
+    --pearl-wash: #FBE1E6;
+    --ok: #2F6B4F;
+    --ok-wash: #DDEFE5;
+    --warn: #8A5A00;
+    --warn-wash: #F6EACB;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    --sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #17191D;
+      --sheet: #1E2025;
+      --ink: #E7E9ED;
+      --lead: #A2A7B0;
+      --rule: rgba(231, 233, 237, 0.14);
+      --graphite: #8C919A;
+      --pearl: #F29AAA;
+      --pearl-ink: #F7B5C1;
+      --pearl-wash: #3A2128;
+      --ok: #8FD1AE;
+      --ok-wash: #1E3329;
+      --warn: #E8C277;
+      --warn-wash: #3A2F17;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--paper); }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font: 16px/1.5 var(--sans);
+    -webkit-text-size-adjust: 100%;
+  }
+  main { max-width: 1040px; margin: 0 auto; padding: 0 20px 64px; }
+
+  .masthead { position: relative; padding: 56px 0 28px; }
+  .wordmark { font-weight: 800; font-size: 20px; letter-spacing: -0.02em; margin: 0 0 40px; }
+  .wordmark span { opacity: 0.38; }
+  h1 {
+    margin: 0;
+    font-size: clamp(44px, 8vw, 88px);
+    line-height: 0.95;
+    font-weight: 800;
+    letter-spacing: -0.045em;
+  }
+  .meta { margin: 18px 0 0; font: 14px/1.6 var(--mono); color: var(--lead); }
+  .meta b { color: var(--ink); font-weight: 600; }
+
+  .strip {
+    position: relative;
+    height: 22px;
+    margin: 28px 0 0;
+    background: repeating-linear-gradient(-38deg, var(--graphite) 0 3px, transparent 3px 8px);
+    opacity: 0.85;
+  }
+  .strip::after {
+    content: "";
+    position: absolute;
+    top: -3px; bottom: -3px; left: 18%; width: 46%;
+    background: var(--paper);
+    background: color-mix(in srgb, var(--paper) 88%, transparent);
+    border-radius: 14px 40px 22px 34px;
+    box-shadow: 0 0 6px 4px var(--paper);
+  }
+
+  .private {
+    margin: 28px 0 0;
+    padding: 14px 18px;
+    border-left: 4px solid var(--pearl);
+    background: var(--pearl-wash);
+    color: var(--ink);
+    font-size: 15px;
+  }
+  .private strong { color: var(--pearl-ink); }
+
+  section { margin-top: 56px; }
+  h2 {
+    margin: 0 0 6px;
+    font-size: 26px;
+    font-weight: 750;
+    letter-spacing: -0.02em;
+  }
+  .lede { margin: 0 0 18px; color: var(--lead); font-size: 15px; max-width: 64ch; }
+
+  .table-wrap {
+    overflow-x: auto;
+    background: var(--sheet);
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 15px; }
+  th, td { padding: 11px 14px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--rule); }
+  tr:last-child > th, tr:last-child > td { border-bottom: 0; }
+  th { font: 600 12px/1.4 var(--mono); text-transform: lowercase; letter-spacing: 0.04em; color: var(--lead); }
+  tbody th[scope="row"] { font: 500 15px/1.5 var(--sans); text-transform: none; letter-spacing: 0; color: var(--ink); }
+  td.num, td.count { font-variant-numeric: tabular-nums; font-weight: 700; text-align: right; }
+  td.date { font: 13px/1.5 var(--mono); color: var(--lead); white-space: nowrap; }
+  td.url, td a { word-break: break-all; }
+  a { color: var(--ink); text-decoration-color: var(--pearl); text-underline-offset: 3px; }
+  a:focus-visible { outline: 2px solid var(--pearl); outline-offset: 2px; }
+
+  #summary .table-wrap { max-width: 520px; }
+  #summary th, #summary td { vertical-align: middle; }
+  #summary td.num { font-size: 22px; }
+
+  .status, .flag {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 3px;
+    font: 600 12px/1.6 var(--mono);
+    background: var(--rule);
+    color: var(--ink);
+    white-space: nowrap;
+  }
+  .status-removed, [data-status="removed"] .status { background: var(--ok-wash); color: var(--ok); }
+  .status-found, .status-relisted, [data-status="found"] .status, [data-status="relisted"] .status { background: var(--pearl-wash); color: var(--pearl-ink); }
+  .status-requested, [data-status="requested"] .status { background: var(--warn-wash); color: var(--warn); }
+  .status-blocked, .status-needs_human, .status-rejected, [data-status="blocked"] .status, [data-status="needs_human"] .status, [data-status="rejected"] .status { background: transparent; box-shadow: inset 0 0 0 1px var(--lead); }
+  .status-not_found, .status-skipped, .status-planned { color: var(--lead); }
+  tr[data-status="removed"] > td:first-child { text-decoration: line-through; text-decoration-color: var(--pearl); text-decoration-thickness: 2px; }
+  .flag { background: var(--warn-wash); color: var(--warn); }
+
+  footer {
+    margin-top: 64px;
+    padding-top: 18px;
+    border-top: 1px solid var(--rule);
+    font: 13px/1.6 var(--mono);
+    color: var(--lead);
+  }
+  footer p { margin: 0 0 6px; }
+
+  @media (max-width: 640px) {
+    .masthead { padding-top: 32px; }
+    .wordmark { margin-bottom: 28px; }
+    th, td { padding: 9px 10px; }
+  }
+  @media print {
+    :root {
+      --paper: #FFFFFF; --sheet: #FFFFFF; --ink: #000000; --lead: #444444;
+      --rule: #BBBBBB; --graphite: #555555; --pearl: #C4506A; --pearl-ink: #8A2238; --pearl-wash: #FFFFFF;
+      --ok: #1F5A3D; --ok-wash: #FFFFFF; --warn: #6A4500; --warn-wash: #FFFFFF;
+    }
+    body { font-size: 11pt; }
+    main { max-width: none; padding: 0; }
+    .masthead { padding-top: 0; }
+    h1 { font-size: 36pt; }
+    .strip { -webkit-print-color-adjust: exact; print-color-adjust: exact; height: 12px; }
+    .table-wrap { overflow: visible; border-radius: 0; }
+    section { break-inside: auto; margin-top: 28px; }
+    h2 { break-after: avoid; }
+    tr { break-inside: avoid; }
+    .status, .flag { box-shadow: inset 0 0 0 1px currentColor; }
+    a { text-decoration: none; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header class="masthead">
+    <p class="wordmark">erase<span> me</span></p>
+    <h1>Exposure map</h1>
+    <p class="meta">for <b>{{person_label}}</b><br>generated {{generated_on}}</p>
+    <div class="strip" aria-hidden="true"></div>
+    <p class="private"><strong>Private.</strong> This page lists where personal data was found. Keep it on this computer and do not post it. To share results, use the share card, which holds counts only.</p>
+  </header>
+
+  <section id="summary" aria-labelledby="summary-h">
+    <h2 id="summary-h">Summary</h2>
+    <p class="lede">Counts from the local ledger. The removal rate is items removed divided by items found.</p>
+    <div class="table-wrap">
+      <table>
+        <tbody>
+{{summary_rows}}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="laws" aria-labelledby="laws-h">
+    <h2 id="laws-h">Laws that apply</h2>
+    <p class="lede">Each law with the right it gives, its response deadline and the regulator for complaints. An unverified entry has not been checked against official text yet.</p>
+    <div class="table-wrap">
+      <table>
+        <tbody>
+{{laws_rows}}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="items" aria-labelledby="items-h">
+    <h2 id="items-h">Every listing</h2>
+    <p class="lede">One row per site or channel, with its current status. Removed rows are struck through.</p>
+    <div class="table-wrap">
+      <table>
+        <tbody>
+{{item_rows}}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    <p>Made with Erase Me, an open-source agent skill. Everything on this page came from files on this computer.</p>
+    <p>This report is not legal advice.</p>
+  </footer>
+</main>
+</body>
+</html>

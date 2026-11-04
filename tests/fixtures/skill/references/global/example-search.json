@@ -1,0 +1,32 @@
+{
+  "id": "example-search",
+  "name": "Example Search",
+  "domain": "search.example.com",
+  "category": "search_engine",
+  "countries": ["*"],
+  "priority": 1,
+  "cluster": null,
+  "covers": [],
+  "search": {
+    "method": "search_engine",
+    "url_template": "https://search.example.com/search?q={full}+{city}",
+    "fields": ["full", "city"],
+    "notes": "Look at the first two pages."
+  },
+  "optout": {
+    "method": "search_removal",
+    "url": "https://search.example.com/remove",
+    "email": null,
+    "requires": ["account"],
+    "fields_needed": ["full_name", "listing_url"],
+    "steps": ["Sign in.", "Paste each result URL.", "Submit the form."],
+    "expected_days": 14,
+    "notes": ""
+  },
+  "relist_risk": "low",
+  "registries": {},
+  "sources": [{"url": "https://search.example.com/help", "license": "own-research", "attribution": ""}],
+  "verified": true,
+  "last_verified": "2026-10-21",
+  "verification_note": ""
+}

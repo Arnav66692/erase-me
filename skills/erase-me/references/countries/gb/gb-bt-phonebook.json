@@ -1,0 +1,50 @@
+{
+  "id": "gb-bt-phonebook",
+  "name": "BT Phone Book and 118 500 (ex-directory)",
+  "domain": "bt.com",
+  "category": "directory",
+  "countries": [
+    "GB"
+  ],
+  "priority": 1,
+  "cluster": null,
+  "covers": [],
+  "search": {
+    "method": "none",
+    "url_template": "",
+    "fields": [],
+    "notes": "BT's online directory thephonebook.bt.com did not respond to automated requests on 2026-10-21. The listing source is the landline provider's directory record."
+  },
+  "optout": {
+    "method": "phone",
+    "url": "https://www.bt.com/help/home-phone/manage-service/how-do-i-sign-up-to-ex-directory-services-",
+    "email": null,
+    "requires": [
+      "phone_call"
+    ],
+    "fields_needed": [
+      "full_name",
+      "phone"
+    ],
+    "steps": [
+      "Decide between Ex-directory No calls, which removes the listing from the Phone Book, BT 118 500 Directory Enquiries and BT's online directory, and Directory Enquiries Only, which keeps the number available only through Directory Enquiries.",
+      "If the line is with BT, the account holder calls BT on 0330 123 4150, 8.30am to 5pm, Monday to Friday, and asks to go ex-directory.",
+      "If the line is with another provider, the account holder asks that provider to make the number ex-directory, because the provider sends the listing data.",
+      "Ask for written confirmation, then check directory sites again after a few weeks."
+    ],
+    "expected_days": null,
+    "notes": "BT says both options are free. BT does not state how long the change takes. Going ex-directory does not remove data already copied by people-search sites, so remove those one by one."
+  },
+  "relist_risk": "low",
+  "registries": {},
+  "sources": [
+    {
+      "url": "https://www.bt.com/help/home-phone/manage-service/how-do-i-sign-up-to-ex-directory-services-",
+      "license": "official",
+      "attribution": "BT help, how do I sign up to ex-directory services"
+    }
+  ],
+  "verified": true,
+  "last_verified": "2026-10-21",
+  "verification_note": "BT help page loaded with HTTP 200 on 2026-10-21 and describes both ex-directory options, the phone number and that both are free."
+}

@@ -1,0 +1,98 @@
+{
+  "code": "us-md-modpa",
+  "name": "Maryland Online Data Privacy Act of 2024, Md. Code, Com. Law 14-4701 to 14-4714",
+  "short_name": "MODPA",
+  "applies_to": {
+    "countries": [
+      "US"
+    ],
+    "regions": [
+      "US-MD"
+    ]
+  },
+  "status": "in_force",
+  "in_force_from": "2025-10-01",
+  "status_note": "In effect since 2025-10-01 per the Attorney General, who enforces it. Text used is the current statute on the Maryland General Assembly site. Secondary sources report a 2026 amendment, effective 2026-07-01, on precise geolocation and sales to immigration enforcement, which was not read and does not appear to change deletion.",
+  "rights": [
+    {
+      "right": "erasure",
+      "citation": "Md. Code, Com. Law 14-4705(b)(4)",
+      "summary": "A consumer may require a controller to delete personal data provided by or obtained about the consumer unless the law requires retention."
+    },
+    {
+      "right": "opt_out_sale",
+      "citation": "Md. Code, Com. Law 14-4705(b)(7)(ii)",
+      "summary": "A consumer may opt out of the sale of their personal data."
+    },
+    {
+      "right": "correction",
+      "citation": "Md. Code, Com. Law 14-4705(b)(3)",
+      "summary": "A consumer may correct inaccuracies in their personal data."
+    },
+    {
+      "right": "access",
+      "citation": "Md. Code, Com. Law 14-4705(b)(1), (b)(2), (b)(6)",
+      "summary": "A consumer may confirm processing, access their data, and get a list of categories of third parties that received it."
+    }
+  ],
+  "deadline": {
+    "days": 45,
+    "day_type": "calendar",
+    "basis": "days",
+    "extension_days": 45,
+    "extension_note": "The controller must respond not later than 45 days after receiving the request. It may extend by 45 more days if reasonably necessary given the complexity and number of requests, and it tells the consumer of the extension and the reason within the first 45 days. A refusal must come within 45 days with the justification and appeal instructions (14-4705(e)(3)). Appeal: the controller must answer in writing not later than 60 days after receiving the appeal, and if it denies the appeal it must provide an online mechanism, if available, to complain to the Division (14-4705(f)).",
+    "citation": "Md. Code, Com. Law 14-4705(e)(2), 14-4705(e)(3), 14-4705(f)"
+  },
+  "regulators": [
+    {
+      "country": "US",
+      "region": "US-MD",
+      "name": "Office of the Attorney General of Maryland, Consumer Protection Division",
+      "complaint_url": "https://oag.maryland.gov/i-need-to/Pages/business-complaints.aspx",
+      "note": "The AG's MODPA page (https://oag.maryland.gov/resources-info/Pages/data-privacy.aspx) says the Office of the Attorney General enforces MODPA. The statute sends complaints after a denied appeal to the Division. The business complaints page is the general route and has no privacy-specific form."
+    }
+  ],
+  "identity_verification": "If a controller cannot authenticate a request to confirm, access, correct, delete or port data using commercially reasonable efforts, it need not comply, and must tell the consumer it cannot authenticate the request until the consumer provides additional information reasonably necessary to authenticate them (14-4705(e)(5)). Opt-out requests need no authentication (14-4705(e)(6)). The controller must offer a secure and reliable request method (14-4705(c)). Responses are free once per 12 months (14-4705(e)(4)).",
+  "authorized_agent": {
+    "allowed": false,
+    "citation": "Md. Code, Com. Law 14-4705(d), 14-4706",
+    "note": "A consumer may designate an authorized agent, including through a browser setting or global device setting, only to opt out of targeted advertising, sale or profiling. A parent or legal guardian may exercise all rights for a child, and a guardian or conservator may do so for a protected person (14-4705(d)(2) and (3)). Otherwise the consumer should send the deletion request personally."
+  },
+  "templates": {
+    "erasure": "us-state-delete",
+    "followup": "followup-generic",
+    "complaint": "regulator-complaint-generic"
+  },
+  "special_channels": [],
+  "public_records_note": "Personal data excludes publicly available information. The statute says \"Personal data\" \"does not include\" \"(ii) Publicly available information\" (14-4701(w)(2)). Publicly available information means information a person lawfully obtains from a record of a governmental entity, reasonably believes a consumer or widely distributed media have lawfully made available to the general public, or obtains from a person to whom the consumer disclosed it if the consumer did not restrict it to a specific audience (14-4701(cc)(1)). It does not include biometric data collected without the consumer's knowledge (14-4701(cc)(2)). A people-search site can decline to delete data drawn from government records. For data obtained from a source other than the consumer, the controller complies by keeping a record of the request and the minimum data needed to keep the data deleted (14-4705(e)(7)). Maryland has no opt-out alternative. No Maryland data broker registry was identified.",
+  "sources": [
+    {
+      "url": "https://mgaleg.maryland.gov/mgawebsite/Laws/StatuteText?article=gcl&section=14-4701&enactments=false",
+      "title": "Md. Code, Commercial Law 14-4701, Maryland General Assembly",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://mgaleg.maryland.gov/mgawebsite/Laws/StatuteText?article=gcl&section=14-4705&enactments=false",
+      "title": "Md. Code, Commercial Law 14-4705, Maryland General Assembly",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://mgaleg.maryland.gov/mgawebsite/Laws/StatuteText?article=gcl&section=14-4706&enactments=false",
+      "title": "Md. Code, Commercial Law 14-4706, Maryland General Assembly",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://oag.maryland.gov/resources-info/Pages/data-privacy.aspx",
+      "title": "Data Privacy in Maryland, Office of the Attorney General of Maryland",
+      "accessed_on": "2026-10-21"
+    },
+    {
+      "url": "https://oag.maryland.gov/i-need-to/Pages/business-complaints.aspx",
+      "title": "Business Complaints, Office of the Attorney General of Maryland",
+      "accessed_on": "2026-10-21"
+    }
+  ],
+  "verified": true,
+  "verified_on": "2026-10-21",
+  "verification_note": "All required fields were read today in the current statute on mgaleg.maryland.gov and on the AG site. The term Division is not defined in 14-4701, and this file reads it as the Attorney General's Consumer Protection Division."
+}

@@ -1,0 +1,54 @@
+{
+  "id": "ca-411",
+  "name": "411.ca",
+  "domain": "411.ca",
+  "category": "directory",
+  "countries": [
+    "CA"
+  ],
+  "priority": 2,
+  "cluster": null,
+  "covers": [],
+  "search": {
+    "method": "search_engine",
+    "url_template": "https://www.google.com/search?q=site%3A411.ca+%22{first}+{last}%22",
+    "fields": [
+      "first",
+      "last"
+    ],
+    "notes": "411.ca person profiles live at /person/profile/<id>. On 2026-10-21 the person search tab on 411.ca sent users to Canada411, so check old 411.ca profiles through a search engine."
+  },
+  "optout": {
+    "method": "email",
+    "url": "https://www.411.ca/privacy-policy",
+    "email": "privacy@411.ca",
+    "requires": [
+      "listing_url"
+    ],
+    "fields_needed": [
+      "full_name",
+      "email",
+      "listing_url"
+    ],
+    "steps": [
+      "Search for the person's 411.ca profile and copy its URL.",
+      "Email the 411.ca Privacy Officer at privacy@411.ca and ask for the listing to be removed, giving the profile URL, the name and the phone number shown.",
+      "Keep a copy of the email and the date sent.",
+      "If there is no answer, follow up by post to 411.ca Privacy Officer, 1500 Don Mills Rd, Suite 600, Toronto, ON M3B 3K4."
+    ],
+    "expected_days": null,
+    "notes": "The privacy policy names the Privacy Officer for access, correction and account deletion. It does not describe removal of directory listings, so this route is a best guess based on that contact."
+  },
+  "relist_risk": "unknown",
+  "registries": {},
+  "sources": [
+    {
+      "url": "https://www.411.ca/privacy-policy",
+      "license": "official",
+      "attribution": "411.ca privacy policy, Privacy Officer contact"
+    }
+  ],
+  "verified": false,
+  "last_verified": "2026-10-21",
+  "verification_note": "411.ca privacy policy loaded with HTTP 200 on 2026-10-21, but it describes account deletion, not directory listing removal. No listing removal page was found. 411.ca/faq and 411.ca/help returned 404."
+}

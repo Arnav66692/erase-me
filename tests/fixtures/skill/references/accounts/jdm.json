@@ -1,0 +1,11 @@
+{
+  "source": "https://github.com/jdm-contrib/jdm",
+  "license": "MIT",
+  "attribution": "JustDeleteMe contributors",
+  "fetched_on": "2026-10-21",
+  "sites": [
+    {"name": "Example Social", "url": "https://social.example.com/delete", "difficulty": "easy", "domains": ["social.example.com"], "notes": "", "email": null},
+    {"name": "Example Shop", "url": "https://shop.example.com/account/close", "difficulty": "hard", "domains": ["shop.example.com", "shop.example.net"], "notes": "Call support.", "email": "support@shop.example.com"},
+    {"name": "Example Forum", "url": "https://forum.example.org/settings", "difficulty": "impossible", "domains": [], "notes": "", "email": null}
+  ]
+}

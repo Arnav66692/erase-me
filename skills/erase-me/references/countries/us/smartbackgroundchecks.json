@@ -1,0 +1,61 @@
+{
+  "id": "smartbackgroundchecks",
+  "name": "SmartBackgroundChecks",
+  "domain": "smartbackgroundchecks.com",
+  "category": "people_search",
+  "countries": [
+    "US"
+  ],
+  "priority": 2,
+  "cluster": "tornado-alley",
+  "covers": [],
+  "search": {
+    "method": "search_engine",
+    "url_template": "https://www.google.com/search?q=site%3Asmartbackgroundchecks.com+%22{first}+{last}%22",
+    "fields": [
+      "first",
+      "last"
+    ],
+    "notes": "No site URL pattern was confirmed, so search Google for the name on this domain and open the listing in a browser."
+  },
+  "optout": {
+    "method": "web_form",
+    "url": "https://www.smartbackgroundchecks.com/remove",
+    "email": null,
+    "requires": [
+      "captcha",
+      "email_verification"
+    ],
+    "fields_needed": [
+      "full_name",
+      "email"
+    ],
+    "steps": [
+      "Open the opt-out page, choose subject or authorized agent, enter the name and email and complete the captcha yourself.",
+      "Open the emailed link within 24 hours.",
+      "Fill the form so it matches the record and submit.",
+      "Keep the confirmation email."
+    ],
+    "expected_days": 3,
+    "notes": "The page says to allow 3 days. The old address /optout redirects here. Operated by Mississippi Tornado Alley, LLC per the 2026 California registry, along with FastPeopleSearch, USPhonebook, SearchPeopleFree, SmartBackgroundChecks, CyberBackgroundChecks and AdvancedBackgroundChecks. Each site has its own opt-out."
+  },
+  "relist_risk": "medium",
+  "registries": {
+    "US-CA": true
+  },
+  "sources": [
+    {
+      "url": "https://www.smartbackgroundchecks.com/remove",
+      "license": "official",
+      "attribution": "SmartBackgroundChecks opt-out page"
+    },
+    {
+      "url": "https://cppa.ca.gov/data_broker_registry/",
+      "license": "official",
+      "attribution": "California Privacy Protection Agency data broker registry, 2026 list fetched 2026-10-27"
+    }
+  ],
+  "verified": true,
+  "last_verified": "2026-10-27",
+  "verification_note": "Opt-out page loaded on 2026-10-27 and shows a reCAPTCHA."
+}

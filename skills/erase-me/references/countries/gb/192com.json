@@ -1,0 +1,65 @@
+{
+  "id": "192com",
+  "name": "192.com",
+  "domain": "192.com",
+  "category": "people_search",
+  "countries": [
+    "GB"
+  ],
+  "priority": 1,
+  "cluster": null,
+  "covers": [],
+  "search": {
+    "method": "search_engine",
+    "url_template": "https://www.google.com/search?q=site%3A192.com+%22{first}+{last}%22+{city}",
+    "fields": [
+      "first",
+      "last",
+      "city"
+    ],
+    "notes": "192.com returned HTTP 403 to automated requests, so the site's own search URL pattern was not inspected. Use a search engine query restricted to 192.com, or open 192.com in a normal browser and search by name and town."
+  },
+  "optout": {
+    "method": "web_form",
+    "url": "https://www.192.com/c01/new-request/",
+    "email": null,
+    "requires": [
+      "email_verification",
+      "captcha"
+    ],
+    "fields_needed": [
+      "first_name",
+      "surname",
+      "postcode",
+      "email"
+    ],
+    "steps": [
+      "Open the 192.com record removal request form in a normal browser.",
+      "Enter first name, surname, postcode and an email address the person can read. Up to five other people at the same address can be added.",
+      "Answer the human check on the form. The human must do this step.",
+      "Submit the form, then open the confirmation email from 192.com and click the link. The request is not processed until the link is clicked.",
+      "Keep the confirmation email as evidence.",
+      "Check 192.com again after a few days. If the record is still visible, reply to 192.com with the confirmation email and ask for the status in writing.",
+      "Also opt out of the open electoral register (see gb-open-register), because 192.com takes data from it and a record can come back at the next refresh."
+    ],
+    "expected_days": 2,
+    "notes": "The form URL and the 48 hour figure come from a third-party guide and could not be confirmed on 192.com today. A postal request using the C01 form is also possible and can take up to 28 days. Removal hides 192.com records only. It does not make a landline ex-directory and it does not remove data from the electoral register."
+  },
+  "relist_risk": "high",
+  "registries": {},
+  "sources": [
+    {
+      "url": "https://www.offlist.me/blog/remove-yourself-from-192-com",
+      "license": "own-research",
+      "attribution": "Form URL and timelines as described in an Offlist guide. Not confirmed on 192.com."
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/192.com",
+      "license": "own-research",
+      "attribution": "Background on the C01 form and the open register source."
+    }
+  ],
+  "verified": false,
+  "last_verified": "2026-10-21",
+  "verification_note": "192.com, 192.com/c01/new-request/ and 192.com/help/ all returned HTTP 403 to curl and WebFetch on 2026-10-21. The form URL comes from a third-party guide only."
+}

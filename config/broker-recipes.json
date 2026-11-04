@@ -1,0 +1,135 @@
+{
+  "usphonebook": {
+    "domain": "usphonebook.com",
+    "enabled": false,
+    "supported_actions": [],
+    "optout_url": "https://www.usphonebook.com/removal",
+    "fields": {
+      "first_name": "#subject-firstname",
+      "last_name": "#subject-lastname",
+      "email": "#subject-email"
+    },
+    "submit": "#BRP",
+    "controls": [{"control": "checkbox", "selector": "#agreement", "checked": true}],
+    "verification": {
+      "inspected": true,
+      "fixture_tested": true,
+      "live_submitted": false,
+      "removal_verified": false,
+      "inspected_at": "2026-10-28",
+      "source": "https://www.usphonebook.com/removal",
+      "fixture": "tests/fixtures/broker_pages/usphonebook-removal.html"
+    },
+    "observed_form": {
+      "selector": "#verifyEmailForm",
+      "action": "https://www.usphonebook.com/removal",
+      "method": "POST",
+      "requester_type": {"selector": "#user-type", "subject_value": "subject", "agent_value": "agent"},
+      "required_checkboxes": ["#agreement"],
+      "optional_fields": {"middle_name": "#subject-middlename"},
+      "agent_fields": {"first_name": "#agent-firstname", "last_name": "#agent-lastname", "email": "#agent-email"},
+      "captcha": {"kind": "recaptcha", "variant": "enterprise", "selector": ".g-recaptcha", "response": "[name=\"g-recaptcha-response\"]"},
+      "next_step": "The emailed link opens a second opt-out form. Completing that form is required before a removal is requested.",
+      "email_link_valid_hours": 24,
+      "expected_processing_days": 3
+    },
+    "observed_search": {
+      "synthetic_url": "https://www.usphonebook.com/zzxqfixture-erasemeverification/california",
+      "http_status": 404,
+      "empty_result_selector": ".no-results-content-wrapper",
+      "fixture": "tests/fixtures/broker_pages/usphonebook-empty-search.html",
+      "scope": "Search results only. This is not a verified removed-listing selector."
+    },
+    "blockers": [
+      "Successful-listing identity selectors have not been observed for an authorized subject.",
+      "First and last name require explicit approved profile fields; do not split names heuristically.",
+      "Choose subject or authorized-agent mode according to actual authorization and identity.",
+      "Submission outcome, confirmation URL, second form, and removed-listing evidence remain unverified."
+    ]
+  },
+  "searchpeoplefree": {
+    "domain": "searchpeoplefree.com",
+    "enabled": false,
+    "supported_actions": [],
+    "optout_url": "https://www.searchpeoplefree.com/opt-out",
+    "fields": {
+      "first_name": "#o_first",
+      "last_name": "#o_last",
+      "email": "#o_email"
+    },
+    "submit": "#o_submit",
+    "controls": [{"control": "checkbox", "selector": "#o_terms", "checked": true}],
+    "verification": {
+      "inspected": true,
+      "fixture_tested": true,
+      "live_submitted": false,
+      "removal_verified": false,
+      "inspected_at": "2026-10-28",
+      "source": "https://www.searchpeoplefree.com/opt-out",
+      "fixture": "tests/fixtures/broker_pages/searchpeoplefree-opt-out.html"
+    },
+    "observed_form": {
+      "selector": "#o_form",
+      "action": "https://www.searchpeoplefree.com/opt-out",
+      "method": "GET",
+      "transport": "JavaScript intercepts submission and performs POST; do not invoke native form.submit().",
+      "script_post_url": "https://www.searchpeoplefree.com/proxy/api/anonymous/begin",
+      "script_success_redirect": "https://www.searchpeoplefree.com/opt-out/email",
+      "required_checkboxes": ["#o_terms"],
+      "optional_fields": {"middle_name": "#o_middle"},
+      "captcha": {"kind": "turnstile", "selector": ".cf-turnstile", "response": "[name=\"cf-turnstile-response\"]"},
+      "hidden_before_submission": ["#o_success", "#o_success_sent"],
+      "next_step": "The emailed link starts a 30-minute removal session. A matching record still needs to be selected and removed.",
+      "email_link_valid_hours": 24,
+      "removal_session_minutes": 30,
+      "expected_processing_days": 3
+    },
+    "blockers": [
+      "The agreement certifies ownership of the email address; a shared service mailbox must not silently impersonate the subject.",
+      "Turnstile acceptance must be observed; no fabricated token or paid solver is configured.",
+      "Both success elements exist hidden before submission and cannot prove success by existence alone.",
+      "Successful-listing, confirmation URL, record-removal action, and removed-listing evidence remain unverified."
+    ]
+  },
+  "smartbackgroundchecks": {
+    "domain": "smartbackgroundchecks.com",
+    "enabled": false,
+    "supported_actions": [],
+    "optout_url": "https://www.smartbackgroundchecks.com/remove",
+    "fields": {
+      "first_name": "#subject_fn",
+      "last_name": "#subject_ln",
+      "email": "#subject_email"
+    },
+    "submit": "form[action=\"/remove\"] button[type=\"submit\"]",
+    "controls": [{"control": "checkbox", "selector": "#confirm_authorize", "checked": true}],
+    "verification": {
+      "inspected": true,
+      "fixture_tested": true,
+      "live_submitted": false,
+      "removal_verified": false,
+      "inspected_at": "2026-10-28",
+      "source": "https://www.smartbackgroundchecks.com/remove",
+      "fixture": "tests/fixtures/broker_pages/smartbackgroundchecks-remove.html"
+    },
+    "observed_form": {
+      "selector": "form[action=\"/remove\"]",
+      "action": "https://www.smartbackgroundchecks.com/remove",
+      "method": "POST",
+      "requester_type": {"selector": "#requester_type", "subject_value": "subject", "agent_value": "agent"},
+      "required_checkboxes": ["#confirm_authorize"],
+      "optional_fields": {"middle_name": "#subject_mn"},
+      "agent_fields": {"first_name": "#agent_fn", "last_name": "#agent_ln", "email": "#agent_email"},
+      "captcha": {"kind": "recaptcha", "selector": ".g-recaptcha", "response": "[name=\"g-recaptcha-response\"]"},
+      "next_step": "The emailed link opens a second opt-out form. Completing that form is required before a removal is requested.",
+      "email_link_valid_hours": 24,
+      "expected_processing_days": 3
+    },
+    "blockers": [
+      "Successful-listing identity selectors have not been observed for an authorized subject.",
+      "First and last name require explicit approved profile fields; do not split names heuristically.",
+      "Choose subject or authorized-agent mode according to actual authorization and identity.",
+      "Submission outcome, confirmation URL, second form, and removed-listing evidence remain unverified."
+    ]
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "id": "bing-report-concern",
+  "name": "Bing report a concern",
+  "domain": "bing.com",
+  "category": "search_engine",
+  "countries": [
+    "*"
+  ],
+  "priority": 3,
+  "cluster": "bing",
+  "covers": [],
+  "search": {
+    "method": "search_engine",
+    "url_template": "https://www.bing.com/search?q=%22{first}+{last}%22+{city}",
+    "fields": [
+      "first",
+      "last",
+      "city"
+    ],
+    "notes": "Search Bing for the name with a city to collect result URLs."
+  },
+  "optout": {
+    "method": "search_removal",
+    "url": "https://help.bing.microsoft.com/#apex/18/en-us/10011/0",
+    "email": null,
+    "requires": [
+      "listing_url"
+    ],
+    "fields_needed": [
+      "full_name",
+      "email",
+      "listing_urls"
+    ],
+    "steps": [
+      "Open the Bing report a concern page.",
+      "Pick the category that matches private info or doxxing.",
+      "Paste each result URL and describe the personal info shown.",
+      "Submit and keep any reference number."
+    ],
+    "expected_days": null,
+    "notes": "For people outside Europe, or for concerns that are not right to be forgotten requests. Bing's own Europe form links here for other concerns."
+  },
+  "relist_risk": "medium",
+  "registries": {},
+  "sources": [
+    {
+      "url": "https://www.bing.com/webmaster/tools/eu-privacy-request",
+      "license": "official",
+      "attribution": "Microsoft Bing, link on the Europe form"
+    }
+  ],
+  "verified": false,
+  "last_verified": null,
+  "verification_note": "Link taken from Bing's Europe form on 2026-10-27. The page is a script app that did not render for a plain fetch, so its categories were not confirmed."
+}

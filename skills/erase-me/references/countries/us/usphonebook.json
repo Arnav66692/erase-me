@@ -1,0 +1,62 @@
+{
+  "id": "usphonebook",
+  "name": "USPhonebook",
+  "domain": "usphonebook.com",
+  "category": "people_search",
+  "countries": [
+    "US"
+  ],
+  "priority": 2,
+  "cluster": "tornado-alley",
+  "covers": [],
+  "search": {
+    "method": "url_template",
+    "url_template": "https://www.usphonebook.com/{first}-{last}/{region_name}",
+    "fields": [
+      "first",
+      "last",
+      "region_name"
+    ],
+    "notes": "Pattern seen on the site with a made-up name on 2026-10-27."
+  },
+  "optout": {
+    "method": "web_form",
+    "url": "https://www.usphonebook.com/removal",
+    "email": null,
+    "requires": [
+      "captcha",
+      "email_verification"
+    ],
+    "fields_needed": [
+      "full_name",
+      "email"
+    ],
+    "steps": [
+      "Open the opt-out page, enter the name and email and complete the captcha yourself.",
+      "Open the emailed link within 24 hours.",
+      "Fill the form so it matches the record and submit.",
+      "Keep the confirmation email."
+    ],
+    "expected_days": 3,
+    "notes": "The page says to allow 3 days. The old address /opt-out redirects here. Operated by Mississippi Tornado Alley, LLC per the 2026 California registry, along with FastPeopleSearch, USPhonebook, SearchPeopleFree, SmartBackgroundChecks, CyberBackgroundChecks and AdvancedBackgroundChecks. Each site has its own opt-out."
+  },
+  "relist_risk": "medium",
+  "registries": {
+    "US-CA": true
+  },
+  "sources": [
+    {
+      "url": "https://www.usphonebook.com/removal",
+      "license": "official",
+      "attribution": "USPhonebook opt-out page"
+    },
+    {
+      "url": "https://cppa.ca.gov/data_broker_registry/",
+      "license": "official",
+      "attribution": "California Privacy Protection Agency data broker registry, 2026 list fetched 2026-10-27"
+    }
+  ],
+  "verified": true,
+  "last_verified": "2026-10-27",
+  "verification_note": "Opt-out page loaded on 2026-10-27 and shows a reCAPTCHA."
+}

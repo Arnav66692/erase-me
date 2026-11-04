@@ -1,0 +1,41 @@
+{
+  "code": "au-privacy",
+  "name": "Privacy Act 1988 (Cth), including the Australian Privacy Principles in Schedule 1",
+  "short_name": "Privacy Act",
+  "applies_to": {"countries": ["AU"], "regions": []},
+  "status": "partial",
+  "in_force_from": "2014-03-12",
+  "status_note": "No general right to erasure is in force on 2026-10-21. The Australian Privacy Principles (APPs) apply from 2014-03-12. Text checked is Compilation No. 104 (compilation date 2026-06-04, registered as C2026C00227). The Privacy and Other Legislation Amendment Act 2024 added a statutory tort for serious invasions of privacy (Schedule 2, in force from 2025-06-10), which is a court action, not a request right. Its remaining items on automated decisions start 2026-12-10. A right to erasure appears only in Schedule 4 Part 2 of the exposure draft Privacy Amendment (Personal Data Protection) Bill 2026, limited to large digital platforms. That draft has not been introduced to Parliament. The Attorney-General's Department consultation closed 2026-09-18 and the bill remains subject to further consideration by government.",
+  "rights": [
+    {"right": "correction", "citation": "Privacy Act 1988 Sch 1, APP 13.1 to 13.5", "summary": "An individual may ask an entity to correct personal information that is inaccurate, out of date, incomplete, irrelevant or misleading, and if it refuses, to attach a statement saying so, at no charge."},
+    {"right": "opt_out_sale", "citation": "Privacy Act 1988 Sch 1, APP 7.6 and 7.7", "summary": "An individual may ask an organisation that uses or discloses their information to help other organisations direct market to stop doing so, and may ask for the source of the information, free of charge."},
+    {"right": "access", "citation": "Privacy Act 1988 Sch 1, APP 12.1 and 12.4", "summary": "An individual may ask an entity for access to the personal information it holds about them."},
+    {"right": "erasure", "citation": "Privacy Act 1988 Sch 1, APP 11.2", "summary": "There is no individual right to erasure, but an entity must take reasonable steps to destroy or de-identify personal information it no longer needs for any permitted purpose, so a request can only ask it to meet that duty."}
+  ],
+  "deadline": {
+    "days": null,
+    "day_type": "calendar",
+    "basis": "days",
+    "extension_days": null,
+    "extension_note": "For private sector organisations, which include people-search sites, the Act requires a response to a correction request within a reasonable period (APP 13.5(a)(ii)), and the same applies to access requests (APP 12.4(a)(ii)) and direct marketing requests (APP 7.7). Only Commonwealth agencies have a fixed 30 days (APP 13.5(a)(i), 12.4(a)(i)). OAIC tells individuals they may complain to it if the organisation does not respond within 30 days, so ask for a reply within 30 days as a reasonable period. This is not a statutory deadline for organisations.",
+    "citation": "Privacy Act 1988 Sch 1, APP 13.5(a)"
+  },
+  "regulators": [
+    {"country": "AU", "region": null, "name": "Office of the Australian Information Commissioner (OAIC)", "complaint_url": "https://www.oaic.gov.au/privacy/privacy-complaints/lodge-a-privacy-complaint-with-us", "note": "The individual must first complain to the organisation (s 40(1A)). OAIC says that if the organisation does not respond within 30 days or the response is unsatisfactory, a complaint can be lodged with OAIC. Complaints must be in writing, through the online form at https://webform.oaic.gov.au/prod?entitytype=Complaint&layoutcode=ComplaintWF or by email to oaicintake@oaic.gov.au. Some sectors (finance, telecoms, energy and water) must go to a recognised external dispute resolution scheme first."}
+  ],
+  "identity_verification": "The Act and the APPs do not prescribe how an entity verifies the identity of a person making an access or correction request. No identity standard was confirmed from a primary source for this file.",
+  "authorized_agent": {"allowed": null, "citation": "Privacy Act 1988 Sch 1, APP 12 and APP 13", "note": "The APP text checked speaks only of requests by the individual and is silent on agents for requests to an organisation. For a complaint to OAIC, OAIC says the individual can nominate someone to represent them, including a lawyer, using its form."},
+  "templates": {"erasure": "generic-erasure", "followup": "followup-generic", "complaint": "regulator-complaint-generic"},
+  "special_channels": [],
+  "public_records_note": "The Act has no general exemption for information that is publicly available, but two limits matter. First, a record under s 6 excludes a generally available publication, defined as a magazine, book, article, newspaper or other publication generally available to the public, in print or online, free or paid (s 6(1)). The Act's handling rules attach to information held in a record, so a published listing on its own may sit outside them, while the site's underlying database remains a record. Second, the small business exemption removes most businesses with annual turnover of $3,000,000 or less (small business operators, s 6D(1) to (3)). That exemption does not cover a business that discloses personal information about another individual to anyone else for a benefit, service or advantage, or that pays to collect personal information about another individual from anyone else (s 6D(4)(c) and (d)), unless done with consent or as authorised by law (s 6D(7) and (8)). Most people-search and data broker sites fall inside the Act for that reason, whatever their size. Media organisations acting in the course of journalism under published privacy standards are exempt (s 7B(4)).",
+  "sources": [
+    {"url": "https://www.legislation.gov.au/C2004A03712/latest/text", "title": "Privacy Act 1988, latest version page on the Federal Register of Legislation", "accessed_on": "2026-10-21"},
+    {"url": "https://www.legislation.gov.au/C2004A03712/2026-06-04/2026-06-04/text/original/pdf", "title": "Privacy Act 1988, Compilation No. 104, compilation date 4 June 2026 (C2026C00227)", "accessed_on": "2026-10-21"},
+    {"url": "https://consultations.ag.gov.au/rights-and-protections/privacy-reform/", "title": "Attorney-General's Department, Privacy Reform consultation (closed 18 Sep 2026)", "accessed_on": "2026-10-21"},
+    {"url": "https://consultations.ag.gov.au/rights-and-protections/privacy-reform/user_uploads/exposure-draft-bill-2026.pdf", "title": "Exposure Draft, Privacy Amendment (Personal Data Protection) Bill 2026", "accessed_on": "2026-10-21"},
+    {"url": "https://www.oaic.gov.au/privacy/privacy-complaints/lodge-a-privacy-complaint-with-us", "title": "OAIC, Before you lodge a privacy complaint with us", "accessed_on": "2026-10-21"}
+  ],
+  "verified": true,
+  "verified_on": "2026-10-21",
+  "verification_note": "APPs 7, 11, 12 and 13 and sections 6, 6D, 7B and 40 were read in the authorised compilation PDF dated 2026-06-04 on legislation.gov.au. The absence of an erasure right was checked against the compilation, its endnotes and the AGD consultation page. Organisations have no fixed statutory deadline, so days is null by design. The 30-day reply request comes from OAIC complaint guidance, not the Act. identity_verification and authorized_agent could not be confirmed beyond the Act's silence. The ministerial media release of 31 Aug 2026 timed out and was not read."
+}

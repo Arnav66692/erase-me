@@ -1,0 +1,44 @@
+{
+  "code": "sg-pdpa",
+  "name": "Personal Data Protection Act 2012, with the Personal Data Protection Regulations 2021",
+  "short_name": "PDPA",
+  "applies_to": {"countries": ["SG"], "regions": []},
+  "status": "partial",
+  "in_force_from": "2014-07-02",
+  "status_note": "The PDPA has no right to erasure. PDPC guidance states that although an individual may withdraw consent, the PDPA does not require an organisation to delete or destroy personal data on request. What exists is withdrawal of consent (s 16), access (s 21), correction (s 22) and a retention limit duty (s 25) that individuals cannot enforce as a deletion right. The Data Protection Provisions came into operation on 2014-07-02. For doxxing, a separate route opened on 2026-06-29 through the Online Safety Commission (see special_channels).",
+  "rights": [
+    {"right": "objection", "citation": "PDPA s 16", "summary": "An individual may at any time, on reasonable notice, withdraw consent for an organisation to collect, use or disclose their personal data, and the organisation must then stop and make its data intermediaries and agents stop, unless the PDPA or another law allows it to continue without consent."},
+    {"right": "correction", "citation": "PDPA s 22(1) and (2)", "summary": "An individual may ask an organisation to correct an error or omission in their personal data, and unless it has reasonable grounds not to, it must correct it as soon as practicable and send the correction to organisations it disclosed the data to in the past year, free of charge."},
+    {"right": "access", "citation": "PDPA s 21(1)", "summary": "An individual may ask an organisation for their personal data in its possession or control and for information on how it was used or disclosed in the past year."},
+    {"right": "erasure", "citation": "PDPA s 25", "summary": "There is no individual right to erasure, but an organisation must stop keeping personal data, or remove the means of linking it to individuals, once retention no longer serves the purpose it was collected for and is not needed for legal or business purposes, so a request can only ask it to meet that duty."}
+  ],
+  "deadline": {
+    "days": 30,
+    "day_type": "calendar",
+    "basis": "days",
+    "extension_days": null,
+    "extension_note": "The Act requires correction as soon as practicable (s 22(2)). PDPC guidance adds that if the organisation cannot correct within 30 days of the request, it must tell the individual in writing within those 30 days when it will be able to correct. PDPC says this generally means 30 calendar days, carried to the next working day when the last day is a Sunday or public holiday. No maximum length for the later date is set. For access, the organisation must respond as soon as reasonably possible, with the same 30-day notice rule under Part 2 of the PDP Regulations 2021. For withdrawal of consent, PDPC treats at least 10 business days from receipt as reasonable notice. Note that PDPC's complaint page asks people to wait 30 business days, not calendar days, after an access or correction request before escalating.",
+    "citation": "PDPA s 22(2), PDP Regulations 2021 Part 2, PDPC Advisory Guidelines on Key Concepts paras 15.18 and 15.52"
+  },
+  "regulators": [
+    {"country": "SG", "region": null, "name": "Personal Data Protection Commission (PDPC)", "complaint_url": "https://www.pdpc.gov.sg/individuals/e-services/report-a-data-protection-concern/organisations-use-of-personal-data", "note": "Contact the organisation first, then wait 10 business days for general concerns or 30 business days for access or correction requests. The formal complaint form is at https://eservice.pdpc.gov.sg/case/dp and requires a Singpass login. PDPC says it reviews submissions and responds within 5 working days."}
+  ],
+  "identity_verification": "PDPC says organisations should use due diligence and appropriate measures to verify an individual's identity before responding to an access request, but does not prescribe how. Organisations should accept requests made in writing to the business contact of their Data Protection Officer, or for a company, left at or posted to its registered or principal office in Singapore, where enough information is given.",
+  "authorized_agent": {"allowed": true, "citation": "PDPC Advisory Guidelines on Key Concepts para 15.13, PDPA s 14(4)", "note": "PDPC says an organisation receiving an access request from a third party on an individual's behalf should make sure the third party has legal authority to act for the individual. Section 14(4) lets any person validly acting for the individual give consent. The Regulations on who may act for an individual were not read."},
+  "templates": {"erasure": "generic-erasure", "followup": "followup-generic", "complaint": "regulator-complaint-generic"},
+  "special_channels": [
+    {"id": "sg-osc-doxxing", "name": "Online Safety Commission (OSC), doxxing reports", "url": "https://www.osc.gov.sg/what-you-can-report/doxxing/", "note": "Free. From 2026-06-29 the OSC handles doxxing, meaning sharing someone's identity information, such as name, address, phone number or workplace, online with intent to cause harassment, alarm, distress or humiliation. It can direct removal and account restriction. Only Singapore Citizens, Permanent Residents and long-term pass holders can report, through https://report.osc.gov.sg. The intent requirement means a routine people-search listing usually does not qualify. Non-consensual disclosure of private information is listed by the government for later, progressive implementation and is not yet handled."}
+  ],
+  "public_records_note": "Personal data that is publicly available, meaning generally available to the public or observable at a public place or event (s 2(1)), may be collected, used and disclosed without consent under paragraph 1 of Part 2 of the First Schedule. PDPC takes the position that data public at the time of collection may still be used and disclosed without consent even if it later stops being public. Because withdrawal of consent under s 16(4) does not stop collection, use or disclosure the PDPA authorises without consent, a withdrawal notice to a people-search site that compiles public data will often have no effect. The s 22 correction right and the s 25 retention duty still apply.",
+  "sources": [
+    {"url": "https://www.pdpc.gov.sg/-/media/files/pdpc/pdf-files/advisory-guidelines/ag-on-key-concepts/advisory-guidelines-on-key-concepts-in-the-pdpa-17-may-2022.pdf", "title": "PDPC Advisory Guidelines on Key Concepts in the PDPA, revised 29 April 2026", "accessed_on": "2026-10-21"},
+    {"url": "https://www.pdpc.gov.sg/individuals/e-services/report-a-data-protection-concern/organisations-use-of-personal-data", "title": "PDPC, Report a Data Protection Concern, Organisation's Use of Personal Data", "accessed_on": "2026-10-21"},
+    {"url": "https://sso.agc.gov.sg/Act/PDPA2012", "title": "Personal Data Protection Act 2012, Singapore Statutes Online (page shell only, provisions blocked)", "accessed_on": "2026-10-21"},
+    {"url": "https://sso.agc.gov.sg/SL/PDPA2012-S63-2021", "title": "Personal Data Protection Regulations 2021, Singapore Statutes Online (page shell only, provisions blocked)", "accessed_on": "2026-10-21"},
+    {"url": "https://www.osc.gov.sg/what-you-can-report/doxxing/", "title": "Online Safety Commission, Doxxing", "accessed_on": "2026-10-21"},
+    {"url": "https://www.mlaw.gov.sg/files/Online_Safety_Commission_Launch___Annex.pdf", "title": "Ministry of Law, Online Safety Commission launch annex", "accessed_on": "2026-10-21"}
+  ],
+  "verified": false,
+  "verified_on": "2026-10-21",
+  "verification_note": "Singapore Statutes Online served the page shell, then returned an AWS WAF challenge to every further request, so the text of PDPA ss 16, 21, 22 and 25 and of the PDP Regulations 2021 was not read. Not bypassed. All rights, the 30-day rule and the publicly available exception were confirmed from the PDPC Advisory Guidelines (revised 29 April 2026), the regulator's own site, which paraphrases or quotes the sections. Unconfirmed: the exact regulation number that sets the 30-day notice for correction requests (the guidelines cite Part 2 of the Regulations only for access). PDPC's own pages also disagree on calendar versus business days for that 30-day period. Recheck against sso.agc.gov.sg in a normal browser."
+}
