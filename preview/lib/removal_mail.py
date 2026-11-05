@@ -42,6 +42,9 @@ CONFIRMATION_CONTRACTS = MappingProxyType({
     'usphonebook': MappingProxyType({'host': 'www.usphonebook.com',
                                    'path': '/removal/validate-record-info',
                                    'query_keys': frozenset(('key', 'ticketid'))}),
+    'fastpeoplesearch': MappingProxyType({'host': 'www.fastpeoplesearch.com',
+                                        'path': '/optout/removal',
+                                        'query_keys': frozenset(('firstname', 'middlename', 'lastname', 'email', 'ticketid'))}),
 })
 
 
@@ -310,7 +313,7 @@ def _safe_url(value, route):
         return False
 
 
-def _continuation_url(links, route_id):
+def _continuation_url(links, route_id, *, recipient=None):
     """One exact reviewed destination, with no link-purpose inference or fetching.
 
     HTMLParser has decoded HTML attribute entities once. Plain-text links are
@@ -319,14 +322,14 @@ def _continuation_url(links, route_id):
     conflicting tokens hold the message instead of selecting a convenient link.
     """
     contract = CONFIRMATION_CONTRACTS.get(route_id)
-    if not contract or not links:
+    if not contract or not links or route_id == 'fastpeoplesearch' and not isinstance(recipient, str):
         return None
     destinations = set()
     for value in links:
         try:
             if (not isinstance(value, str) or len(value) > 2048
                     or any(c.isspace() or ord(c) < 32 or ord(c) == 127 for c in value)
-                    or '\\' in value or '#' in value):
+                    or '\\' in value or '#' in value or re.search(r'%(?![0-9A-Fa-f]{2})', value)):
                 return None
             url = urlsplit(value)
             if (url.scheme != 'https' or url.hostname != contract['host'] or url.path != contract['path']
@@ -335,13 +338,25 @@ def _continuation_url(links, route_id):
                     or url.port not in (None, 443) or url.fragment):
                 return None
             pairs = parse_qsl(url.query, keep_blank_values=True, strict_parsing=True,
-                              encoding='utf-8', errors='strict', max_num_fields=3)
-            if len(pairs) != 2 or {key for key, _ in pairs} != contract['query_keys']:
+                              encoding='utf-8', errors='strict', max_num_fields=len(contract['query_keys']) + 1)
+            if len(pairs) != len(contract['query_keys']) or {key for key, _ in pairs} != contract['query_keys']:
                 return None
             parameters = dict(pairs)
-            if (len(parameters['key']) > 512 or not re.fullmatch(r'[A-Za-z0-9_-]+={0,2}', parameters['key'])
-                    or not re.fullmatch(r'[0-9]{1,32}', parameters['ticketid'])):
+            if not re.fullmatch(r'[0-9]{1,32}', parameters['ticketid']):
                 return None
+            if route_id == 'usphonebook':
+                if len(parameters['key']) > 512 or not re.fullmatch(r'[A-Za-z0-9_-]+={0,2}', parameters['key']):
+                    return None
+            else:
+                # The live first form never supplies a middle name. Keep that
+                # exact contract, and bind the mailed contact to this capability.
+                if parameters['middlename'] != '' or parameters['email'] != recipient:
+                    return None
+                for key in ('firstname', 'lastname'):
+                    value = parameters[key]
+                    if (not value or len(value) > 120 or value.strip() != value
+                            or any(ord(c) < 32 or ord(c) == 127 or c in '<>' for c in value)):
+                        return None
             destinations.add(tuple(sorted(pairs)))
         except (ValueError, TypeError, UnicodeError):
             return None
@@ -402,7 +417,7 @@ def _inspect_receipt(raw, received_ms, claims, *, now=None):
         return None
     urls = list(dict.fromkeys(value for value in links if _safe_url(value, route)))
     continuation = (None if invalid_links or len(links) > 20 else
-                    _continuation_url(links, claims['route_id']))
+                    _continuation_url(links, claims['route_id'], recipient=claims['recipient']))
     reason = 'route_validation_required' if urls else 'confirmation_link_unvalidated'
     return ({'status': 'held', 'reason': reason, 'request_id': claims['request_id'],
              'route_id': claims['route_id'], 'operation_id': claims['operation_id'], 'received_at': received,

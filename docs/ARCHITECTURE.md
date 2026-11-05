@@ -47,13 +47,24 @@ deletion. No generic alert or navigation promotes it to an accepted request.
 `removal-session.js` supplies one authorized scoped-mail pass. These modules and
 `contact-setup.js` load before `workspace-ui.js`.
 
+The dedicated-mail relay has exact continuation contracts for USPhonebook and
+FastPeopleSearch. Both require another authenticated read of the operation's same
+raw receipt before releasing a transient private URL. FastPeopleSearch's URL carries
+the original names, empty middle name, dedicated contact and ticket; the core and
+companion check these against the initial approved fields before navigation. Its
+confirmation action pins and reads the matching form without filling new details or
+submitting it. The hidden ticket must agree with the reviewed URL. Neither URL nor
+profile values enter the companion journal. Date of birth or street address remains
+a separate required identity step; no final acceptance or deletion follows from
+opening the matching form. Held operations remain excluded.
+
 The UI attaches an optional `afterForms` callback to `form-batch.js`. It receives only
 detached, qualifying operation references after every selected form outcome has been
 saved, then checks selected bound removal contacts once. A stopped queue, preparation
 failure, unknown result or failed result storage skips the final pass. A separate mail-only
 pass can check existing operations without opening forms. Mail arriving after a pass
 requires another explicitly authorized check; no polling, push subscription, recurring
-timer or background retry is installed. Companion 0.5.0 remains unchanged by this web update.
+timer or background retry is installed.
 
 The optional native host `org.eraseme.challenge` recognizes bounded text/audio media
 with existing local tools. The reviewed Chrome integration currently sends only
@@ -61,6 +72,17 @@ NumaraAra's five-character image. Installation is per user and extension ID, req
 an explicit optional native-messaging grant, and starts no daemon or timer. Its protocol
 accepts no URL, filesystem path or arbitrary command. FastPeopleSearch requires a
 genuine site-issued challenge response; no token is fabricated.
+
+Companion 0.6.0 adds `waitReady()` before FastPeopleSearch capture. It first validates
+the exact approved form, destination, controls, fields and consent, then pins their
+identities in the original document. A `MutationObserver` and input/change events
+trigger revalidation while the normal widget supplies a genuine response. One
+12-second foreground deadline ends the wait; a `pagehide` event, navigation or
+changed form also stops it. Listeners and the observer are removed when it settles.
+There is no polling, recurring timer, widget click, token manufacturing or new vendor
+permission. The response is not returned to the workspace. Readiness still goes
+through the existing capture and one-shot guarded submission contract; it is not
+evidence of broker acceptance or deletion.
 
 Own-record matching reads only a specifically approved Spokeo candidate page. Bounded
 schema.org Person data must identify that exact document URL, full name and typed

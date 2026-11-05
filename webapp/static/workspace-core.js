@@ -161,9 +161,17 @@
     // route/recipient mixups and never establishes broker acceptance.
     return { capability, request_id, route_id, operation_id, contact_email, expires_at };
   }
-  function confirmationURL(value) {
+  function confirmationURL(value, routeId = 'usphonebook', fields = null) {
     try {
       if (typeof value !== 'string' || value.length > 2048 || /\s/.test(value)) return false;
+      if(routeId==='fastpeoplesearch'){
+        if(!value.startsWith('https://www.fastpeoplesearch.com/optout/removal?')||/[\\\x00-\x1f\x7f]/.test(value)||/%(?![0-9a-f]{2})/i.test(value)||!fields)return false;
+        const u=new URL(value),keys=['firstname','middlename','lastname','email','ticketid'];
+        return !u.username&&!u.password&&!u.port&&!u.hash&&u.pathname==='/optout/removal'&&[...u.searchParams].length===5&&keys.every(key=>u.searchParams.getAll(key).length===1)&&
+          u.searchParams.get('firstname')===fields.first_name&&u.searchParams.get('lastname')===fields.last_name&&u.searchParams.get('email')===fields.email&&
+          u.searchParams.get('middlename')===''&&/^[0-9]{1,32}$/.test(u.searchParams.get('ticketid'));
+      }
+      if(routeId!=='usphonebook')return false;
       const u = new URL(value), key = u.searchParams.get('key');
       return u.protocol === 'https:' && u.hostname === 'www.usphonebook.com' && !u.port && !u.username && !u.password && !u.hash &&
         u.pathname === '/removal/validate-record-info' && [...u.searchParams].length === 2 &&
@@ -530,7 +538,7 @@
         if (result.authenticated !== true || !['route_validation_required', 'confirmation_link_unvalidated'].includes(result.reason) ||
             !Number.isSafeInteger(result.received_at) || result.received_at < contact.expires_at - 7 * 86400 || result.received_at > now + 300 ||
             typeof result.receipt_ref !== 'string' || !/^[a-f0-9]{64}$/.test(result.receipt_ref) || typeof result.continuation_available !== 'boolean' ||
-            (result.continuation_available && id !== 'usphonebook')) throw new WorkspaceError('The removal receipt could not be validated.');
+            (result.continuation_available && !['usphonebook','fastpeoplesearch'].includes(id))) throw new WorkspaceError('The removal receipt could not be validated.');
         Object.assign(receipt, { authenticated: true, reason: result.reason, received_at: result.received_at, receipt_ref: result.receipt_ref,
           continuation_available: result.continuation_available });
         changed(item, 'blocked', result.continuation_available ? 'An authenticated removal email is ready for the reviewed broker confirmation form. Review its required fields before continuing. Deletion is unverified.' : 'An authenticated removal-related email was received. Confirmation is held pending broker-route validation; no link was followed and deletion is unverified.');
@@ -543,13 +551,17 @@
     function continuationContext(id) {
       const item = itemFor(id);
       requireNotHeld(item);
-      if (id !== 'usphonebook' || state.campaign.status !== 'active' || !item.operation_id || !item.mail_contact ||
+      if (!['usphonebook','fastpeoplesearch'].includes(id) || state.campaign.status !== 'active' || !item.operation_id || !item.mail_contact ||
           !item.mail_receipt?.authenticated || item.mail_receipt.continuation_available !== true || item.status === 'user_reported_completed')
         throw new WorkspaceError('Choose a current authenticated confirmation for this active operation.', 409);
       const contact = mailContact(item.mail_contact, id, item.operation_id, Math.floor(Date.parse(clock()) / 1000));
       return { item, contact };
     }
-    function continuationFields(item, contact, supplied) {
+    function continuationFields(item, contact, supplied, id) {
+      if(id==='fastpeoplesearch'){
+        if(!supplied||typeof supplied!=='object'||Array.isArray(supplied)||Object.keys(supplied).length!==0)throw new WorkspaceError('FastPeopleSearch opens only the verified matching form. No additional identity fields are accepted here.');
+        return {first_name:brokerField(routeFor(id),'first_name',item.fields.first_name),last_name:brokerField(routeFor(id),'last_name',item.fields.last_name),email:contact.contact_email};
+      }
       if (!supplied || typeof supplied !== 'object' || Array.isArray(supplied) || Object.keys(supplied).length !== 3 ||
           !['city', 'state', 'zip_code'].every(key => Object.hasOwn(supplied, key))) throw new WorkspaceError('Review the city, state and ZIP required by this broker.');
       const city = text(supplied.city, 120), stateCode = text(supplied.state, 2).toUpperCase(), zip = text(supplied.zip_code, 5);
@@ -561,19 +573,19 @@
     function mailContinuationRequest(id, supplied) {
       const { item, contact } = continuationContext(id);
       if (item.continuation) throw new WorkspaceError('This confirmation action already started. Check its existing broker tab; no replay is allowed.', 409);
-      continuationFields(item, contact, supplied);
-      item.continuation_fields = { city: text(supplied.city, 120), state: text(supplied.state, 2).toUpperCase(), zip_code: text(supplied.zip_code, 5) };
+      continuationFields(item, contact, supplied,id);
+      item.continuation_fields = id==='fastpeoplesearch'?{}:{ city: text(supplied.city, 120), state: text(supplied.state, 2).toUpperCase(), zip_code: text(supplied.zip_code, 5) };
       item.mail_continuation_authorized_at = clock(); save();
       return { capability: contact.capability, explicit: true, receipt_ref: item.mail_receipt.receipt_ref };
     }
     function prepareMailContinuation(id, response, reviewedFields) {
       const { item, contact } = continuationContext(id);
       if (!item.mail_continuation_authorized_at || item.continuation) throw new WorkspaceError('This confirmation action is unapproved or already started. No replay is allowed.', 409);
+      const fields = continuationFields(item, contact, reviewedFields,id);
       if (!response || response.status !== 'confirmation_ready' || response.route_id !== id || response.operation_id !== item.operation_id ||
           response.request_id !== contact.request_id || response.receipt_ref !== item.mail_receipt.receipt_ref ||
-          response.automatic_execution !== false || !confirmationURL(response.confirmation_url)) throw new WorkspaceError('The confirmation does not match this operation.');
-      const fields = continuationFields(item, contact, reviewedFields);
-      const authorizedFields = continuationFields(item, contact, item.continuation_fields);
+          response.automatic_execution !== false || !confirmationURL(response.confirmation_url,id,fields)) throw new WorkspaceError('The confirmation does not match this operation.');
+      const authorizedFields = continuationFields(item, contact, item.continuation_fields,id);
       if (Object.keys(fields).some(key => fields[key] !== authorizedFields[key]))
         throw new WorkspaceError('The confirmation fields changed in another tab. Review them again before continuing.', 409);
       // Persist the uncertain boundary before the private URL leaves this call.
@@ -586,12 +598,12 @@
     }
     function recordMailContinuation(id, operationId, result) {
       const item = itemFor(id);
-      if (id !== 'usphonebook' || item.operation_id !== operationId || !item.continuation || !result || !['prepared', 'blocked', 'unknown'].includes(result.status))
+      if (!['usphonebook','fastpeoplesearch'].includes(id) || item.operation_id !== operationId || !item.continuation || !result || !['prepared', 'blocked', 'unknown'].includes(result.status))
         throw new WorkspaceError('The confirmation result does not match a started action.', 409);
       if (item.continuation.result !== 'unknown' && item.continuation.result !== result.status) throw new WorkspaceError('The confirmation result is already recorded. No replay was sent.', 409);
       item.continuation.result = result.status; item.continuation.observed_at = clock();
       changed(item, result.status === 'prepared' ? 'needs_broker_step' : result.status === 'blocked' ? 'blocked' : 'uncertain',
-        result.status === 'prepared' ? 'The confirmation form was filled. Review its accuracy statement, complete the broker challenge and submit on the broker site. Deletion is unverified.' : undefined);
+        result.status === 'prepared' ? id==='fastpeoplesearch'?'The authenticated matching form opened and its prefilled name and contact matched the approved fields. Enter required identity details directly on the broker form. Record matching, request acceptance and deletion remain unverified.':'The confirmation form was filled. Review its accuracy statement, complete the broker challenge and submit on the broker site. Deletion is unverified.' : undefined);
       event(routeFor(id).name + '. Confirmation form outcome recorded; request acceptance and deletion remain unverified.'); save(); return dashboard();
     }
     function recordCompanion(id, operationId, result) {

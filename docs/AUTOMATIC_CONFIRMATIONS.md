@@ -9,8 +9,8 @@ provide unrestricted shared-mailbox access. Credential configuration alone never
 enables the relay.
 
 Mailbox checks remain read-only. An authorized continuation action can return
-one reviewed USPhonebook privacy-form link to the authorized browser. The server
-never follows it. `CONFIRMATION_CONTRACTS` contains only that exact reviewed route;
+one reviewed USPhonebook or FastPeopleSearch privacy-form link to the authorized browser. The server
+never follows it. `CONFIRMATION_CONTRACTS` contains only those exact reviewed routes;
 other broker links remain held. Neither a receipt nor a ready form counts as an
 accepted removal request or verified deletion.
 
@@ -126,7 +126,7 @@ approval, optional submission mode and optional mail pass are unchecked; creatin
 address does not authorize its disclosure to a broker. The operator reviews the new
 values and selects the desired actions. The key can remain only in memory for this open
 review so this sequence does not require entering it again. Closing, stopping or completing
-the review disposes that access. This web update does not change companion 0.5.0.
+the review disposes that access. The current companion is 0.6.0.
 
 The optional mail pass runs only after all selected form outcomes have been saved.
 `form-batch.js` supplies `afterForms` with minimal operation references only for verified
@@ -152,8 +152,8 @@ confirmation remain distinct stages.
 The API's `explicit: true` and private-key requirements remain unchanged. The session
 supplies those requests under the user's upfront approval rather than asking for a
 new click between every call. A continuation still reauthenticates the exact receipt
-and needs the previously reviewed fields and companion capability. Only the existing
-USPhonebook contract can release a URL; unfamiliar links and FastPeopleSearch links
+and needs the previously reviewed fields and companion capability. Only the reviewed
+USPhonebook and FastPeopleSearch contracts can release URLs; unfamiliar destinations
 remain held. SearchPeopleFree's legacy receipt capabilities remain held-only.
 
 The held USPhonebook pilot is excluded from these sessions. No session resumes a held
@@ -223,6 +223,39 @@ server-enforced one-time execution. The companion's local action journal must
 hold repeated or interrupted continuations instead of navigating again. An API
 response or the broker's processing estimate does not prove removal.
 
+## Reviewed FastPeopleSearch continuation
+
+The destination is exactly `https://www.fastpeoplesearch.com/optout/removal`.
+Its query has exactly five fields: `firstname`, `middlename`, `lastname`, `email`
+and `ticketid`. The middle name must be empty because the initial companion action
+does not supply one. First and last names are bounded, nonempty text. The email
+must equal the capability's dedicated recipient, and the ticket ID has 1–32 ASCII
+digits. Duplicate or extra parameters, malformed encoding, credentials, fragments,
+different purposes and ambiguous destinations stay held. Entity decoding occurs once
+at extraction, as for USPhonebook. The client, core and companion also check that
+the URL names and contact match the reviewed initial operation before navigation.
+
+The companion journals before opening this private URL and pins the resulting
+document. It checks `form#optout-removal`, the exact POST destination, prefilled
+first/last/contact values and ticket reference. This action reads the form; it does
+not enter additional personal details, certify accuracy or submit the final request.
+The approved initial names and contact are sufficient for this continuation; it
+does not reuse USPhonebook's city/state/ZIP prefill contract.
+
+The official form requires a full date of birth or street address, plus city, state
+and ZIP. Its labels describe phone as optional despite initial HTML validation
+attributes. Age alone cannot supply the missing date or establish the correct
+record. Missing identity details remain a required action. A ready matching form
+is not an accepted erasure request or deletion.
+
+An authorized November 5 pilot reached this exact sequence: ordinary visible Chrome
+received a genuine widget response; the initial verification form was submitted;
+the operation's removal-only alias received broker mail passing the relay's sender,
+recipient, time and Gmail authentication checks; the authenticated destination opened
+the matching form. The pilot is awaiting a full date of birth or street address.
+No final acceptance or independently verified deletion was established. Personal
+inboxes and the held USPhonebook request were untouched.
+
 ## Free hosting limits
 
 The implementation needs no hosted profile database or paid mail solver. Mail is
@@ -241,6 +274,12 @@ origin/body checks, offline configuration and secret-free error responses. The
 continuation fixtures also cover exact host/path/query contracts, entity decoding,
 ambiguous links, changed message content and cross-operation receipt references. These
 fixtures do not demonstrate that a real broker accepted or completed a request.
+
+A November 5 dedicated-account OAuth identity check succeeded before the separately
+authorized, operation-scoped FastPeopleSearch receipt check described above. Identity
+preflight alone does not authenticate mail or establish deletion. Companion 0.6.0
+adds the reviewed FastPeopleSearch confirmation path without expanding mailbox scopes
+or installing recurring work.
 
 Google's method contracts are documented at
 [message listing](https://developers.google.com/workspace/gmail/api/reference/rest/v1/users.messages/list)

@@ -11,7 +11,7 @@ import json
 from pathlib import Path
 import threading
 from urllib.error import URLError
-from urllib.parse import parse_qs, urlsplit
+from urllib.parse import parse_qs, urlencode, urlsplit
 
 import pytest
 
@@ -239,7 +239,7 @@ def test_authenticated_correlated_message_is_held_until_route_contract_exists(co
     for private in ('privacy@', 'private-fixture-token', 'Authentication-Results', 'fixture-access', 'Confirm your removal'):
         assert private not in encoded
     assert answer['continuation_available'] is False
-    assert set(mail.CONFIRMATION_CONTRACTS) == {'usphonebook'}
+    assert set(mail.CONFIRMATION_CONTRACTS) == {'usphonebook', 'fastpeoplesearch'}
 
 
 @pytest.mark.parametrize('change', ['recipient', 'from', 'authentication', 'forged_header', 'old', 'future', 'unrelated', 'large'])
@@ -559,8 +559,9 @@ def test_continuation_shape_is_strict_before_any_mail_read(connected, monkeypatc
 
 
 def test_continuation_requires_pilot_authorization_and_supported_route(connected, monkeypatch):
-    result = issued('fastpeoplesearch')
-    body = {'capability': result['capability'], 'explicit': True, 'receipt_ref': 'a' * 64}
+    claims = mail.verify_capability(issued()['capability'])
+    claims['route_id'] = 'searchpeoplefree'
+    body = {'capability': resign(claims), 'explicit': True, 'receipt_ref': 'a' * 64}
     monkeypatch.setattr(mail, '_request_json', lambda *args, **kwargs: pytest.fail('Unsupported continuation must not read mail'))
     for key in (None, 'ef' * 32):
         with pytest.raises(mail.MailError) as error:
@@ -583,3 +584,176 @@ def test_http_continuation_enforces_origin_key_shape_and_checked_receipt(connect
     assert http_client(path, {**body, 'receipt_ref': 'a' * 64})[0] == 409
     code, answer = http_client(path, body)
     assert code == 200 and answer['status'] == 'confirmation_ready' and answer['confirmation_url'] == FORM
+
+
+def fps_form(claims, **changes):
+    fields = {'firstname': 'Example', 'middlename': '', 'lastname': 'Person',
+              'email': claims['recipient'], 'ticketid': '12345678'}
+    fields.update(changes)
+    return 'https://www.fastpeoplesearch.com/optout/removal?' + urlencode(fields)
+
+
+def fps_message(claims, **changes):
+    return raw_message(claims, sender='privacy@fastpeoplesearch.com',
+                       auth='mx.google.com; dmarc=pass header.from=fastpeoplesearch.com; dkim=pass header.d=fastpeoplesearch.com',
+                       link=changes.pop('link', fps_form(claims)), **changes)
+
+
+def test_fastpeoplesearch_check_hides_fields_and_explicit_continuation_reauthenticates_exact_receipt(connected, monkeypatch):
+    result = issued('fastpeoplesearch'); claims = mail.verify_capability(result['capability'])
+    calls = google_fixture(monkeypatch, claims, [fps_message(claims)])
+    receipt = mail.check({'capability': result['capability'], 'explicit': True}, pilot_key=PILOT)
+    assert receipt['status'] == 'held' and receipt['authenticated'] is True
+    assert receipt['continuation_available'] is True and receipt['route_id'] == 'fastpeoplesearch'
+    for private in ('Example', 'Person', claims['recipient'], 'ticketid', '12345678', 'confirmation_url'):
+        assert private not in json.dumps(receipt)
+    response = mail.continue_confirmation({'capability': result['capability'], 'explicit': True,
+                                          'receipt_ref': receipt['receipt_ref']}, pilot_key=PILOT)
+    assert response['status'] == 'confirmation_ready' and response['route_id'] == 'fastpeoplesearch'
+    assert response['operation_id'] == OPERATION and response['request_id'] == claims['request_id']
+    assert response['receipt_ref'] == receipt['receipt_ref'] and response['automatic_execution'] is False
+    query = parse_qs(urlsplit(response['confirmation_url']).query, keep_blank_values=True)
+    assert query == {'firstname': ['Example'], 'middlename': [''], 'lastname': ['Person'],
+                     'email': [claims['recipient']], 'ticketid': ['12345678']}
+    assert '%2B' in response['confirmation_url']
+    assert sum('/messages?' in url for url, _ in calls) == 2
+    assert sum('/messages/message' in url for url, _ in calls) == 2
+    assert all(urlsplit(url).hostname in {'oauth2.googleapis.com', 'openidconnect.googleapis.com', 'gmail.googleapis.com'} for url, _ in calls)
+
+
+def test_fastpeoplesearch_html_and_plain_entities_decode_once_to_the_same_bound_destination(connected):
+    claims = mail.verify_capability(issued('fastpeoplesearch')['capability'])
+    url = fps_form(claims)
+    message = message_from_bytes(fps_message(claims, link=url.replace('&', '&amp;')), policy=policy.default)
+    message.add_alternative('<p>Verify your removal request.</p><a href="' + url.replace('&', '&amp;') + '">Complete form</a>', subtype='html')
+    receipt = mail._receipt(message.as_bytes(), (NOW + 1) * 1000, claims)
+    assert receipt['continuation_available'] is True
+    message = message_from_bytes(fps_message(claims), policy=policy.default)
+    message.add_alternative('<p>Verify your removal request.</p><a href="' + url.replace('&', '&amp;amp;') + '">Complete form</a>', subtype='html')
+    assert mail._receipt(message.as_bytes(), (NOW + 1) * 1000, claims)['continuation_available'] is False
+
+
+@pytest.mark.parametrize('change', [
+    {'firstname': ''}, {'lastname': ''}, {'firstname': ' Example'}, {'lastname': 'Person '},
+    {'firstname': 'x' * 121}, {'lastname': 'x' * 121}, {'firstname': 'Ex\x00ample'},
+    {'lastname': 'Per\x1fson'}, {'firstname': 'Exam\x7fple'}, {'lastname': 'Per\r\nson'},
+    {'firstname': '<Example>'}, {'lastname': 'Person>'}, {'middlename': 'Middle'},
+    {'email': 'other@example.test'}, {'email': ''}, {'ticketid': ''},
+    {'ticketid': '1' * 33}, {'ticketid': 'NaN'}, {'ticketid': '１２３'},
+])
+def test_fastpeoplesearch_invalid_identity_fields_recipient_and_ticket_stay_held(connected, change):
+    claims = mail.verify_capability(issued('fastpeoplesearch')['capability'])
+    receipt = mail._receipt(fps_message(claims, link=fps_form(claims, **change)), (NOW + 1) * 1000, claims)
+    assert receipt['status'] == 'held' and receipt['authenticated'] is True
+    assert receipt['continuation_available'] is False
+
+
+@pytest.mark.parametrize('change', [
+    'http', 'bare_host', 'foreign_host', 'credentials', 'empty_credentials', 'port', 'empty_port',
+    'login', 'trailing_path', 'encoded_path', 'fragment', 'empty_fragment', 'backslash',
+    'extra', 'duplicate_firstname', 'duplicate_middle', 'duplicate_ticket', 'missing_middle',
+    'trailing_separator', 'double_entities', 'unencoded_plus', 'bare_percent', 'invalid_percent', 'short_percent',
+])
+def test_fastpeoplesearch_ambiguous_or_unreviewed_link_shapes_cannot_continue(connected, monkeypatch, change):
+    result = issued('fastpeoplesearch'); claims = mail.verify_capability(result['capability'])
+    url = fps_form(claims)
+    transformations = {
+        'http': lambda value: value.replace('https:', 'http:'),
+        'bare_host': lambda value: value.replace('www.fastpeoplesearch.com', 'fastpeoplesearch.com'),
+        'foreign_host': lambda value: value.replace('www.fastpeoplesearch.com', 'www.fastpeoplesearch.com.evil.test'),
+        'credentials': lambda value: value.replace('www.fastpeoplesearch.com', 'user@www.fastpeoplesearch.com'),
+        'empty_credentials': lambda value: value.replace('www.fastpeoplesearch.com', '@www.fastpeoplesearch.com'),
+        'port': lambda value: value.replace('www.fastpeoplesearch.com', 'www.fastpeoplesearch.com:444'),
+        'empty_port': lambda value: value.replace('www.fastpeoplesearch.com', 'www.fastpeoplesearch.com:'),
+        'login': lambda value: value.replace('/optout/removal', '/login'),
+        'trailing_path': lambda value: value.replace('/optout/removal', '/optout/removal/'),
+        'encoded_path': lambda value: value.replace('/optout/removal', '/optout/%72emoval'),
+        'fragment': lambda value: value + '#fragment', 'empty_fragment': lambda value: value + '#',
+        'backslash': lambda value: value.replace('/optout/removal', '/optout\\removal'),
+        'extra': lambda value: value + '&next=https://evil.test',
+        'duplicate_firstname': lambda value: value + '&firstname=Other',
+        'duplicate_middle': lambda value: value + '&middlename=',
+        'duplicate_ticket': lambda value: value + '&ticketid=2',
+        'missing_middle': lambda value: value.replace('&middlename=', ''),
+        'trailing_separator': lambda value: value + '&',
+        'double_entities': lambda value: value.replace('&', '&amp;amp;'),
+        'unencoded_plus': lambda value: value.replace('%2B', '+'),
+        'bare_percent': lambda value: value.replace('firstname=Example', 'firstname=Example%'),
+        'invalid_percent': lambda value: value.replace('firstname=Example', 'firstname=Example%G0'),
+        'short_percent': lambda value: value.replace('firstname=Example', 'firstname=Example%0'),
+    }
+    url = transformations[change](url)
+    google_fixture(monkeypatch, claims, [fps_message(claims, link=url)])
+    receipt = mail.check({'capability': result['capability'], 'explicit': True}, pilot_key=PILOT)
+    assert receipt['status'] == 'held' and receipt['continuation_available'] is False
+    with pytest.raises(mail.MailError) as error:
+        mail.continue_confirmation({'capability': result['capability'], 'explicit': True,
+                                   'receipt_ref': receipt['receipt_ref']}, pilot_key=PILOT)
+    assert error.value.status == 409
+
+
+def test_fastpeoplesearch_must_have_bound_recipient_even_for_a_structurally_valid_destination(connected):
+    claims = mail.verify_capability(issued('fastpeoplesearch')['capability'])
+    url = fps_form(claims)
+    assert mail._continuation_url([url], 'fastpeoplesearch') is None
+    assert mail._continuation_url([url], 'fastpeoplesearch', recipient='other@example.test') is None
+    assert mail._continuation_url([url], 'fastpeoplesearch', recipient=claims['recipient']) is not None
+    wrong_case = fps_form(claims, email=claims['recipient'].upper())
+    assert mail._continuation_url([wrong_case], 'fastpeoplesearch', recipient=claims['recipient']) is None
+
+
+def test_fastpeoplesearch_unicode_names_are_preserved_and_default_https_port_is_canonicalized(connected):
+    claims = mail.verify_capability(issued('fastpeoplesearch')['capability'])
+    url = fps_form(claims, firstname='Örnek', lastname='Örnek Kişi').replace('www.fastpeoplesearch.com/', 'www.fastpeoplesearch.com:443/')
+    result = mail._continuation_url([url], 'fastpeoplesearch', recipient=claims['recipient'])
+    assert urlsplit(result).netloc == 'www.fastpeoplesearch.com'
+    fields = parse_qs(urlsplit(result).query, keep_blank_values=True)
+    assert fields['firstname'] == ['Örnek'] and fields['lastname'] == ['Örnek Kişi']
+
+
+def test_fastpeoplesearch_unrelated_extra_links_and_conflicting_destinations_hold_the_receipt(connected):
+    claims = mail.verify_capability(issued('fastpeoplesearch')['capability'])
+    for other in (fps_form(claims, firstname='Other'), fps_form(claims, ticketid='87654321'),
+                  'https://www.fastpeoplesearch.com/login', 'https://www.fastpeoplesearch.com/export',
+                  'https://evil.test/confirmation'):
+        receipt = mail._receipt(fps_message(claims, link=fps_form(claims) + '\n' + other), (NOW + 1) * 1000, claims)
+        assert receipt['continuation_available'] is False
+
+
+def test_fastpeoplesearch_requires_its_own_sender_provenance_and_matching_recipient(connected):
+    claims = mail.verify_capability(issued('fastpeoplesearch')['capability'])
+    for raw in (raw_message(claims, link=fps_form(claims)),
+                fps_message(claims, recipient='other@example.test'),
+                raw_message(claims, sender='privacy@fastpeoplesearch.com', link=fps_form(claims))):
+        assert mail._receipt(raw, (NOW + 1) * 1000, claims) is None
+
+
+def test_fastpeoplesearch_reference_cannot_release_changed_mail_or_another_operation(connected, monkeypatch):
+    result = issued('fastpeoplesearch'); claims = mail.verify_capability(result['capability'])
+    google_fixture(monkeypatch, claims, [fps_message(claims)])
+    receipt = mail.check({'capability': result['capability'], 'explicit': True}, pilot_key=PILOT)
+    google_fixture(monkeypatch, claims, [fps_message(claims, link=fps_form(claims, ticketid='87654321'))])
+    with pytest.raises(mail.MailError) as error:
+        mail.continue_confirmation({'capability': result['capability'], 'explicit': True,
+                                   'receipt_ref': receipt['receipt_ref']}, pilot_key=PILOT)
+    assert error.value.status == 409
+    other = issued('fastpeoplesearch'); other_claims = mail.verify_capability(other['capability'])
+    google_fixture(monkeypatch, other_claims, [fps_message(other_claims)])
+    with pytest.raises(mail.MailError) as error:
+        mail.continue_confirmation({'capability': other['capability'], 'explicit': True,
+                                   'receipt_ref': receipt['receipt_ref']}, pilot_key=PILOT)
+    assert error.value.status == 409
+
+
+def test_fastpeoplesearch_http_continuation_retains_origin_private_key_and_response_boundaries(connected, monkeypatch, http_client):
+    result = issued('fastpeoplesearch'); claims = mail.verify_capability(result['capability'])
+    google_fixture(monkeypatch, claims, [fps_message(claims)])
+    receipt = mail.check({'capability': result['capability'], 'explicit': True}, pilot_key=PILOT)
+    body = {'capability': result['capability'], 'explicit': True, 'receipt_ref': receipt['receipt_ref']}
+    path = '/api/removal-mail/continue'
+    assert http_client(path, body, origin='https://evil.test')[0] == 403
+    assert http_client(path, body, pilot_key=None)[0] == 403
+    assert http_client(path, {**body, 'email': claims['recipient']})[0] == 400
+    status, response = http_client(path, body)
+    assert status == 200 and response['route_id'] == 'fastpeoplesearch'
+    assert response['status'] == 'confirmation_ready' and response['automatic_execution'] is False

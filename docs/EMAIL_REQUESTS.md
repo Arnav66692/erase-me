@@ -35,12 +35,15 @@ ownership of the subject's record or satisfy a broker's ownership terms automati
 
 The relay requires private-pilot activation and an operator key for every explicit
 action. Receipt checks return held or pending metadata without a confirmation URL.
-USPhonebook alone has a reviewed continuation: a separate action revalidates the same
-authenticated receipt and opens its exact official second form through the companion.
-Only authorized name, city, state, ZIP and contact fields are filled. USPhonebook also
+USPhonebook and FastPeopleSearch have reviewed continuations: a separate action revalidates
+the same authenticated receipt and opens its exact official form through the companion.
+USPhonebook fills only authorized name, city, state, ZIP and contact fields. FastPeopleSearch
+checks the names/contact already present in its matching form and fills no extra details.
+USPhonebook also
 requires either date of birth or street address, entered directly on its official form
 by the person. Erase Me does not collect or autofill those details or a phone number;
-the accuracy checkbox, CAPTCHA and final submission stay with the person. Other
+the accuracy checkbox, CAPTCHA and final submission stay with the person. FastPeopleSearch
+likewise needs a full date of birth or street address before final matching. Other
 confirmation routes remain held. Neither a
 receipt nor form preparation proves accepted removal or deletion. No recurring
 mailbox checks run, and personal inboxes stay disconnected.

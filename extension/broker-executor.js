@@ -95,9 +95,23 @@
     });
     return true;
   }
-  function continuationURL(value) {
+  function continuationURL(value,routeId='usphonebook',fields) {
     try {
-      if(typeof value!=='string'||value.length>2048||/\s/.test(value))return false;
+      if(typeof value!=='string'||value.length>2048||/[\s\\\x00-\x1f\x7f]/.test(value))return false;
+      if(routeId==='fastpeoplesearch'){
+        if(!value.startsWith('https://www.fastpeoplesearch.com/optout/removal?')||/%(?![a-f0-9]{2})/i.test(value))return false;
+        const u=new URL(value),keys=['firstname','middlename','lastname','email','ticketid'];
+        // URLSearchParams tolerates malformed UTF-8; the reviewed link does not.
+        for(const part of u.search.slice(1).split('&'))for(const encoded of part.split('='))decodeURIComponent(encoded.replace(/\+/g,' '));
+        if(u.protocol!=='https:'||u.hostname!=='www.fastpeoplesearch.com'||u.port||u.username||u.password||u.hash||u.pathname!=='/optout/removal'||
+          [...u.searchParams].length!==keys.length||keys.some(key=>u.searchParams.getAll(key).length!==1)||u.searchParams.get('middlename')!==''||
+          !/^[0-9]{1,32}$/.test(u.searchParams.get('ticketid')))return false;
+        for(const key of ['firstname','lastname']){const name=u.searchParams.get(key);if(!name||name.length>120||name!==name.trim()||/[\x00-\x1f\x7f<>]/.test(name))return false;}
+        const email=u.searchParams.get('email');
+        if(!email||email.length>254||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)||/[\x00-\x1f\x7f<>]/.test(email))return false;
+        return !fields||u.searchParams.get('firstname')===fields.first_name&&u.searchParams.get('lastname')===fields.last_name&&email===fields.email;
+      }
+      if(routeId!=='usphonebook')return false;
       const u=new URL(value),key=u.searchParams.get('key');
       return u.protocol==='https:'&&u.hostname==='www.usphonebook.com'&&!u.port&&!u.username&&!u.password&&!u.hash&&
         u.pathname==='/removal/validate-record-info'&&[...u.searchParams].length===2&&u.searchParams.getAll('key').length===1&&
@@ -106,17 +120,64 @@
   }
   function validateContinuation(payload) {
     const {routeId,operationId,requestId,receiptRef,confirmationUrl,contactEmail,fields,authorized}=payload||{};
-    if(routeId!=='usphonebook'||authorized!==true||!/^[a-f0-9-]{32,40}$/.test(operationId||'')||!/^[a-f0-9]{32}$/.test(requestId||'')||
-      !/^[a-f0-9]{64}$/.test(receiptRef||'')||!continuationURL(confirmationUrl)||!fields||Object.keys(fields).length!==6||
-      !['first_name','last_name','email','city','state','zip_code'].every(k=>Object.hasOwn(fields,k)))throw new Error('Unsupported confirmation form.');
-    validate('usphonebook',{first_name:fields.first_name,last_name:fields.last_name,email:fields.email});
-    if(contactEmail!==fields.email||!new RegExp('^[a-z0-9._-]{1,25}\\+erase-'+requestId+'@(?:gmail\\.com|googlemail\\.com)$').test(contactEmail)||
+    const keys=routeId==='fastpeoplesearch'?['first_name','last_name','email']:['first_name','last_name','email','city','state','zip_code'];
+    if(!['usphonebook','fastpeoplesearch'].includes(routeId)||authorized!==true||!/^[a-f0-9-]{32,40}$/.test(operationId||'')||!/^[a-f0-9]{32}$/.test(requestId||'')||
+      !/^[a-f0-9]{64}$/.test(receiptRef||'')||!fields||typeof fields!=='object'||Array.isArray(fields)||Object.keys(fields).length!==keys.length||
+      !keys.every(k=>Object.hasOwn(fields,k))||!continuationURL(confirmationUrl,routeId,fields))throw new Error('Unsupported confirmation form.');
+    validate(routeId,{first_name:fields.first_name,last_name:fields.last_name,email:fields.email});
+    if(contactEmail!==fields.email||!new RegExp('^[a-z0-9._-]{1,25}\\+erase-'+requestId+'@(?:gmail\\.com|googlemail\\.com)$').test(contactEmail))throw new Error('Review the authorized confirmation contact.');
+    if(routeId==='fastpeoplesearch')return {host:'www.fastpeoplesearch.com',path:'/optout/removal',url:confirmationUrl};
+    if(
       typeof fields.city!=='string'||!fields.city.trim()||fields.city.length>120||/[\r\n\x00<>]/.test(fields.city)||
       !/^(AL|AK|AZ|AR|CA|CO|CT|DE|DC|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY|AA|AE|AP|AS|FM|GU|MH|MP|PR|PW|VI)$/.test(fields.state)||!/^\d{5}$/.test(fields.zip_code))throw new Error('Review the authorized confirmation fields.');
     return {host:'www.usphonebook.com',path:'/removal/validate-record-info',url:confirmationUrl};
   }
+  async function readFastPeopleSearchContinuation(payload,env) {
+    const doc=env.document,url=payload.confirmationUrl,signature=JSON.stringify(payload);
+    const blocked=()=>({status:'blocked',detail:'The reviewed FastPeopleSearch matching form changed or is unavailable. No fields were changed or submitted.'});
+    const safe=()=>env.document===doc&&env.location.href===url&&JSON.stringify(payload)===signature&&
+      continuationURL(url,'fastpeoplesearch',payload.fields)&&!doc.querySelector('input[type="file"]');
+    const one=selector=>{const values=[...doc.querySelectorAll(selector)];return values.length===1?values[0]:null;};
+    const inspect=()=>{
+      if(!safe())return blocked();
+      const forms=[...doc.querySelectorAll('form#optout-removal')];
+      if(!forms.length)return null;
+      if(forms.length!==1)return blocked();
+      const form=forms[0];
+      if(form.method?.toLowerCase()!=='post'||form.action!=='https://www.fastpeoplesearch.com/optout/removal')return blocked();
+      const identity={first_name:one('input#firstname[name="firstname"][type="text"]'),last_name:one('input#lastname[name="lastname"][type="text"]'),email:one('input#email[name="email"][type="email"]')};
+      const middle=one('input#middlename[name="middlename"][type="text"]'),ticket=one('#optout-removal input[name="ticketid"][type="hidden"]');
+      if(Object.entries(identity).some(([key,e])=>!visible(e)||e.disabled||e.readOnly||e.form!==form||e.value!==payload.fields[key])||
+        !visible(middle)||middle.disabled||middle.readOnly||middle.form!==form||middle.value!==''||!ticket||ticket.form!==form||ticket.value!==new URL(url).searchParams.get('ticketid'))return blocked();
+      const shape=[
+        ['select[name="dobMonth"]','SELECT'],['select[name="dobDay"]','SELECT'],['select[name="dobYear"]','SELECT'],
+        ['input#streetAddress[name="streetAddress"][type="text"]','INPUT'],['input#city[name="city"][type="text"]','INPUT'],
+        ['select#state[name="state"]','SELECT'],['input#zipcode[name="zipcode"][type="text"]','INPUT'],['input#phone[name="phone"][type="text"]','INPUT'],
+        ['#optout-removal input[name="legal"][type="checkbox"]','INPUT']
+      ];
+      if(shape.some(([selector,tag])=>{const e=one(selector);return !visible(e)||e.disabled||e.readOnly||e.form!==form||e.tagName!==tag;}))return blocked();
+      const token=one('#optout-removal input[name="cf-turnstile-response"][type="hidden"]');
+      const widget=one('#optout-removal .cf-turnstile'),buttons=[...form.querySelectorAll('button[type="submit"],input[type="submit"]')];
+      if(!token||token.form!==form||!visible(widget)||buttons.length!==1||buttons[0].tagName!=='BUTTON'||buttons[0].form!==form||
+        !visible(buttons[0])||buttons[0].disabled||buttons[0].textContent.trim()!=='Submit'||!safe())return blocked();
+      return {status:'prepared',detail:'The authenticated FastPeopleSearch email opened its reviewed matching form. Its original name and removal-contact email match this operation. No fields were changed or submitted. The broker requires either full date of birth or street address, plus city, state and ZIP, before its final accuracy statement and submission. Record matching, acceptance and deletion remain unverified.'};
+    };
+    let initial;try{initial=inspect();}catch(_){return blocked();}if(initial)return initial;
+    if(typeof env.MutationObserver!=='function'||typeof env.addEventListener!=='function'||typeof env.removeEventListener!=='function')return blocked();
+    return new Promise(resolve=>{
+      let done=false,observer,timeout;
+      const finish=result=>{if(done)return;done=true;observer?.disconnect();if(timeout!==undefined)env.clearTimeout(timeout);env.removeEventListener('pagehide',pageHidden,true);resolve(result);};
+      const check=()=>{try{const result=inspect();if(result)finish(result);}catch(_){finish(blocked());}};
+      const pageHidden=()=>finish(blocked());
+      try{
+        observer=new env.MutationObserver(check);observer.observe(doc,{subtree:true,childList:true,attributes:true});
+        env.addEventListener('pagehide',pageHidden,true);timeout=env.setTimeout(()=>{try{finish(inspect()||blocked());}catch(_){finish(blocked());}},10000);check();
+      }catch(_){finish(blocked());}
+    });
+  }
   async function executeContinuation(payload,env=globalThis) {
     validateContinuation(payload);
+    if(payload.routeId==='fastpeoplesearch')return readFastPeopleSearchContinuation(payload,env);
     const doc=env.document,fields=payload.fields,selectors={first_name:'#subject-firstname',last_name:'#subject-lastname',email:'#subject-email',city:'#subject-city',state:'#subject-state',zip_code:'#subject-zipcode'};
     const formURL='https://www.usphonebook.com/removal/validate-record-info';
     const form=()=>doc.querySelector('#removalForm');

@@ -70,7 +70,9 @@
       if(view.keyNote)view.keyNote.textContent=view.session?'The private key is available only for this open review. Closing or completing it clears access.':'Enter the private key once. It stays in memory only for this open review.';
       if(view.contactPrepare)view.contactPrepare.disabled=view.running||!contactSelected;
       view.mailScope.replaceChildren();
-      for(const entry of formContacts)view.mailScope.append(n('p',(W().routes().find(route=>route.id===entry.preview.routeId)?.name||entry.preview.routeId)+': '+entry.mailContact+' — one receipt check after all selected forms finish, if this form has a qualifying submission result.','public-route-note'));
+      for(const entry of formContacts){view.mailScope.append(n('p',(W().routes().find(route=>route.id===entry.preview.routeId)?.name||entry.preview.routeId)+': '+entry.mailContact+' — one receipt check after all selected forms finish, if this form has a qualifying submission result.','public-route-note'));
+        if(entry.preview.routeId==='fastpeoplesearch')view.mailScope.append(n('p','If its authenticated confirmation is ready, open the official matching form using only the first name, last name and removal contact displayed above. No additional identity fields are filled or submitted.','public-route-note'));
+      }
       view.mailOnce.disabled=view.running||!view.pendingMail.some(entry=>entry.select.checked);
     }
   }
@@ -92,6 +94,7 @@
       (!entry.continuationIdentity||['first_name','last_name'].every(key=>item.input_fields?.[key]===entry.continuationIdentity[key]));
   }
   function reviewedContinuation(item){
+    if(item.site_id==='fastpeoplesearch'&&['first_name','last_name'].every(key=>typeof item.input_fields?.[key]==='string'&&item.input_fields[key].trim()))return {};
     const fields=item.continuation_fields;
     return item.site_id==='usphonebook'&&['first_name','last_name'].every(key=>typeof item.input_fields?.[key]==='string'&&item.input_fields[key].trim())&&fields&&Object.keys(fields).length===3&&['city','state','zip_code'].every(key=>typeof fields[key]==='string')&&
       fields.city.trim()&&fields.city.length<=120&&!/[\r\n\x00<>]/.test(fields.city)&&/^[A-Z]{2}$/.test(fields.state)&&/^\d{5}$/.test(fields.zip_code)?{...fields}:null;
@@ -290,7 +293,7 @@
       const continuationFields=reviewedContinuation(item);
       const continuationIdentity=continuationFields?{first_name:item.input_fields.first_name,last_name:item.input_fields.last_name,email:item.mail_contact.contact_email}:null;
       if(continuationFields){
-        section.append(n('p','If its authenticated confirmation is ready, use only these reviewed confirmation fields. The broker can still require additional identity steps.','public-route-note'));
+        section.append(n('p',route.id==='fastpeoplesearch'?'If its authenticated confirmation is ready, open the official matching form using only these original name and removal-contact fields. No additional identity fields are filled or submitted.':'If its authenticated confirmation is ready, use only these reviewed confirmation fields. The broker can still require additional identity steps.','public-route-note'));
         const fields=n('dl',null,'form-batch-fields');for(const [key,value]of Object.entries({...continuationIdentity,...continuationFields}))fields.append(n('dt',key.replace(/_/g,' ')),n('dd',value));section.append(fields);
       }
       view.pendingMail.push({routeId:route.id,name:route.name,operationId:item.operation_id,profileId:dashboard.profile.id,mailContact:item.mail_contact.contact_email,continuationFields,continuationIdentity,select});view.mailList.append(section);
@@ -362,7 +365,7 @@
     }));
     if(M())box.append(button('Check removal-mail availability',async()=>{
       mailStatus=await M().status();changed();
-      feedback(mailStatus.enabled?'The removal-mail relay is available as a private operator pilot. It checks receipts on demand. Reviewed USPhonebook confirmations can open its second form after you review the required fields.':mailStatus.configured?'The dedicated mailbox is configured, but the private pilot is disabled. Personal inboxes stay disconnected.':'The dedicated removal mailbox is not connected. Use the broker’s own email steps. Personal inboxes stay disconnected.');
+      feedback(mailStatus.enabled?'The removal-mail relay is available as a private operator pilot. It checks receipts on demand. Reviewed USPhonebook and FastPeopleSearch confirmations can open their matching forms under the displayed approval. Required identity details and final broker steps remain outstanding.':mailStatus.configured?'The dedicated mailbox is configured, but the private pilot is disabled. Personal inboxes stay disconnected.':'The dedicated removal mailbox is not connected. Use the broker’s own email steps. Personal inboxes stay disconnected.');
     }),n('p',S()?'Optional removal-mail checks are a gated operator pilot using a separate account. A private key is held only for the session you approve. Checks make one pass; they never run on a schedule. Only displayed, reviewed confirmation fields can continue automatically.':'Optional removal-mail checks are a gated operator pilot. They use a separate account, require a private key for each action and never run on a schedule. Each reviewed confirmation needs an explicit continuation.','public-route-note'));
   }
   function mailControls(route,item){
@@ -370,7 +373,7 @@
     if(item.held)return n('p','Removal-mail actions are on hold for this route. Existing receipt history stays available; explicitly resume before any new mailbox action.','public-route-note');
     if(route.id==='searchpeoplefree'&&!item.mail_contact)return n('p','SearchPeopleFree requires an email you own. It uses your typed email; a shared removal contact is not offered.','public-route-note');
     const panel=n('details',null,'public-mail-pilot');panel.append(n('summary','Operator removal-mail pilot'));
-    panel.append(n('p','A removal contact sends broker mail to Erase Me’s shared, removal-only account. Its operator can read those broker messages. It is not an email address personally owned by you. Review the broker’s consent terms and use it only where an authorized contact address is accepted. Your personal inbox stays disconnected. A reviewed USPhonebook confirmation can open its second form only when you choose to continue.','public-route-note'));
+    panel.append(n('p','A removal contact sends broker mail to Erase Me’s shared, removal-only account. Its operator can read those broker messages. It is not an email address personally owned by you. Review the broker’s consent terms and use it only where an authorized contact address is accepted. Your personal inbox stays disconnected. A reviewed USPhonebook or FastPeopleSearch confirmation can open its matching form only under your displayed approval.','public-route-note'));
     const label=n('label','Private operator pilot key');const key=n('input');key.type='password';key.maxLength=64;key.autocomplete='off';key.setAttribute('aria-label',route.name+' private operator pilot key');label.append(key);panel.append(label);
     const takeKey=()=>{const value=key.value.trim();key.value='';if(!/^[a-fA-F0-9]{64}$/.test(value))throw new Error('Enter the private operator pilot key. It is cleared after each click and never saved.');return value;};
     if(!item.held&&newMailRoutes.has(route.id)&&!item.operation_id&&(!item.mail_contact||item.mail_contact.expires_at<=Math.floor(Date.now()/1000)))panel.append(button('Use removal-only contact email',async()=>{
@@ -381,8 +384,29 @@
     if(!item.held&&item.mail_contact&&item.operation_id)panel.append(button('Check confirmation email',async()=>{
       const pilotKey=takeKey();const request=await W().mailCheckRequest(route.id);
       const result=await M().check(request,pilotKey);await W().recordMailReceipt(route.id,result);changed();
-      feedback(result.status==='held'?(result.continuation_available?'An authenticated USPhonebook confirmation is ready. Review the required city, state and ZIP before choosing Continue broker form. No request acceptance or deletion has been established.':'An authenticated removal-related email is held for broker-route validation. No confirmation link was followed, and deletion remains unverified.'):'No qualifying email was found for this operation in this explicit check. No broker action was repeated.');
+      feedback(result.status==='held'?(result.continuation_available?route.id==='fastpeoplesearch'?'An authenticated FastPeopleSearch confirmation is ready. Review the original name and removal contact before opening its matching form. No request acceptance or deletion has been established.':'An authenticated USPhonebook confirmation is ready. Review the required city, state and ZIP before choosing Continue broker form. No request acceptance or deletion has been established.':'An authenticated removal-related email is held for broker-route validation. No confirmation link was followed, and deletion remains unverified.'):'No qualifying email was found for this operation in this explicit check. No broker action was repeated.');
     }));
+    if(!item.held&&route.id==='fastpeoplesearch'&&item.mail_receipt?.authenticated&&item.mail_receipt.continuation_available&&!item.continuation){
+      panel.append(n('p','Open only the authenticated FastPeopleSearch matching form. The companion checks the original first name, last name and removal contact already present there. It fills no date of birth, street address, phone or other identity details and does not submit the form. The broker requires date of birth or street address, plus location details, before final submission.','public-route-note'));
+      panel.append(n('p','First name: '+(item.input_fields?.first_name||'')+'. Last name: '+(item.input_fields?.last_name||'')+'. Removal contact: '+item.mail_contact.contact_email+'.','public-field-disclosure'));
+      const label=n('label','I reviewed the original name and removal contact and authorize opening this verified matching form.');const agreed=n('input');agreed.type='checkbox';agreed.setAttribute('aria-label',route.name+' '+label.textContent);label.append(agreed);panel.append(label);
+      panel.append(button('Open verified matching form',async()=>{
+        if(!agreed.checked)throw new Error('Review the original name and removal contact before opening this matching form.');
+        const expected={routeId:route.id,profileId:W().profile().id,operationId:item.operation_id,mailContact:item.mail_contact.contact_email,
+          continuationIdentity:{first_name:item.input_fields?.first_name,last_name:item.input_fields?.last_name}};
+        const current=()=>{if(!reviewedMailContext(expected))throw new Error('The reviewed workspace or contact changed. No further confirmation action started.');};
+        let pilotKey=takeKey();
+        try{
+          current();const ping=await companion({action:'ping'});current();
+          if(!ping.routes?.includes(route.id)||!ping.capabilities?.includes('fastpeoplesearch-continuation-v1'))throw new Error('Update and enable the companion for FastPeopleSearch before opening this matching form.');
+          const request=await W().mailContinuationRequest(route.id,{});current();
+          const response=await M().continuation(request,pilotKey);current();
+          const operation=await W().prepareMailContinuation(route.id,response,{});changed();
+          let result;try{result=await companion({action:'continue',...operation});}catch(_){result={status:'unknown',detail:'The matching-form outcome is unknown. Check its existing tab; no replay will be sent.'};}
+          await W().recordMailContinuation(route.id,operation.operationId,result);changed();feedback(result.detail||'Matching-form outcome recorded. Request acceptance and deletion remain unverified.');
+        }finally{pilotKey='';}
+      }));
+    }
     if(!item.held&&route.id==='usphonebook'&&item.mail_receipt?.authenticated&&item.mail_receipt.continuation_available&&!item.continuation){
       panel.append(n('p','Review the fields the companion will fill on the broker’s second form. USPhonebook also requires either date of birth or street address: enter one directly on its official form. Erase Me does not collect or autofill those details. Then review the broker’s accuracy statement, complete any challenge and submit there.','public-route-note'));
       const profile=W().profile(),inputs={};

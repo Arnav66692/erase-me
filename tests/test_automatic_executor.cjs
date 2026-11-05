@@ -101,6 +101,34 @@ function page(routeId = 'fastpeoplesearch') {
   return { env, payload, form, button, controls, selection, label, consent, token, answer, image, policy, add, all, body, events, normal, clicks: () => clicks, sent: () => nativeSubmissions };
 }
 
+function readinessClock(p) {
+  const timers = new Map(), documentListeners = new Map(), windowListeners = new Map(), observers = [];
+  let timerId = 0;
+  const listen = (target, type, callback, capture) => { assert.equal(capture, true); if (!target.has(type)) target.set(type, new Set()); target.get(type).add(callback); };
+  const unlisten = (target, type, callback, capture) => { assert.equal(capture, true); target.get(type)?.delete(callback); };
+  p.env.document.addEventListener = (type, callback, capture) => listen(documentListeners, type, callback, capture);
+  p.env.document.removeEventListener = (type, callback, capture) => unlisten(documentListeners, type, callback, capture);
+  p.env.addEventListener = (type, callback, capture) => listen(windowListeners, type, callback, capture);
+  p.env.removeEventListener = (type, callback, capture) => unlisten(windowListeners, type, callback, capture);
+  p.env.MutationObserver = class {
+    constructor(callback) { this.callback = callback; this.disconnected = false; observers.push(this); }
+    observe(target, options) { assert.equal(target, p.env.document); this.options = options; }
+    disconnect() { this.disconnected = true; }
+  };
+  p.env.setTimeout = (callback, milliseconds) => { const id = ++timerId; timers.set(id, { callback, milliseconds }); return id; };
+  p.env.clearTimeout = id => timers.delete(id);
+  p.env.setInterval = () => { throw new Error('A readiness wait must not poll.'); };
+  const fire = type => { for (const callback of [...(documentListeners.get(type) || [])]) callback({ type }); };
+  const mutate = () => { for (const observer of observers) if (!observer.disconnected) observer.callback([{ type: 'attributes' }]); };
+  const deadline = () => { assert.equal(timers.size, 1); [...timers.values()][0].callback(); };
+  const hidden = () => { for (const callback of [...(windowListeners.get('pagehide') || [])]) callback({ type: 'pagehide' }); };
+  const clean = () => {
+    assert.equal(timers.size, 0); assert.ok(observers.every(observer => observer.disconnected));
+    assert.ok([...documentListeners.values(), ...windowListeners.values()].every(listeners => listeners.size === 0));
+  };
+  return { timers, observers, documentListeners, windowListeners, fire, mutate, deadline, hidden, clean };
+}
+
 test('automatic contracts are frozen, narrowly scoped and distinguish initiation from request submission', () => {
   assert.equal(Object.isFrozen(Automatic.CONTRACTS), true);
   assert.deepEqual(Object.keys(Automatic.CONTRACTS), ['fastpeoplesearch', 'tr-numaraara']);
@@ -115,6 +143,106 @@ test('FPS requires the real broker response and never creates or alters a challe
   assert.equal(result.status, 'blocked'); assert.equal(result.reason, 'challenge_required');
   assert.equal(p.token.value, ''); assert.equal(p.consent.checked, false); assert.equal(p.clicks(), 0);
   p.token.value = 'site-issued-response'; assert.equal(Automatic.capture(p.payload, p.env).status, 'ready');
+});
+
+test('FPS readiness returns only a minimal ready state for an already-present genuine response without capturing or waiting', async () => {
+  const p = page(), clock = readinessClock(p), before = p.token.value;
+  assert.deepEqual(await Automatic.waitReady(p.payload, p.env), { status: 'ready' });
+  assert.equal(clock.observers.length, 0); clock.clean();
+  assert.equal(p.token.value, before); assert.equal(p.clicks(), 0); assert.equal(p.consent.checked, false);
+  assert.equal(Automatic.capture(p.payload, p.env).status, 'ready');
+});
+
+test('FPS readiness waits for a genuine value through DOM, input or change notifications and tears down every resource', async () => {
+  for (const notification of ['mutation', 'input', 'change']) {
+    const p = page(); p.token.value = ''; const clock = readinessClock(p), waiting = Automatic.waitReady(p.payload, p.env);
+    assert.equal(clock.observers.length, 1); assert.equal(clock.timers.size, 1);
+    assert.equal([...clock.timers.values()][0].milliseconds, 12000);
+    assert.deepEqual(clock.observers[0].options, { subtree: true, childList: true, attributes: true, characterData: true });
+    assert.equal(p.token.value, ''); assert.equal(p.clicks(), 0); assert.equal(p.consent.checked, false); assert.deepEqual(p.events, []);
+    p.token.value = 'broker-widget-produced-response';
+    if (notification === 'mutation') clock.mutate(); else clock.fire(notification);
+    const result = await waiting; assert.deepEqual(result, { status: 'ready' }); clock.clean();
+    assert.equal(p.token.value, 'broker-widget-produced-response'); assert.equal(JSON.stringify(result).includes('response'), false);
+    assert.equal(Automatic.capture(p.payload, p.env).status, 'ready'); assert.equal(p.clicks(), 0);
+  }
+});
+
+test('a single final readiness read catches a silent value-property write without a polling loop', async () => {
+  const p = page(); p.token.value = ''; const clock = readinessClock(p), waiting = Automatic.waitReady(p.payload, p.env);
+  p.token.value = 'silently-produced-response'; clock.deadline();
+  assert.deepEqual(await waiting, { status: 'ready' }); assert.equal(clock.observers.length, 1); clock.clean(); assert.equal(p.clicks(), 0);
+});
+
+test('readiness deadline with no actual response remains challenge_required and starts no capture or submission', async () => {
+  const p = page(); p.token.value = ''; const clock = readinessClock(p), waiting = Automatic.waitReady(p.payload, p.env);
+  clock.deadline(); const result = await waiting;
+  assert.equal(result.status, 'blocked'); assert.equal(result.reason, 'challenge_required'); clock.clean();
+  assert.equal(p.token.value, ''); assert.equal(p.consent.checked, false); assert.equal(p.clicks(), 0);
+  p.token.value = 'later-response'; assert.equal(Automatic.capture(p.payload, p.env).status, 'ready');
+});
+
+test('readiness validates all existing controls and exact approval before registering any observer', async () => {
+  const mutations = [p => { p.payload.autoSubmit = false; }, p => { p.payload.authorized = false; }, p => { p.payload.consentId = 'old'; },
+    p => { p.payload.operationId = 'bad'; }, p => { p.label.textContent += ' Extra agreement'; }, p => { p.form.action = 'https://evil.example/collect'; },
+    p => { p.controls.email.value = 'different@example.test'; }, p => { p.button.disabled = true; }, p => { p.selection.value = 'agent'; },
+    p => { p.token.type = 'text'; }, p => { p.token.disabled = true; }, p => { p.token.readOnly = true; },
+    p => { p.token.name = 'other-response'; }, p => { p.token.value = 'a'.repeat(16385); },
+    p => { p.add(new p.env.HTMLInputElement({ name: 'identity', type: 'file' })); },
+    p => { p.add(new p.env.HTMLInputElement({ name: 'additional', type: 'checkbox', required: true })); }];
+  for (const mutate of mutations) {
+    const p = page(); p.token.value = ''; const clock = readinessClock(p); mutate(p);
+    assert.equal((await Automatic.waitReady(p.payload, p.env)).status, 'blocked'); assert.equal(clock.observers.length, 0); clock.clean(); assert.equal(p.clicks(), 0);
+  }
+  const other = page('tr-numaraara'), clock = readinessClock(other);
+  assert.equal((await Automatic.waitReady(other.payload, other.env)).status, 'blocked'); assert.equal(clock.observers.length, 0); clock.clean();
+});
+
+test('readiness rechecks the original URL, form, fields, consent and widget identity at notifications and deadline', async () => {
+  const mutations = [p => { p.env.location.href += '?changed=1'; }, p => { p.env.document = { ...p.env.document }; },
+    p => { p.form.action += '?unexpected=1'; }, p => { p.label.textContent += ' Export consent.'; }, p => { p.selection.value = 'agent'; },
+    p => { p.consent.checked = true; }, p => { p.consent.value = 'changed'; }, p => { p.controls.email.value = 'other@example.test'; },
+    p => { p.controls.email.id = 'old-email'; const replacement = new p.env.HTMLInputElement({ id: 'email', name: 'email', type: 'email', required: true }); replacement.value = p.payload.fields.email; p.add(replacement); },
+    p => { p.token.name = 'old-response'; const replacement = new p.env.HTMLInputElement({ name: 'cf-turnstile-response', type: 'hidden' }); replacement.value = 'replacement-response'; p.add(replacement); },
+    p => { p.all.find(element => element.className === 'cf-turnstile').className = 'old-widget'; p.add({ tagName: 'DIV', className: 'cf-turnstile', getClientRects: () => [{}], style: { display: 'block', visibility: 'visible', opacity: '1' } }); },
+    p => { p.payload.fields.email = 'changed@example.test'; p.controls.email.value = p.payload.fields.email; }];
+  for (const finalRead of [false, true]) for (const mutate of mutations) {
+    const p = page(); p.token.value = ''; const originalDocument = p.env.document, clock = readinessClock(p), waiting = Automatic.waitReady(p.payload, p.env);
+    p.token.value = 'genuine-response'; mutate(p); if (finalRead) clock.deadline(); else clock.mutate();
+    const result = await waiting; assert.equal(result.status, 'blocked'); assert.equal(p.clicks(), 0); clock.clean();
+    p.env.document = originalDocument;
+  }
+});
+
+test('pagehide cancels pending readiness and late widget events cannot resume it', async () => {
+  const p = page(); p.token.value = ''; const clock = readinessClock(p), waiting = Automatic.waitReady(p.payload, p.env);
+  clock.hidden(); const result = await waiting;
+  assert.equal(result.status, 'blocked'); assert.equal(result.reason, 'changed_destination'); clock.clean();
+  p.token.value = 'late-response'; clock.mutate(); clock.fire('input'); assert.equal(await waiting, result); assert.equal(p.clicks(), 0);
+});
+
+test('concurrent identical readiness calls share one observer and differing approval cannot replace that wait', async () => {
+  const p = page(); p.token.value = ''; const clock = readinessClock(p), first = Automatic.waitReady(p.payload, p.env), second = Automatic.waitReady(p.payload, p.env);
+  assert.equal(first, second); assert.equal(clock.observers.length, 1); assert.equal(clock.timers.size, 1);
+  const invalid = await Automatic.waitReady({ ...p.payload, consentId: 'other' }, p.env);
+  assert.equal(invalid.status, 'blocked'); assert.equal(clock.observers.length, 1);
+  p.token.value = 'normal-response'; assert.equal(Automatic.waitReady(p.payload, p.env), first); clock.fire('change');
+  assert.deepEqual(await first, { status: 'ready' }); clock.clean();
+});
+
+test('missing observation APIs and registration exceptions fail closed with no leftover observers or timers', async () => {
+  const missing = page(); missing.token.value = ''; assert.equal((await Automatic.waitReady(missing.payload, missing.env)).reason, 'challenge_unavailable');
+  const p = page(); p.token.value = ''; const clock = readinessClock(p);
+  p.env.document.addEventListener = () => { throw new Error('private provider detail'); };
+  const result = await Automatic.waitReady(p.payload, p.env); assert.equal(result.reason, 'challenge_unavailable');
+  assert.equal(JSON.stringify(result).includes('private provider detail'), false); clock.clean(); assert.equal(p.clicks(), 0);
+});
+
+test('readiness cannot reopen an operation already captured for native submission', async () => {
+  const p = page(), clock = readinessClock(p);
+  assert.equal(Automatic.capture(p.payload, p.env).status, 'ready'); p.token.value = '';
+  assert.equal((await Automatic.waitReady(p.payload, p.env)).reason, 'already_captured');
+  assert.equal(clock.observers.length, 0); clock.clean(); assert.equal(p.clicks(), 0);
 });
 
 test('FPS submits exactly once after safe native submission and keeps acceptance unverified', () => {
@@ -271,4 +399,13 @@ test('new module injection in the same document preserves the one-shot journal',
   assert.equal(first.capture(p.payload, context).status, 'ready'); assert.equal(first.submit(p.payload, context).status, 'submission_attempted');
   vm.runInNewContext(source, context); assert.equal(context.EraseAutomaticExecutor, first);
   context.EraseAutomaticExecutor.submit(p.payload, context); assert.equal(p.clicks(), 1);
+});
+
+test('a stale v1 API is replaced on injection so readiness is available, then v2 reinjection remains stable', () => {
+  const fs = require('node:fs'), vm = require('node:vm'), p = page();
+  const source = fs.readFileSync(require.resolve('../extension/automatic-executor.js'), 'utf8');
+  const context = { ...p.env, EraseBrokerExecutor: Base, EraseAutomaticExecutor: { version: 'automatic-executor-v1' }, URL, Map, WeakMap, Object, JSON, Set };
+  vm.runInNewContext(source, context); const upgraded = context.EraseAutomaticExecutor;
+  assert.equal(upgraded.version, 'automatic-executor-v2'); assert.equal(typeof upgraded.waitReady, 'function');
+  vm.runInNewContext(source, context); assert.equal(context.EraseAutomaticExecutor, upgraded);
 });

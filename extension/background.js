@@ -49,6 +49,12 @@ async function automaticSubmit(payload,tabId,documentId,chromeApi){
   const target={tabId,documentIds:[documentId]};
   const [installed]=await chromeApi.scripting.executeScript({target,files:['automatic-executor.js']});
   if(installed?.documentId!==documentId)return unknown('The broker tab changed before submission. No repeat was sent.');
+  if(payload.routeId==='fastpeoplesearch'){
+    const [readiness]=await chromeApi.scripting.executeScript({target,func:value=>globalThis.EraseAutomaticExecutor.waitReady(value),args:[payload]});
+    if(readiness?.documentId!==documentId)return unknown('The broker document changed while its security widget was loading. No submit was attempted.');
+    if(readiness.result?.status==='blocked')return {status:'blocked',detail:String(readiness.result.detail||'The broker security check still needs attention.').slice(0,600)};
+    if(readiness.result?.status!=='ready')return unknown('The broker security response could not be validated. No submit was attempted.');
+  }
   const [capture]=await chromeApi.scripting.executeScript({target,func:value=>globalThis.EraseAutomaticExecutor.capture(value),args:[payload]});
   if(capture?.documentId!==documentId)return unknown();
   const challenge=capture.result;
@@ -176,7 +182,7 @@ async function dispatch(message,sender,chromeApi=chrome){
   if(message.action==='ping'){
     const routes=[];
     for(const [routeId,route] of Object.entries(EXEC.ROUTES))if(await chromeApi.permissions.contains({origins:['https://'+route.host+'/*']}))routes.push(routeId);
-    return {status:'connected',version:'0.5.0',routes,capabilities:['usphonebook-continuation-v1','explicit-fields-v1','structured-fields-v1','broker-observation-v1','automatic-submit-v1','structured-record-match-v1']};
+    return {status:'connected',version:'0.6.0',routes,capabilities:['usphonebook-continuation-v1','fastpeoplesearch-continuation-v1','explicit-fields-v1','structured-fields-v1','broker-observation-v1','automatic-submit-v1','structured-record-match-v1']};
   }
   if(message.action==='helper-status')return helperStatus(chromeApi);
   if(!id(message.operationId)||!EXEC.ROUTES[message.routeId])throw new Error('Unsupported operation.');
@@ -200,6 +206,7 @@ async function dispatch(message,sender,chromeApi=chrome){
     record.tabId=tab.id;await chromeApi.storage.local.set({[key]:record});
     await settled(chromeApi,tab.id);
     const [installed]=await chromeApi.scripting.executeScript({target:{tabId:tab.id},files:['broker-executor.js']});
+    if(continuation&&typeof installed?.documentId!=='string')throw new Error('The confirmation document cannot be pinned.');
     let observationNonce;
     if(!continuation&&OBSERVABLE.has(message.routeId)&&typeof installed?.documentId==='string'){
       const [baseline]=await chromeApi.scripting.executeScript({target:{tabId:tab.id,documentIds:[installed.documentId]},
@@ -224,6 +231,7 @@ async function dispatch(message,sender,chromeApi=chrome){
       {routeId:message.routeId,operationId:message.operationId,observationNonce,fields:message.fields,businessEmailConfirmed:message.businessEmailConfirmed,listingConfirmed:message.listingConfirmed,ownRequestConfirmed:message.ownRequestConfirmed};
     const [response]=await chromeApi.scripting.executeScript({target:{tabId:tab.id,...(typeof installed?.documentId==='string'?{documentIds:[installed.documentId]}:{})},
       func:(payload,continueForm)=>continueForm?globalThis.EraseBrokerExecutor.executeContinuation(payload):globalThis.EraseBrokerExecutor.execute(payload),args:[payload,continuation]});
+    if(continuation&&response?.documentId!==installed.documentId)throw new Error('The confirmation document changed.');
     let result=response?.result;
     if(!continuation&&message.autoSubmit===true&&result?.status==='prepared'){
       if(response?.documentId!==installed?.documentId)throw new Error('The broker document changed before submission.');

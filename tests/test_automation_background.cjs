@@ -6,7 +6,7 @@ const Auto = require('../extension/automatic-executor.js');
 
 const sender = { url: 'https://erase-me-preview.vercel.app/', tab: { id: 90 } };
 const listing = 'https://www.spokeo.com/Example-Person/Example-City/CA/p12345678';
-function fixture({ image = true, nativeAllowed = true, challengeBlocked = false, answer = 'Ab123', changedDocument = false, changedListing = false } = {}) {
+function fixture({ image = true, nativeAllowed = true, challengeBlocked = false, answer = 'Ab123', changedDocument = false, changedListing = false, waitResult={status:'ready'}, changedWaitDocument=false } = {}) {
   const records = {}, calls = [];
   let tabUrl = '', opens = 0;
   const api = {
@@ -21,6 +21,13 @@ function fixture({ image = true, nativeAllowed = true, challengeBlocked = false,
     scripting: { executeScript: async spec => {
       if (spec.files) { calls.push({ kind: 'install', files: spec.files }); return [{ documentId: 'owned-document' }]; }
       const text = spec.func.toString();
+      if(text.includes('EraseAutomaticExecutor.waitReady')){
+        calls.push({kind:'wait'});
+        assert.equal(records['operation:'+'a'.repeat(32)]?.result.status,'unknown','Journal must precede readiness observation');
+        assert.deepEqual(spec.target.documentIds,['owned-document']);
+        assert.equal(spec.args[0].consentId,Auto.CONTRACTS.fastpeoplesearch.id);
+        return [{documentId:changedWaitDocument?'changed-document':'owned-document',result:waitResult}];
+      }
       if (text.includes('EraseAutomaticExecutor.capture')) {
         calls.push({ kind: 'capture' });
         assert.deepEqual(spec.target.documentIds, ['owned-document']);
@@ -74,6 +81,24 @@ test('a ready reviewed form needs no native recognizer', async () => {
   const result = await Background.dispatch(message('fastpeoplesearch'), sender, f.api);
   assert.equal(result.status, 'submission_attempted');
   assert.equal(f.calls.some(call => call.kind === 'native'), false);
+  assert.equal(f.calls.filter(call=>call.kind==='wait').length,1);
+  assert.ok(f.calls.findIndex(call=>call.kind==='wait')<f.calls.findIndex(call=>call.kind==='capture'));
+});
+
+test('unready, invalid and changed readiness documents stop before capture, recognition or submission',async()=>{
+  for(const options of [{waitResult:{status:'blocked',detail:'The actual widget response did not arrive.'}},{waitResult:{status:'unknown'}},{changedWaitDocument:true}]){
+    const f=fixture(options),request=message('fastpeoplesearch');
+    const result=await Background.dispatch(request,sender,f.api);
+    assert.ok(['blocked','unknown'].includes(result.status));
+    assert.equal(f.calls.filter(call=>['capture','submit','native'].includes(call.kind)).length,0);
+    await Background.dispatch(request,sender,f.api);
+    assert.equal(f.calls.filter(call=>call.kind==='wait').length,1);assert.equal(f.opens(),1);
+  }
+});
+
+test('image recognition does not invoke the managed-widget readiness path',async()=>{
+  const f=fixture();await Background.dispatch(message(),sender,f.api);
+  assert.equal(f.calls.filter(call=>call.kind==='wait').length,0);
 });
 
 test('recognizer permission denial, invalid answer or changed document prevents submission', async () => {

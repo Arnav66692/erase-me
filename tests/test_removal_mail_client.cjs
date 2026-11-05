@@ -93,3 +93,18 @@ test('explicit continuation accepts only the reviewed destination and keeps prof
   await assert.rejects(()=>fixture({...value,receipt_ref:'a'.repeat(64)}).client.continuation(body,KEY),/could not be validated/);
   const rejected=fixture(value);await assert.rejects(()=>rejected.client.continuation({...body,zip_code:'12345'},KEY));assert.equal(rejected.calls.length,0);
 });
+
+const FPS_URL='https://www.fastpeoplesearch.com/optout/removal?'+new URLSearchParams({firstname:'Example',middlename:'',lastname:'Person',email:'erase+erase-'+REQUEST+'@gmail.com',ticketid:'12345678'});
+test('FastPeopleSearch releases only its reviewed matching URL while checks remain metadata-only',async()=>{
+  const receipt={...HELD,route_id:'fastpeoplesearch',continuation_available:true};
+  assert.deepEqual(await fixture(receipt).client.check({capability:CAPABILITY,explicit:true},KEY),receipt);
+  const value={status:'confirmation_ready',route_id:'fastpeoplesearch',operation_id:OPERATION,request_id:REQUEST,receipt_ref:HELD.receipt_ref,confirmation_url:FPS_URL,automatic_execution:false};
+  const body={capability:CAPABILITY,explicit:true,receipt_ref:HELD.receipt_ref},f=fixture(value);
+  assert.deepEqual(await f.client.continuation(body,KEY),value);
+  assert.deepEqual(JSON.parse(f.calls[0].options.body),body);assert.equal(f.calls[0].options.body.includes('firstname'),false);
+  for(const url of [FPS_URL.replace('www.fastpeoplesearch.com','evil.example'),FPS_URL.replace('/optout/removal','/login'),FPS_URL+'&email=other%40example.test',FPS_URL+'&redirect=https%3A%2F%2Fevil.example',FPS_URL.replace('middlename=','middlename=Middle'),FPS_URL.replace('firstname=Example','firstname=%00Example'),FPS_URL.replace('ticketid=12345678','ticketid=x'),FPS_URL.replace('/optout/removal','/optout/%72emoval'),FPS_URL.replace('/optout/removal','/optout/../optout/removal'),FPS_URL+'#private',FPS_URL.replace('https:','http:')]){
+    await assert.rejects(()=>fixture({...value,confirmation_url:url}).client.continuation(body,KEY),/could not be validated/);
+  }
+  await assert.rejects(()=>fixture({...value,route_id:'usphonebook'}).client.continuation(body,KEY));
+  await assert.rejects(()=>fixture({...HELD,route_id:'searchpeoplefree',continuation_available:true}).client.check({capability:CAPABILITY,explicit:true},KEY));
+});

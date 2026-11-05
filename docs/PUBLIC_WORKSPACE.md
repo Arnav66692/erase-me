@@ -16,7 +16,7 @@ submit forms. The person starts an individual broker action or authorizes a revi
 batch with its displayed fields.
 There are no recurring checks, background alarms, inbox polls or automatic resubmissions.
 
-Companion 0.5.0 can initiate People Data Labs email verification and prefill the initial
+Companion 0.6.0 can initiate People Data Labs email verification and prefill the initial
 USPhonebook, SearchPeopleFree, FastPeopleSearch, Apollo, Spokeo, AdvancedBackgroundChecks
 and four reviewed Turkish request forms. Optional guarded submission applies only to
 FastPeopleSearch's initial verification form and NumaraAra's request form. The review
@@ -27,8 +27,10 @@ or deletion. Other forms retain their existing manual submission steps.
 NumaraAra's one reviewed image challenge can use a separately installed free local
 helper. Managed challenges still require the site's real accepted response. The private
 mail pilot can prepare USPhonebook's reviewed second form after an authorized receipt
-check and field review; missing identity details, its final accuracy statement, CAPTCHA
-and final submission remain user steps. Other confirmation destinations remain held.
+check and field review, or open and check FastPeopleSearch's reviewed matching form.
+FastPeopleSearch uses only the names and contact already approved in its initial form;
+additional identity details remain untouched. Missing identity details, final accuracy
+statements, challenges and final submissions remain user steps. Other destinations remain held.
 ID uploads are excluded, and the held USPhonebook pilot stays held.
 
 Only a correlated companion result with fresh, visible broker acceptance evidence may
@@ -83,6 +85,18 @@ stops it. NumaraAra can use one local OCR attempt on the reviewed five-character
 FastPeopleSearch needs its real Turnstile response. No token is fabricated. A checked
 native form event records `submission_attempted`. Broker acceptance needs separate
 fresh evidence; this release has no new accepted-request or deletion contract.
+
+Companion 0.6.0 waits up to 12 seconds for FastPeopleSearch's normal widget response
+instead of treating an initially empty response as a final failure. It first validates
+the approved form and pins the original document, URL, controls, field values and
+agreement. DOM changes and input/change events trigger another validation; one
+foreground deadline also performs a final read. Navigation, a `pagehide` event,
+changed controls or an unresolved response stop the action. The wait uses no polling,
+recurring timer, challenge click, vendor-token manufacture or extra host permission.
+The response stays in the broker document, and the existing guarded capture/submission
+checks still apply after readiness. The separate approved removal-mail pass can now
+open the exact FastPeopleSearch matching-form link; record matching and final erasure
+acceptance are separate stages.
 
 The review binds each selected route to its current workspace identity, country, stable
 operation reference, exact effective email, other approved fields and route affirmations.
@@ -265,9 +279,18 @@ not grant relay access without the operator key.
 
 An explicit `/check` returns pending or authenticated held metadata without a message body
 or confirmation URL. USPhonebook's exact official `/removal/validate-record-info` route is
-the sole reviewed continuation. An authorized `/continue` re-reads and authenticates
+one reviewed continuation; FastPeopleSearch's exact `/optout/removal` destination is
+also supported. An authorized `/continue` re-reads and authenticates
 the same correlated receipt, then returns that form URL transiently to the browser. Other
 links remain held. The URL never enters workspace history or private backups.
+
+FastPeopleSearch confirmation URLs contain the original first/last names, empty middle
+name, dedicated contact and ticket reference. The core checks those values against the
+bound initial operation before journaling and navigation. The companion checks the
+matching form's original prefilled fields without reading or filling further identity
+values. This step requires no new disclosure fields; its review is an empty object.
+The official form still needs a full date of birth or street address plus location
+details for final matching and submission. Personal inboxes remain disconnected.
 
 The batch can opt into one final removal-mail pass after all selected form outcomes
 are saved. Only qualifying verification-initiation or guarded submission-attempt operations

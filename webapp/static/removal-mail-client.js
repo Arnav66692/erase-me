@@ -14,9 +14,17 @@
     return value && typeof value === 'object' && !Array.isArray(value) &&
       Object.keys(value).length === keys.length && keys.every(key => Object.hasOwn(value, key));
   }
-  function continuationURL(value) {
+  function continuationURL(value, routeId = 'usphonebook') {
     try {
       if (typeof value !== 'string' || value.length > 2048 || /\s/.test(value)) return false;
+      if(routeId==='fastpeoplesearch'){
+        if(!value.startsWith('https://www.fastpeoplesearch.com/optout/removal?')||/[\\\x00-\x1f\x7f]/.test(value)||/%(?![0-9a-f]{2})/i.test(value))return false;
+        const u=new URL(value),keys=['firstname','middlename','lastname','email','ticketid'];
+        if(u.username||u.password||u.port||u.hash||u.pathname!=='/optout/removal'||[...u.searchParams].length!==5||keys.some(key=>u.searchParams.getAll(key).length!==1))return false;
+        return ['firstname','lastname'].every(key=>{const name=u.searchParams.get(key);return name&&name===name.trim()&&name.length<=120&&!/[<>\x00-\x1f\x7f\ufffd]/.test(name);})&&
+          u.searchParams.get('middlename')===''&&/^[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+$/.test(u.searchParams.get('email'))&&/^[0-9]{1,32}$/.test(u.searchParams.get('ticketid'));
+      }
+      if(routeId!=='usphonebook')return false;
       const u = new URL(value), entries = [...u.searchParams], key = u.searchParams.get('key');
       return u.protocol === 'https:' && u.hostname === 'www.usphonebook.com' && !u.port && !u.username && !u.password && !u.hash &&
         u.pathname === '/removal/validate-record-info' && entries.length === 2 && u.searchParams.getAll('key').length === 1 &&
@@ -86,7 +94,7 @@
           typeof value.operation_id !== 'string' || !OPERATION.test(value.operation_id) || !/^[a-f0-9]{32}$/.test(value.request_id) || value.automatic_execution !== false ||
           (value.status === 'held' && (value.authenticated !== true || !['route_validation_required', 'confirmation_link_unvalidated'].includes(value.reason) ||
             !Number.isSafeInteger(value.received_at) || !/^[a-f0-9]{64}$/.test(value.receipt_ref) || typeof value.continuation_available !== 'boolean' ||
-            (value.continuation_available && value.route_id !== 'usphonebook')))) throw new Error('The dedicated mailbox returned an invalid receipt.');
+            (value.continuation_available && !['usphonebook','fastpeoplesearch'].includes(value.route_id))))) throw new Error('The dedicated mailbox returned an invalid receipt.');
       return value;
     }
     async function continuation(body, pilotKey) {
@@ -94,9 +102,9 @@
           body.explicit !== true || !/^[a-f0-9]{64}$/.test(body.receipt_ref)) throw new Error('Choose a verified confirmation for this operation.');
       const value = await request('continue', body, pilotKey);
       if (!object(value, ['status', 'request_id', 'route_id', 'operation_id', 'receipt_ref', 'confirmation_url', 'automatic_execution']) ||
-          value.status !== 'confirmation_ready' || value.route_id !== 'usphonebook' || value.receipt_ref !== body.receipt_ref ||
+          value.status !== 'confirmation_ready' || !['usphonebook','fastpeoplesearch'].includes(value.route_id) || value.receipt_ref !== body.receipt_ref ||
           typeof value.operation_id !== 'string' || !OPERATION.test(value.operation_id) || !/^[a-f0-9]{32}$/.test(value.request_id) ||
-          value.automatic_execution !== false || !continuationURL(value.confirmation_url)) throw new Error('The broker confirmation could not be validated.');
+          value.automatic_execution !== false || !continuationURL(value.confirmation_url,value.route_id)) throw new Error('The broker confirmation could not be validated.');
       return value;
     }
     return Object.freeze({ status, session, check, continuation });

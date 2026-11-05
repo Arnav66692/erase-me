@@ -9,7 +9,7 @@ Tools for finding and requesting removal of your own personal information from d
 
 Erase Me combines a browser workspace, a narrowly permissioned Chrome extension and an installable agent skill. It keeps a private record of the actions you authorize and separates form preparation, broker verification and removal evidence.
 
-**Current scope:** companion 0.5.0 supports 11 reviewed initial form actions, two optional guarded submissions and one local text-challenge route. Other challenges, identity checks and broker steps can still need attention. No independently verified broker deletion has been established by this release.
+**Current scope:** companion 0.6.0 supports 11 reviewed initial form actions, two optional guarded submissions and one local text-challenge route. Other challenges, identity checks and broker steps can still need attention. No independently verified broker deletion has been established by this release.
 
 ## Get started
 
@@ -27,6 +27,8 @@ For supported form filling, install the free [Chrome companion](https://erase-me
 To fill several forms, complete their required details and own-record confirmations, then choose **Review form batch**. Review the selected brokers and exact outgoing fields, authorize the batch once and choose **Fill selected forms**. The companion works through eligible forms one at a time while the page stays open. Held, already-started, incomplete and manual routes are excluded with reasons. **Stop after current form** leaves the remaining forms untouched. Closing or reloading does not resume a batch.
 
 The review also offers optional automation for FastPeopleSearch's initial verification form and NumaraAra's request form. Review their displayed agreements before enabling it. NumaraAra's text security code can use the free [local challenge helper](docs/LOCAL_CHALLENGE_HELPER.md). An observed submit event is recorded as an attempt; delivery and broker acceptance still require separate evidence.
+
+Companion 0.6.0 gives FastPeopleSearch's normal widget up to 12 seconds to supply its genuine challenge response while the approved action is open. It watches the original form rather than checking repeatedly or clicking a challenge. A changed form, navigation, expired wait or unresolved challenge stops the action. This does not bypass managed challenges or complete the broker's later email and record-selection steps.
 
 ### Agent skill
 
@@ -116,7 +118,9 @@ The batch review can prepare selected FastPeopleSearch and USPhonebook removal c
 
 For that open review, the key remains in memory so an optional mail pass can follow without another key entry. After every selected form outcome is saved, the pass checks qualifying bound operations once. A stopped queue, unknown outcome or failed result storage prevents the final pass. Closing or completing the review clears its key. Pending mail starts no future check; a separate authorized mail-only pass can check existing operations later.
 
-Only USPhonebook has a reviewed confirmation-form destination. It still requires additional identity details and final broker steps; the held pilot request stays held. FastPeopleSearch links remain held, SearchPeopleFree cannot issue new shared aliases, and People Data Labs and Apollo retain their record-associated email requirements. OAuth credentials and the operator key remain outside public assets and backups.
+USPhonebook and FastPeopleSearch have reviewed confirmation-form destinations. After authenticating the exact operation's mail again, the companion can open FastPeopleSearch's matching form and check its prefilled name and contact fields. It leaves date of birth, street address and other identity inputs untouched. The broker requires a full date of birth or street address before final submission. USPhonebook retains its reviewed prefill behavior; the held pilot request stays held. SearchPeopleFree cannot issue new shared aliases, and People Data Labs and Apollo retain their record-associated email requirements. OAuth credentials and the operator key remain outside public assets and backups.
+
+A November 5 authorized pilot submitted FastPeopleSearch's initial form in ordinary visible Chrome, received an authenticated email in the removal-only mailbox and opened its matching form. The run is awaiting the required identity detail. This establishes a real verification path, with no final removal acceptance or independently verified deletion yet.
 
 See [the relay contract and deployment limits](docs/AUTOMATIC_CONFIRMATIONS.md). The public workspace and unpacked companion need no paid service. Optional account and hosting quotas still apply.
 
@@ -166,4 +170,4 @@ Related work includes [unbroker](https://github.com/NousResearch/hermes-agent), 
 
 Privacy-law references are informational and may become outdated. Check their official sources. This software does not provide legal advice.
 
-*Documentation reviewed November 5, 2026. Capability counts describe companion 0.5.0.*
+*Documentation reviewed November 5, 2026. Capability counts describe companion 0.6.0.*

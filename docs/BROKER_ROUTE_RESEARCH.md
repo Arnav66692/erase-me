@@ -12,6 +12,14 @@ The latest Spokeo inspection returned HTTP 403. These source checks establish no
 new accepted request, live structured-record match or verified deletion. References
 to “today” in the original first-form notes refer to the November 4 inspection.
 
+A further November 5 check loaded the official FastPeopleSearch form with HTTP 200
+and the expected consent and controls. Its response field stayed empty in a separate
+headless browser. In an ordinary visible, isolated Chrome session, the normal
+Turnstile widget supplied a nonempty response automatically while the form remained
+blank. No challenge click, fabricated token, paid service, personal data entry or
+submission was used in those checks. This establishes normal widget readiness in
+that session, not request acceptance or deletion.
+
 ## Coverage is a sequence
 
 A supported prefill means the initial official form and controls were observed.
@@ -162,6 +170,11 @@ and change events. Do not call `form.submit()` to bypass site handlers.
   is `verification_initiation`, while the result remains `submission_attempted`
   until a separate fresh broker acknowledgment proves more.
 - Conditional agent identity fields must not be populated for self requests.
+- Companion 0.6.0 allows one event-driven foreground wait of at most 12 seconds for
+  the real widget response. The exact approved form is validated first and the
+  original document, destination, controls, values and agreement stay pinned.
+  Changes or navigation stop the wait. No polling or challenge click is introduced;
+  an unresolved managed challenge still needs attention.
 
 ### Spokeo
 
@@ -244,7 +257,7 @@ no newly observed server-acceptance or deletion contract.
 
 No fallback endpoint or selector was invented to work around these responses.
 
-## Version 0.5.0 execution boundaries
+## Version 0.6.0 execution boundaries
 
 `extension/automatic-executor.js` defines only two immutable submission contracts:
 FastPeopleSearch's [initial opt-out form](https://www.fastpeoplesearch.com/optout)
@@ -253,6 +266,15 @@ identifiers bind the November 5 review. The workspace displays the applicable
 agreements before automation is enabled; runtime checks require the same text,
 policy destination, purpose and controls. An earlier alert, additional unexpected
 field, changed challenge or changed document stops the action.
+
+The optional submission contracts were introduced in 0.5.0. Version 0.6.0 adds
+`waitReady()` for FastPeopleSearch before the existing capture/submission sequence.
+It observes DOM and input/change events on the original approved form, plus one
+12-second foreground deadline with a final response read. A `pagehide` event or
+changed document, URL, control, field value or agreement stops it. Observers and
+listeners are removed when the wait settles. It neither clicks a challenge nor
+returns its response token to the workspace, and creates no recurring work or
+additional vendor permissions.
 
 Each operation is consumed before the submit control is activated. No direct API
 request, `form.submit()` bypass, automatic retry or fabricated vendor token is used.
@@ -273,11 +295,35 @@ data, conflicts, ambiguity and blocked pages stay unresolved. No live matching
 result was established by the November 5 HTTP 403 response, and a match would still
 be distinct from submission or deletion.
 
-The dedicated-mail session checks existing scoped contacts once. It does not expand
-the relay's destination allowlist: only USPhonebook's previously reviewed second
-form can be released after reauthentication and field review. Its missing identity
-details and final broker steps remain outstanding, and the held pilot remains held.
-FastPeopleSearch confirmation links have no reviewed automatic destination contract.
+The dedicated-mail session checks existing scoped contacts once. USPhonebook's reviewed
+second form and FastPeopleSearch's exact matching-form link can be released after
+reauthentication and field review. Missing identity details and final broker steps
+remain outstanding, and the held USPhonebook pilot remains held.
+
+### November 5 authorized FastPeopleSearch verification pilot
+
+An ordinary visible Chrome session received a genuine Turnstile response and submitted
+the initial form once for the authorized subject, using a new removal-only contact.
+The resulting email passed the relay's exact recipient, official sender, timestamp and
+Gmail authentication checks. Its destination was exactly the official `/optout/removal`
+path with `firstname`, empty `middlename`, `lastname`, `email` and numeric `ticketid`.
+Plain-text and HTML destinations canonicalized to the same link after one entity decode.
+The link was opened once, after journaling the action outside the repository.
+
+The matching form is `form#optout-removal`, POST to the same origin and path with no
+query in its action. It contains prefilled first/last/contact fields and a hidden
+ticket reference. Date selectors are named `dobMonth`, `dobDay` and `dobYear`; the
+address, city, state, ZIP and phone controls use `streetAddress`, `city`, `state`,
+`zipcode` and `phone`. The page says date of birth is required when street address
+is absent, and vice versa. City, state and ZIP are required. Phone has no asterisk
+in its label despite initial HTML `required` attributes. The accuracy checkbox and
+normal Turnstile widget remain final broker steps.
+
+Companion 0.6.0 validates and reads this matching form after the authenticated link
+opens; it does not enter new identity details, certify accuracy or submit it. The
+live run is awaiting a full date of birth or street address. No final erasure request
+acceptance, correct-record match or independently verified deletion was established.
+No personal inbox or held USPhonebook action was accessed during this pilot.
 
 ## Implications for the public app
 

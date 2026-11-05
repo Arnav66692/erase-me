@@ -11,8 +11,8 @@ function fixture({held=false,status='held',continuation=true,fields=false,routeI
     prepareMailContinuation:async()=>{calls.push('reserve');return {routeId,operationId:item.operation_id,authorized:true};},recordMailContinuation:async()=>calls.push('record')};
   const mail={check:async(body,supplied)=>{assert.equal(supplied,key);calls.push('check');return {status,authenticated:status==='held',continuation_available:continuation};},
     continuation:async(body,supplied)=>{assert.equal(supplied,key);calls.push('release');return {confirmation_url:'https://www.usphonebook.com/reviewed-test-url'};}};
-  const companion=async payload=>{calls.push(payload.action);return payload.action==='ping'?{routes:[routeId],capabilities:['usphonebook-continuation-v1']}:{status:'prepared'};};
-  const session=Session.create({workspace,mail,companion,operatorKey:key,continuationFields:fields?{usphonebook:{city:'Example City',state:'CA',zip_code:'92101'}}:{}});
+  const companion=async payload=>{calls.push(payload.action);return payload.action==='ping'?{routes:[routeId],capabilities:[routeId+'-continuation-v1']}:{status:'prepared'};};
+  const session=Session.create({workspace,mail,companion,operatorKey:key,continuationFields:fields?{[routeId]:routeId==='fastpeoplesearch'?{}:{city:'Example City',state:'CA',zip_code:'92101'}}:{}});
   return {calls,item,state,workspace,mail,session};
 }
 test('held routes and paused campaigns never read removal mail',async()=>{
@@ -26,7 +26,7 @@ test('identity-email routes never substitute or access the removal mailbox',asyn
   const f=fixture({routeId:'apollo'});assert.equal((await f.session.process({routeId:'apollo'})).status,'not_applicable');assert.deepEqual(f.calls,[]);
 });
 test('unsupported email destinations stay held after an authenticated receipt',async()=>{
-  const f=fixture({routeId:'fastpeoplesearch'});assert.equal((await f.session.process({routeId:'fastpeoplesearch'})).status,'needs_broker_step');assert.deepEqual(f.calls,['request','check','receipt']);
+  const f=fixture({routeId:'searchpeoplefree',continuation:false});assert.equal((await f.session.process({routeId:'searchpeoplefree'})).status,'needs_broker_step');assert.deepEqual(f.calls,['request','check','receipt']);
 });
 test('a reviewed confirmation waits for required fields without releasing its link',async()=>{
   const f=fixture();assert.equal((await f.session.process({routeId:'usphonebook'})).status,'needs_detail');assert.equal(f.calls.includes('release'),false);
@@ -66,4 +66,21 @@ test('a workspace change during a mailbox await cannot attach a receipt or relea
   f.mail.check=async(...args)=>{const receipt=await check(...args);f.state.profile.id='another-profile';return receipt;};
   const result=await f.session.process({routeId:'usphonebook'});
   assert.equal(result.status,'unknown');assert.deepEqual(f.calls,['request','check']);
+});
+
+test('approved FPS continuation opens the matching form once without additional identity fields or acceptance',async()=>{
+  const f=fixture({fields:true,routeId:'fastpeoplesearch'}),result=await f.session.process({routeId:'fastpeoplesearch'});
+  assert.deepEqual(f.calls,['request','check','receipt','ping','continuation-request','release','reserve','continue','record']);
+  assert.equal(result.status,'needs_broker_step');assert.match(result.detail,/No additional identity fields were filled or submitted/);
+  await f.session.process({routeId:'fastpeoplesearch'});assert.equal(f.calls.filter(call=>call==='continue').length,1);
+});
+test('FPS must be selected for matching-form review and rejects additional identity fields at session setup',async()=>{
+  const f=fixture({routeId:'fastpeoplesearch'});
+  assert.equal((await f.session.process({routeId:'fastpeoplesearch'})).status,'needs_detail');assert.equal(f.calls.includes('release'),false);
+  for(const fields of [{city:'Example City'},{date_of_birth:'1990-01-01'},{street_address:'Example Street'},[],null])assert.throws(()=>Session.create({operatorKey:'a'.repeat(64),continuationFields:{fastpeoplesearch:fields}}),/supported confirmation fields/);
+});
+test('any profile change during a receipt await prevents FPS link release and attachment',async()=>{
+  const f=fixture({fields:true,routeId:'fastpeoplesearch'}),check=f.mail.check;
+  f.mail.check=async(...args)=>{const result=await check(...args);f.state.profile.city='Another City';return result;};
+  assert.equal((await f.session.process({routeId:'fastpeoplesearch'})).status,'unknown');assert.deepEqual(f.calls,['request','check']);
 });

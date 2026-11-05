@@ -2,7 +2,7 @@
 (function (root) {
   'use strict';
   // Reinjecting the file into the same isolated document must not reset its journal.
-  if (root.EraseAutomaticExecutor?.version === 'automatic-executor-v1') {
+  if (root.EraseAutomaticExecutor?.version === 'automatic-executor-v2') {
     if (typeof module !== 'undefined') module.exports = root.EraseAutomaticExecutor;
     return;
   }
@@ -14,7 +14,7 @@
       consentText: "Kişisel Verilerin Korunması Kanunu uyarınca gerçekleştirilen ilgili Bilgilendirme'yi okudum ve kabul ediyorum.",
       policyUrl: 'https://www.numaraara.com/kvkk-aydinlatma-metni' })
   });
-  const documents = new WeakMap(), MAX_MEDIA = 512 * 1024;
+  const documents = new WeakMap(), pendingReadiness = new WeakMap(), MAX_MEDIA = 512 * 1024, READINESS_TIMEOUT_MS = 12000;
   const normal = value => String(value || '').replace(/\s+/g, ' ').trim();
   const blocked = (reason, detail = 'The reviewed form changed. No automatic submission was performed.') => ({ status: 'blocked', reason, detail });
   function reject(reason) { const error = new Error(reason); error.reason = reason; throw error; }
@@ -38,7 +38,7 @@
       fields: Object.entries(payload.fields).sort(([a], [b]) => a.localeCompare(b)),
       ownRequestConfirmed: payload.ownRequestConfirmed === true });
   }
-  function inspect(payload, env) {
+  function inspect(payload, env, allowPendingToken = false) {
     const contract = CONTRACTS[payload?.routeId], doc = env.document;
     if (!BASE || !contract || payload.autoSubmit !== true || payload.authorized !== true || payload.consentId !== contract.id ||
         !/^[a-f0-9-]{32,40}$/.test(payload.operationId || '')) reject('approval_required');
@@ -80,9 +80,9 @@
       imageSource(facts.image, env);
     } else {
       facts.token = one(doc, '#optout-start input[name="cf-turnstile-response"]');
-      if (facts.token.form !== form || facts.token.type !== 'hidden' || typeof facts.token.value !== 'string' || facts.token.value.length > 16384) reject('changed_challenge');
-      if (!facts.token.value.trim()) reject('challenge_required');
-      if (![...doc.querySelectorAll('#optout-start .cf-turnstile')].some(e => visible(e, env))) reject('changed_challenge');
+      facts.widget = one(doc, '#optout-start .cf-turnstile');
+      if (facts.token.form !== form || facts.token.type !== 'hidden' || facts.token.disabled || facts.token.readOnly || typeof facts.token.value !== 'string' || facts.token.value.length > 16384 || !visible(facts.widget, env)) reject('changed_challenge');
+      if (!facts.token.value.trim() && !allowPendingToken) reject('challenge_required');
     }
     const approved = new Set([...controls, selection, checkbox, button, facts.answer, facts.token]);
     const hiddenNames = new Set(numara ? ['form.FormId', '__RequestVerificationToken', 'form.Kvkk'] : []);
@@ -93,6 +93,67 @@
       if (element.required && visible(element, env) || typeof element.value === 'string' && element.value.trim()) reject('additional_fields');
     }
     return facts;
+  }
+  function waitReady(payload, env = root) {
+    let record, doc, operationId;
+    try {
+      if (payload?.routeId !== 'fastpeoplesearch') reject('approval_required');
+      const fresh = inspect(payload, env, true);
+      doc = env.document; operationId = payload.operationId;
+      if (documents.get(doc)?.has(operationId)) reject('already_captured');
+      record = { ...fresh, signature: signature(payload), url: env.location.href,
+        initialConsent: fresh.checkbox.checked, checkboxValue: fresh.checkbox.value };
+      const previous = pendingReadiness.get(doc)?.get(operationId);
+      if (previous) return previous.signature === record.signature && previous.promise ? previous.promise : Promise.resolve(blocked('already_waiting'));
+      // This observes a response already produced by the normal broker widget;
+      // it does not consume the later one-shot capture or disclose its token.
+      if (fresh.token.value.trim()) return Promise.resolve({ status: 'ready' });
+      if (typeof env.MutationObserver !== 'function' || typeof env.setTimeout !== 'function' || typeof env.clearTimeout !== 'function' ||
+          typeof doc.addEventListener !== 'function' || typeof doc.removeEventListener !== 'function' ||
+          typeof env.addEventListener !== 'function' || typeof env.removeEventListener !== 'function') reject('challenge_unavailable');
+    } catch (error) { return Promise.resolve(blocked(error.reason || 'changed_form')); }
+    let waiting = pendingReadiness.get(doc);
+    if (!waiting) { waiting = new Map(); pendingReadiness.set(doc, waiting); }
+    const entry = { signature: record.signature };
+    waiting.set(operationId, entry);
+    entry.promise = new Promise(resolve => {
+      let finished = false, observer, timeout;
+      const finish = result => {
+        if (finished) return;
+        finished = true;
+        try { observer?.disconnect(); } catch (_) {}
+        try { if (timeout !== undefined) env.clearTimeout(timeout); } catch (_) {}
+        for (const event of ['input', 'change']) { try { doc.removeEventListener(event, changed, true); } catch (_) {} }
+        try { env.removeEventListener('pagehide', pageHidden, true); } catch (_) {}
+        if (waiting.get(operationId) === entry) waiting.delete(operationId);
+        resolve(result);
+      };
+      const check = finalRead => {
+        if (finished) return;
+        try {
+          if (env.document !== doc || env.location.href !== record.url || signature(payload) !== record.signature) reject('changed_form');
+          const fresh = inspect(payload, env, true);
+          if (['form', 'selection', 'checkbox', 'label', 'button', 'token', 'widget'].some(key => record[key] !== fresh[key]) ||
+              record.controls.length !== fresh.controls.length || record.controls.some((element, index) => element !== fresh.controls[index]) ||
+              fresh.checkbox.checked !== record.initialConsent || fresh.checkbox.value !== record.checkboxValue) reject('changed_form');
+          if (fresh.token.value.trim()) finish({ status: 'ready' });
+          else if (finalRead) finish(blocked('challenge_required', 'The broker still requires its actual challenge response. No token was created or submission attempted.'));
+        } catch (error) { finish(blocked(error.reason || 'changed_form')); }
+      };
+      const changed = () => check(false);
+      const pageHidden = () => finish(blocked('changed_destination', 'The broker page was left before its normal challenge was ready. No submission was attempted.'));
+      try {
+        observer = new env.MutationObserver(changed);
+        observer.observe(doc, { subtree: true, childList: true, attributes: true, characterData: true });
+        for (const event of ['input', 'change']) doc.addEventListener(event, changed, true);
+        env.addEventListener('pagehide', pageHidden, true);
+        // One foreground deadline, with a final read for value-property writes
+        // that emit no DOM mutation or input/change event. No polling is started.
+        timeout = env.setTimeout(() => check(true), READINESS_TIMEOUT_MS);
+        check(false);
+      } catch (_) { finish(blocked('challenge_unavailable')); }
+    });
+    return entry.promise;
   }
   function imageSource(image, env) {
     if (!visible(image, env) || !image.complete || image.naturalWidth !== 130 || image.naturalHeight !== 40) reject('changed_challenge');
@@ -116,7 +177,7 @@
     return { source, media };
   }
   function same(record, fresh, payload, env, consent, answer) {
-    if (record.signature !== signature(payload) || ['form', 'selection', 'checkbox', 'label', 'button', 'image', 'answer', 'token'].some(key => record[key] !== fresh[key]) ||
+    if (record.signature !== signature(payload) || ['form', 'selection', 'checkbox', 'label', 'button', 'image', 'answer', 'token', 'widget'].some(key => record[key] !== fresh[key]) ||
         record.controls.length !== fresh.controls.length || record.controls.some((element, index) => element !== fresh.controls[index]) ||
         fresh.checkbox.checked !== consent || fresh.checkbox.value !== record.checkboxValue) reject('changed_form');
     if (fresh.token && fresh.token.value !== record.tokenValue) reject('changed_challenge');
@@ -194,7 +255,7 @@
     }
     return result;
   }
-  const api = Object.freeze({ version: 'automatic-executor-v1', CONTRACTS, capture, submit });
+  const api = Object.freeze({ version: 'automatic-executor-v2', CONTRACTS, waitReady, capture, submit });
   root.EraseAutomaticExecutor = api;
   if (typeof module !== 'undefined') module.exports = api;
 })(typeof globalThis === 'object' ? globalThis : this);

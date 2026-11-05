@@ -45,7 +45,7 @@ for(const id of ['usphonebook','searchpeoplefree','fastpeoplesearch'])test(id+' 
 });
 function chromeMock(){
  const records={};let opens=0,executes=0,permission=true;
- return {records,count:()=>opens,deny:()=>{permission=false;},storage:{local:{async get(key){return JSON.parse(JSON.stringify({[key]:records[key]}));},async set(data){Object.assign(records,JSON.parse(JSON.stringify(data)));}}},permissions:{async contains(){await new Promise(r=>setImmediate(r));return permission;}},tabs:{async create(){opens++;return{id:opens,status:'complete'};},async get(){return{status:'complete'};}},scripting:{async executeScript(spec){executes++;return spec.files?[]:[{result:{status:'prepared',detail:'Fields filled.'}}];}}};
+ return {records,count:()=>opens,deny:()=>{permission=false;},storage:{local:{async get(key){return JSON.parse(JSON.stringify({[key]:records[key]}));},async set(data){Object.assign(records,JSON.parse(JSON.stringify(data)));}}},permissions:{async contains(){await new Promise(r=>setImmediate(r));return permission;}},tabs:{async create(){opens++;return{id:opens,status:'complete'};},async get(){return{status:'complete'};}},scripting:{async executeScript(spec){executes++;return spec.files?[{documentId:'owned-document'}]:[{documentId:'owned-document',result:{status:'prepared',detail:'Fields filled.'}}];}}};
 }
 const sender={url:'https://erase-me-preview.vercel.app/',tab:{id:5}};
 const message={type:'erase-me',action:'run',operationId:'a'.repeat(32),routeId:'usphonebook',fields:{email:'person@example.test',first_name:'Example',last_name:'Person'},authorized:true};

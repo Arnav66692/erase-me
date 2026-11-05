@@ -1,6 +1,6 @@
 # Local challenge helper
 
-Companion 0.5.0 can send NumaraAra's reviewed text-image challenge to a recognizer
+Companion 0.6.0 can send NumaraAra's reviewed text-image challenge to a recognizer
 running on the same computer. Tesseract supplies a candidate five-character answer;
 the browser checks the original image, controls, fields and consent again before
 attempting the approved submission. Recognition does not establish that the broker
@@ -17,7 +17,7 @@ Use a source checkout and Python 3.10 or newer. Install
 Homebrew installation can use `brew install tesseract`. Linux users can use their
 distribution's Tesseract package. The installer does not install dependencies.
 
-1. Download companion 0.5.0, replace the extracted extension files and reload it in
+1. Download companion 0.6.0, replace the extracted extension files and reload it in
    `chrome://extensions`. The eleven optional broker origins are unchanged.
 2. Copy this unpacked extension's ID from that page. It must contain exactly 32
    lowercase letters from `a` through `p`; it is not a password.
@@ -85,6 +85,14 @@ capability is not permission to fetch arbitrary audio or operate another vendor'
 widget. FastPeopleSearch submission needs the site's actual accepted Turnstile
 response. The helper does not manufacture vendor tokens or guarantee passage
 through managed challenges, image grids or bot walls.
+
+For FastPeopleSearch, companion 0.6.0 watches the original approved form for at most
+12 seconds while its normal widget completes. It validates the exact destination,
+form, controls, fields and agreement before waiting and keeps them pinned throughout.
+DOM or input changes trigger revalidation; navigation or a `pagehide` event stops the wait.
+There is one foreground deadline, with no polling, recurring timer, challenge click
+or new vendor permission. The helper is not involved, and no response token is
+returned to the workspace. An empty or unresolved response remains blocked.
 
 See the separate [local Python CAPTCHA connector](LOCAL_CAPTCHA.md) for that
 adapter's OCR/audio interfaces. Its broader recipe API does not expand this

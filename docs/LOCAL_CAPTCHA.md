@@ -5,6 +5,12 @@ companion's narrower, reviewed NumaraAra text-image integration uses the
 [native challenge helper](LOCAL_CHALLENGE_HELPER.md). Its Chrome integration does not
 enable all the adapter's audio or checkbox flows.
 
+Companion 0.6.0 separately allows FastPeopleSearch's normal Turnstile widget up to
+12 seconds to provide its genuine response in the original approved form. This is
+an event-driven foreground wait, not a recognizer or managed-challenge bypass. It
+does not click a widget, manufacture a token, poll or start recurring work. Changed
+controls, navigation, a `pagehide` event or an unresolved response stop that action.
+
 The web browser adapter has no paid solver dependency, API key or cloud-recognition
 fallback. It uses tools running on the worker's own machine:
 

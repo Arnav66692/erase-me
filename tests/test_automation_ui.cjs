@@ -81,7 +81,7 @@ async function fixture({ bound = [], started = [], held = [], delayed = false, d
     } };
   } };
   const session = { create: config => {
-    const record = { receivedKey: config.operatorKey, keyAtCreation: byId('form-batch-mail-key').value, disposed: false, disposeCount: 0 };
+    const record = { receivedKey: config.operatorKey, keyAtCreation: byId('form-batch-mail-key').value, continuationFields:JSON.parse(JSON.stringify(config.continuationFields)),disposed: false, disposeCount: 0 };
     sessions.push(record);
     return { dispose: () => { record.disposed = true; record.disposeCount++; }, process: async payload => {
       mailCalls.push({ routeId: payload.routeId, stopped: payload.isStopped?.() || record.disposed });
@@ -90,7 +90,13 @@ async function fixture({ bound = [], started = [], held = [], delayed = false, d
       return { status: 'awaiting_mail', detail: 'No correlated message in this one pass.' };
     } };
   } };
-  const mail={session:async(request,operatorKey)=>{
+  const mail={status:async()=>({configured:true,enabled:true}),continuation:async request=>{
+    const routeId=JSON.parse(Buffer.from(request.capability.split('.')[0],'base64url').toString()).route_id;
+    const item=core.dashboard().items.find(item=>item.site_id===routeId);
+    assert.equal(item.site_id,'fastpeoplesearch');
+    return {status:'confirmation_ready',route_id:item.site_id,request_id:item.mail_contact.request_id,operation_id:item.operation_id,receipt_ref:request.receipt_ref,automatic_execution:false,
+      confirmation_url:'https://www.fastpeoplesearch.com/optout/removal?'+new URLSearchParams({firstname:item.input_fields.first_name,middlename:'',lastname:item.input_fields.last_name,email:item.mail_contact.contact_email,ticketid:'12345678'})};
+  },session:async(request,operatorKey)=>{
     contactCalls.push({request,operatorKey,keyAtCall:byId('form-batch-mail-key').value});
     if(delayedContact)await contactGate.promise;
     const request_id=(request.route_id==='usphonebook'?'d':'e').repeat(32),issued_at=Math.floor(Date.parse(stamp)/1000),expires_at=issued_at+7*86400;
@@ -110,7 +116,9 @@ async function fixture({ bound = [], started = [], held = [], delayed = false, d
         assert.equal(core.snapshot().items.spokeo.matching_request.id, payload.operationId);
         assert.equal(core.snapshot().items.spokeo.operation_id, null);
         result = matchResult || { status: 'matched', candidateUrl: payload.listingUrl, evidence: ['structured_person', 'exact_candidate_url', 'name', 'email'], source: 'structured_person_v1', match_verified: true };
-      } else result = { routes: core.routes().filter(route => route.automationLevel === 'companion').map(route => route.id), capabilities: ['explicit-fields-v1', 'structured-fields-v1'] };
+      } else if(payload.action==='continue'){
+        assert.equal(core.snapshot().items[payload.routeId].continuation.result,'unknown');result={status:'prepared'};
+      }else result = { routes: core.routes().filter(route => route.automationLevel === 'companion').map(route => route.id), capabilities: ['explicit-fields-v1', 'structured-fields-v1','fastpeoplesearch-continuation-v1'] };
       queueMicrotask(() => listeners.get('message')?.({ source: window, origin: 'https://erase-me-preview.vercel.app', data: { source: 'erase-companion', requestId: message.requestId, reply: { ok: true, result } } }));
     }
   };
@@ -276,6 +284,33 @@ test('automatic continuation review discloses all six fields and rejects a chang
   state=JSON.parse(ui.values.get(Core.KEY));state.items.usphonebook.fields.first_name='Changed';ui.values.set(Core.KEY,JSON.stringify(state));
   ui.toggle('form-batch-mail');ui.byId('form-batch-mail-key').value=key;ui.toggle('form-batch-approval');await ui.click('Check existing removal mail once');
   assert.deepEqual(ui.mailCalls,[]);
+});
+
+test('FPS mail review discloses only original names and contact before its matching-form opening',async()=>{
+  const ui=await fixture({bound:['fastpeoplesearch'],started:['fastpeoplesearch'],held:['usphonebook']});await ui.click('Review form batch');
+  const review=ui.byId('form-batch-mail-list').textContent;
+  for(const label of ['first name','last name','email'])assert.ok(review.includes(label));
+  for(const label of ['zip code','state','date of birth','street address'])assert.equal(review.includes(label),false);
+  assert.match(review,/No additional identity fields are filled or submitted/);
+  ui.toggle('form-batch-mail');ui.byId('form-batch-mail-key').value=key;ui.toggle('form-batch-approval');await ui.click('Check existing removal mail once');
+  assert.deepEqual(ui.sessions[0].continuationFields,{fastpeoplesearch:{}});assert.equal(ui.sessions[0].disposed,true);
+});
+
+test('FPS per-route confirmation needs explicit original-field approval and reserves before navigation',async()=>{
+  const ui=await fixture({bound:['fastpeoplesearch'],started:['fastpeoplesearch'],held:['usphonebook']});
+  const item=ui.core.dashboard().items.find(item=>item.site_id==='fastpeoplesearch');
+  ui.core.recordMailReceipt('fastpeoplesearch',{status:'held',route_id:'fastpeoplesearch',operation_id:item.operation_id,request_id:item.mail_contact.request_id,reason:'route_validation_required',
+    received_at:Math.floor(Date.parse('2026-11-05T00:00:00.000Z')/1000),receipt_ref:'c'.repeat(64),authenticated:true,automatic_execution:false,continuation_available:true});
+  await ui.click('Check removal-mail availability');ui.render();
+  const action=ui.button('Open verified matching form');assert.ok(action);
+  await ui.click(action);assert.equal(ui.posted.length,0);
+  const review=ui.input('FastPeopleSearch I reviewed the original name and removal contact and authorize opening this verified matching form.');
+  ui.toggle(review);
+  const privateKey=ui.input('FastPeopleSearch private operator pilot key');privateKey.value=key;
+  await ui.click(action);
+  assert.deepEqual(ui.posted.map(payload=>payload.action),['ping','continue']);assert.equal(privateKey.value,'');
+  assert.deepEqual(Object.keys(ui.posted[1].fields).sort(),['email','first_name','last_name']);
+  assert.equal(ui.core.snapshot().items.fastpeoplesearch.continuation.result,'prepared');assert.equal(ui.core.dashboard().counts.removed,0);assert.equal(ui.core.exportData().includes('ticketid'),false);
 });
 
 test('mail-only stop checks no later contacts and a changed reviewed workspace blocks mailbox access', async () => {
