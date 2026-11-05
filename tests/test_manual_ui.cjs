@@ -33,7 +33,7 @@ class Element {
   closest(selector) { return this.querySelector(selector); }
 }
 
-async function boot({ publicMarker = false, manual = true, localOnly = false, signedIn = true, fragment = '', questions = [], items = [] } = {}) {
+async function boot({ publicMarker = false, browserWorkspace = false, manual = true, localOnly = false, signedIn = true, fragment = '', questions = [], items = [] } = {}) {
   const elements = new Map();
   const get = id => {
     if (!elements.has(id)) elements.set(id, new Element(id));
@@ -63,7 +63,7 @@ async function boot({ publicMarker = false, manual = true, localOnly = false, si
       let data;
       if (url === '/api/config') {
         if (fragment.startsWith('#local-session=')) assert.equal(location.hash, '', 'Token must be removed before any request');
-        data = { manual, local_only: localOnly, mode: manual ? 'live' : 'demo', email_configured: !localOnly, automation_configured: true };
+        data = { manual, browser_workspace: browserWorkspace, local_only: localOnly, mode: manual ? 'live' : 'demo', email_configured: !localOnly, automation_configured: true };
       } else if (url === '/api/dashboard') {
         counters.dashboardReads += 1;
         if (!signedIn) return { ok: false, status: 401, json: async () => ({ error: 'No profile yet' }) };
@@ -115,6 +115,15 @@ test('explicit run stays disabled while backend reports the batch active', async
   assert.equal(counters.runs, 1);
   assert.equal(get('run-button').disabled, true);
   assert.equal(get('run-button').textContent, 'Check running');
+  assert.equal(counters.scheduled, 0);
+});
+
+test('preparing a browser route plan keeps its label after the action finishes', async () => {
+  const { get, counters } = await boot({ browserWorkspace: true });
+  assert.equal(get('run-button').textContent, 'Prepare route plan');
+  await get('run-button').listeners.get('click')();
+  assert.equal(get('run-button').textContent, 'Prepare route plan');
+  assert.match(get('campaign-feedback').textContent, /No broker has been contacted/);
   assert.equal(counters.scheduled, 0);
 });
 

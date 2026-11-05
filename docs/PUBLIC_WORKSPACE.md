@@ -15,9 +15,10 @@ There are no recurring checks, background alarms, inbox polls or automatic resub
 
 The companion can initiate People Data Labs email verification and prefill the initial
 USPhonebook, SearchPeopleFree and FastPeopleSearch forms. Fields prepared is not sent;
-opening a portal is not sent. Verification initiation is not a deletion request. CAPTCHA,
-record matching, later broker forms and confirmation links remain user steps. ID uploads
-are excluded.
+opening a portal is not sent. Verification initiation is not a deletion request. The
+private mail pilot can also prepare USPhonebook's reviewed second form after separate
+authorization. Record matching, its final accuracy statement, CAPTCHA and submission
+remain user steps. Other confirmation routes remain held. ID uploads are excluded.
 
 Only a correlated companion result with fresh, visible broker acceptance evidence may
 establish request acceptance. User reports remain self-reported. Imports downgrade
@@ -87,11 +88,22 @@ browser sends only route and operation references to obtain an alias, and a scop
 capability to check it. The capability stays in private local storage and backups; it does
 not grant relay access without the operator key.
 
-An explicit confirmation-email check can return pending or authenticated held metadata.
-No message body or confirmation URL is returned, and no link is followed. Broker-specific
-confirmation contracts are still unvalidated. Receipt checks establish neither accepted
-removal requests nor deleted records. They are a private pilot, not a public unlimited
-mail service. Free hosting, provider quotas and OAuth restrictions apply.
+An explicit `/check` returns pending or authenticated held metadata without a message body
+or confirmation URL. USPhonebook's exact official `/removal/validate-record-info` route is
+the sole reviewed continuation. A separate explicit `/continue` re-reads and authenticates
+the same correlated receipt, then returns that form URL transiently to the browser. Other
+links remain held. The URL never enters workspace history or private backups.
+
+Before continuing, the person reviews and authorizes first name, last name, city, state,
+five-digit ZIP and the bound removal contact. These fields go directly through the
+companion to the broker form, not to the relay. Birth date, phone and street address stay
+blank. The companion leaves the final accuracy checkbox, CAPTCHA and submission to the
+person. An interrupted continuation is held rather than replayed.
+
+Live pilot evidence establishes first-form acceptance and a correlated authenticated
+email, not acceptance of the final removal request or deletion. Receipt checks and second
+form preparation never establish deletion. The relay remains a private pilot, not an
+unlimited public mail service. Free hosting, provider quotas and OAuth restrictions apply.
 
 ## Core interface and checks
 
@@ -112,6 +124,11 @@ shape. The server verifies its signature and dedicated mailbox identity. `mailCh
 validates storage and the saved capability before dispatch. `recordMailReceipt()` saves
 only pending or held metadata. `clearMailContact()` permits a local undo before the broker
 action starts. These mutations share the same Web Lock as other writes.
+
+For USPhonebook, `mailContinuationRequest()` saves the separately approved city, state
+and ZIP before `/continue`. `prepareMailContinuation()` validates the transient response
+and persists the no-replay boundary before companion navigation. `recordMailContinuation()`
+records prepared, blocked or unknown results without accepting or verifying a removal.
 
 `removal-mail-client.js` permits only fixed same-origin HTTPS endpoints, strict request
 and response shapes, no redirects and explicit calls. It has no polling or account-login

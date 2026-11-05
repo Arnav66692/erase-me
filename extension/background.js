@@ -20,27 +20,30 @@ async function dispatch(message,sender,chromeApi=chrome){
   if(message.action==='ping'){
     const routes=[];
     for(const [routeId,route] of Object.entries(EXEC.ROUTES))if(await chromeApi.permissions.contains({origins:['https://'+route.host+'/*']}))routes.push(routeId);
-    return {status:'connected',version:'0.2.0',routes};
+    return {status:'connected',version:'0.2.1',routes,capabilities:['usphonebook-continuation-v1']};
   }
   if(!id(message.operationId)||!EXEC.ROUTES[message.routeId])throw new Error('Unsupported operation.');
-  const key='operation:'+message.operationId;
+  const continuation=['continue','continuation-result'].includes(message.action);
+  const key=(continuation?'continuation:':'operation:')+message.operationId;
   const previous=(await chromeApi.storage.local.get(key))[key];
-  if(message.action==='result')return previous?.routeId===message.routeId?previous.result:{status:'unknown',detail:'No companion result is stored.'};
-  if(message.action!=='run')throw new Error('Unsupported action.');
+  if(['result','continuation-result'].includes(message.action))return previous?.routeId===message.routeId?previous.result:{status:'unknown',detail:'No companion result is stored.'};
+  if(!['run','continue'].includes(message.action))throw new Error('Unsupported action.');
   if(previous||active.has(key))return previous?.routeId===message.routeId?previous.result:{status:'unknown',detail:'An operation with this reference already started. No repeat was sent.'};
-  const route=EXEC.validate(message.routeId,message.fields);
+  const route=continuation?EXEC.validateContinuation(message):EXEC.validate(message.routeId,message.fields);
   active.add(key);
   // Persist the uncertain boundary before opening a tab or filling any field.
-  const record={routeId:message.routeId,result:{status:'unknown',detail:'Operation started. Review the broker tab if this browser was interrupted.'}};
+  const record={routeId:message.routeId,...(continuation?{requestId:message.requestId,receiptRef:message.receiptRef}:{}),result:{status:'unknown',detail:'Operation started. Review the broker tab if this browser was interrupted.'}};
   try{
     if(!await chromeApi.permissions.contains({origins:['https://'+route.host+'/*']}))throw new Error('Open the companion icon and enable access to the reviewed broker sites.');
     await chromeApi.storage.local.set({[key]:record});
     const tab=await chromeApi.tabs.create({url:route.url,active:true});
     await settled(chromeApi,tab.id);
     await chromeApi.scripting.executeScript({target:{tabId:tab.id},files:['broker-executor.js']});
-    const [response]=await chromeApi.scripting.executeScript({target:{tabId:tab.id},func:payload=>globalThis.EraseBrokerExecutor.execute(payload),args:[{routeId:message.routeId,fields:message.fields}]});
+    const payload=continuation?{routeId:message.routeId,operationId:message.operationId,requestId:message.requestId,receiptRef:message.receiptRef,
+      confirmationUrl:message.confirmationUrl,contactEmail:message.contactEmail,fields:message.fields,authorized:message.authorized}:{routeId:message.routeId,fields:message.fields};
+    const [response]=await chromeApi.scripting.executeScript({target:{tabId:tab.id},func:(payload,continueForm)=>continueForm?globalThis.EraseBrokerExecutor.executeContinuation(payload):globalThis.EraseBrokerExecutor.execute(payload),args:[payload,continuation]});
     const result=response?.result;
-    if(!result||!['prepared','verification_sent','blocked','unknown'].includes(result.status))throw new Error('The form result could not be verified.');
+    if(!result||!(continuation?['prepared','blocked','unknown']:['prepared','verification_sent','blocked','unknown']).includes(result.status))throw new Error('The form result could not be verified.');
     record.result={status:result.status,detail:String(result.detail||'').slice(0,600)};
     if(result.status==='verification_sent'&&result.route_verified===true&&result.evidence==='fresh_visible_success')Object.assign(record.result,{route_verified:true,evidence:'fresh_visible_success'});
     await chromeApi.storage.local.set({[key]:record});

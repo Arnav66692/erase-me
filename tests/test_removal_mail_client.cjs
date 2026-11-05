@@ -7,7 +7,7 @@ const STATUS={configured:false,enabled:false,provider:'gmail',on_demand:true,aut
 const SESSION={status:'ready',route_id:'usphonebook',operation_id:OPERATION,request_id:REQUEST,contact_email:'erase+erase-'+REQUEST+'@example.test',
   capability:CAPABILITY,expires_at:1800000000,automatic_execution:false};
 const PENDING={status:'pending',route_id:'usphonebook',operation_id:OPERATION,request_id:REQUEST,automatic_execution:false};
-const HELD={...PENDING,status:'held',reason:'route_validation_required',received_at:1790000000,authenticated:true,receipt_ref:'d'.repeat(64)};
+const HELD={...PENDING,status:'held',reason:'route_validation_required',received_at:1790000000,authenticated:true,receipt_ref:'d'.repeat(64),continuation_available:false};
 function fixture(value=STATUS,{code=200,origin='https://erase-me-preview.vercel.app'}={}){
   const calls=[];
   const client=Mail.create({location:{origin},fetch:async(path,options)=>{calls.push({path,options});return {ok:code>=200&&code<300,status:code,text:async()=>JSON.stringify(value)};}});
@@ -71,4 +71,20 @@ test('strict response allowlists reject contact mismatches, leaked fields and cl
     await assert.rejects(()=>fixture(value).client.session({route_id:'usphonebook',operation_id:OPERATION,authorized:true},KEY),/invalid contact/);
   }
   for(const value of [{...STATUS,enabled:true},{...STATUS,automatic_execution:true},{...STATUS,email:'private@example.test'}])await assert.rejects(()=>fixture(value).client.status(),/invalid configuration/);
+});
+
+const CONFIRM_URL='https://www.usphonebook.com/removal/validate-record-info?key='+ 'a'.repeat(418)+'%3D%3D&ticketid=12345678';
+test('explicit continuation accepts only the reviewed destination and keeps profile fields out of the API',async()=>{
+  const value={status:'confirmation_ready',route_id:'usphonebook',operation_id:OPERATION,request_id:REQUEST,receipt_ref:HELD.receipt_ref,
+    confirmation_url:CONFIRM_URL,automatic_execution:false};
+  const {client,calls}=fixture(value),body={capability:CAPABILITY,explicit:true,receipt_ref:HELD.receipt_ref};
+  assert.deepEqual(await client.continuation(body,KEY),value);
+  assert.equal(calls[0].path,'/api/removal-mail/continue');assert.deepEqual(JSON.parse(calls[0].options.body),body);
+  assert.equal(calls[0].options.body.includes('zip'),false);assert.equal(calls[0].options.headers['X-Erase-Mail-Key'],KEY);
+  for(const url of [CONFIRM_URL.replace('www.usphonebook.com','evil.example'),CONFIRM_URL+'&ticketid=9',CONFIRM_URL+'&redirect=evil',
+    CONFIRM_URL.replace('/removal/validate-record-info','/login'),CONFIRM_URL+'#token',CONFIRM_URL.replace('ticketid=12345678','ticketid=abc'),CONFIRM_URL.replace('https:','http:')]){
+    await assert.rejects(()=>fixture({...value,confirmation_url:url}).client.continuation(body,KEY),/could not be validated/);
+  }
+  await assert.rejects(()=>fixture({...value,receipt_ref:'a'.repeat(64)}).client.continuation(body,KEY),/could not be validated/);
+  const rejected=fixture(value);await assert.rejects(()=>rejected.client.continuation({...body,zip_code:'12345'},KEY));assert.equal(rejected.calls.length,0);
 });

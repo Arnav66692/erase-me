@@ -20,7 +20,7 @@
         stop();const reply=event.data.reply;
         if(reply?.ok)resolve(reply.result);else reject(new Error(reply?.error||'The companion could not complete this action.'));
       };
-      const timeout=setTimeout(()=>{stop();reject(new Error('The companion did not respond. Install it, enable broker access, then refresh this page. No repeat has been sent.'));},payload.action==='run'?60000:1500);
+      const timeout=setTimeout(()=>{stop();reject(new Error('The companion did not respond. Install it, enable broker access, then refresh this page. No repeat has been sent.'));},['run','continue'].includes(payload.action)?60000:1500);
       window.addEventListener('message',listener);
       window.postMessage({source:'erase-workspace',requestId,payload},location.origin);
     });
@@ -76,13 +76,13 @@
     box.append(n('p','For automatic form filling, install the desktop Chrome companion once. Official forms also work without it. Broker email and CAPTCHA steps remain yours.','public-route-note'),download,instructions,connect,exportButton);
     if(M())box.append(button('Check removal-mail availability',async()=>{
       mailStatus=await M().status();changed();
-      feedback(mailStatus.enabled?'The removal-mail relay is available only as a private operator pilot. It checks receipts on demand; automatic confirmations remain held.':mailStatus.configured?'The dedicated mailbox is configured, but the private pilot is disabled. Personal inboxes stay disconnected.':'The dedicated removal mailbox is not connected. Use the broker’s own email steps. Personal inboxes stay disconnected.');
-    }),n('p','Optional removal-mail receipt checks are a gated operator pilot. They use a separate account, require a private key for each action and never run on a schedule. Confirmation links are not followed.','public-route-note'));
+      feedback(mailStatus.enabled?'The removal-mail relay is available as a private operator pilot. It checks receipts on demand. Reviewed USPhonebook confirmations can open its second form after you review the required fields.':mailStatus.configured?'The dedicated mailbox is configured, but the private pilot is disabled. Personal inboxes stay disconnected.':'The dedicated removal mailbox is not connected. Use the broker’s own email steps. Personal inboxes stay disconnected.');
+    }),n('p','Optional removal-mail checks are a gated operator pilot. They use a separate account, require a private key for each action and never run on a schedule. Each reviewed confirmation needs an explicit continuation.','public-route-note'));
   }
   function mailControls(route,item){
     if(!mailRoutes.has(route.id)||!M()||!mailStatus?.enabled)return null;
     const panel=n('details',null,'public-mail-pilot');panel.append(n('summary','Operator removal-mail pilot'));
-    panel.append(n('p','A removal contact sends broker mail to Erase Me’s shared, removal-only account. Its operator can read those broker messages. It is not an email address personally owned by you. Review the broker’s consent terms and use it only where an authorized contact address is accepted. Your personal inbox stays disconnected. This pilot checks receipts; it does not follow confirmation links.','public-route-note'));
+    panel.append(n('p','A removal contact sends broker mail to Erase Me’s shared, removal-only account. Its operator can read those broker messages. It is not an email address personally owned by you. Review the broker’s consent terms and use it only where an authorized contact address is accepted. Your personal inbox stays disconnected. A reviewed USPhonebook confirmation can open its second form only when you choose to continue.','public-route-note'));
     const label=n('label','Private operator pilot key');const key=n('input');key.type='password';key.maxLength=64;key.autocomplete='off';key.setAttribute('aria-label',route.name+' private operator pilot key');label.append(key);panel.append(label);
     const takeKey=()=>{const value=key.value.trim();key.value='';if(!/^[a-fA-F0-9]{64}$/.test(value))throw new Error('Enter the private operator pilot key. It is cleared after each click and never saved.');return value;};
     if(!item.operation_id&&(!item.mail_contact||item.mail_contact.expires_at<=Math.floor(Date.now()/1000)))panel.append(button('Use removal-only contact email',async()=>{
@@ -93,8 +93,29 @@
     if(item.mail_contact&&item.operation_id)panel.append(button('Check confirmation email',async()=>{
       const pilotKey=takeKey();const request=await W().mailCheckRequest(route.id);
       const result=await M().check(request,pilotKey);await W().recordMailReceipt(route.id,result);changed();
-      feedback(result.status==='held'?'An authenticated removal-related email is held for broker-route validation. No confirmation link was followed, and deletion remains unverified.':'No qualifying email was found for this operation in this explicit check. No broker action was repeated.');
+      feedback(result.status==='held'?(result.continuation_available?'An authenticated USPhonebook confirmation is ready. Review the required city, state and ZIP before choosing Continue broker form. No request acceptance or deletion has been established.':'An authenticated removal-related email is held for broker-route validation. No confirmation link was followed, and deletion remains unverified.'):'No qualifying email was found for this operation in this explicit check. No broker action was repeated.');
     }));
+    if(route.id==='usphonebook'&&item.mail_receipt?.authenticated&&item.mail_receipt.continuation_available&&!item.continuation){
+      panel.append(n('p','Review the exact fields for the broker’s second form. The companion fills these fields, then you review its accuracy statement, complete any challenge and submit on USPhonebook. Date of birth, phone and street address stay blank.','public-route-note'));
+      const profile=W().profile(),inputs={};
+      for(const [name,title,initial,max]of [['city','Current city',item.continuation_fields?.city||profile.city||'',120],['state','US state abbreviation',item.continuation_fields?.state||(profile.region||'').replace(/^US-/i,'').toUpperCase(),2],['zip_code','Current ZIP code',item.continuation_fields?.zip_code||'',5]]){
+        const label=n('label',title),input=n('input');input.type='text';input.maxLength=max;input.value=initial;
+        if(name==='zip_code')input.inputMode='numeric';input.setAttribute('aria-label',route.name+' '+title);label.append(input);panel.append(label);inputs[name]=input;
+      }
+      panel.append(n('p','Name: '+(item.input_fields?.first_name||'')+' '+(item.input_fields?.last_name||'')+'. Contact email: '+item.mail_contact.contact_email+'.','public-field-disclosure'));
+      const review=n('label','I reviewed these fields and authorize filling this broker confirmation form.');const agreed=n('input');agreed.type='checkbox';review.append(agreed);panel.append(review);
+      panel.append(button('Continue broker form',async()=>{
+        if(!agreed.checked)throw new Error('Review the fields and authorize this specific confirmation form first.');
+        const fields=Object.fromEntries(Object.entries(inputs).map(([name,input])=>[name,input.value.trim()]));
+        const pilotKey=takeKey(),ping=await companion({action:'ping'});
+        if(!ping.routes?.includes(route.id))throw new Error('Open the companion toolbar icon and enable USPhonebook before continuing.');
+        if(!ping.capabilities?.includes('usphonebook-continuation-v1'))throw new Error('Update the unpacked companion from the current download, then refresh this workspace before continuing. No confirmation action started.');
+        const request=await W().mailContinuationRequest(route.id,fields),response=await M().continuation(request,pilotKey);
+        const operation=await W().prepareMailContinuation(route.id,response,fields);changed();
+        let result;try{result=await companion({action:'continue',...operation});}catch(_){result={status:'unknown',detail:'The confirmation outcome is unknown. Check its existing broker tab; no replay will be sent.'};}
+        await W().recordMailContinuation(route.id,operation.operationId,result);changed();feedback(result.detail||'Confirmation-form outcome recorded. Deletion remains unverified.');
+      }));
+    }
     panel.append(n('p','The key is cleared after each click. Private backups include the scoped mail capability, which permits checking only this operation. Keep backups private.','public-route-note'));
     return panel;
   }
@@ -129,6 +150,7 @@
       }
       const operationId=item.operationId||item.operation_id;
       if(operationId&&!item.status.startsWith('user_reported'))actions.append(button('Read companion result',async()=>{const result=await companion({action:'result',routeId:route.id,operationId});await W().recordCompanion(route.id,operationId,result);changed();feedback(result.detail||'Companion result checked.');}));
+      if(operationId&&item.continuation)actions.append(button('Read confirmation-form result',async()=>{const result=await companion({action:'continuation-result',routeId:route.id,operationId});await W().recordMailContinuation(route.id,operationId,result);changed();feedback(result.detail||'Confirmation-form result checked. No action was repeated.');}));
       actions.append(button('I submitted the request',async()=>{if(!item.operation_id)await save();await W().recordUser(route.id,'user_reported_requested');changed();feedback('Your report of submitting a request is saved. Broker acceptance and deletion remain unverified.');}));
       actions.append(button('I finished the broker steps',async()=>{await W().recordUser(route.id,'user_reported_completed');changed();feedback('Your completion report is saved. It is not counted as a verified deletion.');}));
       const steps=n('details',null,'public-broker-steps');
@@ -137,7 +159,7 @@
       if(route.fields.includes('email'))steps.append(n('p','Email to use for this broker: '+(item.mail_contact?.contact_email||W().profile().email)+(item.mail_contact?' (separate removal-only contact)':' (your typed profile email)'),'public-field-disclosure'));
       if(item.mail_contact)steps.append(n('p','Removal contact expires '+new Date(item.mail_contact.expires_at*1000).toISOString()+'. It does not prove ownership of a broker record.','public-route-note'));
       if(item.mail_contact&&!item.operation_id)steps.append(button('Use my typed email instead',async()=>{await W().clearMailContact(route.id);changed();feedback('This route will use your typed profile email. No broker was contacted.');}));
-      if(item.mail_receipt)steps.append(n('p',item.mail_receipt.status==='held'?(item.mail_receipt.authenticated?'Authenticated broker mail received; confirmation is held for route validation.':'Imported receipt history is unverified; perform an explicit check to establish its current state.'):'The last explicit check found no qualifying receipt.','public-route-note'));
+      if(item.mail_receipt)steps.append(n('p',item.mail_receipt.status==='held'?(item.mail_receipt.authenticated?(item.mail_receipt.continuation_available?'Authenticated broker mail received; a reviewed confirmation form is available. This does not establish deletion.':'Authenticated broker mail received; confirmation is held for route validation.'):'Imported receipt history is unverified; perform an explicit check to establish its current state.'):'The last explicit check found no qualifying receipt.','public-route-note'));
       const mailPanel=mailControls(route,item);if(mailPanel)steps.append(mailPanel);
       steps.append(actions,n('p',route.evidence,'public-route-note'));
       info.append(steps);

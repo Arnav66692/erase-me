@@ -13,6 +13,16 @@
     return value && typeof value === 'object' && !Array.isArray(value) &&
       Object.keys(value).length === keys.length && keys.every(key => Object.hasOwn(value, key));
   }
+  function continuationURL(value) {
+    try {
+      if (typeof value !== 'string' || value.length > 2048 || /\s/.test(value)) return false;
+      const u = new URL(value), entries = [...u.searchParams], key = u.searchParams.get('key');
+      return u.protocol === 'https:' && u.hostname === 'www.usphonebook.com' && !u.port && !u.username && !u.password && !u.hash &&
+        u.pathname === '/removal/validate-record-info' && entries.length === 2 && u.searchParams.getAll('key').length === 1 &&
+        typeof key === 'string' && key.length <= 512 && /^[A-Za-z0-9_-]+={0,2}$/.test(key) &&
+        u.searchParams.getAll('ticketid').length === 1 && /^[0-9]{1,32}$/.test(u.searchParams.get('ticketid'));
+    } catch (_) { return false; }
+  }
   function create(options = {}) {
     const fetcher = options.fetch || ((...args) => root.fetch(...args));
     const location = options.location || root.location;
@@ -70,16 +80,27 @@
       if (!object(body, ['capability', 'explicit']) || typeof body.capability !== 'string' || !CAPABILITY.test(body.capability) || body.explicit !== true) throw new Error('Choose an explicit check for a saved removal contact.');
       const value = await request('check', body, pilotKey);
       const base = ['status', 'request_id', 'route_id', 'operation_id', 'automatic_execution'];
-      const keys = value?.status === 'held' ? [...base, 'reason', 'received_at', 'authenticated', 'receipt_ref'] : base;
+      const keys = value?.status === 'held' ? [...base, 'reason', 'received_at', 'authenticated', 'receipt_ref', 'continuation_available'] : base;
       if (!object(value, keys) || !['pending', 'held'].includes(value.status) || !ROUTES.has(value.route_id) ||
           typeof value.operation_id !== 'string' || !OPERATION.test(value.operation_id) || !/^[a-f0-9]{32}$/.test(value.request_id) || value.automatic_execution !== false ||
           (value.status === 'held' && (value.authenticated !== true || !['route_validation_required', 'confirmation_link_unvalidated'].includes(value.reason) ||
-            !Number.isSafeInteger(value.received_at) || !/^[a-f0-9]{64}$/.test(value.receipt_ref)))) throw new Error('The dedicated mailbox returned an invalid receipt.');
+            !Number.isSafeInteger(value.received_at) || !/^[a-f0-9]{64}$/.test(value.receipt_ref) || typeof value.continuation_available !== 'boolean' ||
+            (value.continuation_available && value.route_id !== 'usphonebook')))) throw new Error('The dedicated mailbox returned an invalid receipt.');
       return value;
     }
-    return Object.freeze({ status, session, check });
+    async function continuation(body, pilotKey) {
+      if (!object(body, ['capability', 'explicit', 'receipt_ref']) || typeof body.capability !== 'string' || !CAPABILITY.test(body.capability) ||
+          body.explicit !== true || !/^[a-f0-9]{64}$/.test(body.receipt_ref)) throw new Error('Choose a verified confirmation for this operation.');
+      const value = await request('continue', body, pilotKey);
+      if (!object(value, ['status', 'request_id', 'route_id', 'operation_id', 'receipt_ref', 'confirmation_url', 'automatic_execution']) ||
+          value.status !== 'confirmation_ready' || value.route_id !== 'usphonebook' || value.receipt_ref !== body.receipt_ref ||
+          typeof value.operation_id !== 'string' || !OPERATION.test(value.operation_id) || !/^[a-f0-9]{32}$/.test(value.request_id) ||
+          value.automatic_execution !== false || !continuationURL(value.confirmation_url)) throw new Error('The broker confirmation could not be validated.');
+      return value;
+    }
+    return Object.freeze({ status, session, check, continuation });
   }
   let instance;
   const defaults = () => instance || (instance = create());
-  return Object.freeze({ create, status: () => defaults().status(), session: (...args) => defaults().session(...args), check: (...args) => defaults().check(...args) });
+  return Object.freeze({ create, continuationURL, status: () => defaults().status(), session: (...args) => defaults().session(...args), check: (...args) => defaults().check(...args), continuation: (...args) => defaults().continuation(...args) });
 });

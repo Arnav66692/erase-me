@@ -1,7 +1,7 @@
-"""On-demand, read-only receipt checking for an explicitly dedicated Gmail account.
+"""On-demand receipt checks and explicit reviewed broker-form continuation.
 
-No message or link is followed. Capabilities isolate random per-operation aliases.
-Confirmation execution stays held until a real broker contract has been reviewed.
+No message link is followed by this service. Capabilities isolate random per-operation
+aliases; a separate explicit action can release one reviewed form URL to its browser.
 """
 from __future__ import annotations
 
@@ -16,10 +16,11 @@ import os
 import re
 import secrets
 import time
+from html import unescape
 from html.parser import HTMLParser
 from types import MappingProxyType
 from urllib.error import HTTPError, URLError
-from urllib.parse import urlencode, urlsplit
+from urllib.parse import parse_qsl, urlencode, urlsplit
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 MAX_BYTES = 262144
@@ -34,9 +35,13 @@ ROUTES = MappingProxyType({
     'searchpeoplefree': {'sender_domains': ('searchpeoplefree.com',), 'hosts': ('www.searchpeoplefree.com', 'searchpeoplefree.com')},
     'fastpeoplesearch': {'sender_domains': ('fastpeoplesearch.com',), 'hosts': ('www.fastpeoplesearch.com', 'fastpeoplesearch.com')},
 })
-# Deliberately empty. Initial-form research does not establish email-link purpose,
-# its final form, or request completion. Environment variables cannot enable it.
-CONFIRMATION_CONTRACTS = MappingProxyType({})
+# This identifies a reviewed second privacy-request form, not deletion or request
+# completion. Other broker links remain held; environment variables cannot add routes.
+CONFIRMATION_CONTRACTS = MappingProxyType({
+    'usphonebook': MappingProxyType({'host': 'www.usphonebook.com',
+                                   'path': '/removal/validate-record-info',
+                                   'query_keys': frozenset(('key', 'ticketid'))}),
+})
 
 
 class _NoRedirect(HTTPRedirectHandler):
@@ -273,10 +278,17 @@ class _MailText(HTMLParser):
         super().__init__(convert_charrefs=True)
         self.urls = []
         self.text = []
+        self.invalid_links = False
 
     def handle_starttag(self, tag, attrs):
-        if tag == 'a' and len(self.urls) < 20:
-            self.urls.extend(value for key, value in attrs if key == 'href' and isinstance(value, str) and len(value) <= 2048)
+        if tag == 'a':
+            for key, value in attrs:
+                if key != 'href':
+                    continue
+                if not isinstance(value, str) or len(value) > 2048 or len(self.urls) >= 20:
+                    self.invalid_links = True
+                else:
+                    self.urls.append(value)
 
     def handle_data(self, data):
         self.text.append(data)
@@ -292,7 +304,49 @@ def _safe_url(value, route):
         return False
 
 
-def _receipt(raw, received_ms, claims, *, now=None):
+def _continuation_url(links, route_id):
+    """One exact reviewed destination, with no link-purpose inference or fetching.
+
+    HTMLParser has decoded HTML attribute entities once. Plain-text links are
+    decoded once when extracted. Decoding here again would accept double encoding.
+    Every extracted link must identify the same reviewed form; unknown links or
+    conflicting tokens hold the message instead of selecting a convenient link.
+    """
+    contract = CONFIRMATION_CONTRACTS.get(route_id)
+    if not contract or not links:
+        return None
+    destinations = set()
+    for value in links:
+        try:
+            if (not isinstance(value, str) or len(value) > 2048
+                    or any(c.isspace() or ord(c) < 32 or ord(c) == 127 for c in value)
+                    or '\\' in value or '#' in value):
+                return None
+            url = urlsplit(value)
+            if (url.scheme != 'https' or url.hostname != contract['host'] or url.path != contract['path']
+                    or url.netloc.lower() not in (contract['host'], contract['host'] + ':443')
+                    or url.username is not None or url.password is not None
+                    or url.port not in (None, 443) or url.fragment):
+                return None
+            pairs = parse_qsl(url.query, keep_blank_values=True, strict_parsing=True,
+                              encoding='utf-8', errors='strict', max_num_fields=3)
+            if len(pairs) != 2 or {key for key, _ in pairs} != contract['query_keys']:
+                return None
+            parameters = dict(pairs)
+            if (len(parameters['key']) > 512 or not re.fullmatch(r'[A-Za-z0-9_-]+={0,2}', parameters['key'])
+                    or not re.fullmatch(r'[0-9]{1,32}', parameters['ticketid'])):
+                return None
+            destinations.add(tuple(sorted(pairs)))
+        except (ValueError, TypeError, UnicodeError):
+            return None
+    if len(destinations) != 1:
+        return None
+    # Return a canonical URL on the fixed reviewed origin, not attacker-controlled
+    # source formatting or a redirect destination from the message.
+    return 'https://' + contract['host'] + contract['path'] + '?' + urlencode(next(iter(destinations)))
+
+
+def _inspect_receipt(raw, received_ms, claims, *, now=None):
     if not isinstance(raw, bytes) or len(raw) > MAX_BYTES or type(received_ms) is not int:
         return None
     stamp = int(time.time() if now is None else now)
@@ -314,6 +368,7 @@ def _receipt(raw, received_ms, claims, *, now=None):
     if claims['recipient'].casefold() not in [address.casefold() for _, address in recipients]:
         return None
     text, links = [str(message.get('Subject', ''))], []
+    invalid_links = False
     for number, part in enumerate(message.walk()):
         if number >= 40:
             return None
@@ -330,26 +385,33 @@ def _receipt(raw, received_ms, claims, *, now=None):
             parser.feed(content)
             text.extend(parser.text)
             links.extend(parser.urls)
+            invalid_links = invalid_links or parser.invalid_links
         else:
             text.append(content)
-            links.extend(re.findall(r'https://[^\s<>"\']+', content))
+            # Plain prose may wrap a URL in parentheses or sentence punctuation.
+            # HTML href attributes are exact destinations and are never trimmed.
+            links.extend(unescape(value).rstrip('.,)') for value in re.findall(r'https://[^\s<>"\']+', content))
     prose = ' '.join(text)
     if not re.search(r'\b(remov\w*|opt[ -]?out|unlist\w*)\b', prose, re.I) or not re.search(r'\b(confirm\w*|verif\w*)\b', prose, re.I):
         return None
-    urls = list(dict.fromkeys(value.rstrip('.,)') for value in links if _safe_url(value.rstrip('.,)'), route)))
-    # No reviewed confirmation contracts exist yet. Do not infer a safe purpose
-    # from a path keyword, a trusted sender, or a link's presence.
+    urls = list(dict.fromkeys(value for value in links if _safe_url(value, route)))
+    continuation = (None if invalid_links or len(links) > 20 else
+                    _continuation_url(links, claims['route_id']))
     reason = 'route_validation_required' if urls else 'confirmation_link_unvalidated'
-    return {'status': 'held', 'reason': reason, 'request_id': claims['request_id'],
-            'route_id': claims['route_id'], 'operation_id': claims['operation_id'], 'received_at': received,
-            'authenticated': True, 'automatic_execution': False}
+    return ({'status': 'held', 'reason': reason, 'request_id': claims['request_id'],
+             'route_id': claims['route_id'], 'operation_id': claims['operation_id'], 'received_at': received,
+             'authenticated': True, 'continuation_available': continuation is not None,
+             'automatic_execution': False}, continuation)
 
 
-def check(body, *, now=None, pilot_key=None):
-    authorize(pilot_key)
-    if not isinstance(body, dict) or set(body) != {'capability', 'explicit'} or body.get('explicit') is not True:
-        raise MailError('Choose an explicit mailbox check for this operation.', 400)
-    claims = verify_capability(body.get('capability'), now=now)
+def _receipt(raw, received_ms, claims, *, now=None):
+    """Public receipt shape never contains a message link."""
+    result = _inspect_receipt(raw, received_ms, claims, now=now)
+    return result[0] if result else None
+
+
+def _find_receipt(claims, *, now=None, pilot_key=None, receipt_ref=None):
+    """Requery only the capability's alias and revalidate raw provenance each time."""
     deadline = time.monotonic() + CHECK_BUDGET_SECONDS
     token = _gmail_token(deadline, pilot_key)
     query = urlencode({'q': 'to:' + claims['recipient'] + ' after:' + str(claims['issued_at']), 'maxResults': MAX_MESSAGES})
@@ -372,11 +434,51 @@ def check(body, *, now=None, pilot_key=None):
             received = message.get('internalDate')
             if not isinstance(received, str) or not re.fullmatch(r'\d{1,16}', received):
                 continue
-            receipt = _receipt(content, int(received), claims, now=now)
+            inspected = _inspect_receipt(content, int(received), claims, now=now)
         except (ValueError, TypeError, UnicodeError):
             continue
-        if receipt:
-            receipt['receipt_ref'] = hmac.new(_secret(), (claims['request_id'] + ':' + message_id).encode(), hashlib.sha256).hexdigest()
-            return receipt
+        if inspected:
+            receipt, continuation = inspected
+            fingerprint = claims['request_id'] + ':' + message_id + ':' + hashlib.sha256(content).hexdigest()
+            reference = hmac.new(_secret(), fingerprint.encode(), hashlib.sha256).hexdigest()
+            if receipt_ref is not None and not hmac.compare_digest(reference, receipt_ref):
+                continue
+            receipt['receipt_ref'] = reference
+            return receipt, continuation
+    return None
+
+
+def check(body, *, now=None, pilot_key=None):
+    authorize(pilot_key)
+    if not isinstance(body, dict) or set(body) != {'capability', 'explicit'} or body.get('explicit') is not True:
+        raise MailError('Choose an explicit mailbox check for this operation.', 400)
+    claims = verify_capability(body.get('capability'), now=now)
+    found = _find_receipt(claims, now=now, pilot_key=pilot_key)
+    if found:
+        return found[0]
     return {'status': 'pending', 'request_id': claims['request_id'], 'route_id': claims['route_id'], 'operation_id': claims['operation_id'],
             'automatic_execution': False}
+
+
+def continue_confirmation(body, *, now=None, pilot_key=None):
+    """Release a reviewed form URL after a separate explicit authorization.
+
+    This service never navigates to the broker and has no durable consumed-nonce
+    store. The companion must journal its action before navigation and hold replay
+    or interruption. A ready form is not an accepted request or verified deletion.
+    """
+    authorize(pilot_key)
+    if (not isinstance(body, dict) or set(body) != {'capability', 'explicit', 'receipt_ref'}
+            or body.get('explicit') is not True or not isinstance(body.get('receipt_ref'), str)
+            or not re.fullmatch(r'[a-f0-9]{64}', body['receipt_ref'])):
+        raise MailError('Choose an explicit continuation for the checked receipt.', 400)
+    claims = verify_capability(body.get('capability'), now=now)
+    if claims['route_id'] not in CONFIRMATION_CONTRACTS:
+        raise MailError('This broker confirmation form is not supported.', 409)
+    found = _find_receipt(claims, now=now, pilot_key=pilot_key, receipt_ref=body['receipt_ref'])
+    if not found or not found[1]:
+        raise MailError('The checked receipt has no validated continuation. No broker was contacted.', 409)
+    receipt, continuation = found
+    return {'status': 'confirmation_ready', 'request_id': claims['request_id'], 'route_id': claims['route_id'],
+            'operation_id': claims['operation_id'], 'receipt_ref': receipt['receipt_ref'],
+            'confirmation_url': continuation, 'automatic_execution': False}

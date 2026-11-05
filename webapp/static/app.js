@@ -207,7 +207,7 @@
     const campaign = dashboard.campaign || {};
     const setupNeeded = dashboard.mode !== 'demo' && config && !config.automation_configured;
     $('run-button').disabled = campaign.status === 'paused' || setupNeeded || Boolean(campaign.run_in_progress);
-    setText('run-button', campaign.run_in_progress ? 'Check running' : 'Run check');
+    setText('run-button', config?.browser_workspace ? 'Prepare route plan' : campaign.run_in_progress ? 'Check running' : 'Run check');
   }
   function renderDashboard() {
     const profile = dashboard.profile || {};

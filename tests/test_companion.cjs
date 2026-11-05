@@ -67,3 +67,48 @@ test('permission denial opens no tab and sends no data',async()=>{
 test('Chrome manifest has no inbox, alarms, or broad host access',()=>{
  const m=require('../extension/manifest.json');assert.equal(m.permissions.includes('alarms'),false);assert.equal(m.permissions.includes('tabs'),false);assert.equal(JSON.stringify(m).includes('<all_urls>'),false);assert.equal(m.optional_host_permissions.length,4);
 });
+
+const continuationMessage={type:'erase-me',action:'continue',routeId:'usphonebook',operationId:'a'.repeat(32),requestId:'b'.repeat(32),receiptRef:'c'.repeat(64),
+ confirmationUrl:'https://www.usphonebook.com/removal/validate-record-info?key=fixture%3D%3D&ticketid=12345678',
+ contactEmail:'erase+erase-'+ 'b'.repeat(32)+'@gmail.com',authorized:true,
+ fields:{first_name:'Example',last_name:'Person',email:'erase+erase-'+ 'b'.repeat(32)+'@gmail.com',city:'Example City',state:'CA',zip_code:'92101'}};
+function continuationPage(){
+ const map=new Map(),form={action:'https://www.usphonebook.com/removal/validate-record-info',method:'post'};
+ const visible=extra=>({hidden:false,parentElement:null,getClientRects:()=>[{}],...extra});
+ class Input{constructor(type='text'){Object.assign(this,visible({tagName:'INPUT',type,disabled:false,readOnly:false,form}));this._value='';}get value(){return this._value;}set value(v){this._value=v;}dispatchEvent(){this.onEvent?.();}}
+ class Select extends Input{constructor(){super();this.tagName='SELECT';this.options=[{value:'CA'}];}get value(){return this._value;}set value(v){this._value=v;}}
+ for(const id of ['subject-firstname','subject-lastname','subject-email','subject-city','subject-zipcode','subject-dob','subject-phone','subject-streetaddress'])map.set('#'+id,new Input(id==='subject-email'?'email':'text'));
+ map.set('#subject-state',new Select());map.set('#removalForm',form);
+ let clicked=0;map.set('#CRP',{click(){clicked++;}});map.set('#accuracy-agreement',{checked:false});
+ const env={location:{href:continuationMessage.confirmationUrl},HTMLInputElement:Input,HTMLSelectElement:Select,Event:class{},setTimeout:f=>f(),document:{querySelector:s=>map.get(s)||null}};
+ return {map,form,env,clicked:()=>clicked};
+}
+test('reviewed continuation fills only required authorized fields and never certifies or submits',async()=>{
+ const p=continuationPage(),result=await executor.executeContinuation(continuationMessage,p.env);
+ assert.equal(result.status,'prepared');assert.equal(p.clicked(),0);assert.equal(p.map.get('#accuracy-agreement').checked,false);
+ assert.equal(p.map.get('#subject-firstname').value,'Example');assert.equal(p.map.get('#subject-city').value,'Example City');
+ assert.equal(p.map.get('#subject-state').value,'CA');assert.equal(p.map.get('#subject-zipcode').value,'92101');
+ for(const name of ['subject-dob','subject-phone','subject-streetaddress'])assert.equal(p.map.get('#'+name).value,'');
+});
+test('continuation holds changed destinations, additional personal fields and record-contact mismatches',async()=>{
+ for(const mutate of [p=>{p.form.action+='?purpose=export';},p=>{p.form.method='get';},p=>{p.map.get('#subject-phone').value='5555555555';},p=>{p.env.location.href=continuationMessage.confirmationUrl.replace('/removal/validate-record-info','/login');}]){
+  const p=continuationPage();mutate(p);assert.equal((await executor.executeContinuation(continuationMessage,p.env)).status,'blocked');assert.equal(p.map.get('#subject-firstname').value,'');assert.equal(p.clicked(),0);
+ }
+ for(const change of [{requestId:'d'.repeat(32)},{authorized:false},{confirmationUrl:continuationMessage.confirmationUrl+'&ticketid=9'},
+  {fields:{...continuationMessage.fields,zip_code:'0000'}},{fields:{...continuationMessage.fields,phone:'5555555555'}}]){
+  assert.throws(()=>executor.validateContinuation({...continuationMessage,...change}));
+ }
+});
+test('continuation journal precedes navigation and prevents repeated or interrupted legs without storing URLs or profile fields',async()=>{
+ const c=chromeMock(),open=c.tabs.create;c.tabs.create=async(...args)=>{
+  assert.equal(c.records['continuation:'+message.operationId].result.status,'unknown');return open(...args);
+ };
+ await Promise.all([background.dispatch(continuationMessage,sender,c),background.dispatch(continuationMessage,sender,c)]);
+ assert.equal(c.count(),1);await background.dispatch(continuationMessage,sender,c);assert.equal(c.count(),1);
+ assert.equal(JSON.stringify(c.records).includes('ticketid'),false);assert.equal(JSON.stringify(c.records).includes('92101'),false);
+ assert.equal(JSON.stringify(c.records).includes('@gmail.com'),false);
+ assert.equal((await background.dispatch({...continuationMessage,action:'continuation-result'},sender,c)).status,'prepared');
+ const interrupted=chromeMock();interrupted.records['continuation:'+message.operationId]={routeId:'usphonebook',result:{status:'unknown'}};
+ assert.equal((await background.dispatch(continuationMessage,sender,interrupted)).status,'unknown');assert.equal(interrupted.count(),0);
+ const full=chromeMock();full.storage.local.set=async()=>{throw new Error('quota');};await background.dispatch(continuationMessage,sender,full);assert.equal(full.count(),0);
+});

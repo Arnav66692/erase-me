@@ -122,6 +122,16 @@
     // route/recipient mixups and never establishes broker acceptance.
     return { capability, request_id, route_id, operation_id, contact_email, expires_at };
   }
+  function confirmationURL(value) {
+    try {
+      if (typeof value !== 'string' || value.length > 2048 || /\s/.test(value)) return false;
+      const u = new URL(value), key = u.searchParams.get('key');
+      return u.protocol === 'https:' && u.hostname === 'www.usphonebook.com' && !u.port && !u.username && !u.password && !u.hash &&
+        u.pathname === '/removal/validate-record-info' && [...u.searchParams].length === 2 &&
+        u.searchParams.getAll('key').length === 1 && typeof key === 'string' && key.length <= 512 && /^[A-Za-z0-9_-]+={0,2}$/.test(key) &&
+        u.searchParams.getAll('ticketid').length === 1 && /^[0-9]{1,32}$/.test(u.searchParams.get('ticketid'));
+    } catch (_) { return false; }
+  }
   function create(options = {}) {
     const storage = options.storage || {
       getItem: key => root.localStorage.getItem(key),
@@ -219,7 +229,7 @@
       return { mode: 'browser', profile: clone(state.profile), campaign: { status: state.campaign.status,
         authorized_at: state.profile.authorized_at, next_check_at: null, run_in_progress: false },
         counts: { found: 0, requested: items.filter(item => item.evidence && item.evidence.acceptance_verified === true).length, removed: 0,
-          blocked: items.filter(item => ['blocked', 'uncertain', 'verification_sent'].includes(item.status)).length },
+          blocked: items.filter(item => ['blocked', 'uncertain', 'verification_sent', 'needs_broker_step'].includes(item.status)).length },
         coverage: { country, supportedCountries: [...new Set(routes.flatMap(route => route.countries).filter(value => value !== '*'))].sort(),
           globalRouteCount: eligible.filter(route => route.countries.includes('*')).length,
           countryRouteCount: eligible.filter(route => !route.countries.includes('*')).length,
@@ -303,14 +313,69 @@
       if (result.status === 'held') {
         if (result.authenticated !== true || !['route_validation_required', 'confirmation_link_unvalidated'].includes(result.reason) ||
             !Number.isSafeInteger(result.received_at) || result.received_at < contact.expires_at - 7 * 86400 || result.received_at > now + 300 ||
-            typeof result.receipt_ref !== 'string' || !/^[a-f0-9]{64}$/.test(result.receipt_ref)) throw new WorkspaceError('The removal receipt could not be validated.');
-        Object.assign(receipt, { authenticated: true, reason: result.reason, received_at: result.received_at, receipt_ref: result.receipt_ref });
-        changed(item, 'blocked', 'An authenticated removal-related email was received. Confirmation is held pending broker-route validation; no link was followed and deletion is unverified.');
+            typeof result.receipt_ref !== 'string' || !/^[a-f0-9]{64}$/.test(result.receipt_ref) || typeof result.continuation_available !== 'boolean' ||
+            (result.continuation_available && id !== 'usphonebook')) throw new WorkspaceError('The removal receipt could not be validated.');
+        Object.assign(receipt, { authenticated: true, reason: result.reason, received_at: result.received_at, receipt_ref: result.receipt_ref,
+          continuation_available: result.continuation_available });
+        changed(item, 'blocked', result.continuation_available ? 'An authenticated removal email is ready for the reviewed broker confirmation form. Review its required fields before continuing. Deletion is unverified.' : 'An authenticated removal-related email was received. Confirmation is held pending broker-route validation; no link was followed and deletion is unverified.');
       }
       // A later empty check must not erase a previously observed held receipt.
       if (item.mail_receipt?.status !== 'held' || result.status === 'held') item.mail_receipt = receipt;
       event(routeFor(id).name + (result.status === 'held' ? '. A removal email is held for route validation.' : '. No qualifying removal receipt was found in this explicit check.'));
       save(); return dashboard();
+    }
+    function continuationContext(id) {
+      const item = itemFor(id);
+      if (id !== 'usphonebook' || state.campaign.status !== 'active' || !item.operation_id || !item.mail_contact ||
+          !item.mail_receipt?.authenticated || item.mail_receipt.continuation_available !== true || item.status === 'user_reported_completed')
+        throw new WorkspaceError('Choose a current authenticated confirmation for this active operation.', 409);
+      const contact = mailContact(item.mail_contact, id, item.operation_id, Math.floor(Date.parse(clock()) / 1000));
+      return { item, contact };
+    }
+    function continuationFields(item, contact, supplied) {
+      if (!supplied || typeof supplied !== 'object' || Array.isArray(supplied) || Object.keys(supplied).length !== 3 ||
+          !['city', 'state', 'zip_code'].every(key => Object.hasOwn(supplied, key))) throw new WorkspaceError('Review the city, state and ZIP required by this broker.');
+      const city = text(supplied.city, 120), stateCode = text(supplied.state, 2).toUpperCase(), zip = text(supplied.zip_code, 5);
+      if (!/^(AL|AK|AZ|AR|CA|CO|CT|DE|DC|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY|AA|AE|AP|AS|FM|GU|MH|MP|PR|PW|VI)$/.test(stateCode) || !/^\d{5}$/.test(zip))
+        throw new WorkspaceError('Use a US state abbreviation and your accurate five-digit ZIP code.');
+      return { first_name: text(item.fields.first_name, 120), last_name: text(item.fields.last_name, 120), email: contact.contact_email,
+        city, state: stateCode, zip_code: zip };
+    }
+    function mailContinuationRequest(id, supplied) {
+      const { item, contact } = continuationContext(id);
+      if (item.continuation) throw new WorkspaceError('This confirmation action already started. Check its existing broker tab; no replay is allowed.', 409);
+      continuationFields(item, contact, supplied);
+      item.continuation_fields = { city: text(supplied.city, 120), state: text(supplied.state, 2).toUpperCase(), zip_code: text(supplied.zip_code, 5) };
+      item.mail_continuation_authorized_at = clock(); save();
+      return { capability: contact.capability, explicit: true, receipt_ref: item.mail_receipt.receipt_ref };
+    }
+    function prepareMailContinuation(id, response, reviewedFields) {
+      const { item, contact } = continuationContext(id);
+      if (!item.mail_continuation_authorized_at || item.continuation) throw new WorkspaceError('This confirmation action is unapproved or already started. No replay is allowed.', 409);
+      if (!response || response.status !== 'confirmation_ready' || response.route_id !== id || response.operation_id !== item.operation_id ||
+          response.request_id !== contact.request_id || response.receipt_ref !== item.mail_receipt.receipt_ref ||
+          response.automatic_execution !== false || !confirmationURL(response.confirmation_url)) throw new WorkspaceError('The confirmation does not match this operation.');
+      const fields = continuationFields(item, contact, reviewedFields);
+      const authorizedFields = continuationFields(item, contact, item.continuation_fields);
+      if (Object.keys(fields).some(key => fields[key] !== authorizedFields[key]))
+        throw new WorkspaceError('The confirmation fields changed in another tab. Review them again before continuing.', 409);
+      // Persist the uncertain boundary before the private URL leaves this call.
+      // The URL itself is transient and must never enter history or a backup.
+      item.continuation = { started_at: clock(), receipt_ref: response.receipt_ref, result: 'unknown', acceptance_verified: false, deletion_verified: false };
+      changed(item, 'uncertain', 'The confirmation-form action started. Check the existing broker tab before any further action.');
+      event('You started the ' + routeFor(id).name + ' confirmation-form action. No request acceptance or deletion was established.'); save();
+      return { routeId: id, operationId: item.operation_id, requestId: contact.request_id, receiptRef: response.receipt_ref,
+        confirmationUrl: response.confirmation_url, contactEmail: contact.contact_email, fields, authorized: true };
+    }
+    function recordMailContinuation(id, operationId, result) {
+      const item = itemFor(id);
+      if (id !== 'usphonebook' || item.operation_id !== operationId || !item.continuation || !result || !['prepared', 'blocked', 'unknown'].includes(result.status))
+        throw new WorkspaceError('The confirmation result does not match a started action.', 409);
+      if (item.continuation.result !== 'unknown' && item.continuation.result !== result.status) throw new WorkspaceError('The confirmation result is already recorded. No replay was sent.', 409);
+      item.continuation.result = result.status; item.continuation.observed_at = clock();
+      changed(item, result.status === 'prepared' ? 'needs_broker_step' : result.status === 'blocked' ? 'blocked' : 'uncertain',
+        result.status === 'prepared' ? 'The confirmation form was filled. Review its accuracy statement, complete the broker challenge and submit on the broker site. Deletion is unverified.' : undefined);
+      event(routeFor(id).name + '. Confirmation form outcome recorded; request acceptance and deletion remain unverified.'); save(); return dashboard();
     }
     function recordCompanion(id, operationId, result) {
       const item = itemFor(id);
@@ -378,6 +443,10 @@
             acceptance_verified: false, deletion_verified: false
           };
         }
+        if (imported.continuation && typeof imported.continuation.started_at === 'string' && Number.isFinite(Date.parse(imported.continuation.started_at))) {
+          item.continuation = { started_at: new Date(imported.continuation.started_at).toISOString(), result: 'unknown',
+            acceptance_verified: false, deletion_verified: false, source: 'imported_user_history' };
+        }
         if (imported.status === 'opened') changed(item, 'opened');
         else if (imported.status !== 'ready') {
           const report = USER_STATES.has(imported.status) ? imported.status :
@@ -437,6 +506,7 @@
     }
     return Object.freeze({ api, snapshot: () => clone(read()), profile: () => clone(active().profile), routes: () => clone(routes),
       setEvidence, prepare, mailSessionRequest, bindMailContact, clearMailContact, mailCheckRequest, recordMailReceipt,
+      mailContinuationRequest, prepareMailContinuation, recordMailContinuation,
       recordCompanion, recordUser, opened, exportData, importData, remove, dashboard,
       updateRoute: setEvidence, applyCompanionResult: recordCompanion });
   }
@@ -449,9 +519,9 @@
     if (!locks || typeof locks.request !== 'function') throw new WorkspaceError('This browser cannot safely coordinate workspace changes. Use a current browser with Web Locks support.', 503);
     return locks.request(KEY + '-write', { mode: 'exclusive' }, action);
   }
-  const mutators = new Set(['setEvidence', 'prepare', 'mailSessionRequest', 'bindMailContact', 'clearMailContact', 'mailCheckRequest', 'recordMailReceipt', 'recordCompanion', 'recordUser', 'opened', 'importData', 'remove', 'updateRoute', 'applyCompanionResult']);
+  const mutators = new Set(['setEvidence', 'prepare', 'mailSessionRequest', 'bindMailContact', 'clearMailContact', 'mailCheckRequest', 'recordMailReceipt', 'mailContinuationRequest', 'prepareMailContinuation', 'recordMailContinuation', 'recordCompanion', 'recordUser', 'opened', 'importData', 'remove', 'updateRoute', 'applyCompanionResult']);
   const exported = { create, KEY, AUTHORIZATION, WorkspaceError, routes: () => clone(routes), listingURL };
-  for (const name of ['snapshot', 'profile', 'setEvidence', 'prepare', 'mailSessionRequest', 'bindMailContact', 'clearMailContact', 'mailCheckRequest', 'recordMailReceipt', 'recordCompanion', 'recordUser', 'opened', 'exportData', 'importData', 'remove', 'dashboard', 'updateRoute', 'applyCompanionResult']) {
+  for (const name of ['snapshot', 'profile', 'setEvidence', 'prepare', 'mailSessionRequest', 'bindMailContact', 'clearMailContact', 'mailCheckRequest', 'recordMailReceipt', 'mailContinuationRequest', 'prepareMailContinuation', 'recordMailContinuation', 'recordCompanion', 'recordUser', 'opened', 'exportData', 'importData', 'remove', 'dashboard', 'updateRoute', 'applyCompanionResult']) {
     exported[name] = (...args) => mutators.has(name) ? exclusive(() => defaults()[name](...args)) : defaults()[name](...args);
   }
   exported.api = async (...args) => {

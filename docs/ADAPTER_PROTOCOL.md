@@ -4,7 +4,7 @@ This is the separate local Python worker's adapter protocol, including optional
 operator modes. It does not describe enabled public-site capabilities. The default
 local setup and public workspace run on demand with recurring timers off. See
 [local deployment](DEPLOYMENT.md), [public workspace scope](PUBLIC_WORKSPACE.md) and
-[the held-only dedicated-mail pilot](AUTOMATIC_CONFIRMATIONS.md). The public Chrome
+[the dedicated-mail pilot](AUTOMATIC_CONFIRMATIONS.md). The public Chrome
 companion does not implement this worker's full scan/confirm/check protocol.
 
 The web application persists work; a trusted, operator-installed adapter performs site interactions. The existing skill engine remains a local catalog and drafting engine. The web worker never reads a person's files under `~/.erase-me`.

@@ -376,7 +376,7 @@ function workspaceUIFixture(config={}) {
     postMessage(data, origin) {
       posted.push(data.payload.action);
       queueMicrotask(() => listeners.get('message')?.({ source: window, origin, data: { source: 'erase-companion', requestId: data.requestId,
-        reply: { ok: true, result: data.payload.action === 'ping' ? { routes: [route.id] } : { status: 'prepared', detail: 'Prepared fixture.' } } } }));
+        reply: { ok: true, result: data.payload.action === 'ping' ? { routes: [route.id], capabilities:['usphonebook-continuation-v1'] } : { status: 'prepared', detail: 'Prepared fixture.' } } } }));
     },
     open: url => opened.push(url)
   };
@@ -544,7 +544,7 @@ test('receipt checks require a saved started operation and held mail never estab
   assert.deepEqual(core.mailCheckRequest('usphonebook'),{capability:contact.capability,explicit:true});
   const result={status:'held',route_id:'usphonebook',operation_id:operation.operationId,request_id:contact.request_id,
     reason:'route_validation_required',received_at:Math.floor(Date.parse('2026-11-04T23:00:00.000Z')/1000),
-    receipt_ref:'c'.repeat(64),authenticated:true,automatic_execution:false};
+    receipt_ref:'c'.repeat(64),authenticated:true,automatic_execution:false,continuation_available:false};
   assert.throws(()=>core.recordMailReceipt('usphonebook',{...result,request_id:'d'.repeat(32)}),/does not match/);
   assert.throws(()=>core.recordMailReceipt('usphonebook',{...result,authenticated:false}),/could not be validated/);
   assert.throws(()=>core.recordMailReceipt('usphonebook',{...result,status:'removed'}),/does not match/);
@@ -561,7 +561,7 @@ test('private backup preserves scoped contact and original operation but never a
   assert.equal(waiting.prepare('usphonebook').fields.email,contact.contact_email);
   core.recordUser('usphonebook','user_reported_requested');
   core.recordMailReceipt('usphonebook',{status:'held',route_id:'usphonebook',operation_id:contact.operation_id,request_id:contact.request_id,
-    reason:'route_validation_required',received_at:Math.floor(Date.parse('2026-11-04T23:00:00.000Z')/1000),receipt_ref:'c'.repeat(64),authenticated:true,automatic_execution:false});
+    reason:'route_validation_required',received_at:Math.floor(Date.parse('2026-11-04T23:00:00.000Z')/1000),receipt_ref:'c'.repeat(64),authenticated:true,automatic_execution:false,continuation_available:false});
   const restored=fixture().core;restored.importData(core.exportData());const item=restored.snapshot().items.usphonebook;
   assert.equal(item.operation_id,contact.operation_id);assert.equal(item.mail_contact.capability,contact.capability);
   assert.equal(item.mail_receipt.authenticated,false);assert.equal(item.mail_receipt.source,'imported_user_history');
@@ -604,4 +604,80 @@ test('pilot UI waits for receipt persistence before showing a mailbox outcome',a
   const previous=ui.feedback.textContent,key=ui.keyInput();key.value='f'.repeat(64);const pending=ui.click('Check confirmation email');
   await new Promise(resolve=>setImmediate(resolve));assert.equal(recordCalls,1);assert.equal(key.value,'');assert.equal(ui.feedback.textContent,previous);
   releaseRecord();await pending;assert.match(ui.feedback.textContent,/held for broker-route validation/);assert.deepEqual(ui.posted,[]);
+});
+
+async function readyContinuation(){
+  const f=await mailFixture(),{core}=f;core.mailSessionRequest('usphonebook');const contact=contactSession(core);core.bindMailContact('usphonebook',contact);
+  const op=core.prepare('usphonebook');core.recordCompanion('usphonebook',op.operationId,{status:'prepared'});
+  const receipt={status:'held',route_id:'usphonebook',operation_id:op.operationId,request_id:contact.request_id,reason:'route_validation_required',
+    received_at:Math.floor(Date.parse('2026-11-04T23:00:00.000Z')/1000),receipt_ref:'c'.repeat(64),authenticated:true,automatic_execution:false,continuation_available:true};
+  core.recordMailReceipt('usphonebook',receipt);
+  const response={status:'confirmation_ready',route_id:'usphonebook',operation_id:op.operationId,request_id:contact.request_id,receipt_ref:receipt.receipt_ref,
+    confirmation_url:'https://www.usphonebook.com/removal/validate-record-info?key=fixture%3D%3D&ticketid=12345678',automatic_execution:false};
+  return {...f,contact,op,receipt,response};
+}
+const CONFIRM_FIELDS={city:'Example City',state:'CA',zip_code:'92101'};
+test('a second tab cannot replace the fields reviewed by an in-flight continuation',async()=>{
+  const f=await readyContinuation();
+  f.core.mailContinuationRequest('usphonebook',CONFIRM_FIELDS);
+  const otherFields={...CONFIRM_FIELDS,city:'Another City',zip_code:'10001',state:'NY'};
+  Core.create(f.options).mailContinuationRequest('usphonebook',otherFields);
+  const fresh=Core.create(f.options);
+  assert.throws(()=>fresh.prepareMailContinuation('usphonebook',f.response,CONFIRM_FIELDS),/changed in another tab/);
+  assert.equal(fresh.snapshot().items.usphonebook.continuation,undefined);
+  const operation=Core.create(f.options).prepareMailContinuation('usphonebook',f.response,otherFields);
+  assert.equal(operation.fields.zip_code,'10001');
+  assert.equal(operation.fields.city,'Another City');
+});
+test('reviewed confirmation requires real required fields and writes a no-replay boundary without storing its private URL',async()=>{
+  const {core,response,contact,values,options}=await readyContinuation();
+  assert.throws(()=>core.mailContinuationRequest('usphonebook',{...CONFIRM_FIELDS,zip_code:''}),/required profile field/);
+  assert.throws(()=>core.mailContinuationRequest('usphonebook',{...CONFIRM_FIELDS,zip_code:'9210'}),/five-digit/);
+  assert.throws(()=>core.mailContinuationRequest('usphonebook',{...CONFIRM_FIELDS,phone:'5555555555'}),/Review the city/);
+  const request=core.mailContinuationRequest('usphonebook',CONFIRM_FIELDS);
+  assert.deepEqual(request,{capability:contact.capability,explicit:true,receipt_ref:response.receipt_ref});
+  assert.equal(JSON.stringify(request).includes('92101'),false);
+  assert.throws(()=>core.prepareMailContinuation('usphonebook',{...response,operation_id:'f'.repeat(32)},CONFIRM_FIELDS),/does not match/);
+  const operation=core.prepareMailContinuation('usphonebook',response,CONFIRM_FIELDS);
+  assert.equal(operation.confirmationUrl,response.confirmation_url);assert.equal(operation.fields.zip_code,'92101');
+  assert.equal(operation.fields.email,contact.contact_email);assert.equal(operation.fields.phone,undefined);
+  assert.equal(values.get(Core.KEY).includes('confirmation_url'),false);assert.equal(values.get(Core.KEY).includes('ticketid'),false);
+  assert.equal(core.exportData().includes(response.confirmation_url),false);assert.equal(JSON.stringify(core.dashboard()).includes('ticketid'),false);
+  assert.equal(core.dashboard().counts.requested,0);assert.equal(core.dashboard().counts.removed,0);
+  assert.throws(()=>Core.create(options).mailContinuationRequest('usphonebook',CONFIRM_FIELDS),/already started/);
+  assert.throws(()=>core.prepareMailContinuation('usphonebook',response,CONFIRM_FIELDS),/already started/);
+  core.recordMailContinuation('usphonebook',operation.operationId,{status:'prepared'});
+  assert.equal(core.snapshot().items.usphonebook.status,'needs_broker_step');assert.equal(core.dashboard().counts.requested,0);
+  assert.equal(core.dashboard().counts.blocked,1,'A prepared form still needs the user’s final broker steps');
+});
+test('continuation honors pause, storage failure, changed receipt and imported no-replay history',async()=>{
+  const f=await readyContinuation();await post(f.core,'/api/campaign',{action:'pause'});
+  assert.throws(()=>f.core.mailContinuationRequest('usphonebook',CONFIRM_FIELDS),/active operation/);
+  await post(f.core,'/api/campaign',{action:'resume'});f.core.mailContinuationRequest('usphonebook',CONFIRM_FIELDS);
+  assert.throws(()=>f.core.prepareMailContinuation('usphonebook',{...f.response,receipt_ref:'f'.repeat(64)},CONFIRM_FIELDS),/does not match/);
+  const originalSet=f.storage.setItem;f.storage.setItem=()=>{throw new Error('quota');};
+  assert.throws(()=>f.core.prepareMailContinuation('usphonebook',f.response,CONFIRM_FIELDS),/could not save/);
+  f.storage.setItem=originalSet;f.core.prepareMailContinuation('usphonebook',f.response,CONFIRM_FIELDS);
+  const restored=fixture().core;restored.importData(f.core.exportData());
+  assert.equal(restored.snapshot().items.usphonebook.continuation.result,'unknown');
+  assert.equal(restored.snapshot().items.usphonebook.mail_receipt.authenticated,false);
+  restored.recordMailReceipt('usphonebook',f.receipt);
+  assert.throws(()=>restored.mailContinuationRequest('usphonebook',CONFIRM_FIELDS),/already started/);
+});
+
+test('continuation UI requires field review and awaits its persisted navigation boundary before contacting the companion',async()=>{
+  let apiCalls=0,prepareCalls=0,recordCalls=0,releasePrepare;
+  const gate=new Promise(resolve=>{releasePrepare=resolve;});
+  const ui=workspaceUIFixture({item:{operation_id:'a'.repeat(32),mail_contact:{contact_email:'erase@example.test',expires_at:1800000000},
+      mail_receipt:{authenticated:true,continuation_available:true}},
+    mail:{status:async()=>({configured:true,enabled:true}),continuation:async()=>{apiCalls++;return {fixture:true};}},
+    workspace:{profile:()=>({email:'person@example.test',city:'Example City',region:'US-CA'}),mailContinuationRequest:async(_id,fields)=>{assert.deepEqual(JSON.parse(JSON.stringify(fields)),CONFIRM_FIELDS);return{capability:'private',explicit:true,receipt_ref:'c'.repeat(64)};},
+      prepareMailContinuation:async()=>{prepareCalls++;return gate;},recordMailContinuation:async()=>{recordCalls++;}}});
+  ui.tools();await ui.click('Check removal-mail availability');ui.render();ui.keyInput().value='f'.repeat(64);
+  await ui.click('Continue broker form');assert.equal(apiCalls,0);assert.deepEqual(ui.posted,[]);assert.match(ui.feedback.textContent,/Review the fields/);
+  ui.findText('I reviewed these fields and authorize filling this broker confirmation form.').children[0].checked=true;
+  ui.findText('Current ZIP code').children[0].value='92101';const pending=ui.click('Continue broker form');
+  await new Promise(resolve=>setImmediate(resolve));assert.equal(apiCalls,1);assert.equal(prepareCalls,1);assert.deepEqual(ui.posted,['ping']);assert.equal(ui.keyInput().value,'');
+  releasePrepare({operationId:'a'.repeat(32),routeId:'usphonebook',fields:{},authorized:true});await pending;
+  assert.deepEqual(ui.posted,['ping','continue']);assert.equal(recordCalls,1);assert.match(ui.feedback.textContent,/Prepared fixture/);
 });

@@ -31,6 +31,52 @@
     if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(fields.email))throw new Error('Invalid email.');
     return route;
   }
+  function continuationURL(value) {
+    try {
+      if(typeof value!=='string'||value.length>2048||/\s/.test(value))return false;
+      const u=new URL(value),key=u.searchParams.get('key');
+      return u.protocol==='https:'&&u.hostname==='www.usphonebook.com'&&!u.port&&!u.username&&!u.password&&!u.hash&&
+        u.pathname==='/removal/validate-record-info'&&[...u.searchParams].length===2&&u.searchParams.getAll('key').length===1&&
+        typeof key==='string'&&key.length<=512&&/^[A-Za-z0-9_-]+={0,2}$/.test(key)&&u.searchParams.getAll('ticketid').length===1&&/^[0-9]{1,32}$/.test(u.searchParams.get('ticketid'));
+    }catch(_){return false;}
+  }
+  function validateContinuation(payload) {
+    const {routeId,operationId,requestId,receiptRef,confirmationUrl,contactEmail,fields,authorized}=payload||{};
+    if(routeId!=='usphonebook'||authorized!==true||!/^[a-f0-9-]{32,40}$/.test(operationId||'')||!/^[a-f0-9]{32}$/.test(requestId||'')||
+      !/^[a-f0-9]{64}$/.test(receiptRef||'')||!continuationURL(confirmationUrl)||!fields||Object.keys(fields).length!==6||
+      !['first_name','last_name','email','city','state','zip_code'].every(k=>Object.hasOwn(fields,k)))throw new Error('Unsupported confirmation form.');
+    validate('usphonebook',{first_name:fields.first_name,last_name:fields.last_name,email:fields.email});
+    if(contactEmail!==fields.email||!new RegExp('^[a-z0-9._-]{1,25}\\+erase-'+requestId+'@(?:gmail\\.com|googlemail\\.com)$').test(contactEmail)||
+      typeof fields.city!=='string'||!fields.city.trim()||fields.city.length>120||/[\r\n\x00<>]/.test(fields.city)||
+      !/^(AL|AK|AZ|AR|CA|CO|CT|DE|DC|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY|AA|AE|AP|AS|FM|GU|MH|MP|PR|PW|VI)$/.test(fields.state)||!/^\d{5}$/.test(fields.zip_code))throw new Error('Review the authorized confirmation fields.');
+    return {host:'www.usphonebook.com',path:'/removal/validate-record-info',url:confirmationUrl};
+  }
+  async function executeContinuation(payload,env=globalThis) {
+    validateContinuation(payload);
+    const doc=env.document,fields=payload.fields,selectors={first_name:'#subject-firstname',last_name:'#subject-lastname',email:'#subject-email',city:'#subject-city',state:'#subject-state',zip_code:'#subject-zipcode'};
+    const formURL='https://www.usphonebook.com/removal/validate-record-info';
+    const form=()=>doc.querySelector('#removalForm');
+    const safe=()=>env.location.href===payload.confirmationUrl&&continuationURL(env.location.href)&&!doc.querySelector('input[type="file"]');
+    const controls=()=>Object.entries(selectors).map(([key,selector])=>({key,e:doc.querySelector(selector)}));
+    const destination=()=>form()&&form().method?.toLowerCase()==='post'&&form().action===formURL;
+    const ready=()=>safe()&&destination()&&controls().every(({key,e})=>visible(e)&&!e.disabled&&!e.readOnly&&e.form===form()&&
+      (key==='state'?e.tagName==='SELECT'&&[...e.options].some(o=>o.value===fields.state):e.tagName==='INPUT'&&(key!=='email'||e.type==='email')));
+    const wait=ms=>new Promise(resolve=>env.setTimeout(resolve,ms));
+    for(let i=0;i<40&&!ready();i++){if(!safe())return {status:'blocked',detail:'The reviewed confirmation page changed. No fields were filled.'};await wait(250);}
+    if(!ready())return {status:'blocked',detail:'The reviewed confirmation form is unavailable. No fields were filled.'};
+    for(const selector of ['#subject-dob','#subject-phone','#subject-streetaddress']){
+      const optional=doc.querySelector(selector);
+      if(!optional||optional.form!==form()||optional.value)return {status:'blocked',detail:'The confirmation form contains additional personal fields. Review it directly; no extra details were supplied.'};
+    }
+    for(const {key,e} of controls()){
+      if(!ready())return {status:'blocked',detail:'The confirmation form changed before fields could be retained.'};
+      const prototype=key==='state'?env.HTMLSelectElement.prototype:env.HTMLInputElement.prototype;
+      Object.getOwnPropertyDescriptor(prototype,'value').set.call(e,fields[key]);
+      e.dispatchEvent(new env.Event('input',{bubbles:true}));e.dispatchEvent(new env.Event('change',{bubbles:true}));
+    }
+    if(!ready()||controls().some(({key,e})=>e.value!==fields[key]))return {status:'blocked',detail:'The broker did not retain the approved confirmation fields.'};
+    return {status:'prepared',detail:'The verified confirmation form is filled. Review its accuracy statement, complete the broker challenge and choose Confirm Removal Process there. Request acceptance and deletion remain unverified.'};
+  }
   async function execute({routeId,fields}, env=globalThis) {
     const route=validate(routeId,fields),doc=env.document;
     const safe=()=>allowed(env.location.href,route)&&!doc.querySelector('input[type="file"]');
@@ -68,7 +114,7 @@
     }
     return {status:'unknown',detail:'The broker outcome is unconfirmed. No automatic repeat will be sent.'};
   }
-  const api={ROUTES,allowed,formAllowed,validate,execute};
+  const api={ROUTES,allowed,formAllowed,validate,execute,continuationURL,validateContinuation,executeContinuation};
   globalThis.EraseBrokerExecutor=api;
   if(typeof module!=='undefined')module.exports=api;
 })();

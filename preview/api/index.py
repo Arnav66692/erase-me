@@ -47,7 +47,7 @@ class handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         path = self.path.split('?')[0]
-        if path not in ('/api/removal-mail/session', '/api/removal-mail/check'):
+        if path not in ('/api/removal-mail/session', '/api/removal-mail/check', '/api/removal-mail/continue'):
             return self.reject_write()
         try:
             if (self.headers.get_all('Origin') != [APP_ORIGIN]
@@ -68,8 +68,10 @@ class handler(BaseHTTPRequestHandler):
             if not 0 < length <= MAX_BODY:
                 raise removal_mail.MailError('Mailbox request is too large.', 413)
             body = removal_mail.parse_json(self.rfile.read(length))
-            result = (removal_mail.session(body, pilot_key=pilot_key) if path.endswith('/session')
-                      else removal_mail.check(body, pilot_key=pilot_key))
+            operation = {'/api/removal-mail/session': removal_mail.session,
+                         '/api/removal-mail/check': removal_mail.check,
+                         '/api/removal-mail/continue': removal_mail.continue_confirmation}[path]
+            result = operation(body, pilot_key=pilot_key)
             self.reply(200, result)
         except removal_mail.MailError as error:
             self.reply(error.status, {'error': str(error)})

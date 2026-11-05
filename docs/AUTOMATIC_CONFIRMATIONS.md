@@ -7,11 +7,11 @@ cron, background alarm or recurring timer is started. The public website does no
 provide unrestricted shared-mailbox access. Credential configuration alone never
 enables the relay.
 
-This release implements receipt checking, not automatic confirmation navigation.
-`CONFIRMATION_CONTRACTS` is an immutable empty table. Even an authenticated,
-correlated broker message is held until its exact confirmation-purpose route and
-later form have been inspected and tested. No link is returned or followed, and no
-mail receipt is counted as an accepted removal request or verified deletion.
+Mailbox checks remain read-only. A separate explicit continuation action can return
+one reviewed USPhonebook privacy-form link to the authorized browser. The server
+never follows it. `CONFIRMATION_CONTRACTS` contains only that exact reviewed route;
+other broker links remain held. Neither a receipt nor a ready form counts as an
+accepted removal request or verified deletion.
 
 ## Address roles
 
@@ -67,6 +67,8 @@ Personal-profile API writes remain rejected.
 - `POST /api/removal-mail/session` accepts exactly `route_id`, `operation_id`
   and `authorized: true`.
 - `POST /api/removal-mail/check` accepts exactly `capability` and `explicit: true`.
+- `POST /api/removal-mail/continue` accepts exactly `capability`, `explicit: true`
+  and the `receipt_ref` returned by a previous explicit check.
 
 POSTs require JSON, `X-Erase-Me: 1` and the exact production workspace Origin.
 POSTs also require the exact private pilot key in `X-Erase-Mail-Key`. It is
@@ -110,11 +112,46 @@ A qualifying receipt requires all of:
 - Removal and confirmation purpose in a bounded text-only message inspection.
 
 Attachments are not read. Parsing HTML does not render it or fetch its resources.
-A candidate returns only `held`, its reason, bound operation identifiers, receipt
-time, authenticated status and an opaque receipt reference. Message bodies,
-subjects, sender addresses, raw headers, Gmail message IDs and confirmation URLs
-are not exposed. A receipt with an unfamiliar link stays held. A missing qualifying
-message returns `pending`; neither result establishes deletion.
+A check returns only `held`, its reason, bound operation identifiers, receipt
+time, authenticated status, `continuation_available` and an opaque receipt
+reference. Message bodies, subjects, sender addresses, raw headers, Gmail message
+IDs and confirmation URLs are not exposed by a check. A receipt with an unfamiliar
+link stays held with `continuation_available: false`. A missing qualifying message
+returns `pending`; neither result establishes deletion.
+
+## Reviewed USPhonebook continuation
+
+The allowed destination is exactly
+`https://www.usphonebook.com/removal/validate-record-info`. Its query must contain
+exactly one nonempty `key` and one numeric `ticketid`, with no extra or duplicate
+parameters. The opaque key is at most 512 characters, with URL-safe base64
+characters and at most two trailing padding characters; the ticket ID is at most
+32 digits. Credentials, fragments, alternate ports, encoded path variants and
+other destinations are rejected. HTML attribute entities are decoded by the HTML
+parser once; plain-text URL entities are decoded once. Every extracted link must
+collapse to the same valid destination. Ambiguity stays held.
+
+The explicit continuation endpoint rechecks the capability, private pilot key,
+connected account identity and the same authenticated receipt. Its opaque
+reference binds the request, Gmail message ID and raw-message digest. An altered
+message or a reference from another operation cannot release a link. It returns
+only `confirmation_ready`, the bound operation identifiers, receipt reference,
+`confirmation_url` and `automatic_execution: false`. No broker request is made by
+the server. The URL is private, transient browser input: do not log it, place it in
+the dashboard, save it to an export or send it to an unrelated tab.
+
+The reviewed second form requires first and last name, current city, state, ZIP
+code and the authorized contact email. The companion must hold until ZIP is
+provided and journal the continuation before navigating. Optional birth date,
+phone number and street address remain blank. The accuracy agreement, any broker
+challenge and final submission remain explicit broker steps. A form submission is
+recorded separately from request acceptance, broker-reported completion and an
+independently verified removal.
+
+This stateless endpoint does not provide a durable consumed-nonce store or
+server-enforced one-time execution. The companion's local action journal must
+hold repeated or interrupted continuations instead of navigating again. An API
+response or the broker's processing estimate does not prove removal.
 
 ## Free hosting limits
 
@@ -130,7 +167,9 @@ confirmation contracts must be validated before automatic execution is enabled.
 It covers disabled activation, missing or wrong pilot keys, revocation between
 Google calls, account mismatch, exact recipient and operation binding, HMAC tampering,
 expiry, forged authentication, stale mail, bounded reads, held links, strict HTTP
-origin/body checks, offline configuration and secret-free error responses. These
+origin/body checks, offline configuration and secret-free error responses. The
+continuation fixtures also cover exact host/path/query contracts, entity decoding,
+ambiguous links, changed message content and cross-operation receipt references. These
 fixtures do not demonstrate that a real broker accepted or completed a request.
 
 Google's method contracts are documented at

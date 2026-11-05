@@ -1,5 +1,6 @@
 """Dedicated receipt API fixtures only. No account, token or live mail is used."""
 import base64
+from email import message_from_bytes, policy
 from email.message import EmailMessage
 import hashlib
 import hmac
@@ -23,6 +24,7 @@ _REAL_REQUEST_JSON = mail._request_json
 NOW = 1800000000
 OPERATION = 'a' * 32
 PILOT = 'cd' * 32
+FORM = 'https://www.usphonebook.com/removal/validate-record-info?key=fixtureKey_01%3D%3D&ticketid=12345678'
 
 
 @pytest.fixture
@@ -203,7 +205,8 @@ def test_authenticated_correlated_message_is_held_until_route_contract_exists(co
     encoded = json.dumps(answer)
     for private in ('privacy@', 'private-fixture-token', 'Authentication-Results', 'fixture-access', 'Confirm your removal'):
         assert private not in encoded
-    assert not mail.CONFIRMATION_CONTRACTS
+    assert answer['continuation_available'] is False
+    assert set(mail.CONFIRMATION_CONTRACTS) == {'usphonebook'}
 
 
 @pytest.mark.parametrize('change', ['recipient', 'from', 'authentication', 'forged_header', 'old', 'future', 'unrelated', 'large'])
@@ -392,3 +395,158 @@ def test_session_runs_fresh_identity_check_before_issuing_capability(connected, 
     result = issued()
     assert result['contact_email'].startswith('removals+erase-')
     assert [url for url, _ in calls] == ['https://oauth2.googleapis.com/token', 'https://openidconnect.googleapis.com/v1/userinfo']
+
+
+def test_reviewed_form_is_advertised_without_link_or_navigation_during_check(connected, monkeypatch):
+    result = issued(); claims = mail.verify_capability(result['capability'])
+    calls = google_fixture(monkeypatch, claims, [raw_message(claims, link=FORM)])
+    answer = mail.check({'capability': result['capability'], 'explicit': True}, pilot_key=PILOT)
+    assert answer['status'] == 'held' and answer['continuation_available'] is True
+    assert 'confirmation_url' not in answer and 'fixtureKey' not in json.dumps(answer)
+    assert all(urlsplit(url).hostname in {'oauth2.googleapis.com', 'openidconnect.googleapis.com', 'gmail.googleapis.com'} for url, _ in calls)
+
+
+def test_explicit_continuation_rechecks_same_receipt_and_returns_only_reviewed_form(connected, monkeypatch):
+    result = issued(); claims = mail.verify_capability(result['capability'])
+    calls = google_fixture(monkeypatch, claims, [raw_message(claims, link=FORM)])
+    receipt = mail.check({'capability': result['capability'], 'explicit': True}, pilot_key=PILOT)
+    answer = mail.continue_confirmation({'capability': result['capability'], 'explicit': True,
+                                         'receipt_ref': receipt['receipt_ref']}, pilot_key=PILOT)
+    assert answer == {'status': 'confirmation_ready', 'route_id': 'usphonebook', 'operation_id': OPERATION,
+                      'request_id': claims['request_id'], 'receipt_ref': receipt['receipt_ref'],
+                      'confirmation_url': FORM, 'automatic_execution': False}
+    assert sum('/messages?' in url for url, _ in calls) == 2
+    assert sum('/messages/message' in url for url, _ in calls) == 2
+    assert all(urlsplit(url).hostname != 'www.usphonebook.com' for url, _ in calls)
+    assert all(secret not in json.dumps(answer) for secret in ('fixture-secret', 'fixture-refresh', 'fixture-access', claims['recipient']))
+
+
+@pytest.mark.parametrize('url', [
+    FORM.replace('https:', 'http:'), FORM.replace('www.usphonebook.com', 'usphonebook.com'),
+    FORM.replace('www.usphonebook.com', 'www.usphonebook.com.evil.test'),
+    FORM.replace('www.usphonebook.com', 'user@www.usphonebook.com'),
+    FORM.replace('www.usphonebook.com', '@www.usphonebook.com'),
+    FORM.replace('www.usphonebook.com', 'www.usphonebook.com:444'),
+    FORM.replace('www.usphonebook.com', 'www.usphonebook.com:'),
+    FORM.replace('/removal/', '/login/'), FORM.replace('validate-record-info', 'validate-record-info/'),
+    FORM.replace('validate-record-info', '%76alidate-record-info'),
+    FORM + '#', FORM + '#fragment', FORM + '&next=https://evil.test',
+    FORM + '&key=another', FORM + '&ticketid=1', FORM + '&',
+    FORM.replace('fixtureKey_01%3D%3D', ''), FORM.replace('fixtureKey_01%3D%3D', 'x' * 513),
+    FORM.replace('fixtureKey_01%3D%3D', '=inside=padding'),
+    FORM.replace('fixtureKey_01%3D%3D', 'x%0d%0aHeader'),
+    FORM.replace('fixtureKey_01%3D%3D', 'x%252Fother'),
+    FORM.replace('12345678', ''), FORM.replace('12345678', '1' * 33), FORM.replace('12345678', 'NaN'),
+    FORM.replace('&ticketid=', '&amp;amp;ticketid='),
+])
+def test_unreviewed_or_ambiguous_link_shapes_never_allow_continuation(connected, monkeypatch, url):
+    result = issued(); claims = mail.verify_capability(result['capability'])
+    google_fixture(monkeypatch, claims, [raw_message(claims, link=url)])
+    receipt = mail.check({'capability': result['capability'], 'explicit': True}, pilot_key=PILOT)
+    assert receipt['status'] == 'held' and receipt['continuation_available'] is False
+    with pytest.raises(mail.MailError) as error:
+        mail.continue_confirmation({'capability': result['capability'], 'explicit': True,
+                                   'receipt_ref': receipt['receipt_ref']}, pilot_key=PILOT)
+    assert error.value.status == 409 and 'fixtureKey' not in str(error.value)
+
+
+def test_html_and_plain_links_decode_entities_once_and_collapse_to_one_destination(connected):
+    claims = mail.verify_capability(issued()['capability'])
+    msg = message_from_bytes(raw_message(claims, link=FORM.replace('&', '&amp;')), policy=policy.default)
+    msg.add_alternative('<p>Verify your removal request.</p><a href="' + FORM.replace('&', '&amp;') + '">Complete form</a>', subtype='html')
+    receipt = mail._receipt(msg.as_bytes(), (NOW + 1) * 1000, claims)
+    assert receipt['continuation_available'] is True
+    # HTMLParser already decodes an attribute once. A second decode must not turn
+    # double-encoded query separators into a different accepted request.
+    msg = message_from_bytes(raw_message(claims, link=FORM), policy=policy.default)
+    msg.add_alternative('<p>Verify your removal request.</p><a href="' + FORM.replace('&', '&amp;amp;') + '">Complete form</a>', subtype='html')
+    assert mail._receipt(msg.as_bytes(), (NOW + 1) * 1000, claims)['continuation_available'] is False
+
+
+def test_plain_prose_wrapper_can_trim_punctuation_but_html_href_is_exact(connected):
+    claims = mail.verify_capability(issued()['capability'])
+    assert mail._receipt(raw_message(claims, link='(' + FORM + ').'), (NOW + 1) * 1000, claims)['continuation_available'] is True
+    msg = message_from_bytes(raw_message(claims, link=FORM), policy=policy.default)
+    msg.add_alternative('<p>Verify your removal request.</p><a href="' + FORM.replace('&', '&amp;') + ')">Complete form</a>', subtype='html')
+    assert mail._receipt(msg.as_bytes(), (NOW + 1) * 1000, claims)['continuation_available'] is False
+
+
+def test_conflicting_or_unrecognized_additional_links_hold_the_receipt(connected):
+    claims = mail.verify_capability(issued()['capability'])
+    for other in (FORM.replace('12345678', '87654321'), 'https://www.usphonebook.com/login', 'https://evil.test/confirm'):
+        receipt = mail._receipt(raw_message(claims, link=FORM + '\n' + other), (NOW + 1) * 1000, claims)
+        assert receipt['continuation_available'] is False
+
+
+@pytest.mark.parametrize('extra', ['<a href="' + 'x' * 2049 + '">Oversized</a>',
+                                 '<a href>Missing destination</a>',
+                                 '<a href="https://evil.test/confirm">Extra</a>' * 21])
+def test_ignored_or_excess_html_links_cannot_hide_an_ambiguous_destination(connected, extra):
+    claims = mail.verify_capability(issued()['capability'])
+    msg = message_from_bytes(raw_message(claims, link=FORM), policy=policy.default)
+    msg.add_alternative('<p>Verify your removal request.</p><a href="' + FORM.replace('&', '&amp;') + '">Complete form</a>' + extra, subtype='html')
+    assert mail._receipt(msg.as_bytes(), (NOW + 1) * 1000, claims)['continuation_available'] is False
+
+
+def test_observed_long_padded_key_and_default_https_port_are_supported(connected):
+    claims = mail.verify_capability(issued()['capability'])
+    url = FORM.replace('fixtureKey_01%3D%3D', 'x' * 418 + '%3D%3D').replace('www.usphonebook.com/', 'www.usphonebook.com:443/')
+    assert mail._receipt(raw_message(claims, link=url), (NOW + 1) * 1000, claims)['continuation_available'] is True
+
+
+def test_receipt_ref_binds_exact_message_contents_and_capability(connected, monkeypatch):
+    result = issued(); claims = mail.verify_capability(result['capability'])
+    google_fixture(monkeypatch, claims, [raw_message(claims, link=FORM)])
+    receipt = mail.check({'capability': result['capability'], 'explicit': True}, pilot_key=PILOT)
+    # Same synthetic Gmail ID with changed authenticated contents cannot inherit
+    # a previously checked reference.
+    google_fixture(monkeypatch, claims, [raw_message(claims, link=FORM.replace('12345678', '87654321'))])
+    with pytest.raises(mail.MailError) as error:
+        mail.continue_confirmation({'capability': result['capability'], 'explicit': True,
+                                   'receipt_ref': receipt['receipt_ref']}, pilot_key=PILOT)
+    assert error.value.status == 409
+    other = issued(); other_claims = mail.verify_capability(other['capability'])
+    google_fixture(monkeypatch, other_claims, [raw_message(other_claims, link=FORM)])
+    with pytest.raises(mail.MailError) as error:
+        mail.continue_confirmation({'capability': other['capability'], 'explicit': True,
+                                   'receipt_ref': receipt['receipt_ref']}, pilot_key=PILOT)
+    assert error.value.status == 409
+
+
+@pytest.mark.parametrize('body', [
+    {}, {'capability': 'fixture', 'explicit': False, 'receipt_ref': 'a' * 64},
+    {'capability': 'fixture', 'explicit': True, 'receipt_ref': 'bad'},
+    {'capability': 'fixture', 'explicit': True, 'receipt_ref': 'a' * 64, 'confirmation_url': FORM},
+])
+def test_continuation_shape_is_strict_before_any_mail_read(connected, monkeypatch, body):
+    monkeypatch.setattr(mail, '_request_json', lambda *args, **kwargs: pytest.fail('Invalid continuation must not read mail'))
+    with pytest.raises(mail.MailError) as error:
+        mail.continue_confirmation(body, pilot_key=PILOT)
+    assert error.value.status == 400
+
+
+def test_continuation_requires_pilot_authorization_and_supported_route(connected, monkeypatch):
+    result = issued('fastpeoplesearch')
+    body = {'capability': result['capability'], 'explicit': True, 'receipt_ref': 'a' * 64}
+    monkeypatch.setattr(mail, '_request_json', lambda *args, **kwargs: pytest.fail('Unsupported continuation must not read mail'))
+    for key in (None, 'ef' * 32):
+        with pytest.raises(mail.MailError) as error:
+            mail.continue_confirmation(body, pilot_key=key)
+        assert error.value.status == 403
+    with pytest.raises(mail.MailError) as error:
+        mail.continue_confirmation(body, pilot_key=PILOT)
+    assert error.value.status == 409
+
+
+def test_http_continuation_enforces_origin_key_shape_and_checked_receipt(connected, monkeypatch, http_client):
+    result = issued(); claims = mail.verify_capability(result['capability'])
+    google_fixture(monkeypatch, claims, [raw_message(claims, link=FORM)])
+    receipt = mail.check({'capability': result['capability'], 'explicit': True}, pilot_key=PILOT)
+    body = {'capability': result['capability'], 'explicit': True, 'receipt_ref': receipt['receipt_ref']}
+    path = '/api/removal-mail/continue'
+    assert http_client(path, body, origin='https://evil.test')[0] == 403
+    assert http_client(path, body, pilot_key=None)[0] == 403
+    assert http_client(path, {**body, 'email': 'person@example.test'})[0] == 400
+    assert http_client(path, {**body, 'receipt_ref': 'a' * 64})[0] == 409
+    code, answer = http_client(path, body)
+    assert code == 200 and answer['status'] == 'confirmation_ready' and answer['confirmation_url'] == FORM

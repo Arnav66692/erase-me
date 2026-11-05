@@ -13,7 +13,7 @@ The catalog contains **43 reference routes**: two global portals, 23 US routes, 
 | Route | Working action | Required next step |
 | --- | --- | --- |
 | People Data Labs | Start the official deletion portal’s verification email | You open the email and finish the portal |
-| USPhonebook | Fill the reviewed first form | You complete CAPTCHA, agreement, submission and emailed record-selection form |
+| USPhonebook | Fill the first form; the private mail pilot can also prepare its reviewed second form | Review the matching details, accuracy statement and CAPTCHA, then submit on the broker site |
 | SearchPeopleFree | Fill the reviewed first form | You complete the challenge, email and record-removal session |
 | FastPeopleSearch | Fill the reviewed first form | You complete the challenge, email and matching-record steps |
 | Apollo | Open the official removal portal | Business-email verification, completed by you |
@@ -22,7 +22,7 @@ The catalog contains **43 reference routes**: two global portals, 23 US routes, 
 
 Form preparation, verification initiation, user-reported submission and verified deletion are distinct. A submitted form is never counted as a deletion. No independently verified deletion is established by this release. See [public app behavior](docs/PUBLIC_WORKSPACE.md), [current route research](docs/BROKER_ROUTE_RESEARCH.md) and [earlier evidence](docs/BROKER_VERIFICATION.md).
 
-Managed CAPTCHA challenges, broker email links and identity checks remain user steps. The companion has no inbox or alarm permission. It holds interrupted operations rather than repeating them. The workspace has no background polling, automatic re-checks or resubmission.
+Managed CAPTCHA challenges, accurate record matching and final submission remain user steps. The companion has no inbox or alarm permission. It holds interrupted operations rather than repeating them. The workspace has no background polling, automatic re-checks or resubmission.
 
 ## Optional removal-only mail pilot
 
@@ -30,7 +30,9 @@ A separate Gmail account can be connected by an operator through the [private OA
 
 USPhonebook, SearchPeopleFree and FastPeopleSearch can use an explicitly chosen removal-only contact where the broker accepts it. The app displays the address before use and explains that it belongs to a shared service account, not the person. People Data Labs and Apollo retain the email associated with the record. The personal inbox remains untouched.
 
-Checks happen only when requested. Authenticated, correlated removal emails are **held for broker-route validation**: no confirmation link is followed, and a receipt never counts as deletion. Automatic confirmations and independently verified removals are not established by this release. The [older IMAP preparation helper](docs/REMOVAL_MAILBOX_SETUP.md) is separate from the hosted OAuth relay.
+Checks happen only when requested and return no confirmation URL. USPhonebook has one reviewed continuation: a separate explicit action revalidates the same authenticated receipt, opens its exact official second form and fills the authorized first name, last name, city, state, ZIP and removal contact. Birth date, phone and street address stay blank. The person reviews the accuracy statement, completes the challenge and submits on the broker site. Other confirmation routes remain held.
+
+Live pilot evidence reaches first-form acceptance and a correlated authenticated email. Final removal-request acceptance and deletion remain unverified. Neither receiving an email nor preparing the second form counts as deletion. The [older IMAP preparation helper](docs/REMOVAL_MAILBOX_SETUP.md) is separate from the hosted OAuth relay.
 
 ## Local Python app
 
