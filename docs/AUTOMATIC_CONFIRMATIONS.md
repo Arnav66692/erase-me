@@ -141,12 +141,16 @@ the server. The URL is private, transient browser input: do not log it, place it
 the dashboard, save it to an export or send it to an unrelated tab.
 
 The reviewed second form requires first and last name, current city, state, ZIP
-code and the authorized contact email. The companion must hold until ZIP is
-provided and journal the continuation before navigating. Optional birth date,
-phone number and street address remain blank. The accuracy agreement, any broker
-challenge and final submission remain explicit broker steps. A form submission is
-recorded separately from request acceptance, broker-reported completion and an
-independently verified removal.
+code and the authorized contact email. Live server validation also requires either
+date of birth or street address, although neither input is marked required in the
+HTML. The person must enter one directly on the broker form. Erase Me does not
+collect or autofill those details; phone number also remains unfilled. The companion
+must hold until ZIP is provided and journal the continuation before navigating.
+The accuracy agreement, any broker challenge and final submission remain explicit
+broker steps. The observed final form was rejected without that additional detail;
+acceptance and deletion remain unverified. A form submission is recorded separately
+from request acceptance, broker-reported completion and an independently verified
+removal.
 
 This stateless endpoint does not provide a durable consumed-nonce store or
 server-enforced one-time execution. The companion's local action journal must

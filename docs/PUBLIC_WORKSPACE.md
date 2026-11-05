@@ -96,13 +96,17 @@ links remain held. The URL never enters workspace history or private backups.
 
 Before continuing, the person reviews and authorizes first name, last name, city, state,
 five-digit ZIP and the bound removal contact. These fields go directly through the
-companion to the broker form, not to the relay. Birth date, phone and street address stay
-blank. The companion leaves the final accuracy checkbox, CAPTCHA and submission to the
-person. An interrupted continuation is held rather than replayed.
+companion to the broker form, not to the relay. USPhonebook also requires either date of
+birth or street address; the person enters one directly on its official form. Erase Me
+does not collect or autofill those details, and phone number remains unfilled. The
+companion leaves the final accuracy checkbox, CAPTCHA and submission to the person. An
+interrupted continuation is held rather than replayed.
 
 Live pilot evidence establishes first-form acceptance and a correlated authenticated
-email, not acceptance of the final removal request or deletion. Receipt checks and second
-form preparation never establish deletion. The relay remains a private pilot, not an
+email. A final submission without date of birth or street address was rejected, despite
+neither input being marked required in the HTML. Final request acceptance and deletion
+remain unverified. Receipt checks and second form preparation never establish deletion.
+The relay remains a private pilot, not an
 unlimited public mail service. Free hosting, provider quotas and OAuth restrictions apply.
 
 ## Core interface and checks

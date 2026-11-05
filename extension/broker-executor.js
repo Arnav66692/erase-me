@@ -75,7 +75,7 @@
       e.dispatchEvent(new env.Event('input',{bubbles:true}));e.dispatchEvent(new env.Event('change',{bubbles:true}));
     }
     if(!ready()||controls().some(({key,e})=>e.value!==fields[key]))return {status:'blocked',detail:'The broker did not retain the approved confirmation fields.'};
-    return {status:'prepared',detail:'The verified confirmation form is filled. Review its accuracy statement, complete the broker challenge and choose Confirm Removal Process there. Request acceptance and deletion remain unverified.'};
+    return {status:'prepared',detail:'The authorized name, city, state, ZIP and contact fields are filled. USPhonebook also requires either date of birth or street address: enter one directly on its official form. Erase Me does not collect or autofill it. Review the accuracy statement, complete the broker challenge and choose Confirm Removal Process there. Request acceptance and deletion remain unverified.'};
   }
   async function execute({routeId,fields}, env=globalThis) {
     const route=validate(routeId,fields),doc=env.document;

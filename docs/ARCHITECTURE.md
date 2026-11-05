@@ -7,7 +7,9 @@ imply 43 automated integrations or a verified removal service.
 
 The public private-mail pilot keeps receipt checks URL-free. A separate explicit
 USPhonebook continuation revalidates the same authenticated receipt and transiently
-opens its reviewed second form. Authorized fields may be prepared there; the final
+opens its reviewed second form. Authorized fields may be prepared there. USPhonebook
+also requires either date of birth or street address, entered directly on the broker
+form by the person; Erase Me does not collect or autofill that detail. The final
 accuracy statement, CAPTCHA and submission remain user steps. No personal inbox,
 recurring timer or verified deletion is implied by that continuation.
 

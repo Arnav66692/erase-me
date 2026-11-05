@@ -65,8 +65,12 @@ submits. The form loads reCAPTCHA Enterprise.
 
 The page describes an email link valid for 24 hours. That link opens another
 opt-out form; it does not complete the removal by itself. The page asks users to
-allow three days after that second form is submitted. Neither the second form
-nor a successful submission was inspected.
+allow three days after that second form is submitted. That earlier inspection did
+not reach the second form. A later November 4 live validation reached its official
+`/removal/validate-record-info` form and observed rejection with “Enter a date of
+birth or street address is mandatory,” despite neither field being marked required
+in the HTML. The person must enter one directly on the broker form; the companion
+does not collect or autofill it. No accepted final request or deletion was verified.
 
 A synthetic search at
 `/zzxqfixture-erasemeverification/california` returned HTTP 404 with a specific

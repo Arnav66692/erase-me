@@ -86,8 +86,13 @@ and change events. Do not call `form.submit()` to bypass site handlers.
 - The page describes an emailed link, a second record-matching opt-out form,
   a final request confirmation and processing time. The email link is valid
   for 24 hours. The stated processing period is three days after the final form.
-- Neither successful first submission nor the second form was inspected today.
-  No successful listing-match selectors or verified-absence contract exists.
+- The initial inspection did not reach successful first submission or the second
+  form. A later November 4 live validation reached the official second form and
+  observed rejection without either date of birth or street address, despite those
+  inputs lacking HTML `required` attributes. The person enters one directly on the
+  broker form; Erase Me does not collect or autofill it. Final request acceptance
+  and deletion remain unverified. No successful listing-match selectors or
+  verified-absence contract exists.
 - Agent fields are present but are outside a self-service companion's scope.
 - First and last names must be supplied explicitly. Do not guess a split from
   a full name and silently submit the result.

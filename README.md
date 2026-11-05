@@ -13,7 +13,7 @@ The catalog contains **43 reference routes**: two global portals, 23 US routes, 
 | Route | Working action | Required next step |
 | --- | --- | --- |
 | People Data Labs | Start the official deletion portal’s verification email | You open the email and finish the portal |
-| USPhonebook | Fill the first form; the private mail pilot can also prepare its reviewed second form | Review the matching details, accuracy statement and CAPTCHA, then submit on the broker site |
+| USPhonebook | Fill the first form; the private mail pilot can also prepare authorized fields in its reviewed second form | Enter either date of birth or street address directly on the broker site, review the matching details, accuracy statement and CAPTCHA, then submit there |
 | SearchPeopleFree | Fill the reviewed first form | You complete the challenge, email and record-removal session |
 | FastPeopleSearch | Fill the reviewed first form | You complete the challenge, email and matching-record steps |
 | Apollo | Open the official removal portal | Business-email verification, completed by you |
@@ -30,9 +30,9 @@ A separate Gmail account can be connected by an operator through the [private OA
 
 USPhonebook, SearchPeopleFree and FastPeopleSearch can use an explicitly chosen removal-only contact where the broker accepts it. The app displays the address before use and explains that it belongs to a shared service account, not the person. People Data Labs and Apollo retain the email associated with the record. The personal inbox remains untouched.
 
-Checks happen only when requested and return no confirmation URL. USPhonebook has one reviewed continuation: a separate explicit action revalidates the same authenticated receipt, opens its exact official second form and fills the authorized first name, last name, city, state, ZIP and removal contact. Birth date, phone and street address stay blank. The person reviews the accuracy statement, completes the challenge and submits on the broker site. Other confirmation routes remain held.
+Checks happen only when requested and return no confirmation URL. USPhonebook has one reviewed continuation: a separate explicit action revalidates the same authenticated receipt, opens its exact official second form and fills the authorized first name, last name, city, state, ZIP and removal contact. USPhonebook additionally requires either date of birth or street address. The person enters one directly on the broker site; Erase Me does not collect or autofill those details. The person reviews the accuracy statement, completes the challenge and submits there. Other confirmation routes remain held.
 
-Live pilot evidence reaches first-form acceptance and a correlated authenticated email. Final removal-request acceptance and deletion remain unverified. Neither receiving an email nor preparing the second form counts as deletion. The [older IMAP preparation helper](docs/REMOVAL_MAILBOX_SETUP.md) is separate from the hosted OAuth relay.
+Live pilot evidence reaches first-form acceptance and a correlated authenticated email. The final form rejected a submission without either date of birth or street address, although neither field was marked required in its HTML. Final removal-request acceptance and deletion remain unverified. Neither receiving an email nor preparing the second form counts as deletion. The [older IMAP preparation helper](docs/REMOVAL_MAILBOX_SETUP.md) is separate from the hosted OAuth relay.
 
 ## Local Python app
 
