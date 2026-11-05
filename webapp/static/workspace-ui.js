@@ -60,6 +60,7 @@
       if(view.automate.checked)for(const {route,contract}of contracts){
         const section=n('section',null,'form-batch-entry');section.append(n('h3',route.name),n('p',contract.consentText));
         if(contract.policyUrl)section.append(sourceNote(contract.policyUrl,'Read the policy named in this agreement',false));
+        if(Array.isArray(contract.policyUrls))for(const [index,url]of contract.policyUrls.entries())section.append(sourceNote(url,'Read agreement source '+(index+1),false));
         view.agreements.append(section);
       }
       view.start.textContent=view.automate.checked?'Run selected form actions':'Fill selected forms';
@@ -114,7 +115,7 @@
       automate=n('input');automate.type='checkbox';automate.id='form-batch-automate';
       const label=n('label');label.className='checkbox-label';label.append(automate,n('span','Automatically submit only forms with the exact agreements displayed below.'));
       agreements=n('div',null,'form-batch-agreements');agreements.hidden=true;
-      options.append(label,n('p','Reviewed submission is available for FastPeopleSearch and NumaraAra only. Other selected forms keep their existing fill behavior. Local text recognition is available only with an installed helper; managed challenges can still require attention.','public-route-note'),agreements);
+      options.append(label,n('p','Reviewed submission is available for FastPeopleSearch, AdvancedBackgroundChecks, No Sorgulama, NumaraAra and NumaraSor. Other selected forms keep their existing fill behavior. Local text recognition is available only with an installed helper; managed challenges can still require attention.','public-route-note'),agreements);
     }
     if(S()&&M()){
       mail=n('input');mail.type='checkbox';mail.id='form-batch-mail';const label=n('label');label.className='checkbox-label';label.append(mail,n('span','Check the selected removal-only contacts once during this session.'));

@@ -44,13 +44,13 @@
   },
   "advancedbackgroundchecks": {
     "status": "reviewed_initial_form",
-    "checkedAt": "2026-11-04",
+    "checkedAt": "2026-11-05",
     "operationKind": "record_removal",
     "sources": [
       "https://www.advancedbackgroundchecks.com/opt-out",
       "https://cppa.ca.gov/data_broker_registry/registry.csv"
     ],
-    "summary": "review consent and submit initial form; complete broker challenge if presented; open 24-hour verification link; complete unobserved second form; await final processing response",
+    "summary": "Enter and review the initial name/contact fields in Erase Me. Optional guarded native submission checks the exact communications agreement, policy links and subject purpose. The broker handles its ordinary reCAPTCHA. Email verification, the unobserved second form and final processing remain outstanding.",
     "limits": "Initial form only; final matching, acceptance, and deletion are unverified.",
     "requestAccepted": false,
     "deletionVerified": false,
@@ -588,24 +588,24 @@
   },
   "tr-nosorgulama": {
     "status": "reviewed_form_candidate",
-    "checkedAt": "2026-11-04",
+    "checkedAt": "2026-11-05",
     "operationKind": "web_form",
     "sources": [
       "https://www.nosorgulama.com.tr/iletisim/"
     ],
-    "summary": "Explicitly select own target number/listing and review a plain removal request. Do not fill the honeypot or hidden CSRF; no accepted request/deletion was observed.",
+    "summary": "Enter and review your own name, contact email and plain removal request inside Erase Me. Optional guarded submission checks the exact KVKK/privacy notice and policy sources. The honeypot and anti-forgery values remain page-owned; acceptance and deletion are unverified.",
     "limits": " No accepted request or deletion was observed.",
     "requestAccepted": false,
     "deletionVerified": false
   },
   "tr-numaraara": {
     "status": "reviewed_form_candidate",
-    "checkedAt": "2026-11-04",
+    "checkedAt": "2026-11-05",
     "operationKind": "web_form",
     "sources": [
       "https://www.numaraara.com/iletisim"
     ],
-    "summary": "Review the own-number request, complete the security code and KVKK checkbox directly on the broker, then submit. Never alter the hidden CSRF/form fields.",
+    "summary": "Enter and review the own-number request inside Erase Me. Optional guarded submission checks the exact KVKK agreement and can use the separately installed free local helper for the reviewed five-character image code. Unresolved challenges stop the action; hidden CSRF/form fields remain page-owned.",
     "limits": " No accepted request or deletion was observed.",
     "requestAccepted": false,
     "deletionVerified": false,
@@ -619,12 +619,12 @@
   },
   "tr-numarasor": {
     "status": "reviewed_form_candidate",
-    "checkedAt": "2026-11-04",
+    "checkedAt": "2026-11-05",
     "operationKind": "web_form",
     "sources": [
       "https://www.numarasor.com/numara-kaldirma-talebi"
     ],
-    "summary": "Explicitly affirm ownership of the target number. The page warns that additional ownership documentation may be requested later; no ID upload is authorized or automated. No accepted outcome observed.",
+    "summary": "Enter and review your own target number, name, contact email and plain request inside Erase Me. Optional guarded submission checks the number-owner relationship and notice. Additional ownership documentation may be requested later; no ID upload is authorized or automated. Acceptance and deletion are unverified.",
     "limits": " No accepted request or deletion was observed.",
     "requestAccepted": false,
     "deletionVerified": false

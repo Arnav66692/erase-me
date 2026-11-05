@@ -17,7 +17,9 @@ function page(options={}){
   const url='https://www.fastpeoplesearch.com/optout/removal?'+new URLSearchParams({firstname:'Example',middlename:'',lastname:'Person',email,ticketid:'12345678'});
   let env;
   class Element{
-    constructor(tag,props={}){this.tagName=tag.toUpperCase();this.type='';this.name='';this.disabled=false;this.readOnly=false;this.hidden=false;this.required=false;this.parentElement=null;this.children=[];this.style={display:'block',visibility:'visible',opacity:'1'};this.labels=[];Object.assign(this,props);}
+    constructor(tag,props={}){this.tagName=tag.toUpperCase();this.type='';this.name='';this.value='';this.multiple=false;this.disabled=false;this.readOnly=false;this.hidden=false;this.required=false;this.parentElement=null;this.children=[];this.style={display:'block',visibility:'visible',opacity:'1'};this.labels=[];this.attributes=new Map();Object.assign(this,props);}
+    hasAttribute(name){return this.attributes.has(name.toLowerCase());}
+    setAttribute(name,value){this.attributes.set(name.toLowerCase(),String(value));}
     getClientRects(){return this.hidden?[]:[{}];}
     querySelectorAll(selector){if(selector==='a')return this.links||[];if(selector==='button[type="submit"],input[type="submit"]')return[this.button].filter(Boolean);return selectors.get(selector)||[];}
     focus(){env.document.activeElement=this;this.onFocus?.();}
@@ -32,7 +34,8 @@ function page(options={}){
     constructor(props={}){super('select',{type:'select-one',...props});this._value='';}
     get value(){return this._value;}set value(value){this._value=String(value);}
   }
-  const body=new Element('body'),form=new Element('form',{method:'post',action:'https://www.fastpeoplesearch.com/optout/removal',noValidate:options.noValidate===true});form.parentElement=body;
+  const body=new Element('body'),form=new Element('form',{method:'post',action:'https://www.fastpeoplesearch.com/optout/removal',noValidate:options.noValidate===true,
+    enctype:'application/x-www-form-urlencoded',target:''});form.parentElement=body;
   const controls={},all=[];
   const add=(key,selector,element)=>{element.form=form;element.parentElement=form;controls[key]=element;selectors.set(selector,[element]);all.push(element);return element;};
   for(const [key,id,name,type]of [['first_name','firstname','firstname','text'],['last_name','lastname','lastname','text'],['email','email','email','email'],['middle','middlename','middlename','text'],['street','streetAddress','streetAddress','text'],['city','city','city','text'],['zip','zipcode','zipcode','text'],['phone','phone','phone','text']]){
@@ -193,4 +196,50 @@ test('reinjection retains the same executor and consumed document journal',async
   const p=page();await Final.execute(payload(),p.url,p.env);
   const context={EraseFinalExecutor:Final,module:{exports:{}}};vm.runInNewContext(fs.readFileSync(require.resolve('../extension/final-executor.js'),'utf8'),context);
   assert.equal(context.module.exports,Final);assert.equal((await context.EraseFinalExecutor.execute(payload(),p.url,p.env)).reason,'already_started');assert.equal(p.clicks(),1);
+});
+
+test('final requirements preflight and execution reject all submitter overrides before reading or writing personal fields',async()=>{
+  for(const attribute of ['formaction','formmethod','formtarget','formenctype','formnovalidate'])for(const value of ['', 'false', 'https://evil.example/collect']){
+    const p=page();p.button.setAttribute(attribute,value);
+    assert.equal(Final.describe(p.url,p.env).status,'unavailable');
+    assert.equal((await Final.execute(payload(),p.url,p.env)).reason,'changed_submit');assert.equal(p.events.length,0);assert.equal(p.clicks(),0);assert.equal(p.submitted(),0);
+  }
+  for(const mutate of [p=>{p.button.name='unapproved';},p=>{p.button.value='unapproved';},p=>{p.button.formNoValidate=true;},
+    p=>{p.form.target='_blank';},p=>{p.form.enctype='multipart/form-data';},p=>{p.form.method='get';},
+    ...['month','day','year','state'].map(key=>p=>{p.controls[key].multiple=true;})]){
+    const p=page();mutate(p);assert.equal(Final.describe(p.url,p.env).status,'unavailable');
+    assert.equal((await Final.execute(payload(),p.url,p.env)).status,'blocked');assert.equal(p.events.length,0);assert.equal(p.clicks(),0);
+  }
+});
+
+test('final submitter and form overrides inserted during input, consent, challenge wait, focus or trusted submission cannot disclose by submission',async()=>{
+  const mutations=[...['formaction','formmethod','formtarget','formenctype','formnovalidate'].map(attribute=>p=>p.button.setAttribute(attribute,'https://evil.example/collect')),
+    p=>{p.button.name='unapproved';},p=>{p.button.value='unapproved';},p=>{p.form.enctype='multipart/form-data';},p=>{p.form.target='_blank';},
+    ...['month','day','year','state'].map(key=>p=>{p.controls[key].multiple=true;})];
+  for(const mutate of mutations)for(const phase of ['input','consent','wait','focus','validity','click']){
+    const p=page({wait:phase==='wait'}),insert=()=>mutate(p);
+    if(phase==='input')p.controls.month.onEvent=insert;
+    if(phase==='consent')p.controls.legal.onEvent=insert;
+    if(phase==='focus')p.button.onFocus=insert;
+    if(phase==='validity')p.form.onValidate=insert;
+    if(phase==='click')p.button.onClick=insert;
+    const pending=Final.execute(payload(),p.url,p.env);
+    if(phase==='wait'){insert();p.mutate();}
+    const result=await pending;
+    assert.equal(result.status,'blocked',mutate.toString()+':'+phase);assert.equal(p.submitted(),0);
+    assert.equal(p.clicks(),['click','validity'].includes(phase)?1:0);
+    assert.equal((await Final.execute(payload(),p.url,p.env)).reason,'already_started');
+    assert.equal(p.timers.size,0);assert.equal(p.liveListeners(),0);
+  }
+});
+
+test('final executor upgrade replaces the older contract and then preserves its consumed journal on reinjection',async()=>{
+  const source=fs.readFileSync(require.resolve('../extension/final-executor.js'),'utf8'),Base=require('../extension/broker-executor.js');
+  for(const version of ['final-executor-v1','final-executor-v2']){
+    const p=page(),context={...p.env,EraseBrokerExecutor:Base,EraseIdentityDetails:Details,EraseFinalExecutor:{version},URL,Map,WeakMap,Object,JSON,Set};
+    vm.runInNewContext(source,context);const current=context.EraseFinalExecutor;assert.equal(current.version,'final-executor-v3');
+    assert.equal((await current.execute(payload(),p.url,context)).status,'submission_attempted');
+    vm.runInNewContext(source,context);assert.equal(context.EraseFinalExecutor,current);
+    assert.equal((await current.execute(payload(),p.url,context)).reason,'already_started');assert.equal(p.clicks(),1);
+  }
 });

@@ -71,7 +71,7 @@
       try{
         const ping=await companion({action:'ping'});
         if(epoch!==revision||!dialog.open)return;
-        if(!ping.routes?.includes('fastpeoplesearch')||!ping.capabilities?.includes('identity-submit-v1'))throw new Error('Update and enable the Chrome companion for this supported submission. No fields were sent.');
+        if(!ping.routes?.includes('fastpeoplesearch')||!ping.capabilities?.includes('identity-submit-v2'))throw new Error('Update and enable the Chrome companion for this supported submission. No fields were sent.');
         if(!same(await workspace.identityPreview('fastpeoplesearch'),frozen.preview))throw new Error('The request changed. Close this dialog and review its current next step.');
         if(epoch!==revision||!dialog.open)return;
         operation=await workspace.prepareIdentitySubmission(frozen.preview,frozen.details,{authorized:true,consentId:details.CONTRACTS.fastpeoplesearch.id,requirements:frozen.requirements});
@@ -105,7 +105,7 @@
         status.textContent='Checking the required fields on your existing broker form. No identity values are being read or sent.';
         if(!dialog.open)dialog.showModal();close.focus({preventScroll:true});
         const ping=await companion({action:'ping'});if(epoch!==revision||!dialog.open)return;
-        if(!ping.routes?.includes(routeId)||!ping.capabilities?.includes('identity-submit-v1')||!ping.capabilities?.includes('identity-requirements-v1'))throw new Error('Update and enable the Chrome companion before entering missing details.');
+        if(!ping.routes?.includes(routeId)||!ping.capabilities?.includes('identity-submit-v2')||!ping.capabilities?.includes('identity-requirements-v1'))throw new Error('Update and enable the Chrome companion before entering missing details.');
         const response=await companion({action:'identity-requirements',routeId,operationId:current.operationId,requestId:current.requestId,receiptRef:current.receiptRef,authorized:true});if(epoch!==revision||!dialog.open)return;
         if(response?.status!=='ready'||response.routeId!==routeId||response.operationId!==current.operationId)throw new Error('The existing broker form could not be verified. Review its current Chrome tab; no new form was opened.');
         requirements=details.validateRequirements(response.requirements);

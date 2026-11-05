@@ -40,6 +40,32 @@ test('batch requires explicit approval and unique supported routes before any ef
   }
 });
 
+test('new submission contracts reject an old companion before reserving even an earlier supported route',async()=>{
+  for(const routeId of ['advancedbackgroundchecks','tr-nosorgulama','tr-numarasor','fastpeoplesearch','tr-numaraara']){
+    let prepared=0,dispatched=0;
+    const ids=['peopledatalabs-form',routeId];
+    const workspace={routes:()=>ids.map(id=>({id,automationLevel:'companion',requiredAffirmations:[]})),prepareReviewed:async()=>{prepared++;throw new Error('Must not reserve.');}};
+    const batch=Batch.create({workspace,companion:async payload=>{if(payload.action==='ping')return{routes:ids,capabilities:['automatic-submit-v1','structured-fields-v1']};dispatched++;}});
+    const result=await batch.run(ids.map(id=>({routeId:id})),{authorized:true,automate:true});
+    assert.equal(result.status,'stopped',routeId);assert.match(result.detail,/Update the companion/);assert.equal(prepared,0,routeId);assert.equal(dispatched,0,routeId);
+  }
+});
+
+test('new companion capability allows reviewed new submissions while ordinary filling remains compatible',async()=>{
+  for(const automate of [false,true]){
+    let prepared=0,dispatched=0;
+    const routeId='advancedbackgroundchecks';
+    const workspace={routes:()=>[{id:routeId,automationLevel:'companion',requiredAffirmations:['own_request']}],prepareReviewed:async()=>{prepared++;return{routeId,operationId:'a'.repeat(32),fields:{}};},recordCompanion:async()=>{}};
+    const batch=Batch.create({workspace,companion:async payload=>{
+      if(payload.action==='ping')return{routes:[routeId],capabilities:['automatic-submit-v1','structured-fields-v1',...(automate?['reviewed-initial-submit-v2']:[])]};
+      dispatched++;assert.equal(payload.autoSubmit,automate?true:undefined);
+      return automate?{status:'submission_attempted',attempt_verified:true,stage:'verification_initiation'}:{status:'prepared'};
+    }});
+    const result=await batch.run([{routeId}],{authorized:true,automate});
+    assert.equal(result.status,'finished');assert.equal(prepared,1);assert.equal(dispatched,1);
+  }
+});
+
 test('batch reserves and persists each form sequentially, never all operations upfront', async () => {
   const f = fixture();
   const result = await f.batch.run(f.previews, { authorized: true });
@@ -214,7 +240,7 @@ test('automatic submission is opt-in and binds the exact supported agreement',as
     const core=await realWorkspace(),runs=[];
     core.setEvidence('fastpeoplesearch',{first_name:'Example',last_name:'Person'});
     const batch=Batch.create({workspace:core,companion:async payload=>{
-      if(payload.action==='ping')return{routes:['fastpeoplesearch'],capabilities:['automatic-submit-v1']};
+      if(payload.action==='ping')return{routes:['fastpeoplesearch'],capabilities:['automatic-submit-v1','reviewed-initial-submit-v2']};
       runs.push(payload);return automate?{status:'submission_attempted',attempt_verified:true,stage:'verification_initiation'}:{status:'prepared'};
     }});
     const result=await batch.run([core.fillPreview('fastpeoplesearch')],{authorized:true,automate});
@@ -227,7 +253,7 @@ test('automatic submission is opt-in and binds the exact supported agreement',as
 test('unproven or wrong-stage submission attempts stop without promotion',async()=>{
   for(const proof of [{attempt_verified:false,stage:'verification_initiation'},{attempt_verified:true,stage:'request_submission'}]){
     const core=await realWorkspace();core.setEvidence('fastpeoplesearch',{first_name:'Example',last_name:'Person'});
-    const batch=Batch.create({workspace:core,companion:async payload=>payload.action==='ping'?{routes:['fastpeoplesearch'],capabilities:['automatic-submit-v1']}:{status:'submission_attempted',...proof}});
+    const batch=Batch.create({workspace:core,companion:async payload=>payload.action==='ping'?{routes:['fastpeoplesearch'],capabilities:['automatic-submit-v1','reviewed-initial-submit-v2']}:{status:'submission_attempted',...proof}});
     const result=await batch.run([core.fillPreview('fastpeoplesearch')],{authorized:true,automate:true});
     assert.equal(result.status,'stopped');assert.equal(result.entries[0].status,'unknown');assert.equal(core.dashboard().counts.requested,0);
   }
@@ -237,7 +263,7 @@ test('one after-result step runs only after persisted proof and respects Stop',a
   for(const stop of [false,true]){
     const core=await realWorkspace();core.setEvidence('fastpeoplesearch',{first_name:'Example',last_name:'Person'});let checks=0,batch;
     batch=Batch.create({workspace:core,companion:async payload=>{
-      if(payload.action==='ping')return{routes:['fastpeoplesearch'],capabilities:['automatic-submit-v1']};
+      if(payload.action==='ping')return{routes:['fastpeoplesearch'],capabilities:['automatic-submit-v1','reviewed-initial-submit-v2']};
       if(stop)batch.stop();return{status:'submission_attempted',attempt_verified:true,stage:'verification_initiation'};
     },afterResult:async({routeId,isStopped})=>{
       assert.equal(core.snapshot().items[routeId].evidence.result,'submission_attempted');assert.equal(isStopped(),false);checks++;return{status:'awaiting_mail',detail:'No receipt is available yet.'};
@@ -348,7 +374,7 @@ test('final-pass summaries stay bounded and do not change request or deletion ev
   core.setEvidence('fastpeoplesearch', { first_name: 'Example', last_name: 'Person' });
   const ids = ['peopledatalabs-form', 'fastpeoplesearch'];
   const batch = Batch.create({ workspace: core, companion: async payload => {
-    if (payload.action === 'ping') return { routes: ids, capabilities: ['automatic-submit-v1'] };
+    if (payload.action === 'ping') return { routes: ids, capabilities: ['automatic-submit-v1','reviewed-initial-submit-v2'] };
     return payload.routeId === 'peopledatalabs-form' ? { status: 'verification_sent', route_verified: true, evidence: 'fresh_visible_success' } :
       { status: 'submission_attempted', attempt_verified: true, stage: 'verification_initiation' };
   }, afterForms: async ({ entries, isStopped }) => {

@@ -16,7 +16,8 @@
   const MATCH_STATES = new Set(['matched', 'not_matched', 'ambiguous', 'needs_identity', 'unsupported']);
   const MATCH_EVIDENCE = new Set(['structured_person', 'exact_candidate_url', 'name', 'email', 'phone', 'age', 'city', 'identity']);
   const MATCH_LIFETIME = 30 * 60 * 1000;
-  const SUBMIT_STAGES = Object.freeze({ fastpeoplesearch: 'verification_initiation', 'tr-numaraara': 'request_submission' });
+  const SUBMIT_STAGES = Object.freeze({ fastpeoplesearch: 'verification_initiation', advancedbackgroundchecks: 'verification_initiation',
+    'tr-nosorgulama': 'request_submission', 'tr-numaraara': 'request_submission', 'tr-numarasor': 'request_submission' });
   const MAIL_ROUTES = new Set(['usphonebook', 'searchpeoplefree', 'fastpeoplesearch']);
   const NEW_MAIL_ROUTES = new Set(['usphonebook', 'fastpeoplesearch']);
   const OPERATION = /^[a-f0-9-]{32,40}$/;
@@ -647,7 +648,7 @@
       if (item.continuation.result !== 'unknown' && item.continuation.result !== result.status) throw new WorkspaceError('The confirmation result is already recorded. No replay was sent.', 409);
       item.continuation.result = result.status; item.continuation.observed_at = clock();
       changed(item, result.status === 'prepared' ? 'needs_broker_step' : result.status === 'blocked' ? 'blocked' : 'uncertain',
-        result.status === 'prepared' ? id==='fastpeoplesearch'?'The authenticated matching form opened and its prefilled name and contact matched the approved fields. Enter required identity details directly on the broker form. Record matching, request acceptance and deletion remain unverified.':'The confirmation form was filled. Review its accuracy statement, complete the broker challenge and submit on the broker site. Deletion is unverified.' : undefined);
+        result.status === 'prepared' ? id==='fastpeoplesearch'?'The authenticated matching form opened and its prefilled name and contact matched the approved fields. Choose Enter missing information inside Erase Me to check the required fields and review one final fill-and-submit attempt. Record matching, request acceptance and deletion remain unverified.':'The confirmation form was filled. Review its accuracy statement, complete the broker challenge and submit on the broker site. Deletion is unverified.' : undefined);
       event(routeFor(id).name + '. Confirmation form outcome recorded; request acceptance and deletion remain unverified.'); save(); return dashboard();
     }
     function recordCompanion(id, operationId, result) {

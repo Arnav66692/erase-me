@@ -5,7 +5,7 @@ const Core=require('../webapp/static/workspace-core.js');
 const Dialog=require('../webapp/static/identity-dialog.js');
 const fullRequirements={date_of_birth:true,street_address:true,phone:true,no_validate:false,submit_no_validate:false};
 function gate(){let resolve;const promise=new Promise(done=>{resolve=done;});return{promise,resolve};}
-async function fixture({requirements=fullRequirements,probeUnavailable=false,delayedProbe=false,delayedSubmitPing=false,result,capability=true}={}){
+async function fixture({requirements=fullRequirements,probeUnavailable=false,delayedProbe=false,delayedSubmitPing=false,result,capability=true,legacyCapability=false}={}){
   const storage=new Map();let sequence=0;
   const core=Core.create({storage:{getItem:key=>storage.get(key)||null,setItem:(key,value)=>storage.set(key,value),removeItem:key=>storage.delete(key)},uuid:()=>(++sequence).toString(16).padStart(32,'0'),now:()=> '2026-11-05T00:00:00.000Z'});
   await core.api('/api/signup',{method:'POST',body:JSON.stringify({name:'Example Person',age:35,email:'profile@example.test',authorized:true})});
@@ -42,7 +42,7 @@ async function fixture({requirements=fullRequirements,probeUnavailable=false,del
     calls.push(JSON.parse(JSON.stringify(payload)));
     if(payload.action==='ping'){
       if(++pings===2&&delayedSubmitPing)await pingGate.promise;
-      return{routes:['fastpeoplesearch'],capabilities:capability?['identity-submit-v1','identity-requirements-v1']:[]};
+      return{routes:['fastpeoplesearch'],capabilities:capability?['identity-submit-v1','identity-requirements-v1',...(legacyCapability?[]:['identity-submit-v2'])]:[]};
     }
     if(payload.action==='identity-requirements'){
       if(delayedProbe)await probeGate.promise;
@@ -69,6 +69,13 @@ test('opening checks only bound requirements and explains the actual full-data c
   assert.match(f.byId('requirements').textContent,/both and a phone number/);assert.equal(f.byId('form').hidden,false);
   assert.equal(f.core.snapshot().items.fastpeoplesearch.final_submission,undefined);
   assert.equal(f.byId('approval').checked,false);assert.equal(f.byId('birth').value,'');
+});
+test('an older final executor cannot collect identity values or reserve a submission',async()=>{
+  const f=await fixture({legacyCapability:true});await f.dialog.open('fastpeoplesearch',f.opener);
+  assert.deepEqual(f.calls.map(call=>call.action),['ping']);
+  assert.match(f.byId('status').textContent,/Update/);
+  assert.equal(f.byId('form').hidden,true);assert.equal(f.core.snapshot().items.fastpeoplesearch.final_submission,undefined);
+  assert.equal(f.byId('birth').value,'');assert.equal(f.byId('street').value,'');assert.equal(f.byId('phone').value,'');
 });
 
 test('review displays the exact canonical fields and certification but cannot send without explicit approval',async()=>{

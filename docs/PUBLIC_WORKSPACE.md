@@ -21,7 +21,7 @@ asks for the broker's specific outstanding step. It distinguishes a separate rem
 contact from a personal or business address. New actions save that recipient when
 they start; older typed-email actions without a saved recipient say it is unknown.
 For an authenticated FastPeopleSearch matching continuation, **Enter missing information**
-opens an Erase Me dialog. Companion 0.8.0 checks the same existing tab, document,
+opens an Erase Me dialog. Companion 0.9.0 checks the same existing tab, document,
 browser session and private destination proof. The read-only probe returns five native
 requirement flags; it reads no DOB, address or phone value. Missing or changed proof
 stops collection without opening a new URL or resending anything.
@@ -45,10 +45,11 @@ broker form for direct entry. Its held pilot request stays held. **Review reques
 opens local instructions. Holds and pause suppress new actionable prompts; unknown
 and imported outcomes ask for review instead of claiming a confirmed match.
 
-Companion 0.8.0 can initiate People Data Labs email verification and prefill the initial
+Companion 0.9.0 can initiate People Data Labs email verification and prefill the initial
 USPhonebook, SearchPeopleFree, FastPeopleSearch, Apollo, Spokeo, AdvancedBackgroundChecks
 and four reviewed Turkish request forms. Optional initial guarded submission applies to
-FastPeopleSearch's verification form and NumaraAra's request form; the separate reviewed
+FastPeopleSearch's and AdvancedBackgroundChecks' verification forms plus No Sorgulama,
+NumaraAra and NumaraSor request forms; the separate reviewed
 FastPeopleSearch matching continuation above supports a final submission attempt. The review
 displays their exact agreements and fields before the person opts in. An observed safe
 native submit event produces `submission_attempted`, not proof of delivery, acceptance
@@ -433,3 +434,30 @@ and removed with the workspace. Rechecks are explicit reports, never scheduled w
 
 See [the staged cleanup roadmap](CLEANUP_ROADMAP.md) for the six product areas and
 the discover → choose → export → submit → verify → manually recheck workflow.
+
+## Version 0.9 submission safeguards
+
+Three additional initial contracts cover AdvancedBackgroundChecks, No Sorgulama and
+NumaraSor. Users enter their required fields inside Erase Me and explicitly select the
+reviewed submission option. All legal text and policy links are shown before approval.
+AdvancedBackgroundChecks relies on its own normal security handler; Erase Me never reads,
+writes or fabricates its challenge token. The two POST contracts leave anti-forgery values
+unchanged and keep them only in the executing document's memory. Optional unapproved
+phone, middle-name, related-number and honeypot fields must remain empty.
+
+All five initial submit contracts reject native button destination/method/target/encoding
+overrides and unexpected serialized submitter fields. Changed forms or consent stop the
+action. A checked native submit event remains an attempt, without delivery or deletion proof.
+All five initial contracts require the hardened companion capability before any selected
+batch operation is reserved; an outdated extension cannot strand a newly selected request.
+
+The [integration matrix](INTEGRATION_STATUS.md) lists every catalog route and unimplemented
+stage. The [simulation report](SIMULATION_TESTS.md) explains the 6,000 seeded local cases
+and what they cannot establish about live brokers.
+
+The sensitive FastPeopleSearch final executor applies the same effective submitter
+and encoding/target checks, including single-select DOB/state controls. Its in-app
+dialog requires `identity-submit-v2` before collecting identity values or reserving an
+action; installing the updated companion is required for this path too. All five
+initial attempt stages are preserved consistently in the local workspace, while
+acceptance and deletion remain unverified until separate evidence exists.

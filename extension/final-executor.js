@@ -1,7 +1,7 @@
 /* One approved final-form attempt. Identity details stay in this document's action. */
 (function(root){
   'use strict';
-  if(root.EraseFinalExecutor?.version==='final-executor-v2'){
+  if(root.EraseFinalExecutor?.version==='final-executor-v3'){
     if(typeof module!=='undefined')module.exports=root.EraseFinalExecutor;
     return;
   }
@@ -47,7 +47,8 @@
     const doc=env.document,url=env.location.href;
     if(!BASE.continuationURL(url,'fastpeoplesearch',payload.fields)||doc.querySelector('input[type="file"]'))reject('changed_destination');
     const form=one(doc,'form#optout-removal');
-    if(form.tagName!=='FORM'||form.method?.toLowerCase()!=='post'||form.action!=='https://www.fastpeoplesearch.com/optout/removal')reject('changed_destination');
+    if(form.tagName!=='FORM'||form.method?.toLowerCase()!=='post'||form.action!=='https://www.fastpeoplesearch.com/optout/removal'||
+      form.target!==''||form.enctype!=='application/x-www-form-urlencoded')reject('changed_destination');
     if([...doc.querySelectorAll('[role="alert"],.alert-danger,.alert-success,.validation-summary-errors')].some(element=>visible(element,env)))reject('existing_alert');
     const selectors={first_name:'input#firstname[name="firstname"][type="text"]',last_name:'input#lastname[name="lastname"][type="text"]',email:'input#email[name="email"][type="email"]',
       middle:'input#middlename[name="middlename"][type="text"]',month:'select[name="dobMonth"]',day:'select[name="dobDay"]',year:'select[name="dobYear"]',
@@ -56,7 +57,7 @@
     const controls=Object.fromEntries(Object.entries(selectors).map(([key,selector])=>[key,one(doc,selector)]));
     for(const [key,element]of Object.entries(controls)){
       if(element.form!==form||element.disabled||element.readOnly||!['ticket','token'].includes(key)&&!visible(element,env)||
-        ['month','day','year','state'].includes(key)&&(element.tagName!=='SELECT'||element.multiple===true))reject('changed_controls');
+        ['month','day','year','state'].includes(key)&&(element.tagName!=='SELECT'||element.multiple!==false))reject('changed_controls');
     }
     if(!preflight){
       for(const key of ['first_name','last_name','email'])if(controls[key].value!==payload.fields[key])reject('changed_identity');
@@ -75,7 +76,9 @@
     const submits=[...form.querySelectorAll('button[type="submit"],input[type="submit"]')];
     if(widgets.length!==1||!visible(widgets[0],env)||submits.length!==1)reject('changed_controls');
     const button=submits[0];
-    if(button.tagName!=='BUTTON'||button.form!==form||button.disabled||!visible(button,env)||normal(button.textContent)!=='Submit')reject('changed_submit');
+    if(button.tagName!=='BUTTON'||button.form!==form||button.disabled||!visible(button,env)||normal(button.textContent)!=='Submit'||
+      button.name!==''||button.value!==''||button.formNoValidate!==false||typeof button.hasAttribute!=='function'||
+      ['formaction','formmethod','formtarget','formenctype','formnovalidate'].some(name=>button.hasAttribute(name)))reject('changed_submit');
     const approved=new Set([...Object.values(controls),button]);
     for(const element of [...form.elements])if(!approved.has(element)){
       if(element.type==='file'||element.type==='hidden'||['checkbox','radio','submit'].includes(element.type)||
@@ -177,6 +180,6 @@
     }catch(error){result=clicked?{status:'unknown',detail:'The final submit action was interrupted. Check its existing tab; no repeat will be sent.'}:failure(error.reason||'changed_form');return result;}
     finally{if(listener&&record)record.form.removeEventListener('submit',listener,{capture:true});if(journal?.has(payload?.operationId))journal.set(payload.operationId,{phase:'done',result});}
   }
-  const api=Object.freeze({version:'final-executor-v2',validate,describe,execute});root.EraseFinalExecutor=api;
+  const api=Object.freeze({version:'final-executor-v3',validate,describe,execute});root.EraseFinalExecutor=api;
   if(typeof module!=='undefined')module.exports=api;
 })(typeof globalThis==='object'?globalThis:this);

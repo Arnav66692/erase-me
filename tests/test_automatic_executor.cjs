@@ -11,16 +11,19 @@ function page(routeId = 'fastpeoplesearch') {
   const normal = value => String(value).replace(/\s+/g, ' ').trim();
   class Element {
     constructor(tag = 'div', props = {}) {
-      this.tagName = tag.toUpperCase(); this.id = ''; this.name = ''; this.type = ''; this.required = false;
+      this.tagName = tag.toUpperCase(); this.id = ''; this.name = ''; this.type = ''; this.value = ''; this.required = false; this.multiple = false;
       this.hidden = false; this.disabled = false; this.readOnly = false; this.parentElement = null;
       this.textContent = ''; this.children = []; this.labels = []; this.style = { display: 'block', visibility: 'visible', opacity: '1' };
+      this.attributes = new Map(); this.formNoValidate = false;
       Object.assign(this, props); all.push(this);
     }
     append(...nodes) { for (const node of nodes) { node.parentElement = this; this.children.push(node); } }
+    hasAttribute(name) { return this.attributes.has(name.toLowerCase()); }
+    setAttribute(name, value) { this.attributes.set(name.toLowerCase(), String(value)); }
     getClientRects() { return this.hidden ? [] : [{}]; }
     querySelector(selector) { return this.querySelectorAll(selector)[0] || null; }
     querySelectorAll(selector) { return query(selector).filter(e => e !== this && (this === form ? e.form === this : descendant(e, this))); }
-    focus() { env.document.activeElement = this; }
+    focus() { env.document.activeElement = this; this.onFocus?.(); }
     dispatchEvent(event) { events.push([this.id || this.name, event.type]); this.onEvent?.(event); return true; }
   }
   class Input extends Element {
@@ -55,7 +58,8 @@ function page(routeId = 'fastpeoplesearch') {
   const query = selector => all.filter(element => selector.split(',').some(part => matches(element, part.trim())));
   const body = new Element('body');
   const route = Base.ROUTES[routeId];
-  const form = new Element('form', { id: routeId === 'fastpeoplesearch' ? 'optout-start' : 'contactForm', method: 'post', action: new URL(route.formPath, route.url).href }); body.append(form);
+  const form = new Element('form', { id: routeId === 'fastpeoplesearch' ? 'optout-start' : 'contactForm', method: 'post', action: new URL(route.formPath, route.url).href,
+    target: '', enctype: 'application/x-www-form-urlencoded', noValidate: false }); body.append(form);
   Object.defineProperty(form, 'elements', { get: () => all.filter(e => e.form === form && ['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON'].includes(e.tagName)) });
   form.addEventListener = (type, listener, options) => { if (type === 'submit') listeners.push({ listener, capture: options === true || options?.capture === true }); };
   form.removeEventListener = (type, listener) => { const index = listeners.findIndex(entry => entry.listener === listener); if (index >= 0) listeners.splice(index, 1); };
@@ -131,10 +135,14 @@ function readinessClock(p) {
 
 test('automatic contracts are frozen, narrowly scoped and distinguish initiation from request submission', () => {
   assert.equal(Object.isFrozen(Automatic.CONTRACTS), true);
-  assert.deepEqual(Object.keys(Automatic.CONTRACTS), ['fastpeoplesearch', 'tr-numaraara']);
+  assert.deepEqual(Object.keys(Automatic.CONTRACTS), ['fastpeoplesearch', 'tr-numaraara', 'advancedbackgroundchecks', 'tr-nosorgulama', 'tr-numarasor']);
   for (const contract of Object.values(Automatic.CONTRACTS)) assert.equal(Object.isFrozen(contract), true);
   assert.equal(Automatic.CONTRACTS.fastpeoplesearch.stage, 'verification_initiation');
   assert.equal(Automatic.CONTRACTS['tr-numaraara'].stage, 'request_submission');
+  assert.equal(Automatic.CONTRACTS.advancedbackgroundchecks.stage, 'verification_initiation');
+  assert.equal(Object.isFrozen(Automatic.CONTRACTS.advancedbackgroundchecks.policyUrls), true);
+  assert.equal(Automatic.CONTRACTS['tr-nosorgulama'].stage, 'request_submission');
+  assert.equal(Automatic.CONTRACTS['tr-numarasor'].stage, 'request_submission');
 });
 
 test('FPS requires the real broker response and never creates or alters a challenge token', () => {
@@ -401,11 +409,55 @@ test('new module injection in the same document preserves the one-shot journal',
   context.EraseAutomaticExecutor.submit(p.payload, context); assert.equal(p.clicks(), 1);
 });
 
-test('a stale v1 API is replaced on injection so readiness is available, then v2 reinjection remains stable', () => {
+test('a stale API is replaced on injection so current contracts are available, then v3 reinjection remains stable', () => {
   const fs = require('node:fs'), vm = require('node:vm'), p = page();
   const source = fs.readFileSync(require.resolve('../extension/automatic-executor.js'), 'utf8');
-  const context = { ...p.env, EraseBrokerExecutor: Base, EraseAutomaticExecutor: { version: 'automatic-executor-v1' }, URL, Map, WeakMap, Object, JSON, Set };
-  vm.runInNewContext(source, context); const upgraded = context.EraseAutomaticExecutor;
-  assert.equal(upgraded.version, 'automatic-executor-v2'); assert.equal(typeof upgraded.waitReady, 'function');
-  vm.runInNewContext(source, context); assert.equal(context.EraseAutomaticExecutor, upgraded);
+  for (const version of ['automatic-executor-v1', 'automatic-executor-v2']) {
+    const context = { ...p.env, EraseBrokerExecutor: Base, EraseAutomaticExecutor: { version }, URL, Map, WeakMap, Object, JSON, Set };
+    vm.runInNewContext(source, context); const upgraded = context.EraseAutomaticExecutor;
+    assert.equal(upgraded.version, 'automatic-executor-v3'); assert.equal(typeof upgraded.waitReady, 'function');
+    assert.ok(upgraded.CONTRACTS.advancedbackgroundchecks);
+    vm.runInNewContext(source, context); assert.equal(context.EraseAutomaticExecutor, upgraded);
+  }
+});
+
+test('all existing automatic contracts reject native submitter override attributes before capture and at every event boundary', () => {
+  const attrs = ['formaction', 'formmethod', 'formtarget', 'formenctype', 'formnovalidate'];
+  for (const routeId of ['fastpeoplesearch', 'tr-numaraara']) for (const attribute of attrs) {
+    for (const value of ['', 'false', 'https://evil.example/collect']) {
+      const p = page(routeId); p.button.setAttribute(attribute, value);
+      assert.equal(Automatic.capture(p.payload, p.env).reason, 'changed_submit'); assert.equal(p.clicks(), 0);
+    }
+    for (const phase of ['before_submit', 'agreement_event', 'validity', 'focus', 'click']) {
+      const p = page(routeId), capture = Automatic.capture(p.payload, p.env);
+      const insert = () => p.button.setAttribute(attribute, 'https://evil.example/collect');
+      if (phase === 'before_submit') insert();
+      if (phase === 'agreement_event') p.consent.onEvent = insert;
+      if (phase === 'validity') p.form.onValidate = insert;
+      if (phase === 'focus') p.button.onFocus = insert;
+      if (phase === 'click') p.button.onClick = insert;
+      const payload = capture.status === 'image' ? { ...p.payload, challengeRef: capture.challengeRef, answer: 'A1b2C' } : p.payload;
+      assert.equal(Automatic.submit(payload, p.env).status, 'blocked', routeId + ':' + attribute + ':' + phase);
+      assert.equal(p.sent(), 0); assert.equal(p.clicks(), phase === 'click' ? 1 : 0);
+      assert.equal(Automatic.submit(payload, p.env).reason, 'already_started');
+    }
+  }
+});
+
+test('existing native form contracts reject changed encoding, target, validation and unapproved serialized submitter fields', () => {
+  for (const routeId of ['fastpeoplesearch', 'tr-numaraara']) for (const mutate of [
+    p => { p.form.enctype = 'multipart/form-data'; }, p => { p.form.target = '_blank'; }, p => { p.form.noValidate = true; },
+    p => { p.selection.multiple = true; },
+    p => { p.button.name = 'unapproved'; }, p => { p.button.value = 'unapproved'; }, p => { p.button.formNoValidate = true; }
+  ]) {
+    const initial = page(routeId); mutate(initial); assert.equal(Automatic.capture(initial.payload, initial.env).status, 'blocked'); assert.equal(initial.clicks(), 0);
+    for (const phase of ['before_submit', 'agreement_event', 'validity', 'focus', 'click']) {
+      const p = page(routeId), capture = Automatic.capture(p.payload, p.env), insert = () => mutate(p);
+      if (phase === 'before_submit') insert(); if (phase === 'agreement_event') p.consent.onEvent = insert;
+      if (phase === 'validity') p.form.onValidate = insert; if (phase === 'focus') p.button.onFocus = insert; if (phase === 'click') p.button.onClick = insert;
+      const payload = capture.status === 'image' ? { ...p.payload, challengeRef: capture.challengeRef, answer: 'A1b2C' } : p.payload;
+      assert.equal(Automatic.submit(payload, p.env).status, 'blocked', routeId + ':' + mutate.toString() + ':' + phase);
+      assert.equal(p.sent(), 0); assert.equal(p.clicks(), phase === 'click' ? 1 : 0); assert.equal(Automatic.submit(payload, p.env).reason, 'already_started');
+    }
+  }
 });

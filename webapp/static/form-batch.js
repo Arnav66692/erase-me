@@ -46,6 +46,9 @@
             ['apollo', 'spokeo'].includes(route.id) ? 'explicit-fields-v1' : null;
           if (capability && !ping.capabilities?.includes(capability))
             throw new Error('Update the companion before using these forms. No form was started.');
+          const submitContract = automate ? automatic?.CONTRACTS?.[route.id] : null;
+          if (submitContract?.requiredCapability && !ping.capabilities?.includes(submitContract.requiredCapability))
+            throw new Error('Update the companion before using these reviewed submissions. No form was started.');
         }
         for (const [index, preview] of queue.entries()) {
           if (stopping) break;

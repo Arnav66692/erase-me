@@ -425,3 +425,23 @@ All commands accept `--json` for machine output for the agent. Exit code 0 on su
 `templates/report.html` placeholders: `{{generated_on}}`, `{{person_label}}`, `{{summary_rows}}`, `{{laws_rows}}`, `{{item_rows}}`. The engine builds the row HTML and escapes every value, using the row markup in the comment at the top of that file (`th scope="row"` plus `td.num` for summary, `span.flag` for unverified laws, `tr[data-status]`, `span.status status-<status>`, `td.date`, `td.url` for items, and `td.note.untrusted` for the last note).
 
 `templates/share-card.svg` placeholders: `{{sites_checked}}`, `{{found}}`, `{{requested}}`, `{{removed}}`, `{{sites_checked_label}}`, `{{found_label}}`, `{{requested_label}}`, `{{removed_label}}` (singular or plural words such as "listing found" or "listings found"), `{{removal_rate}}` (always a percent like `62%`, `0%` when nothing was found, because the template also uses it as a bar width. `stats` reports `n/a` in that case), `{{days_since_start}}`. Nothing else. No names, places, sites, request IDs or dates. The engine falls back to a built-in minimal template when a file is missing.
+
+## Version 0.9.0 initial-contract extension
+
+`automatic-executor.js` now has five optional initial submit contracts. The three added
+contracts are AdvancedBackgroundChecks, No Sorgulama and NumaraSor. The batch displays
+their exact review text and frozen policy sources. A `requiredCapability` declaration
+on all five automatic initial contracts is checked against the companion before any selected operation is
+reserved, including earlier entries in a mixed batch. Existing filling remains compatible.
+
+Shared native form/submitter checks reject destination/method/target/encoding overrides
+and unexpected outgoing submitter fields. Checks run before capture, after input/focus
+events, after validity checks and at the native submit boundary. Anti-forgery data stays
+in isolated document memory; no additional mailbox scopes, background jobs or private
+fields are added. The executor records attempts only, separately from acceptance/deletion.
+
+The final executor applies the same destination/submitter/encoding safeguards and
+requires single-select DOB/state controls. The web dialog requires `identity-submit-v2`
+before detail collection and reservation; automatic initial batches require
+`reviewed-initial-submit-v2` for every contract. The workspace's bounded stage map
+records proven attempts for all five initial contracts without promoting acceptance.

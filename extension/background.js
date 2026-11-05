@@ -365,7 +365,7 @@ async function dispatch(message,sender,chromeApi=chrome){
   if(message.action==='ping'){
     const routes=[];
     for(const [routeId,route] of Object.entries(EXEC.ROUTES))if(await chromeApi.permissions.contains({origins:['https://'+route.host+'/*']}))routes.push(routeId);
-    return {status:'connected',version:'0.8.0',routes,capabilities:['usphonebook-continuation-v1','fastpeoplesearch-continuation-v1','explicit-fields-v1','structured-fields-v1','broker-observation-v1','automatic-submit-v1','structured-record-match-v1','owned-tab-focus-v1','identity-submit-v1','identity-requirements-v1']};
+    return {status:'connected',version:'0.9.0',routes,capabilities:['usphonebook-continuation-v1','fastpeoplesearch-continuation-v1','explicit-fields-v1','structured-fields-v1','broker-observation-v1','automatic-submit-v1','reviewed-initial-submit-v2','structured-record-match-v1','owned-tab-focus-v1','identity-submit-v1','identity-submit-v2','identity-requirements-v1']};
   }
   if(message.action==='helper-status')return helperStatus(chromeApi);
   if(!id(message.operationId)||!EXEC.ROUTES[message.routeId])throw new Error('Unsupported operation.');

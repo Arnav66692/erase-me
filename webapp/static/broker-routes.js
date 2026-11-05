@@ -25,9 +25,9 @@
       steps: ['Enter your own first name, last name and email.', 'Complete the broker challenge and email verification.', 'Complete the second opt-out form for the matching record.'],
       evidence: 'The official route returned HTTP 403 in the November 4 inspection. Open it manually if accessible in your browser. Submission and deletion are unverified.' },
     { id: 'fastpeoplesearch', countries: ['US'], name: 'FastPeopleSearch', domain: 'fastpeoplesearch.com', url: 'https://www.fastpeoplesearch.com/optout',
-      fields: ['first_name', 'last_name', 'email'], automationLevel: 'companion', automationMode: 'prefill', inspectedAt: '2026-11-04', allowedHosts: ['www.fastpeoplesearch.com', 'fastpeoplesearch.com'],
-      steps: ['Choose the subject option for your own information.', 'Enter your name and email, then complete the broker challenge.', 'Complete the broker email and matching-record steps.'],
-      evidence: 'Official initial form inspected. Submission and removal outcomes remain unverified.' },
+      fields: ['first_name', 'last_name', 'email'], automationLevel: 'companion', automationMode: 'prefill', inspectedAt: '2026-11-05', allowedHosts: ['www.fastpeoplesearch.com', 'fastpeoplesearch.com'],
+      steps: ['Enter your own first name, last name and email inside Erase Me. Review the exact authorization before optionally submitting the initial form.', 'The private removal-mail operator pilot can authenticate this request’s confirmation and open its matching form. Personal inboxes stay disconnected; other users complete the official email step themselves.', 'For an authenticated prepared continuation, choose Enter missing information inside Erase Me. The companion checks the existing form’s requirements, then you review the exact identity fields and accuracy statement before approving one fill-and-submit attempt.', 'The current matching form marks date of birth, street address and phone required despite wording that date of birth or address is enough. Erase Me explains this conflict before collection. Cancel or hold instead if you do not want to provide those fields.', 'A genuine broker challenge response is still required. A checked submit event establishes an attempt; correct-record matching, broker acceptance and independently verified deletion need separate evidence.'],
+      evidence: 'Reviewed initial submission and authenticated matching-form submission contracts are implemented. Additional identity details are transient. Neither form preparation, a confirmation email nor a submit event establishes deletion.' },
     { id: 'spokeo', countries: ['US'], name: 'Spokeo', domain: 'spokeo.com', url: 'https://www.spokeo.com/optout',
       fields: ['listing_url', 'email'], requiredAffirmations: ['own_listing'], automationLevel: 'companion', automationMode: 'prefill', inspectedAt: '2026-11-04', allowedHosts: ['www.spokeo.com', 'spokeo.com'],
       steps: ['Find your own matching listing and explicitly confirm that it belongs to you.', 'Supply its exact official record URL and your typed email for the reviewed opt-out form.', 'Review and submit on Spokeo, then complete its challenge and confirmation email for each listing.', 'If the form is inaccessible, Spokeo’s official opt-out page also lists privacy@spokeo.com for assistance. Contact that address from your chosen removal account and identify only your confirmed listing. Erase Me does not send this email or connect to your personal inbox. Reconcile any uncertain earlier submission first.'],
@@ -67,16 +67,16 @@
       "cluster": "tornado-alley",
       "covers": [],
       "steps": [
-        "Review your own name and contact email, then complete the official challenge, consent and email/second-form steps. Only the initial form has a reviewed prefill contract.",
+        "Enter and review your own name and contact email inside Erase Me. You can fill the initial form or explicitly approve its exact communications agreement, policy links and optional guarded submission.",
         "Confirm that the target information is your own before filling. Never submit for an unrelated person without explicit authorization.",
-        "Form preparation is not request acceptance or deletion. Review the broker response and complete its required verification."
+        "The broker handles its normal reCAPTCHA through the official page. An unresolved challenge needs attention. A checked native submit event establishes an initial attempt, not acceptance or deletion. Email continuation, the second form and record matching remain manual or unobserved."
       ],
       "evidence": "The official initial form contract was inspected without entering personal data or submitting. Later identity matching, request acceptance and deletion remain unverified.",
       "requiredAffirmations": [
         "own_request"
       ],
       "automationMode": "prefill",
-      "inspectedAt": "2026-11-04"
+      "inspectedAt": "2026-11-05"
     },
     { "id": "beenverified", "name": "BeenVerified", "domain": "beenverified.com", "url": "https://www.beenverified.com/app/optout/search",
       "countries": ["US"], "fields": [], "automationLevel": "manual", "availability": "unverified_current", "allowedHosts": ["beenverified.com","www.beenverified.com"], "manualMethod": "web_form",
@@ -221,16 +221,16 @@
       "cluster": null,
       "covers": [],
       "steps": [
-        "Write a request for your own number or listing. The companion selects the removal topic and fills only your approved name, contact email and plain request. Review and submit on the official site.",
+        "Enter your own name, contact email and plain request inside Erase Me. The companion selects the removal topic. In Review form batch, enable optional guarded submission after reviewing the exact KVKK/privacy notice and policy sources. Unreviewed changes or challenges stop the action.",
         "Confirm that the target information is your own before filling. Never submit for an unrelated person without explicit authorization.",
         "Form preparation is not request acceptance or deletion. Review the broker response and complete its required verification."
       ],
-      "evidence": "The official initial form contract was inspected without entering personal data or submitting. Later identity matching, request acceptance and deletion remain unverified.",
+      "evidence": "The official POST form, exact notice and permitted fields were checked read-only on November 5. Optional guarded submission records an attempt only; correct-record matching, acceptance and deletion remain unverified.",
       "requiredAffirmations": [
         "own_request"
       ],
       "automationMode": "prefill",
-      "inspectedAt": "2026-11-04"
+      "inspectedAt": "2026-11-05"
     },
     {
       "id": "tr-numaraara",
@@ -258,16 +258,17 @@
       "cluster": null,
       "covers": [],
       "steps": [
-        "Write a request for your own number or listing. Complete the security code and KVKK checkbox yourself on the official site. The companion does not submit or alter hidden fields.",
+        "Write and review a request for your own number or listing inside Erase Me. You can fill the official form, or explicitly approve its reviewed KVKK agreement and optional guarded submission.",
         "Confirm that the target information is your own before filling. Never submit for an unrelated person without explicit authorization.",
-        "Form preparation is not request acceptance or deletion. Review the broker response and complete its required verification."
+        "The optional free local challenge helper can recognize this form’s reviewed five-character image code. Unresolved challenges stop submission. Hidden CSRF and form fields remain page-owned.",
+        "A checked native submit event establishes an attempt, not request acceptance or deletion. Review the broker response and complete its required verification."
       ],
       "evidence": "The official initial form contract was inspected without entering personal data or submitting. Later identity matching, request acceptance and deletion remain unverified.",
       "requiredAffirmations": [
         "own_request"
       ],
       "automationMode": "prefill",
-      "inspectedAt": "2026-11-04"
+      "inspectedAt": "2026-11-05"
     },
     {
       "id": "tr-numarasor",
@@ -296,16 +297,16 @@
       "cluster": null,
       "covers": [],
       "steps": [
-        "Supply your own target phone number and request. The companion selects the number-owner option; complete any further verification yourself. Stop if an ID upload or payment is required.",
+        "Enter your own target phone number, name, contact email and request inside Erase Me. The companion selects the number-owner option. In Review form batch, optional guarded submission sends only those reviewed fields. The site may request additional ownership evidence later; Erase Me uploads no ID or payment.",
         "Confirm that the target information is your own before filling. Never submit for an unrelated person without explicit authorization.",
         "Form preparation is not request acceptance or deletion. Review the broker response and complete its required verification."
       ],
-      "evidence": "The official initial form contract was inspected without entering personal data or submitting. Later identity matching, request acceptance and deletion remain unverified.",
+      "evidence": "The official POST form, exact notice and permitted fields were checked read-only on November 5. Optional guarded submission records an attempt only; correct-record matching, acceptance and deletion remain unverified.",
       "requiredAffirmations": [
         "own_request"
       ],
       "automationMode": "prefill",
-      "inspectedAt": "2026-11-04"
+      "inspectedAt": "2026-11-05"
     },
     {
       "id": "tr-telefonsorgulama",

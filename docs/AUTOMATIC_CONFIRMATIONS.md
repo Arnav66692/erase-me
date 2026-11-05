@@ -126,7 +126,7 @@ approval, optional submission mode and optional mail pass are unchecked; creatin
 address does not authorize its disclosure to a broker. The operator reviews the new
 values and selects the desired actions. The key can remain only in memory for this open
 review so this sequence does not require entering it again. Closing, stopping or completing
-the review disposes that access. The current companion is 0.8.0.
+the review disposes that access. The current companion is 0.9.0.
 
 The optional mail pass runs only after all selected form outcomes have been saved.
 `form-batch.js` supplies `afterForms` with minimal operation references only for verified
@@ -302,7 +302,7 @@ that the API loads the helper from the expected project file.
 
 ## Approved missing-information submission
 
-Companion 0.8.0 supports a separate in-app review after an authenticated FastPeopleSearch
+Companion 0.9.0 supports a separate in-app review after an authenticated FastPeopleSearch
 matching continuation. This does not add mailbox access or a future check. The proof-bound
 read-only probe returns native required flags only, then the dialog collects and reviews
 the exact chosen fields and certification. It explains the broker's contradictory full-data

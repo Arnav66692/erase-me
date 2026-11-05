@@ -200,15 +200,18 @@ and change events. Do not call `form.submit()` to bypass site handlers.
 - Exact HTTPS origin and `/opt-out` path; the reviewed containing form uses GET and
   the same-page action. Inputs are `#sfn`, `#sln` and `#semail`, with a scoped Submit
   control. The companion selects only `#mode=subject` after an own-request affirmation.
-- This is initial prefill only. Consent, any challenge, email verification and its
-  unobserved second form remain user steps. Neither acceptance nor deletion was observed.
+- Version 0.9.0 adds an optional guarded initial submission after review of the
+  exact communications agreement and policy sources. The normal site security handler
+  remains responsible for its challenge. Email continuation and the unobserved second
+  form remain outstanding; neither acceptance nor deletion was observed.
 
 ### Turkish request forms
 
 All four require a separate own-request affirmation and review of each displayed field.
 Request text is plain Unicode text, retaining line breaks, not executable content.
 NumaraAra has the separate optional 0.5.0 consent, text-code and submission contract
-below. The other three forms remain guarded prefill only. The companion does not forge
+below. Version 0.9.0 also adds guarded submission for No Sorgulama and NumaraSor;
+TelefonSorgulama remains guarded prefill only. The companion does not forge
 hidden tokens, upload ID or perform phone/SMS verification. An unreviewed challenge or
 unfamiliar page needs attention.
 
@@ -407,3 +410,37 @@ only action references and bounded outcome metadata persist. Unsupported forms r
 
 Synthetic native-browser tests establish execution behavior, not live acceptance. The
 personal pilot remains awaiting identity details; no final deletion was verified.
+
+## Version 0.9.0 additional initial submission contracts
+
+November 5 official-page checks used anonymous, read-only gstack browser sessions. No
+personal fields were entered into these three forms and no request was submitted.
+
+- [AdvancedBackgroundChecks](https://www.advancedbackgroundchecks.com/opt-out): exact
+  subject selector and required first/last/email controls; same-page GET form, native
+  noValidate=true, URL-encoded encoding and empty target. The review pins its exact
+  three legal paragraphs and five policy URLs. Its own normal reCAPTCHA handler runs
+  after a native button action. Erase Me neither reads nor writes that token.
+- [No Sorgulama](https://www.nosorgulama.com.tr/iletisim/): same-page POST, subject
+  profil-kaldir, required name/email/message, exact KVKK/privacy notice and two policy
+  links. Optional phone and related-number fields remain empty.
+- [NumaraSor](https://www.numarasor.com/numara-kaldirma-talebi): same-page POST,
+  relation Numara sahibiyim, required own-number/name/email/reason. The review shows
+  its warning that additional ownership evidence may be requested later. No ID is
+  uploaded, and optional contact-phone fields remain empty.
+
+Both POST forms have native validation enabled and an existing hidden anti-forgery
+value. That value stays unchanged in document memory and is never returned to the
+workspace or stored in an extension journal. Empty honeypot fields remain empty.
+Unrecognized fields, new challenges, new documents or changed legal text stop the action.
+
+All five initial contracts now pin the observed native form method, encoding, target
+and validation flag. All reject submitter destination, method, target, encoding and
+validation overrides, plus unapproved serialized submitter fields. Rechecks cover event
+handlers and the trusted native submit event. The three new contracts require a new
+companion capability before any selected batch operation is reserved.
+
+The existing FastPeopleSearch and NumaraAra forms were also checked live on November 5:
+URL-encoded POST forms, empty target, noValidate=false, empty submitter name/value and
+no submitter override attributes. Synthetic native-browser checks validate the executor's
+behavior; they do not establish live delivery, correct-record matching or deletion.
