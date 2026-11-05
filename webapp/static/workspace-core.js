@@ -263,6 +263,11 @@
           if (item.affirmations) item.affirmations = approvedAffirmations(knownRoute, item.affirmations);
           item.url = knownRoute.url; item.name = knownRoute.name; item.domain = knownRoute.domain;
           if (item.mail_contact) item.mail_contact = mailContact(item.mail_contact, id, item.operation_id || item.id, Math.floor(Date.parse(clock()) / 1000), true);
+          if (item.operation_source !== undefined && !['browser_workspace', 'imported_user_history'].includes(item.operation_source)) throw new Error();
+          if (item.operation_email !== undefined || item.operation_email_role !== undefined) {
+            if (!item.operation_id || email(item.operation_email) !== item.operation_email ||
+                !['profile', 'business', 'removal'].includes(item.operation_email_role)) throw new Error();
+          }
           if (!validMatchingRequest(item, parsed.profile)) clearMatch(item);
           else if (item.match_result && !validMatchingResult(item, parsed.profile)) delete item.match_result;
         }
@@ -454,6 +459,12 @@
       const { route, item, fields } = preparation(id, reviewed);
       // The route's pre-existing UUID also deduplicates simultaneous tab dispatches.
       item.operation_id = item.id; item.operation_started_at = clock(); changed(item, 'running');
+      item.operation_source = 'browser_workspace';
+      const recipient = fields.email || fields.business_email;
+      if (recipient) {
+        item.operation_email = recipient;
+        item.operation_email_role = fields.business_email ? 'business' : item.mail_contact ? 'removal' : 'profile';
+      }
       event('You started the ' + route.name + ' broker action. Its result is not yet established.'); save();
       return { routeId: id, operationId: item.operation_id, fields, authorized: true,
         ...(id === 'apollo' ? { businessEmailConfirmed: true } : {}), ...(id === 'spokeo' ? { listingConfirmed: true } : {}),
@@ -635,6 +646,27 @@
       item.observation_authorized_at = clock(); save();
       return { routeId: id, operationId: item.operation_id, authorized: true };
     }
+    function focusRequest(id, stage) {
+      const route = routeFor(id), item = itemFor(id, false);
+      requireNotHeld(item);
+      requireCountryRoute(route, item);
+      if (state.campaign.status !== 'active' || !OPERATION.test(item.operation_id || '') ||
+          item.operation_source === 'imported_user_history' || USER_STATES.has(item.status) || item.status === 'requested')
+        throw new WorkspaceError('Choose an active request with an existing companion tab.', 409);
+      if (!['operation', 'continuation'].includes(stage)) throw new WorkspaceError('Choose the existing broker step to return to.');
+      const request = { routeId: id, operationId: item.operation_id, stage, authorized: true };
+      if (stage === 'continuation') {
+        if (!['usphonebook', 'fastpeoplesearch'].includes(id) || item.continuation?.result !== 'prepared' ||
+            item.continuation.source === 'imported_user_history' || item.mail_receipt?.authenticated !== true ||
+            item.mail_receipt.continuation_available !== true || item.continuation.receipt_ref !== item.mail_receipt.receipt_ref ||
+            !/^[a-f0-9]{64}$/.test(item.mail_receipt.receipt_ref || '') || !item.mail_contact)
+          throw new WorkspaceError('The matching form has no current authenticated companion reference. Review its existing request steps.', 409);
+        const contact = mailContact(item.mail_contact, id, item.operation_id, Math.floor(Date.parse(clock()) / 1000), true);
+        request.requestId = contact.request_id;
+        request.receiptRef = item.mail_receipt.receipt_ref;
+      }
+      return request;
+    }
     function recordObservation(id, operationId, result) {
       const item = itemFor(id);
       if (!item.operation_id || item.operation_id !== operationId || !item.observation_authorized_at || !result || !['unknown', 'verification_sent'].includes(result.status))
@@ -738,13 +770,18 @@
       try { data = JSON.parse(raw); } catch (_) { throw new WorkspaceError('Invalid workspace export.'); }
       if (!data || data.version !== VERSION || !data.profile || !data.items || typeof data.items !== 'object' || Array.isArray(data.items)) throw new WorkspaceError('Invalid workspace export.');
       const forbidden = new Set(['removed', 'verified_removed', 'not_found']);
-      const restoredFields = {}, restoredContacts = {};
+      const restoredFields = {}, restoredContacts = {}, restoredEmails = {};
       for (const [id, item] of Object.entries(data.items)) {
         const route = routeFor(id);
         if (!item || forbidden.has(item.status) || !Object.hasOwn(TEXT, item.status)) throw new WorkspaceError('Imports cannot establish verified removal or listing absence.');
         if (item.held !== undefined && typeof item.held !== 'boolean') throw new WorkspaceError('Invalid imported hold state.');
         restoredFields[id] = approvedFields(route, item.fields === undefined ? {} : item.fields);
         if (item.mail_contact) restoredContacts[id] = mailContact(item.mail_contact, id, item.operation_id || item.id, Math.floor(Date.parse(clock()) / 1000), true);
+        if (item.operation_email !== undefined || item.operation_email_role !== undefined) {
+          if (!item.operation_id || email(item.operation_email) !== item.operation_email || !['profile', 'business', 'removal'].includes(item.operation_email_role))
+            throw new WorkspaceError('Invalid imported request email.');
+          restoredEmails[id] = { address: item.operation_email, role: item.operation_email_role };
+        }
       }
       const input = data.profile;
       const candidate = { name: text(input.name, 120), email: email(input.email), age: input.age, authorized: true };
@@ -784,6 +821,11 @@
           // the companion. Importing its reference does not import its evidence.
           item.operation_id = typeof imported.operation_id === 'string' && /^[a-f0-9-]{32,40}$/.test(imported.operation_id)
             ? imported.operation_id : uuid();
+          item.operation_source = 'imported_user_history';
+          if (restoredEmails[id]) {
+            item.operation_email = restoredEmails[id].address;
+            item.operation_email_role = restoredEmails[id].role;
+          }
           item.operation_started_at = typeof imported.operation_started_at === 'string' && imported.operation_started_at.length <= 40 && Number.isFinite(Date.parse(imported.operation_started_at))
             ? new Date(imported.operation_started_at).toISOString() : clock();
         }
@@ -835,7 +877,7 @@
     return Object.freeze({ api, snapshot: () => clone(read()), profile: () => clone(active().profile), routes: () => clone(routes),
       setEvidence, prepare, fillPreview, prepareReviewed, matchRequest, recordMatch, holdRoute, resumeRoute, mailSessionRequest, bindMailContact, clearMailContact, mailCheckRequest, recordMailReceipt,
       mailContinuationRequest, prepareMailContinuation, recordMailContinuation,
-      recordCompanion, observationRequest, recordObservation, searchRequest, privacyDraftRequest, recordUser, opened, exportData, importData, remove, dashboard,
+      recordCompanion, observationRequest, focusRequest, recordObservation, searchRequest, privacyDraftRequest, recordUser, opened, exportData, importData, remove, dashboard,
       updateRoute: setEvidence, applyCompanionResult: recordCompanion });
   }
   let instance;
@@ -849,7 +891,7 @@
   }
   const mutators = new Set(['setEvidence', 'prepare', 'prepareReviewed', 'matchRequest', 'recordMatch', 'holdRoute', 'resumeRoute', 'mailSessionRequest', 'bindMailContact', 'clearMailContact', 'mailCheckRequest', 'recordMailReceipt', 'mailContinuationRequest', 'prepareMailContinuation', 'recordMailContinuation', 'recordCompanion', 'observationRequest', 'recordObservation', 'searchRequest', 'privacyDraftRequest', 'recordUser', 'opened', 'importData', 'remove', 'updateRoute', 'applyCompanionResult']);
   const exported = { create, KEY, AUTHORIZATION, WorkspaceError, routes: () => clone(routes), listingURL };
-  for (const name of ['snapshot', 'profile', 'setEvidence', 'prepare', 'fillPreview', 'prepareReviewed', 'matchRequest', 'recordMatch', 'holdRoute', 'resumeRoute', 'mailSessionRequest', 'bindMailContact', 'clearMailContact', 'mailCheckRequest', 'recordMailReceipt', 'mailContinuationRequest', 'prepareMailContinuation', 'recordMailContinuation', 'recordCompanion', 'observationRequest', 'recordObservation', 'searchRequest', 'privacyDraftRequest', 'recordUser', 'opened', 'exportData', 'importData', 'remove', 'dashboard', 'updateRoute', 'applyCompanionResult']) {
+  for (const name of ['snapshot', 'profile', 'setEvidence', 'prepare', 'fillPreview', 'prepareReviewed', 'matchRequest', 'recordMatch', 'holdRoute', 'resumeRoute', 'mailSessionRequest', 'bindMailContact', 'clearMailContact', 'mailCheckRequest', 'recordMailReceipt', 'mailContinuationRequest', 'prepareMailContinuation', 'recordMailContinuation', 'recordCompanion', 'observationRequest', 'focusRequest', 'recordObservation', 'searchRequest', 'privacyDraftRequest', 'recordUser', 'opened', 'exportData', 'importData', 'remove', 'dashboard', 'updateRoute', 'applyCompanionResult']) {
     exported[name] = (...args) => mutators.has(name) ? exclusive(() => defaults()[name](...args)) : defaults()[name](...args);
   }
   exported.api = async (...args) => {

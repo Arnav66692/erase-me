@@ -9,7 +9,7 @@ Tools for finding and requesting removal of your own personal information from d
 
 Erase Me combines a browser workspace, a narrowly permissioned Chrome extension and an installable agent skill. It keeps a private record of the actions you authorize and separates form preparation, broker verification and removal evidence.
 
-**Current scope:** companion 0.6.0 supports 11 reviewed initial form actions, two optional guarded submissions and one local text-challenge route. Other challenges, identity checks and broker steps can still need attention. No independently verified broker deletion has been established by this release.
+**Current scope:** companion 0.7.0 supports 11 reviewed initial form actions, two optional guarded submissions and one local text-challenge route. Other challenges, identity checks and broker steps can still need attention. No independently verified broker deletion has been established by this release.
 
 ## Get started
 
@@ -21,6 +21,8 @@ Erase Me combines a browser workspace, a narrowly permissioned Chrome extension 
 4. Complete the broker's verification steps and record the result.
 
 The workspace requires no account or email login. Your profile and ledger stay in this browser. Export a private backup before clearing site data or changing devices.
+
+**Next steps** shows the email used for each started request and asks for the information that broker still needs. A prepared FastPeopleSearch or USPhonebook matching form asks for a full date of birth **or** current street address, plus location details. Choose **Provide missing information** to return to the verified form already open in desktop Chrome. Enter the detail on the broker's form. The button opens no new request or confirmation link; missing or changed tabs need manual review. Held requests stay untouched.
 
 For supported form filling, install the free [Chrome companion](https://erase-me-preview.vercel.app/companion.html). Load the unpacked extension in desktop Chrome and grant access to its reviewed broker sites. Mobile browsers can use the workspace and official links, but companion actions require desktop Chrome. Updating an older copy requires replacing its extracted files and reloading the extension.
 
@@ -170,4 +172,4 @@ Related work includes [unbroker](https://github.com/NousResearch/hermes-agent), 
 
 Privacy-law references are informational and may become outdated. Check their official sources. This software does not provide legal advice.
 
-*Documentation reviewed November 5, 2026. Capability counts describe companion 0.6.0.*
+*Documentation reviewed November 5, 2026. Capability counts describe companion 0.7.0.*

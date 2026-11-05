@@ -12,6 +12,23 @@ listing search opens Google with only the name and optional city; it does not sc
 confirm a record. Route holds survive backup and campaign resume, while operation IDs
 continue to prevent duplicate dispatch.
 
+`next-steps.js` derives prominent broker-specific prompts from the local dashboard.
+New operations snapshot their outbound email and whether it was the profile,
+business or removal-only address. Earlier typed-email operations without a snapshot
+show an unknown original recipient rather than borrowing a current profile address.
+Imported history cannot produce an authenticated missing-identity prompt. Prepared
+matching forms can ask for a full date of birth or street address on the official
+form; the workspace does not collect those additional values.
+
+The explicit `focus-existing` companion action accepts operation references only.
+After a safe same-document preparation, the companion may keep a session-only proof
+binding the browser session, tab, document, route and a domain-separated HMAC of the
+exact URL. Focus rechecks that proof and granted origin before activating the tab
+and its window. Raw verification URLs, names and email fields are not stored in the
+proof. Missing, changed or restored tabs fall back to manual review; focus never
+creates a tab, follows a confirmation link or repeats a form. The workspace's
+read-only `focusRequest()` rejects held, paused and untrusted history before dispatch.
+
 The public workspace also offers a reviewed form batch over the same eleven initial
 contracts. `fillPreview()` validates current route eligibility and exact fields without
 reserving an operation. Its snapshot binds the route, stable operation reference,

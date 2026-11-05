@@ -124,6 +124,86 @@ async function acknowledgmentDigest(key,value){
   const signature=await crypto.subtle.sign('HMAC',imported,new TextEncoder().encode(input));
   return [...new Uint8Array(signature)].map(n=>n.toString(16).padStart(2,'0')).join('');
 }
+function focusUnavailable(message){
+  return {status:'unavailable',routeId:message.routeId,stage:message.stage,detail:'The original form could not be verified. Find its existing Chrome tab manually. No form or request was reopened.'};
+}
+function focusRecordMatches(record,message){
+  return record?.routeId===message.routeId&&Number.isInteger(record.tabId)&&
+    (message.stage!=='continuation'||record.requestId===message.requestId&&record.receiptRef===message.receiptRef)&&
+    (record.result?.status==='prepared'||evidenceResult(record.result));
+}
+function focusPurpose(url,routeId,stage){
+  return stage==='continuation'?EXEC.continuationURL(url,routeId):EXEC.allowed(url,EXEC.ROUTES[routeId]);
+}
+async function focusDigest(key,url){
+  if(!key||typeof url!=='string'||!url||url.length>4096||/[\x00-\x1f\x7f]/.test(url))return null;
+  const imported=await crypto.subtle.importKey('raw',key,{name:'HMAC',hash:'SHA-256'},false,['sign']);
+  const signature=await crypto.subtle.sign('HMAC',imported,new TextEncoder().encode(JSON.stringify(['focus-url-v1',url])));
+  return [...new Uint8Array(signature)].map(n=>n.toString(16).padStart(2,'0')).join('');
+}
+async function sameFocusDocument(chromeApi,tabId,documentId,url){
+  const [response]=await chromeApi.scripting.executeScript({target:{tabId,documentIds:[documentId]},
+    func:expected=>location.href===expected,args:[url]});
+  return response?.documentId===documentId&&response.result===true;
+}
+async function rememberFocus(message,stage,record,documentId,chromeApi){
+  // Optional convenience proof. Failure never changes the completed form outcome.
+  try{
+    const reference={...message,stage},journalKey=stage+':'+message.operationId;
+    if(typeof documentId!=='string'||!documentId||!focusRecordMatches(record,reference)||!chromeApi.storage.session)return;
+    const session=await browserSession(chromeApi,true),key=await observationKey(chromeApi,session,true);
+    if(!session||!key||!await chromeApi.permissions.contains({origins:['https://'+EXEC.ROUTES[message.routeId].host+'/*']}))return;
+    const tab=await chromeApi.tabs.get(record.tabId);
+    if(tab.id!==record.tabId||tab.status!=='complete'||!focusPurpose(tab.url,message.routeId,stage)||
+      stage==='continuation'&&tab.url!==message.confirmationUrl||
+      !await sameFocusDocument(chromeApi,record.tabId,documentId,tab.url))return;
+    const digest=await focusDigest(key,tab.url);
+    const current=(await chromeApi.storage.local.get(journalKey))[journalKey];
+    if(!digest||!focusRecordMatches(current,reference)||current.tabId!==record.tabId||await browserSession(chromeApi)!==session)return;
+    const proof={session,routeId:message.routeId,operationId:message.operationId,stage,tabId:record.tabId,documentId,urlHmac:digest,
+      ...(stage==='continuation'?{requestId:message.requestId,receiptRef:message.receiptRef}:{})};
+    await chromeApi.storage.session.set({['focus:'+stage+':'+message.operationId]:proof});
+  }catch(_){/* An unproven tab stays unavailable; no action is repeated. */}
+}
+async function focusExisting(message,chromeApi){
+  const keys=['type','action','routeId','operationId','stage','authorized',...(message.stage==='continuation'?['requestId','receiptRef']:[])];
+  if(message.authorized!==true||!['operation','continuation'].includes(message.stage)||
+    Object.keys(message).length!==keys.length||!keys.every(key=>Object.hasOwn(message,key))||
+    message.stage==='continuation'&&(!['usphonebook','fastpeoplesearch'].includes(message.routeId)||
+      !/^[a-f0-9]{32}$/.test(message.requestId||'')||!/^[a-f0-9]{64}$/.test(message.receiptRef||'')))throw new Error('Authorize an existing broker form first.');
+  const journalKey=message.stage+':'+message.operationId,proofKey='focus:'+message.stage+':'+message.operationId;
+  if(active.has(journalKey)||active.has(proofKey))return focusUnavailable(message);
+  active.add(proofKey);
+  try{
+    const record=(await chromeApi.storage.local.get(journalKey))[journalKey],session=await browserSession(chromeApi);
+    const proof=chromeApi.storage.session&&(await chromeApi.storage.session.get(proofKey))[proofKey];
+    if(!focusRecordMatches(record,message)||!session||!proof||proof.session!==session||proof.routeId!==message.routeId||
+      proof.operationId!==message.operationId||proof.stage!==message.stage||proof.tabId!==record.tabId||
+      typeof proof.documentId!=='string'||!proof.documentId||!/^[a-f0-9]{64}$/.test(proof.urlHmac||'')||
+      message.stage==='continuation'&&(proof.requestId!==message.requestId||proof.receiptRef!==message.receiptRef))return focusUnavailable(message);
+    const key=await observationKey(chromeApi,session),permission={origins:['https://'+EXEC.ROUTES[message.routeId].host+'/*']};
+    if(!key||!await chromeApi.permissions.contains(permission))return focusUnavailable(message);
+    const tab=await chromeApi.tabs.get(record.tabId);
+    if(tab.id!==record.tabId||tab.status!=='complete'||!Number.isInteger(tab.windowId)||!focusPurpose(tab.url,message.routeId,message.stage)||
+      await focusDigest(key,tab.url)!==proof.urlHmac||!await sameFocusDocument(chromeApi,record.tabId,proof.documentId,tab.url))return focusUnavailable(message);
+    // Reread references and permission after the document check. A removed or
+    // changed proof cannot authorize activation from stale page state.
+    const stillAuthorized=async()=>{
+      const current=(await chromeApi.storage.local.get(journalKey))[journalKey],fresh=(await chromeApi.storage.session.get(proofKey))[proofKey];
+      return focusRecordMatches(current,message)&&current.tabId===record.tabId&&JSON.stringify(fresh)===JSON.stringify(proof)&&
+        await browserSession(chromeApi)===session&&await chromeApi.permissions.contains(permission);
+    };
+    if(!await stillAuthorized())return focusUnavailable(message);
+    const before=await chromeApi.tabs.get(record.tabId);
+    if(before.id!==record.tabId||before.status!=='complete'||before.url!==tab.url||
+      !await sameFocusDocument(chromeApi,record.tabId,proof.documentId,tab.url))return focusUnavailable(message);
+    const activated=await chromeApi.tabs.update(record.tabId,{active:true});
+    if(activated?.id!==record.tabId||activated.url!==tab.url||!Number.isInteger(activated.windowId)||
+      !await sameFocusDocument(chromeApi,record.tabId,proof.documentId,tab.url)||!await stillAuthorized())return focusUnavailable(message);
+    await chromeApi.windows.update(activated.windowId,{focused:true});
+    return {status:'focused',routeId:message.routeId,stage:message.stage,detail:'The existing broker form is open. Complete the requested information there.'};
+  }catch(_){return focusUnavailable(message);}finally{active.delete(proofKey);}
+}
 async function captureIntent(message,sender,chromeApi=chrome){
   if(!message||!sender||message.type!=='erase-broker-submit-intent'||!id(message.operationId)||!OBSERVABLE.has(message.routeId)||
     typeof message.fieldsMatch!=='boolean'||!/^[a-f0-9]{32}$/.test(message.nonce||'')||
@@ -182,10 +262,11 @@ async function dispatch(message,sender,chromeApi=chrome){
   if(message.action==='ping'){
     const routes=[];
     for(const [routeId,route] of Object.entries(EXEC.ROUTES))if(await chromeApi.permissions.contains({origins:['https://'+route.host+'/*']}))routes.push(routeId);
-    return {status:'connected',version:'0.6.0',routes,capabilities:['usphonebook-continuation-v1','fastpeoplesearch-continuation-v1','explicit-fields-v1','structured-fields-v1','broker-observation-v1','automatic-submit-v1','structured-record-match-v1']};
+    return {status:'connected',version:'0.7.0',routes,capabilities:['usphonebook-continuation-v1','fastpeoplesearch-continuation-v1','explicit-fields-v1','structured-fields-v1','broker-observation-v1','automatic-submit-v1','structured-record-match-v1','owned-tab-focus-v1']};
   }
   if(message.action==='helper-status')return helperStatus(chromeApi);
   if(!id(message.operationId)||!EXEC.ROUTES[message.routeId])throw new Error('Unsupported operation.');
+  if(message.action==='focus-existing')return focusExisting(message,chromeApi);
   if(message.action==='match')return matchRecord(message,chromeApi);
   const continuation=['continue','continuation-result'].includes(message.action),key=(continuation?'continuation:':'operation:')+message.operationId;
   const previous=(await chromeApi.storage.local.get(key))[key];
@@ -242,7 +323,11 @@ async function dispatch(message,sender,chromeApi=chrome){
     record.result={status:result.status,detail:String(result.detail||'').slice(0,600)};
     if(evidenceResult(result))Object.assign(record.result,{route_verified:true,evidence:'fresh_visible_success'});
     if(result.status==='submission_attempted')Object.assign(record.result,{attempt_verified:true,stage:result.stage});
-    await chromeApi.storage.local.set({[key]:record});return record.result;
+    await chromeApi.storage.local.set({[key]:record});
+    if(response?.documentId===installed?.documentId&&typeof installed?.documentId==='string'&&
+      (record.result.status==='prepared'||evidenceResult(record.result)))
+      await rememberFocus(message,continuation?'continuation':'operation',record,installed.documentId,chromeApi);
+    return record.result;
   }catch(_){return record.result;}finally{active.delete(key);}
 }
 if(typeof chrome!=='undefined'&&chrome.runtime?.onMessage)chrome.runtime.onMessage.addListener((message,sender,reply)=>{

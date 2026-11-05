@@ -126,7 +126,7 @@ approval, optional submission mode and optional mail pass are unchecked; creatin
 address does not authorize its disclosure to a broker. The operator reviews the new
 values and selects the desired actions. The key can remain only in memory for this open
 review so this sequence does not require entering it again. Closing, stopping or completing
-the review disposes that access. The current companion is 0.6.0.
+the review disposes that access. The current companion is 0.7.0.
 
 The optional mail pass runs only after all selected form outcomes have been saved.
 `form-batch.js` supplies `afterForms` with minimal operation references only for verified

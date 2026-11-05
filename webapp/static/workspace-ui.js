@@ -6,6 +6,7 @@
   const A=()=>globalThis.EraseAutomaticExecutor;
   const S=()=>globalThis.EraseRemovalSession;
   const C=()=>globalThis.EraseContactSetup;
+  const N=()=>globalThis.EraseNextSteps;
   const mailRoutes=new Set(['usphonebook','searchpeoplefree','fastpeoplesearch']);
   const newMailRoutes=new Set(['usphonebook','fastpeoplesearch']);
   const fieldSpecs={
@@ -32,7 +33,7 @@
         stop();const reply=event.data.reply;
         if(reply?.ok)resolve(reply.result);else reject(new Error(reply?.error||'The companion could not complete this action.'));
       };
-      const timeout=setTimeout(()=>{stop();reject(new Error('The companion did not respond. Install it, enable broker access, then refresh this page. No repeat has been sent.'));},['run','continue','match'].includes(payload.action)?60000:1500);
+      const timeout=setTimeout(()=>{stop();reject(new Error('The companion did not respond. Install it, enable broker access, then refresh this page. No repeat has been sent.'));},['run','continue','match'].includes(payload.action)?60000:payload.action==='focus-existing'?5000:1500);
       window.addEventListener('message',listener);
       window.postMessage({source:'erase-workspace',requestId,payload},location.origin);
     });
@@ -335,12 +336,67 @@
     $('dashboard-heading').textContent='Your privacy work';
     $('listings-heading').textContent='Broker routes';
   }
+  function reviewRequestSteps(routeId){
+    const steps=$('request-steps-'+routeId);
+    if(!steps)throw new Error('Choose All in Broker routes, then open this broker’s Request steps. No broker action was started.');
+    steps.open=true;
+    const summary=steps.querySelector('summary');summary?.focus({preventScroll:true});
+    steps.scrollIntoView?.({block:'start',behavior:'auto'});
+  }
+  function nextStepsPanel(dashboard){
+    if(!N())return null;
+    const cards=N().build(dashboard);
+    if(!cards.length&&dashboard.campaign.status==='active')return null;
+    const panel=n('section',null,'next-steps-panel');panel.id='next-steps-panel';panel.setAttribute('aria-labelledby','next-steps-heading');
+    const heading=n('h2','Next steps');heading.id='next-steps-heading';panel.append(heading);
+    if(dashboard.campaign.status!=='active'){
+      panel.append(n('p','Your privacy work is paused. Resume it when you want to continue. Held requests stay on hold.'));return panel;
+    }
+    panel.append(n('p','Each request shows the email it uses and the information the broker still needs.','next-steps-intro'));
+    for(const card of cards){
+      const article=n('article',null,'next-step-card'),title=n('h3',card.title.includes(card.name)?card.title:card.name+': '+card.title);title.id='next-step-'+card.routeId+'-heading';article.id='next-step-'+card.routeId;article.setAttribute('aria-labelledby',title.id);article.append(title);
+      const email=n('p',null,'next-step-email');
+      if(card.email){
+        const value=n('bdi',card.email);value.setAttribute('dir','ltr');
+        email.append(n('span','Email for this request'),value);
+        const role=card.emailRole==='removal'?'Separate removal-only contact':card.emailRole==='business'?'Your approved business email':'Your email for this request';
+        email.append(n('span',role,'next-step-email-role'));
+      }else email.append(n('span','The original request email was not recorded. Review the existing request before choosing an address.'));
+      article.append(email,n('p',card.detail));
+      const actions=n('div',null,'public-route-actions');
+      if(card.action==='focus'){
+        const help=n('p','Switches to the official form already open in desktop Chrome.','public-route-note');help.id='next-step-'+card.routeId+'-help';article.append(help);
+        const expected={profileId:dashboard.profile.id,operationId:dashboard.items.find(item=>item.site_id===card.routeId)?.operation_id};
+        const current=()=>{
+          const next=W().dashboard(),item=next.items.find(item=>item.site_id===card.routeId),fresh=N().build(next).find(item=>item.routeId===card.routeId);
+          if(next.profile.id!==expected.profileId||next.campaign.status!=='active'||item?.held||item?.operation_id!==expected.operationId||
+            !fresh||['kind','action','stage','email'].some(key=>fresh[key]!==card[key]))throw new Error('This request changed. Review its current next step before continuing.');
+        };
+        const label=card.kind==='detail_required'?'Provide missing information':'Return to existing form';
+        const focus=button(label,async()=>{
+          current();const request=await W().focusRequest(card.routeId,card.stage);current();
+          const ping=await companion({action:'ping'});current();
+          if(!ping.capabilities?.includes('owned-tab-focus-v1'))throw new Error('Update the Chrome companion to return to an existing form. You can also find that tab in Chrome yourself.');
+          const fresh=await W().focusRequest(card.routeId,card.stage);current();
+          if(JSON.stringify(fresh)!==JSON.stringify(request))throw new Error('The existing form reference changed. Review this request again.');
+          const result=await companion({action:'focus-existing',...fresh});
+          feedback(result?.status==='focused'&&result.routeId===card.routeId&&result.stage===card.stage?
+            card.name+'’s existing form is open in Chrome. Use the request email shown here and provide the information requested there.':
+            'The existing '+card.name+' form could not be verified. Find its current tab in Chrome or review the request steps below. No new form was opened or request repeated.');
+        });focus.id='next-step-'+card.routeId+'-primary';focus.setAttribute('aria-label',label+' for '+card.name);focus.setAttribute('aria-describedby',help.id);actions.append(focus);
+      }
+      const review=button('Review request steps',()=>reviewRequestSteps(card.routeId));review.id='next-step-'+card.routeId+'-review';review.setAttribute('aria-label','Review request steps for '+card.name);actions.append(review);article.append(actions);panel.append(article);
+    }
+    return panel;
+  }
   function tools(){
     let box=$('public-tools');
     if(!box){box=n('div',null,'public-tools');box.id='public-tools';$('campaign-feedback').after(box);}
+    let returnId=null;for(let node=document.activeElement;node;node=node.parentElement)if(node===box){returnId=document.activeElement.id;break;}
     box.hidden=false;
     box.replaceChildren();
-    const coverage=W().dashboard().coverage;
+    const dashboard=W().dashboard(),steps=nextStepsPanel(dashboard);if(steps)box.append(steps);
+    const coverage=dashboard.coverage;
     if(coverage){
       const message=!coverage.country
         ? 'Choose your country below to show regional routes. ' + coverage.globalRouteCount + ' global portals are available meanwhile.'
@@ -367,6 +423,7 @@
       mailStatus=await M().status();changed();
       feedback(mailStatus.enabled?'The removal-mail relay is available as a private operator pilot. It checks receipts on demand. Reviewed USPhonebook and FastPeopleSearch confirmations can open their matching forms under the displayed approval. Required identity details and final broker steps remain outstanding.':mailStatus.configured?'The dedicated mailbox is configured, but the private pilot is disabled. Personal inboxes stay disconnected.':'The dedicated removal mailbox is not connected. Use the broker’s own email steps. Personal inboxes stay disconnected.');
     }),n('p',S()?'Optional removal-mail checks are a gated operator pilot using a separate account. A private key is held only for the session you approve. Checks make one pass; they never run on a schedule. Only displayed, reviewed confirmation fields can continue automatically.':'Optional removal-mail checks are a gated operator pilot. They use a separate account, require a private key for each action and never run on a schedule. Each reviewed confirmation needs an explicit continuation.','public-route-note'));
+    if(returnId){const target=$(returnId);if(target&&!target.disabled)target.focus({preventScroll:true});}
   }
   function mailControls(route,item){
     if(!mailRoutes.has(route.id)||!M()||!mailStatus?.enabled)return null;
@@ -553,7 +610,7 @@
         actions.append(button('I finished the broker steps',async()=>{await W().recordUser(route.id,'user_reported_completed');changed();feedback('Your completion report is saved. It is not counted as a verified deletion.');}));
         actions.append(button('Hold this route',async()=>{await W().holdRoute(route.id);changed();feedback('This route is on hold. No new broker or mailbox action will start until you explicitly resume it.');}));
       }else actions.append(button('Resume this route',async()=>{await W().resumeRoute(route.id);changed();feedback('This route was explicitly resumed. Its existing operation references still prevent repeated actions.');}));
-      const steps=n('details',null,'public-broker-steps');
+      const steps=n('details',null,'public-broker-steps');steps.id='request-steps-'+route.id;
       steps.append(n('summary','Request steps'),n('p',route.steps.join(' '),'public-route-note'));
       if(fields.children.length)steps.append(fields);
       if(route.searchable)steps.append(n('p','Find my listing opens a Google search only when you choose it. Google receives your name and optional city. Review candidates yourself; a search is not evidence that a listing belongs to you.','public-route-note'));
@@ -561,7 +618,10 @@
         const explanation=n('p','Use the Intelius / PeopleConnect route for one manual personal-use suppression session covering the four named report brands. Other brands and report types are not automatically covered.','public-route-note');
         steps.append(explanation);
       }
-      if(route.fields.includes('email'))steps.append(n('p','Email to use for this broker: '+(item.mail_contact?.contact_email||W().profile().email)+(item.mail_contact?' (separate removal-only contact)':' (your typed profile email)'),'public-field-disclosure'));
+      if(route.fields.includes('email')){
+        const address=item.operation_email||item.mail_contact?.contact_email||(!operationId?W().profile().email:null);
+        steps.append(n('p',address?(operationId?'Email used for this request: ':'Email to use for this broker: ')+address+(item.operation_email_role==='removal'||item.mail_contact?' (separate removal-only contact)':' (your typed profile email)'):'The original email for this earlier request was not recorded. Check its existing broker history before choosing an address.','public-field-disclosure'));
+      }
       if(item.mail_contact)steps.append(n('p','Removal contact expires '+new Date(item.mail_contact.expires_at*1000).toISOString()+'. It does not prove ownership of a broker record.','public-route-note'));
       if(!item.held&&item.mail_contact&&!item.operation_id)steps.append(button('Use my typed email instead',async()=>{await W().clearMailContact(route.id);changed();feedback('This route will use your typed profile email. No broker was contacted.');}));
       if(item.mail_receipt)steps.append(n('p',item.mail_receipt.status==='held'?(item.mail_receipt.authenticated?(item.mail_receipt.continuation_available?'Authenticated broker mail received; a reviewed confirmation form is available. This does not establish deletion.':'Authenticated broker mail received; confirmation is held for route validation.'):'Imported receipt history is unverified; perform an explicit check to establish its current state.'):'The last explicit check found no qualifying receipt.','public-route-note'));

@@ -176,6 +176,7 @@ function observationChrome(){
   tabs:{async create({url}){state.opens++;state.url=url;return{id:1,status:'complete',url};},async get(tabId){return{id:tabId,status:'complete',url:state.url};}},
   scripting:{async executeScript(spec){
    if(spec.files)return[{documentId:state.documentId}];
+   if(spec.func.toString().includes('location.href===expected'))return[{documentId:state.documentId,result:state.url===spec.args[0]}];
    if(spec.args.length===1){state.reads++;return[{documentId:state.documentId,result:clone(state.facts)}];}
    state.writes++;state.payload=spec.args[0];return[{documentId:state.documentId,result:{status:'prepared',detail:'Fields filled.'}}];
   }}};

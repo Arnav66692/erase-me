@@ -1,6 +1,6 @@
 # Local challenge helper
 
-Companion 0.6.0 can send NumaraAra's reviewed text-image challenge to a recognizer
+Companion 0.7.0 can send NumaraAra's reviewed text-image challenge to a recognizer
 running on the same computer. Tesseract supplies a candidate five-character answer;
 the browser checks the original image, controls, fields and consent again before
 attempting the approved submission. Recognition does not establish that the broker
@@ -17,7 +17,7 @@ Use a source checkout and Python 3.10 or newer. Install
 Homebrew installation can use `brew install tesseract`. Linux users can use their
 distribution's Tesseract package. The installer does not install dependencies.
 
-1. Download companion 0.6.0, replace the extracted extension files and reload it in
+1. Download companion 0.7.0, replace the extracted extension files and reload it in
    `chrome://extensions`. The eleven optional broker origins are unchanged.
 2. Copy this unpacked extension's ID from that page. It must contain exactly 32
    lowercase letters from `a` through `p`; it is not a password.

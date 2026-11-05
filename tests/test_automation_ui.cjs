@@ -7,11 +7,12 @@ const vm = require('node:vm');
 const Core = require('../webapp/static/workspace-core.js');
 const Automatic = require('../extension/automatic-executor.js');
 const ContactSetup = require('../webapp/static/contact-setup.js');
+const NextSteps = require('../webapp/static/next-steps.js');
 const listing = 'https://www.spokeo.com/Example-Person/California/Example-City/p123456';
 const key = 'a'.repeat(64);
 function gate() { let resolve; const promise = new Promise(done => { resolve = done; }); return { promise, resolve }; }
 
-async function fixture({ bound = [], started = [], held = [], delayed = false, delayedMail = false, delayedContact = false, preMatched = false, globals = true, country = 'US', matchResult } = {}) {
+async function fixture({ bound = [], started = [], held = [], delayed = false, delayedMail = false, delayedContact = false, preMatched = false, globals = true, country = 'US', matchResult,focusAvailable=true,focusCapability=true,beforeFocusPing } = {}) {
   const values = new Map(); let sequence = 0, stamp = '2026-11-05T00:00:00.000Z';
   const core = Core.create({ storage: { getItem: id => values.get(id) || null, setItem: (id, value) => values.set(id, value), removeItem: id => values.delete(id) },
     uuid: () => (++sequence).toString(16).padStart(32, '0'), now: () => stamp });
@@ -48,7 +49,7 @@ async function fixture({ bound = [], started = [], held = [], delayed = false, d
     replaceChildren(...children) { for (const child of this.children) child.parentElement = null; this.children = []; this._text = ''; this.append(...children); }
     addEventListener(type, callback) { this.listeners[type] = callback; }
     setAttribute(name, value) { this.attributes.set(name, String(value)); }
-    querySelector(selector) { return find(this, element => selector === '.listing-title' ? element.className === 'listing-title' : selector === '.listing-info' ? element.className === 'listing-info' : false); }
+    querySelector(selector) { return find(this, element => selector === '.listing-title' ? element.className === 'listing-title' : selector === '.listing-info' ? element.className === 'listing-info' : selector==='summary'?element.tagName==='SUMMARY':false); }
     focus() { document.activeElement = this; }
     showModal() { this.open = true; find(this, element => ['INPUT', 'BUTTON'].includes(element.tagName))?.focus(); }
     close() { this.open = false; this.listeners.close?.(); }
@@ -118,11 +119,15 @@ async function fixture({ bound = [], started = [], held = [], delayed = false, d
         result = matchResult || { status: 'matched', candidateUrl: payload.listingUrl, evidence: ['structured_person', 'exact_candidate_url', 'name', 'email'], source: 'structured_person_v1', match_verified: true };
       } else if(payload.action==='continue'){
         assert.equal(core.snapshot().items[payload.routeId].continuation.result,'unknown');result={status:'prepared'};
-      }else result = { routes: core.routes().filter(route => route.automationLevel === 'companion').map(route => route.id), capabilities: ['explicit-fields-v1', 'structured-fields-v1','fastpeoplesearch-continuation-v1'] };
+      }else if(payload.action==='focus-existing')result={status:focusAvailable?'focused':'unavailable',routeId:payload.routeId,stage:payload.stage};
+      else {
+        if(payload.action==='ping')beforeFocusPing?.(core);
+        result = { routes: core.routes().filter(route => route.automationLevel === 'companion').map(route => route.id), capabilities: ['explicit-fields-v1', 'structured-fields-v1','fastpeoplesearch-continuation-v1',...(focusCapability?['owned-tab-focus-v1']:[])] };
+      }
       queueMicrotask(() => listeners.get('message')?.({ source: window, origin: 'https://erase-me-preview.vercel.app', data: { source: 'erase-companion', requestId: message.requestId, reply: { ok: true, result } } }));
     }
   };
-  const context = { document, EraseWorkspace: workspace, EraseFormBatch: batch, ...(globals ? { EraseAutomaticExecutor: Automatic, EraseRemovalSession: session, EraseRemovalMail: mail, EraseContactSetup: ContactSetup } : {}),
+  const context = { document, EraseWorkspace: workspace, EraseFormBatch: batch,EraseNextSteps:NextSteps, ...(globals ? { EraseAutomaticExecutor: Automatic, EraseRemovalSession: session, EraseRemovalMail: mail, EraseContactSetup: ContactSetup } : {}),
     URL, Blob, CustomEvent: class { constructor(type) { this.type = type; } }, location: { origin: 'https://erase-me-preview.vercel.app' },
     crypto: { randomUUID: () => (++sequence).toString(16).padStart(32, '0') }, setTimeout: (_callback, delay) => { deadlines.push(delay); return ++timeoutId; }, clearTimeout() {}, window };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../webapp/static/workspace-ui.js'), 'utf8'), context);
@@ -366,4 +371,69 @@ test('editing a derived record clears its checkbox without losing the reference 
   approval.checked = true; await ui.click('Review form batch');
   assert.equal(ui.input('Include Spokeo in this form batch'), undefined);
   assert.equal(typeof ui.saves.find(args => args[0] === 'spokeo')[3].automaticReference, 'string');
+});
+
+async function detailPromptFixture(options={}){
+  const ui=await fixture({bound:['fastpeoplesearch'],started:['fastpeoplesearch'],held:['usphonebook'],...options});
+  const item=ui.core.dashboard().items.find(item=>item.site_id==='fastpeoplesearch');
+  const receipt={status:'held',route_id:item.site_id,operation_id:item.operation_id,request_id:item.mail_contact.request_id,reason:'route_validation_required',
+    received_at:Math.floor(Date.parse('2026-11-05T00:00:00.000Z')/1000),receipt_ref:'c'.repeat(64),authenticated:true,automatic_execution:false,continuation_available:true};
+  ui.core.recordMailReceipt('fastpeoplesearch',receipt);ui.core.mailContinuationRequest('fastpeoplesearch',{});
+  const response={status:'confirmation_ready',route_id:item.site_id,operation_id:item.operation_id,request_id:item.mail_contact.request_id,receipt_ref:receipt.receipt_ref,automatic_execution:false,
+    confirmation_url:'https://www.fastpeoplesearch.com/optout/removal?'+new URLSearchParams({firstname:'Example',middlename:'',lastname:'Person',email:item.mail_contact.contact_email,ticketid:'12345678'})};
+  const operation=ui.core.prepareMailContinuation(item.site_id,response,{});ui.core.recordMailContinuation(item.site_id,operation.operationId,{status:'prepared'});ui.render();
+  return ui;
+}
+
+test('a prominent next-step prompt shows the request-specific removal email and exact identity requirement without sending anything',async()=>{
+  const ui=await detailPromptFixture(),panel=ui.byId('next-steps-panel'),card=ui.byId('next-step-fastpeoplesearch');
+  assert.ok(panel);assert.equal(panel.attributes.get('aria-labelledby'),'next-steps-heading');
+  const email=ui.core.dashboard().items.find(item=>item.site_id==='fastpeoplesearch').mail_contact.contact_email;
+  assert.ok(card.textContent.includes(email));assert.equal(card.textContent.includes('person@example.test'),false);
+  assert.match(card.textContent,/date of birth/i);assert.match(card.textContent,/street address/i);assert.match(card.textContent,/city/i);assert.match(card.textContent,/ZIP/i);
+  assert.equal(ui.byId('next-step-usphonebook'),undefined);assert.deepEqual(ui.posted,[]);assert.deepEqual(ui.mailCalls,[]);
+  const action=ui.byId('next-step-fastpeoplesearch-primary');assert.match(action.attributes.get('aria-label'),/FastPeopleSearch/);assert.equal(action.attributes.get('aria-describedby'),'next-step-fastpeoplesearch-help');
+});
+
+test('verification prompts name the broker and show its captured recipient without opening a mailbox',async()=>{
+  const ui=await fixture();const operation=ui.core.prepare('peopledatalabs-form');
+  ui.core.recordCompanion('peopledatalabs-form',operation.operationId,{status:'verification_sent',route_verified:true,evidence:'fresh_visible_success'});ui.render();
+  const card=ui.byId('next-step-peopledatalabs-form');assert.ok(card.textContent.includes('person@example.test'));
+  assert.ok(ui.byId('next-step-peopledatalabs-form-heading').textContent.includes('People Data Labs'));assert.match(card.textContent,/verification message/);
+  assert.deepEqual(ui.posted,[]);assert.deepEqual(ui.mailCalls,[]);
+});
+
+test('providing missing information focuses only the existing continuation using opaque references',async()=>{
+  const ui=await detailPromptFixture();await ui.click(ui.byId('next-step-fastpeoplesearch-primary'));
+  assert.deepEqual(ui.posted.map(value=>value.action),['ping','focus-existing']);
+  const request=ui.posted[1];assert.equal(request.stage,'continuation');assert.equal(request.routeId,'fastpeoplesearch');
+  assert.deepEqual(Object.keys(request).sort(),['action','authorized','operationId','receiptRef','requestId','routeId','stage'].sort());
+  assert.equal(JSON.stringify(request).includes('@'),false);assert.equal(JSON.stringify(request).includes('https:'),false);assert.deepEqual(ui.mailCalls,[]);
+  assert.match(ui.byId('campaign-feedback').textContent,/existing form is open in Chrome/);assert.equal(ui.core.dashboard().counts.removed,0);
+});
+
+test('a changed request or route hold while the companion preflights prevents stale focus',async()=>{
+  const ui=await detailPromptFixture({beforeFocusPing:core=>core.holdRoute('fastpeoplesearch')});
+  await ui.click(ui.byId('next-step-fastpeoplesearch-primary'));assert.deepEqual(ui.posted.map(value=>value.action),['ping']);
+  ui.render();assert.equal(ui.byId('next-step-fastpeoplesearch'),undefined);
+});
+
+test('unavailable or outdated companions give a manual existing-tab fallback without opening or repeating anything',async()=>{
+  for(const options of [{focusAvailable:false},{focusCapability:false}]){
+    const ui=await detailPromptFixture(options);await ui.click(ui.byId('next-step-fastpeoplesearch-primary'));
+    assert.ok(ui.posted.every(value=>['ping','focus-existing'].includes(value.action)));assert.deepEqual(ui.mailCalls,[]);
+    assert.match(ui.byId('campaign-feedback').textContent,/existing|current tab|Chrome/);assert.equal(ui.core.snapshot().items.fastpeoplesearch.continuation.result,'prepared');
+  }
+});
+
+test('reviewing a next step opens its existing request details and moves keyboard focus to the summary',async()=>{
+  const ui=await detailPromptFixture();await ui.click(ui.byId('next-step-fastpeoplesearch-review'));
+  const details=ui.byId('request-steps-fastpeoplesearch');assert.equal(details.open,true);assert.equal(ui.document.activeElement,details.querySelector('summary'));assert.deepEqual(ui.posted,[]);
+});
+
+test('next-step renders preserve an intentional focused control and pause suppresses action cards',async()=>{
+  const ui=await detailPromptFixture();ui.byId('next-step-fastpeoplesearch-primary').focus();ui.render();
+  assert.equal(ui.document.activeElement,ui.byId('next-step-fastpeoplesearch-primary'));
+  await ui.core.api('/api/campaign',{method:'POST',body:JSON.stringify({action:'pause'})});ui.render();
+  assert.equal(ui.byId('next-step-fastpeoplesearch'),undefined);assert.match(ui.byId('next-steps-panel').textContent,/paused/);assert.deepEqual(ui.posted,[]);
 });

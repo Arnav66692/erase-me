@@ -2076,6 +2076,28 @@ input:disabled { opacity:1; color:var(--muted); background:var(--panel, var(--pa
 .clarification-panel { scroll-margin-top:84px; }
 .clarification-panel form,.location-fields>div { min-width:0; }
 .clarification-panel input { max-width:100%; }
+.next-steps-panel {
+  grid-column:1/-1;
+  min-width:0;
+  margin:0 0 16px;
+  border:2px solid var(--ink);
+  padding:24px;
+}
+.public-tools .next-steps-panel h2 { margin:0 0 10px; font:48px/1 var(--display); }
+.next-steps-intro { margin:0 0 20px; }
+.next-step-card { min-width:0; padding:20px 0; border-top:1px solid var(--ink); }
+.next-step-card h3 { margin:0 0 16px; font:24px/1.15 var(--sans); }
+.next-step-card p { margin:12px 0; }
+.next-step-email { display:grid; gap:4px; min-width:0; padding:12px; border:1px solid var(--ink); font:15px/1.4 var(--mono); }
+.next-step-email bdi { min-width:0; overflow-wrap:anywhere; user-select:text; }
+.next-step-email-role { color:var(--muted); font:14px/1.4 var(--sans); }
+.next-step-card .public-route-actions { margin-top:16px; }
+.public-broker-steps { scroll-margin-top:84px; }
+@media(max-width:760px) {
+  .next-steps-panel { padding:18px; }
+  .public-tools .next-steps-panel h2 { font-size:40px; }
+  .next-step-card h3 { font-size:22px; }
+}
 @media(max-width:760px) {
   .public-coverage,#coverage-note { font-size:14px; }
   .clarification-panel { padding:22px 18px; gap:20px; }

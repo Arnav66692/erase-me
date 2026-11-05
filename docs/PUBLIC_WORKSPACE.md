@@ -16,7 +16,22 @@ submit forms. The person starts an individual broker action or authorizes a revi
 batch with its displayed fields.
 There are no recurring checks, background alarms, inbox polls or automatic resubmissions.
 
-Companion 0.6.0 can initiate People Data Labs email verification and prefill the initial
+The **Next steps** section shows the original email for each started request and
+asks for the broker's specific outstanding step. It distinguishes a separate removal
+contact from a personal or business address. New actions save that recipient when
+they start; older typed-email actions without a saved recipient say it is unknown.
+Prepared, authenticated FastPeopleSearch and USPhonebook matching forms ask for a
+full date of birth **or** current street address, with city, state and ZIP. The person
+enters those values directly on the official form.
+
+**Provide missing information** returns to that already-open matching form through
+companion 0.7.0. It checks the original tab, document and browser session before
+activation. It does not open a new URL or resend a request. Closed, changed or older
+unproven tabs need manual review. **Review request steps** opens the existing local
+instructions without contacting a broker. Holds and pause suppress actionable prompts;
+unknown and imported outcomes ask for review instead of claiming a confirmed match.
+
+Companion 0.7.0 can initiate People Data Labs email verification and prefill the initial
 USPhonebook, SearchPeopleFree, FastPeopleSearch, Apollo, Spokeo, AdvancedBackgroundChecks
 and four reviewed Turkish request forms. Optional guarded submission applies only to
 FastPeopleSearch's initial verification form and NumaraAra's request form. The review
