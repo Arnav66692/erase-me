@@ -85,14 +85,12 @@ The original SMTP/IMAP setup helpers are retained for explicit operator configur
 
 ## Vercel and public hosting
 
-The Vercel deployment is a synthetic demo. It does not run the local browser, SQLite
-database or real removal requests. Local data and credentials are never copied into
-that preview. No domain or public server is needed for the local app.
+The public deployment runs a browser-local workspace. Build it with `python3 tools/build_preview.py`, then deploy `preview/` to Vercel. The generated public HTML loads the local workspace core before the shared interface controller and fails closed if that core is missing. Public CSP blocks native HTML form submissions. The hosted API only describes capabilities and rejects personal-data writes without parsing or storing their bodies.
 
-A public signup service requires a separate authenticated backend, HTTPS, persistent
-storage and a host for browser execution. The local self-attested session mode must
-not be published as a public login system. Free source code does not guarantee free
-managed hosting at arbitrary scale.
+No database, authentication service, inbox, paid API, cron or persistent hosted browser is needed. Supported form actions run through the open-source Chrome companion in the user's own browser. The companion ZIP is generated from an explicit file allowlist and served at `/downloads/erase-me-companion.zip`. The source and install instructions are public. No Chrome Web Store purchase is required for loading the unpacked extension.
 
-The application is MIT-licensed. Browser, recognition binaries and model weights
-retain their own licenses; see [third-party licenses](../THIRD_PARTY_LICENSES.md).
+Never expose the separate local Python API or its session-recovery mode publicly. Do not copy local configuration, profiles or SQLite data into the deployment.
+
+Current scope is documented in [PUBLIC_WORKSPACE.md](PUBLIC_WORKSPACE.md). Broker verification and CAPTCHA steps remain with the user, and no independently verified deletion is established by this release.
+
+The application is MIT-licensed. Browser, recognition binaries, fonts and model weights retain their own licenses. See [third-party licenses](../THIRD_PARTY_LICENSES.md).

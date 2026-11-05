@@ -14,6 +14,8 @@
   let sessionGeneration = 0;
 
   const statusLabels = {
+    ready: 'Ready to start', opened: 'Form opened', uncertain: 'Check broker outcome', verification_sent: 'Finish broker verification',
+    user_reported_requested: 'You reported submitting', user_reported_completed: 'You reported completing',
     planned: 'Queued', queued: 'Queued', scanning: 'Checking', found: 'Match found',
     requested: 'Requested', submitted: 'Requested', pending: 'In progress',
     awaiting_confirmation: 'Confirming', confirmation_pending: 'Confirming',
@@ -43,8 +45,11 @@
   }
   async function api(path, options = {}) {
     let response;
+    if (document.documentElement?.dataset?.browserWorkspace === 'true' && typeof EraseWorkspace === 'undefined') {
+      throw new Error('Workspace components did not load. Refresh this page before entering details.');
+    }
     try {
-      response = await fetch(path, {
+      response = await (typeof EraseWorkspace !== 'undefined' ? EraseWorkspace.api : fetch)(path, {
         credentials: 'same-origin', cache: 'no-store', ...options,
         headers: { 'Content-Type': 'application/json', 'X-Erase-Me': '1', ...options.headers }
       });
@@ -135,7 +140,7 @@
       if (url) { title.href = url; title.target = '_blank'; title.rel = 'noopener noreferrer'; title.setAttribute('aria-label', `${item.name || 'Site'} — open ${item.status === 'needs_broker_step' ? 'broker portal' : 'listing'} in a new tab`); }
       info.append(title, node('p', 'listing-domain', item.domain || ''));
       if (item.detail) info.append(node('p', 'listing-detail', item.detail));
-      if (config?.local_only && ['awaiting_confirmation', 'needs_broker_step'].includes(item.status) && typeof item.site_id === 'string') {
+      if (config?.local_only && !config?.browser_workspace && ['awaiting_confirmation', 'needs_broker_step'].includes(item.status) && typeof item.site_id === 'string') {
         const brokerSteps = item.status === 'needs_broker_step';
         if (brokerSteps) info.append(node('p', 'listing-detail', 'Open the broker email and finish the portal steps before recording completion here.'));
         const confirmation = node('button', 'button button-secondary broker-confirmation', brokerSteps ? 'I completed the broker steps' : 'I completed the broker email step');
@@ -160,6 +165,7 @@
       fragment.append(row);
     }
     $('listing-items').replaceChildren(fragment);
+    if (config?.browser_workspace && typeof EraseWorkspaceUI !== 'undefined') EraseWorkspaceUI.decorate(items);
     setText('listing-total', `${items.length} ${items.length === 1 ? 'site' : 'sites'}`);
     show($('listings-empty'), selected.length === 0);
     const empty = $('listings-empty');
@@ -222,8 +228,10 @@
       (campaign.run_in_progress ? 'One check is running. Refresh status to see its progress.' : 'Choose Run check when you’re ready. No recurring checks are scheduled.') :
       (dateLabel(campaign.next_check_at, true) || 'Waiting for the first scan'));
     renderListings(); renderActivity(); renderQuestions();
+    if (config?.browser_workspace && typeof EraseWorkspaceUI !== 'undefined') EraseWorkspaceUI.tools();
     show($('welcome-view'), false); show($('dashboard-view')); show($('logout-button'), !config?.local_only);
     show($('edit-location'), !config?.synthetic_only);
+    if(config?.browser_workspace) { setText('run-button', 'Prepare route plan'); setText('next-check-date', 'Choose a broker action below. Nothing runs on a schedule.'); }
   }
   function schedulePoll() {
     stopPolling();
@@ -331,7 +339,7 @@
         await loadDashboard();
         setText('campaign-feedback', action === 'pause' ? 'Future work is paused. Requests already sent may still be processed by sites.' : action === 'resume' ?
           (manualMode() ? 'Checks are allowed. Choose Run check to start; recurring checks remain off.' : 'Protection resumed. The next check is queued.') :
-          (manualMode() ? 'One check has started. Use Refresh status to see progress. Recurring checks remain off.' : 'A check is queued. Progress will appear here as sites are processed.'));
+          (config?.browser_workspace ? 'Your route plan is ready. Start a broker action below. No broker has been contacted.' : manualMode() ? 'One check has started. Use Refresh status to see progress. Recurring checks remain off.' : 'A check is queued. Progress will appear here as sites are processed.'));
         show($('campaign-feedback'));
       } catch (error) { errorAt('page-error', error.message); }
     });
@@ -354,6 +362,7 @@
       setText('page-error', 'Your account and history have been deleted.'); show($('page-error'));
     } catch (error) { errorAt('delete-error', error.message); }
   }));
+  document.addEventListener('erase-workspace-change', () => loadDashboard());
   document.addEventListener('visibilitychange', () => { if (document.hidden) stopPolling(); else if (dashboard) loadDashboard(); });
 
   async function init() {
@@ -377,6 +386,7 @@
         $('signup-panel').querySelector('.form-description').textContent = 'Enter your own details. This local profile does not verify ownership of the email address.';
         $('privacy-dialog').querySelector('.dialog-body > p').textContent = 'This local app stores your profile and request history on this computer. It does not connect to or read your inbox.';
       }
+      if(config.browser_workspace && typeof EraseWorkspaceUI !== 'undefined') EraseWorkspaceUI.configure();
       if (config.synthetic_only) {
         setText('mode-badge', 'Public demo');
         $('privacy-dialog').querySelector('.dialog-body > p').textContent = 'This public demo uses a fixed sample profile. It does not accept personal profiles or send real removal requests.';

@@ -58,9 +58,7 @@ The server binds to loopback and rejects local mode on public origins. The same 
 keeps its session. Email alone cannot recover a profile; the machine owner can use
 `python3 tools/local_access.py` to reopen it locally without sending email.
 
-The Vercel preview remains synthetic-only and accepts only its sample profile.
-It contains no real-user database or removal worker. Public signup requires separate
-hosting and authentication work; do not publish local-mode authentication as a public API.
+The public site now runs a separate browser-local workspace for real profiles, with supported actions through the Chrome companion. See [PUBLIC_WORKSPACE.md](PUBLIC_WORKSPACE.md). It does not expose this local server or its authentication API.
 
 The app uses Python 3.10+ and the standard library. Run verification with
 `.venv/bin/python -m pytest -q` and `node --test tests/test_manual_ui.cjs`.

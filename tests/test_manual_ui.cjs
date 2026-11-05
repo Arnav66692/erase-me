@@ -33,7 +33,7 @@ class Element {
   closest(selector) { return this.querySelector(selector); }
 }
 
-async function boot({ manual = true, localOnly = false, signedIn = true, fragment = '', questions = [], items = [] } = {}) {
+async function boot({ publicMarker = false, manual = true, localOnly = false, signedIn = true, fragment = '', questions = [], items = [] } = {}) {
   const elements = new Map();
   const get = id => {
     if (!elements.has(id)) elements.set(id, new Element(id));
@@ -42,12 +42,12 @@ async function boot({ manual = true, localOnly = false, signedIn = true, fragmen
   const filters = ['all', 'pending', 'removed', 'blocked'].map(name => {
     const e = new Element(name); e.dataset.filter = name; return e;
   });
-  const counters = { scheduled: 0, dashboardReads: 0, runs: 0, exchanges: 0, confirmations: 0 };
+  const counters = { requests: 0, scheduled: 0, dashboardReads: 0, runs: 0, exchanges: 0, confirmations: 0 };
   const location = { hash: fragment, pathname: '/', search: '' };
   const history = { replaceState(_state, _title, url) { assert.equal(url, '/'); location.hash = ''; } };
   const campaign = { status: 'active', run_in_progress: false, next_check_at: '2027-01-01T00:00:00Z' };
   const document = {
-    hidden: false, activeElement: null,
+    hidden: false, activeElement: null, documentElement: { dataset: { browserWorkspace: publicMarker ? 'true' : '' } },
     getElementById: get,
     createElement: () => new Element(),
     createDocumentFragment: () => new Element(),
@@ -59,6 +59,7 @@ async function boot({ manual = true, localOnly = false, signedIn = true, fragmen
     setTimeout: () => { counters.scheduled += 1; return counters.scheduled; },
     clearTimeout() {},
     fetch: async (url, options = {}) => {
+      counters.requests += 1;
       let data;
       if (url === '/api/config') {
         if (fragment.startsWith('#local-session=')) assert.equal(location.hash, '', 'Token must be removed before any request');
@@ -207,4 +208,16 @@ test('broker portal completion stays unverified without a request or removal cou
   filters.find(e => e.dataset.filter === 'removed').listeners.get('click')();
   assert.equal(get('listing-items').children[0].children.length, 0);
   assert.equal(counters.scheduled, 0);
+});
+
+
+test('hosted workspace fails closed when its local core script is unavailable', async () => {
+  const { get, counters } = await boot({ publicMarker: true, signedIn: false });
+  assert.equal(counters.requests, 0);
+  get('signup-name').value = 'Example Person';
+  get('signup-email').value = 'person@example.test';
+  get('signup-age').value = '35';
+  get('signup-consent').checked = true;
+  await get('signup-form').listeners.get('submit')({ preventDefault() {}, submitter: new Element() });
+  assert.equal(counters.requests, 0, 'Personal fields must never fall back to hosting API');
 });

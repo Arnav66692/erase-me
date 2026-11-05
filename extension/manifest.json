@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "Erase Me Companion",
+  "version": "0.2.0",
+  "description": "Fill approved privacy forms in your browser. No inbox access or scheduled work.",
+  "permissions": ["scripting", "storage"],
+  "optional_host_permissions": [
+    "https://privacy.peopledatalabs.com/*",
+    "https://www.usphonebook.com/*",
+    "https://www.searchpeoplefree.com/*",
+    "https://www.fastpeoplesearch.com/*"
+  ],
+  "background": {"service_worker": "background.js"},
+  "action": {"default_popup": "popup.html", "default_title": "Erase Me Companion"},
+  "content_scripts": [{"matches": ["https://erase-me-preview.vercel.app/*"], "js": ["bridge.js"], "run_at": "document_start"}]
+}

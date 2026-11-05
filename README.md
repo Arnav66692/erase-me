@@ -1,30 +1,39 @@
 # Erase Me
 
-[Live interface demo](https://erase-me-preview.vercel.app). The hosted version accepts sample data only. For real supported requests, run the local app below or install the skill.
+[Open the live workspace](https://erase-me-preview.vercel.app). Enter your own details, keep a private request ledger in your browser, and start each broker action explicitly. No inbox connection, server profile, subscription or scheduled checks.
 
-## Local app
+## Public browser workspace
 
-Enter your own name, age and email, authorize requests, and run checks when you choose.
-The app has no inbox connection and requires no email password. Broker verification
-emails go directly to the address you enter; you finish any required broker steps.
-Recurring checks are off.
+Profiles and history stay in this browser on this device. The host serves the interface, not a personal-data database. No email login is required. Clearing browser data deletes the workspace, so export a private backup if you need one. Other people with access to this browser profile can read the saved details.
+
+Use the free [Chrome companion](https://erase-me-preview.vercel.app/companion.html) for supported form actions. Download the ZIP, load it unpacked in desktop Chrome, grant access to the four reviewed broker sites, and refresh the workspace. Source is in `extension/`.
+
+| Route | Working action | Required next step |
+| --- | --- | --- |
+| People Data Labs | Start the official deletion portal’s verification email | You open the email and finish the portal |
+| USPhonebook | Fill the reviewed first form | You complete CAPTCHA, agreement, submission and emailed record-selection form |
+| SearchPeopleFree | Fill the reviewed first form | You complete the challenge, email and record-removal session |
+| FastPeopleSearch | Fill the reviewed first form | You complete the challenge, email and matching-record steps |
+| Apollo | Open the official removal portal | Business-email verification, completed by you |
+| Spokeo | Open the official opt-out route | Confirm your exact listing and complete the broker steps. Current page access was blocked in our research |
+| SmartBackgroundChecks | Open the official removal route | Current page access was blocked in our research. No companion action is enabled |
+
+Form preparation, verification initiation, user-reported submission and verified deletion are distinct. A submitted form is never counted as a deletion. No independently verified deletion is established by this release. See [public app behavior](docs/PUBLIC_WORKSPACE.md), [current route research](docs/BROKER_ROUTE_RESEARCH.md) and [earlier evidence](docs/BROKER_VERIFICATION.md).
+
+Managed CAPTCHA challenges, broker email links and identity checks remain user steps. The companion has no inbox or alarm permission. It holds interrupted operations rather than repeating them. The workspace has no background polling, automatic re-checks or resubmission.
+
+## Local Python app
+
+The separate local app remains available with its existing data and permissions.
 
 ```sh
 python3 tools/configure_service.py --local
 python3 tools/run_service.py
 ```
 
-Open http://127.0.0.1:8766. See [setup](docs/DEPLOYMENT.md),
-[app behavior](docs/WEB_APP.md), and [broker evidence](docs/BROKER_VERIFICATION.md).
-Only supported routes run. Requests are never counted as removals without evidence.
-The app does not yet have verified end-to-end removal coverage for the whole catalog.
+Open http://127.0.0.1:8766. See [local setup](docs/DEPLOYMENT.md) and [local app behavior](docs/WEB_APP.md).
 
-CAPTCHA attempts use free local Tesseract and whisper.cpp where supported. No paid
-solver or cloud inference is required; unsupported challenges remain blocked.
-See [recognition limits](docs/LOCAL_CAPTCHA.md).
-
-The Vercel preview is a synthetic interface demo. It has no personal data or real
-removal worker. The application is MIT-licensed; dependencies keep their own licenses.
+The application is MIT-licensed. Dependencies and bundled fonts keep their licenses. No paid service is needed for the public workspace or unpacked companion.
 
 ## Original agent skill
 

@@ -21,6 +21,7 @@
         <svg class="brand-mark" viewBox="0 0 20 20" aria-hidden="true"><path d="M2 5h16M2 10h11M2 15h6"/></svg>
         <span>Erase Me</span>
       </a>
+      <span class="header-caption">Your information belongs with you.</span>
       <nav class="header-actions" aria-label="Account">
         <span id="mode-badge" class="mode-badge" hidden></span>
         <button class="text-button" id="privacy-button" type="button">Privacy</button>
@@ -39,25 +40,29 @@
       <div class="hero">
 
         <div class="container hero-inner">
-          <h1>Your life.<br>Your name.<br><mark>Your business.</mark></h1>
-          <p class="hero-lede">Start removal work on people-search sites. Keep a record of every request and every step still waiting on you.</p>
+          <p class="hero-index"><span>Personal privacy, on your terms.</span><span aria-hidden="true">[ erase-me ]</span></p>
+          <div class="headline-crop">
+            <i aria-hidden="true"></i><i aria-hidden="true"></i><i aria-hidden="true"></i><i aria-hidden="true"></i>
+            <h1>Your life.<br><mark>Less public.</mark></h1>
+          </div>
+          <p class="hero-lede">Make requests to the sites holding your information. Keep your details here, and keep track of what happens next.</p>
           <div class="hero-actions">
             <a class="button button-light" href="#signup-panel">Get started</a>
             <a class="button button-ghost" href="https://github.com/Arnav66692/erase-me">Get the source</a>
           </div>
         </div>
         <div class="container hero-facts" aria-label="What Erase Me does not do">
-          <span>No inbox access</span><span>No ID uploads</span><span>Nothing runs until you click</span><span>Runs on your computer</span>
+          <span>Your details stay with you</span><span>No inbox connection</span><span>Every run starts with you</span>
         </div>
       </div>
 
       <div class="light">
         <section class="container framed start" id="start" aria-labelledby="start-heading">
           <div class="start-copy">
-            <h2 id="start-heading">Privacy is a process.<br><span class="accent-text">Keep the receipts.</span></h2>
-            <p class="section-lede">The current local app can start People Data Labs email verification. Other broker routes are still being developed. No complete removal has been independently verified in the pilot.</p>
+            <h2 id="start-heading">Take it off the list.<br><span class="accent-text">Keep the record.</span></h2>
+            <p class="section-lede">Each broker has its own removal process. This workspace helps you open the right form, supply the required details and record the response. A request and a verified removal are different stages.</p>
             <ul class="fact-list">
-              <li><span class="fact-label">Stored</span><span>On the computer running this app.</span></li>
+              <li><span class="fact-label">Stored</span><span>In your browser workspace.</span></li>
               <li><span class="fact-label">Sent</span><span>Only the fields a removal form asks for.</span></li>
               <li><span class="fact-label">Counted</span><span>A removal, once the listing is actually gone.</span></li>
             </ul>
@@ -65,9 +70,10 @@
 
           <div class="onboarding-column">
             <section id="signup-panel" class="form-card" aria-labelledby="signup-heading">
-              <span class="form-kicker">Create your profile</span>
-              <h2 id="signup-heading">Make yourself harder to find.</h2>
-              <p class="form-description">Three details to get started. We ask for more only when we need a better match.</p>
+              <div class="window-body">
+              <span class="form-kicker">Your private workspace</span>
+              <h2 id="signup-heading">Keep your life yours.</h2>
+              <p class="form-description">Start with three details. Add a location only when a site needs a better match.</p>
               <form id="signup-form">
                 <label for="signup-name">Full name</label>
                 <input id="signup-name" name="name" autocomplete="name" maxlength="120" placeholder="First and last name" required>
@@ -82,9 +88,12 @@
               </form>
               <p class="card-footnote">Use your own email address for broker replies. Complete broker verification steps when required. No ID uploads.</p>
               <p class="login-switch">Already started? <button id="show-login" class="inline-button" type="button">Log in</button></p>
+
+              </div>
             </section>
 
             <section id="login-panel" class="form-card" aria-labelledby="login-heading" hidden>
+              <div class="window-body">
               <span class="form-kicker">Welcome back</span>
               <h2 id="login-heading">Pick up where you left off.</h2>
               <p class="form-description">Enter your email and we’ll send you a sign-in code.</p>
@@ -95,9 +104,12 @@
                 <p id="login-error" class="form-error" role="alert" hidden></p>
               </form>
               <p class="login-switch">New here? <button id="show-signup" class="inline-button" type="button">Get started</button></p>
+
+              </div>
             </section>
 
             <section id="verification-panel" class="form-card" aria-labelledby="verification-heading" hidden>
+              <div class="window-body">
               <span class="form-kicker">One quick check</span>
               <h2 id="verification-heading">Check your inbox.</h2>
               <p class="form-description">Enter the sign-in code sent to <strong id="verification-email"></strong>.</p>
@@ -109,19 +121,21 @@
                 <p id="verification-error" class="form-error" role="alert" hidden></p>
               </form>
               <p class="login-switch"><button id="back-to-login" class="inline-button" type="button">Use a different email or request a new code</button></p>
+
+              </div>
             </section>
           </div>
         </section>
 
         <section class="container framed how" id="how" aria-labelledby="how-heading">
           <div class="how-head">
-            <h2 id="how-heading">What happens when you<br>click <span class="accent-text">Run check</span></h2>
-            <p class="section-lede">One bounded batch, then it stops. Click again when you want the next check.</p>
+            <h2 id="how-heading">A smaller footprint.<br><span class="accent-text">One site at a time.</span></h2>
+            <p class="section-lede">You choose when to begin. Broker verification stays with you. Nothing comes back to run in the background.</p>
           </div>
           <ol class="step-rows">
-            <li><span class="step-label">Find</span><div><h3>Search for your listings</h3><p>People-search sites and data brokers are checked for your name, age and city. A name alone never counts as a match.</p></div></li>
-            <li><span class="step-label">Request</span><div><h3>Ask each site to remove them</h3><p>Supported removal forms get only the fields they ask for. When a site emails you to confirm, you open that email yourself.</p></div></li>
-            <li><span class="step-label">Verify</span><div><h3>Check that the page is gone</h3><p>A request sent is not a removal. Erase Me re-opens the listing and counts it only when it is gone.</p></div></li>
+            <li><span class="step-label">Find</span><div><h3>Search for your listings</h3><p>Open the broker’s search and check that the listing is yours. Use your name together with an age or location before requesting removal.</p></div></li>
+            <li><span class="step-label">Request</span><div><h3>Ask each site to remove them</h3><p>Open the official form. Supported routes can use the browser companion to fill required fields. Complete any broker email or verification step yourself.</p></div></li>
+            <li><span class="step-label">Verify</span><div><h3>Check that the page is gone</h3><p>Save the broker’s response and recheck the original listing. Your report stays distinct from an independently verified removal.</p></div></li>
           </ol>
         </section>
       </div>
@@ -155,6 +169,7 @@
       <div class="light dash-body">
         <div class="container framed">
           <p id="campaign-feedback" class="feedback" role="status" hidden></p>
+          <div id="public-tools" class="public-tools" hidden></div>
           <section id="reply-attention-panel" class="notice attention-notice reply-attention" aria-labelledby="reply-attention-heading" hidden>
             <div><h2 id="reply-attention-heading">A broker reply needs attention</h2><ul id="reply-questions"></ul><p>Review the reply in your mailbox. No additional details are sent automatically.</p></div>
           </section>
@@ -222,15 +237,16 @@
       <p>Removal depends on each site. Public records and every copy of your information cannot be erased.</p>
       <span class="footer-note"><a href="https://github.com/Arnav66692/erase-me">Open source, MIT</a>. <a href="https://github.com/Arnav66692/erase-me#claude-code-installation">Install the skill</a>.</span>
     </div>
+    <div class="footer-signature" aria-hidden="true"><span>Keep your life</span><span>yours. <svg viewBox="0 0 100 60"><path d="M10 12h80M10 30h55M10 48h28"/></svg></span></div>
   </footer>
 
   <dialog id="privacy-dialog" aria-labelledby="privacy-heading">
     <div class="dialog-body">
       <span class="form-kicker">Your information</span>
       <h2 id="privacy-heading">Where your data goes.</h2>
-      <p>Your profile and request history are stored on the computer running this app. If this app is hosted, that means the service’s server.</p>
-      <p>The local app has no inbox access. Supported broker forms receive the details needed for your request. Brokers may send verification emails directly to the address you enter, and you complete those steps yourself.</p>
-      <p>Demo mode uses synthetic listings and does not send removal requests. You can pause future work or delete your account and its stored history. Deleting your account does not recall requests already sent to other sites.</p>
+      <p>The public workspace stores your profile and request history in this browser. Your details are not sent to the site’s server. Other people using this browser profile may be able to read them.</p>
+      <p>Erase Me has no inbox access. A broker form receives the fields needed for your request. Brokers may send verification emails to the address you enter, and you complete those steps yourself.</p>
+      <p>Your workspace does not run scheduled checks. You can export your record or delete it from this browser. Deleting the workspace does not recall information or requests already sent to brokers.</p>
       <button class="button button-primary dialog-close" type="button">Got it</button>
     </div>
   </dialog>
@@ -238,7 +254,7 @@
     <div class="dialog-body">
       <span class="form-kicker">Delete account</span>
       <h2 id="delete-heading">Delete your profile here.</h2>
-      <p>This deletes your profile and request history from this app and stops future work. Requests already sent to sites cannot be recalled.</p>
+      <p>This deletes your profile and request history from this workspace. Requests already sent to brokers cannot be recalled.</p>
       <p class="muted">This action cannot be undone.</p>
       <div class="dialog-actions">
         <button id="confirm-delete" class="button button-danger" type="button">Delete my account and history</button>

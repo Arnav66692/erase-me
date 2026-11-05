@@ -36,33 +36,18 @@ def client():
     thread.join()
 
 
-def test_public_demo_rejects_personal_data(client):
-    assert client('GET','/api/config')[1]['synthetic_only'] is True
-    status,_=client('POST','/api/signup',{'name':'Other Person','age':45,'email':'other@example.com','authorized':True})
-    assert status==400
-    assert client('GET','/api/dashboard')[0]==401
+def test_public_workspace_has_no_server_profile_or_synthetic_results(client):
+    status, config = client('GET', '/api/config')
+    assert status == 200 and config['browser_workspace'] is True
+    assert config['synthetic_only'] is False and config['server_profiles'] is False
+    assert config['inbox_connected'] is False and config['manual'] is True
+    assert client('GET', '/api/dashboard')[0] == 410
 
 
-def test_public_demo_full_flow(client):
-    body={k:preview.PROFILE[k] for k in ('name','email','age')}
-    assert client('POST','/api/signup',body)[0]==400
-    body['authorized']=True
-    assert client('POST','/api/signup',body)[1]['demo_code']==preview.CODE
-    assert client('POST','/api/verify',{'email':body['email'],'code':'000000'})[0]==400
-    assert client('POST','/api/verify',{'email':body['email'],'code':preview.CODE})[0]==200
-    assert client('POST','/api/campaign',{'action':'run'})[0]==200
-    dashboard=client('GET','/api/dashboard')[1]
-    assert dashboard['counts']['removed']==2
-    assert all(row['domain'].endswith('.example') for row in dashboard['items'])
-    assert client('POST','/api/profile',{'city':'New city'})[0]==400
-    assert client('POST','/api/campaign',{'action':'pause'})[0]==200
-    assert client('GET','/api/dashboard')[1]['campaign']['status']=='paused'
-    assert client('POST','/api/campaign',{'action':'resume'})[0]==200
-    assert client('DELETE','/api/account')[0]==200
-    assert client('GET','/api/dashboard')[0]==401
-
-
-def test_malformed_cookie_cannot_crash_preview():
-    # Defensive state normalization protects dashboard indexing.
-    data=preview.dashboard({'start':preview.time.time(),'paused':True,'stage':0})
-    assert data['counts']['found']==0
+def test_public_server_rejects_personal_writes_without_echoing_them(client):
+    body = {'name': 'Example Person', 'email': 'person@example.test', 'age': 40}
+    for path in ('/api/signup', '/api/profile', '/api/campaign', '/api/verify'):
+        status, response = client('POST', path, body)
+        assert status == 405
+        assert body['email'] not in json.dumps(response)
+    assert client('DELETE', '/api/account')[0] == 405
