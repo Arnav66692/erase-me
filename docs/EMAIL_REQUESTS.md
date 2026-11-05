@@ -44,3 +44,20 @@ the accuracy checkbox, CAPTCHA and final submission stay with the person. Other
 confirmation routes remain held. Neither a
 receipt nor form preparation proves accepted removal or deletion. No recurring
 mailbox checks run, and personal inboxes stay disconnected.
+
+
+## Browser-local contact alternatives
+
+The public audit attaches 24 fixed published contacts, with their official source and
+check date. **Prepare private request** is available only for a purpose-verified privacy
+channel and requires the person’s own record reference plus explicit authorization.
+**Prepare procedure question** is used for support or registry contacts and rejects
+record identifiers; its text contains no profile name or other personal fields.
+
+These drafts are shown locally for review, copying or private download. The recipient
+is not editable, the message body is not stored in the ledger, and only the preparation
+event is saved. Nothing is sent or uploaded to a mail API. The person chooses an
+appropriate account and sends any request themselves. Route holds, paused campaigns
+and uncertain earlier outcomes block preparing another contact request. Draft text,
+provider instructions and marketing registrations are never accepted-request or
+deleted-record evidence.

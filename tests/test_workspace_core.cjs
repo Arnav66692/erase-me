@@ -298,9 +298,9 @@ test('backup retains a valid held operation reference without importing accepted
   assert.throws(() => restored.core.prepare(PDL), /already started/);
 });
 
-function browserTab(storage, locks, uuid) {
+function browserTab(storage, locks, uuid, catalog = Routes) {
   const vm = require('node:vm'), fs = require('node:fs'), path = require('node:path');
-  const context = { localStorage: storage, crypto: { randomUUID: uuid }, navigator: locks ? { locks } : {}, URL, EraseBrokerRoutes: Routes };
+  const context = { localStorage: storage, crypto: { randomUUID: uuid }, navigator: locks ? { locks } : {}, URL, EraseBrokerRoutes: catalog };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../webapp/static/workspace-core.js'), 'utf8'), context);
   return context.EraseWorkspace;
 }
@@ -349,14 +349,16 @@ test('default read-only access does not write recovery state outside the lock', 
 
 function workspaceUIFixture(config={}) {
   const vm = require('node:vm'), fs = require('node:fs'), path = require('node:path');
+  const copied=[],downloads=[];
   class Element {
     constructor() { this.children = []; this.listeners = {}; this.className = ''; this.textContent = ''; this.value = ''; }
     append(...nodes) { this.children.push(...nodes); }
     replaceChildren(...nodes) { this.children=[...nodes]; }
     addEventListener(type, action) { this.listeners[type] = action; }
     setAttribute(key,value) { (this.attributes ||= new Map()).set(key,value); }
+    click() { if(this.download)downloads.push({href:this.href,name:this.download}); }
   }
-  const route = Routes.find(route => route.id === (config.routeId||'usphonebook'));
+  const route = config.route||Routes.find(route => route.id === (config.routeId||'usphonebook'));
   const title = new Element(); title.textContent = route.name;
   const info = new Element(), row = new Element(); row.querySelector = selector => selector === '.listing-title' ? title : info;
   const listing = new Element(); listing.children = [row];
@@ -368,7 +370,7 @@ function workspaceUIFixture(config={}) {
   const resultGate = new Promise(resolve => { resolveResult = resolve; });
   const openGate = new Promise((resolve, reject) => { resolveOpen = resolve; rejectOpen = reject; });
   const calls = { saves: 0, prepares: 0, results: 0 };
-  const workspace = { routes: () => [route], profile: () => ({ email: 'person@example.test' }),
+  const workspace = { routes: () => [route], profile: () => ({ name:'Example Person',email: 'person@example.test' }),
     setEvidence: () => { calls.saves++; return saveGate; }, prepare: () => { calls.prepares++; return prepareGate; },
     recordCompanion: () => { calls.results++; return resultGate; }, opened: () => openGate,
     dashboard:()=>({coverage:null}),...config.workspace };
@@ -378,13 +380,14 @@ function workspaceUIFixture(config={}) {
     postMessage(data, origin) {
       posted.push(data.payload.action);
       queueMicrotask(() => listeners.get('message')?.({ source: window, origin, data: { source: 'erase-companion', requestId: data.requestId,
-        reply: { ok: true, result: data.payload.action === 'ping' ? { routes: [route.id], capabilities:config.capabilities||['usphonebook-continuation-v1','explicit-fields-v1','broker-observation-v1'] } : { status: 'prepared', detail: 'Prepared fixture.' } } } }));
+        reply: { ok: true, result: data.payload.action === 'ping' ? { routes: [route.id], capabilities:config.capabilities||['usphonebook-continuation-v1','explicit-fields-v1','broker-observation-v1','structured-fields-v1'] } : { status: 'prepared', detail: 'Prepared fixture.' } } } }));
     },
     open: url => opened.push(url)
   };
-  const context = { window, location: { origin: 'https://erase-me-preview.vercel.app' }, crypto: { randomUUID: () => 'a'.repeat(32) },
+  const context = { window, location: { origin: 'https://erase-me-preview.vercel.app' }, crypto: { randomUUID: () => 'a'.repeat(32) }, URL,Blob,
+    navigator:{clipboard:{writeText:async value=>{copied.push(value);}}},
     setTimeout, clearTimeout, CustomEvent: class { constructor(type) { this.type = type; } },
-    document: { getElementById: id => elements.get(id), createElement: () => new Element(), dispatchEvent: event => changes.push(event.type) },
+    document: { getElementById: id => elements.get(id), createElement: tag => {const e=new Element();e.tagName=tag.toUpperCase();return e;}, dispatchEvent: event => changes.push(event.type) },
     EraseWorkspace: workspace,EraseRemovalMail:config.mail };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../webapp/static/workspace-ui.js'), 'utf8'), context);
   const item={ site_id: route.id, status: 'ready', input_fields: { first_name: 'Example', last_name: 'Person' },...config.item };
@@ -392,7 +395,8 @@ function workspaceUIFixture(config={}) {
   function find(element, predicate) { if (predicate(element)) return element; for (const child of element.children) { const found = find(child, predicate); if (found) return found; } }
   const findText=text=>find(info,element=>element.textContent===text)||find(toolbox,element=>element.textContent===text);
   const click = text => findText(text).listeners.click();
-  return { click, calls, posted, changes, opened, feedback, resolveSave, resolvePrepare, resolveResult, resolveOpen, rejectOpen,
+  const allLinks=element=>[...(element.href?[element.href]:[]),...element.children.flatMap(allLinks)];
+  return { click, calls, posted, changes, opened, copied,downloads,links:()=>allLinks(info),feedback, resolveSave, resolvePrepare, resolveResult, resolveOpen, rejectOpen,
     tools:()=>context.EraseWorkspaceUI.tools(),render,findText,keyInput:()=>find(info,element=>element.type==='password'),input:label=>find(info,element=>element.attributes?.get('aria-label')===label) };
 }
 test('workspace UI waits for saved fields, operation reservation and result persistence', async () => {
@@ -428,7 +432,7 @@ test('US location selects only global and US routes without claiming more automa
   const { core } = fixture(); await signup(core); await post(core, '/api/profile', { country: 'us' });
   const data = core.dashboard(), expected = Routes.filter(route => route.countries.includes('*') || route.countries.includes('US'));
   assert.equal(data.items.length, expected.length); assert.equal(data.coverage.countryRouteCount, 23);
-  assert.equal(data.coverage.companionRouteCount, 6); assert.equal(data.coverage.hasCountryPack, true);
+  assert.equal(data.coverage.companionRouteCount, expected.filter(route => route.automationLevel === 'companion').length); assert.equal(data.coverage.hasCountryPack, true);
   assert.equal(data.questions.length, 0); assert.equal(data.items.some(item => item.site_id === 'canada411'), false);
   assert.equal(data.items.every(item => item.operation_id === null), true);
 });
@@ -436,7 +440,7 @@ test('non-US packs expose their manual routes and block new actions outside that
   for (const [country, selected] of [['CA', 'canada411'], ['GB', '192com'], ['DE', 'de-11880'], ['TR', 'tr-numaraara']]) {
     const { core } = fixture(); await signup(core); await post(core, '/api/profile', { country }); const data = core.dashboard();
     assert.ok(data.items.some(item => item.site_id === selected)); assert.equal(data.items.some(item => item.site_id === 'spokeo'), false);
-    assert.equal(data.coverage.hasCountryPack, true); assert.equal(data.coverage.companionRouteCount, 2);
+    assert.equal(data.coverage.hasCountryPack, true); assert.equal(data.coverage.companionRouteCount, Routes.filter(route => (route.countries.includes('*') || route.countries.includes(country)) && route.automationLevel === 'companion').length);
     core.opened(selected); assert.equal(core.dashboard().counts.requested, 0);
     assert.throws(() => core.prepare('usphonebook'), /outside your selected country/);
     assert.throws(() => core.opened('usphonebook'), /outside your selected country/);
@@ -810,4 +814,126 @@ test('a manual submission report does not require or save prefill fields left em
     await ui.click('I submitted the request');assert.equal(reports,1);assert.deepEqual(ui.posted,[]);assert.deepEqual(ui.opened,[]);
     assert.match(ui.feedback.textContent,/Broker acceptance and deletion remain unverified/);
   }
+});
+
+test('structured request fields require an own-request review and preserve Unicode paragraphs and phone formatting',async()=>{
+  const f=fixture();await signup(f.core);await post(f.core,'/api/profile',{country:'TR'});
+  const fields={full_name:'Örnek Kişi',phone:'+90 (532) 123-45-67',request_text:'Kendi bilgilerimin kaldırılmasını istiyorum.\r\nLütfen sonucu bildirin.\tTeşekkürler <örnek>.'};
+  f.core.setEvidence('tr-numarasor',fields);
+  assert.throws(()=>f.core.prepare('tr-numarasor'),/Confirm.*own request/);
+  const saved=f.core.setEvidence('tr-numarasor',fields,{own_request:true});
+  const op=f.core.prepare('tr-numarasor',{fields:saved,affirmations:{own_request:true}});
+  assert.equal(op.ownRequestConfirmed,true);assert.equal(op.fields.full_name,'Örnek Kişi');
+  assert.equal(op.fields.phone,fields.phone);assert.equal(op.fields.request_text,fields.request_text.replace(/\r\n/g,'\n'));
+  assert.equal(op.fields.email,'person@example.test');assert.equal(op.fields.date_of_birth,undefined);
+  assert.equal(f.core.dashboard().counts.requested,0);assert.equal(f.core.dashboard().counts.removed,0);
+});
+test('all five structured routes independently require own-request consent and emit only their approved fields',async()=>{
+  for(const id of ['advancedbackgroundchecks','tr-nosorgulama','tr-numaraara','tr-numarasor','tr-telefonsorgulama']){
+    const route=Routes.find(r=>r.id===id),f=fixture();await signup(f.core);await post(f.core,'/api/profile',{country:id==='advancedbackgroundchecks'?'US':'TR'});
+    const supplied=id==='advancedbackgroundchecks'?{first_name:'Example',last_name:'Person'}:{full_name:'Örnek Kişi',request_text:'Please remove my own information.',...(id==='tr-numarasor'?{phone:'+90 (532) 123-45-67'}:{})};
+    f.core.setEvidence(id,supplied);assert.throws(()=>f.core.prepare(id),/own request/);
+    f.core.setEvidence(id,supplied,{own_request:true});const op=f.core.prepare(id);
+    assert.equal(op.ownRequestConfirmed,true);assert.deepEqual(Object.keys(op.fields).sort(),[...route.fields].sort());
+    assert.equal(op.fields.email,'person@example.test');assert.equal(f.core.dashboard().counts.requested,0);assert.equal(f.core.dashboard().counts.removed,0);
+  }
+});
+test('structured fields survive private backup restoration but their authorization never does',async()=>{
+  const f=fixture();await signup(f.core);await post(f.core,'/api/profile',{country:'TR'});
+  const fields={full_name:'Örnek Kişi',phone:'+90 (532) 123-45-67',request_text:'Please remove my own information.\nThank you.'};
+  f.core.setEvidence('tr-numarasor',fields,{own_request:true});const restored=fixture().core;restored.importData(f.core.exportData());
+  assert.deepEqual(restored.snapshot().items['tr-numarasor'].fields,fields);assert.deepEqual(restored.snapshot().items['tr-numarasor'].affirmations,{});
+  assert.throws(()=>restored.prepare('tr-numarasor'),/own request/);restored.setEvidence('tr-numarasor',fields,{own_request:true});assert.equal(restored.prepare('tr-numarasor').ownRequestConfirmed,true);
+});
+test('structured field validation and fresh review reject invalid bodies, phone formats and interleaved changes before dispatch',async()=>{
+  const f=fixture();await signup(f.core);await post(f.core,'/api/profile',{country:'TR'});
+  for(const body of ['short','x'.repeat(5001),'Valid request\u0000with control'])assert.throws(()=>f.core.setEvidence('tr-numaraara',{request_text:body}),/request text/);
+  for(const phone of ['123','+90x5321234567','++905321234567','9'.repeat(16),' '.repeat(35)+'1234567'])assert.throws(()=>f.core.setEvidence('tr-numarasor',{phone}),/phone/);
+  const fields={full_name:'Örnek Kişi',request_text:'Please remove my own information.'},affirmations={own_request:true};
+  f.core.setEvidence('tr-numaraara',fields,affirmations);
+  Core.create(f.options).setEvidence('tr-numaraara',{...fields,request_text:'A different request that was not reviewed.'},affirmations);
+  assert.throws(()=>f.core.prepare('tr-numaraara',{fields,affirmations}),/changed in another tab/);
+  assert.equal(f.core.snapshot().items['tr-numaraara'].operation_id,null);
+});
+test('privacy drafts fix the official recipient and keep local draft preparation separate from sending and removal',async()=>{
+  const f=fixture();await signup(f.core);await post(f.core,'/api/profile',{country:'CA'});
+  const reference='My own listing reference 123';
+  assert.throws(()=>f.core.privacyDraftRequest('ca-411',{reference,own_request:false}),/own information/);
+  for(const value of ['Reference\nBcc: other@example.test','bad\u0000reference','x'.repeat(2049)])assert.throws(()=>f.core.privacyDraftRequest('ca-411',{reference:value,own_request:true}),/reference/);
+  assert.throws(()=>f.core.privacyDraftRequest('ca-411',{reference,own_request:true,to:'other@example.test'}),/reference/);
+  const before=f.core.dashboard().counts,draft=f.core.privacyDraftRequest('ca-411',{reference,own_request:true});
+  assert.deepEqual(Object.keys(draft),['to','subject','body','source']);assert.equal(draft.to,'privacy@411.ca');
+  assert.equal(draft.source,'https://www.411.ca/privacy-policy');assert.ok(draft.body.includes('Example Person'));assert.ok(draft.body.includes(reference));
+  assert.equal(draft.body.includes('person@example.test'),false);assert.equal(/GDPR|CCPA|\b(?:30|45|90) days\b/.test(draft.body),false);
+  assert.deepEqual(f.core.dashboard().counts,before);assert.equal(f.core.snapshot().items['ca-411'].operation_id,null);
+  const stored=JSON.parse(f.values.get(Core.KEY));assert.equal(JSON.stringify(stored.activity).includes(reference),false);assert.equal(JSON.stringify(stored.items['ca-411']).includes(draft.body),false);
+});
+test('support contacts receive only a generic procedure draft and never the subject or record identifiers',async()=>{
+  const f=fixture();await signup(f.core);await post(f.core,'/api/profile',{country:'US'});
+  assert.throws(()=>f.core.privacyDraftRequest('beenverified',{reference:'private record 123',own_request:true}),/support contact/);
+  const draft=f.core.privacyDraftRequest('beenverified',{reference:'',own_request:true});
+  assert.equal(draft.to,Routes.find(r=>r.id==='beenverified').privacyContact.email);
+  assert.equal(draft.body.includes('Example Person'),false);assert.equal(draft.body.includes('person@example.test'),false);assert.match(draft.body,/procedure/);
+  assert.equal(f.core.dashboard().counts.requested,0);assert.equal(f.core.snapshot().items.beenverified.operation_id,null);
+});
+test('local privacy drafts honor route holds, country, pause and failed-storage gates without changing prior evidence',async()=>{
+  const f=fixture();await signup(f.core);await post(f.core,'/api/profile',{country:'CA'});const input={reference:'My own record',own_request:true};
+  assert.throws(()=>f.core.privacyDraftRequest('ukphonebook',input),/outside your selected country/);
+  f.core.holdRoute('ca-411');assert.throws(()=>f.core.privacyDraftRequest('ca-411',input),/on hold/);f.core.resumeRoute('ca-411');
+  await post(f.core,'/api/campaign',{action:'pause'});assert.throws(()=>f.core.privacyDraftRequest('ca-411',input),/Allow checks/);await post(f.core,'/api/campaign',{action:'resume'});
+  f.storage.setItem=()=>{throw new Error('quota');};assert.throws(()=>f.core.privacyDraftRequest('ca-411',input),/could not save/);
+});
+test('draft metadata and references cannot introduce a recipient header or an unrelated contact source',async()=>{
+  const f=fixture();await signup(f.core);await post(f.core,'/api/profile',{country:'CA'});
+  const base=Routes.find(r=>r.id==='ca-411'),input={reference:'My own record',own_request:true};
+  for(const contact of [{...base.privacyContact,email:'privacy@example.test\r\nBcc: other@example.test'},{...base.privacyContact,source:'javascript:alert(1)'},{...base.privacyContact,kind:'unknown'}]){
+    const catalog=Routes.map(r=>r.id==='ca-411'?{...r,privacyContact:contact}:r),core=browserTab(f.storage,null,()=> 'b'.repeat(32),catalog).create(f.options);
+    assert.throws(()=>core.privacyDraftRequest('ca-411',input),/contact/);
+  }
+  for(const reference of ['http://www.411.ca/person/example','https://other.example/person/example'])assert.throws(()=>f.core.privacyDraftRequest('ca-411',{reference,own_request:true}),/official listing URL/);
+  const data=f.core.snapshot();data.items['ca-411'].status='uncertain';f.values.set(Core.KEY,JSON.stringify(data));
+  assert.throws(()=>f.core.privacyDraftRequest('ca-411',input),/uncertain earlier broker outcome/);
+});
+test('structured UI uses a request textarea, clears own-request approval on edits and rejects old companions before dispatch',async()=>{
+  let prepares=0;
+  const route=Routes.find(r=>r.id==='tr-numaraara');
+  const ui=workspaceUIFixture({routeId:route.id,capabilities:[],item:{input_fields:{request_text:'Please remove my own information.'}},workspace:{
+    profile:()=>({name:'Örnek Kişi',email:'person@example.test'}),
+    setEvidence:async(_id,fields,flags)=>{assert.equal(fields.full_name,'Örnek Kişi');assert.equal(flags.own_request,true);return fields;},
+    prepare:()=>{prepares++;throw new Error('An old companion must not dispatch');}
+  }});
+  const name=ui.input(route.name+' Your full name'),body=ui.input(route.name+' Your removal request text'),agreed=ui.input(route.name+' own request authorization');
+  assert.equal(name.value,'Örnek Kişi');assert.equal(body.tagName,'TEXTAREA');assert.equal(body.maxLength,5000);
+  agreed.checked=true;body.listeners.input();assert.equal(agreed.checked,false);agreed.checked=true;
+  await ui.click('Fill with companion');assert.equal(prepares,0);assert.deepEqual(ui.posted,['ping']);assert.match(ui.feedback.textContent,/Update the companion/);
+});
+test('private draft UI waits for persistence, discards changed references and copies or downloads only by explicit click',async()=>{
+  let requested=0,release;
+  const gate=new Promise(resolve=>{release=resolve;}),draft={to:'privacy@411.ca',subject:'Personal information removal request — 411.ca',body:'A private own-record request.',source:'https://www.411.ca/privacy-policy'};
+  const ui=workspaceUIFixture({routeId:'ca-411',workspace:{privacyDraftRequest:async(_id,input)=>{requested++;assert.equal(input.own_request,true);return requested===1?gate:draft;}}});
+  const reference=ui.input('411.ca own record reference'),agreed=ui.input('411.ca privacy draft authorization'),output=ui.input('411.ca private request draft');
+  await ui.click('Prepare private request');assert.equal(requested,0);assert.deepEqual(ui.copied,[]);
+  reference.value='My own reference';agreed.checked=true;const pending=ui.click('Prepare private request');await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(requested,1);assert.equal(output.hidden,true);assert.deepEqual(ui.copied,[]);assert.deepEqual(ui.downloads,[]);
+  reference.value='Changed reference';reference.listeners.input();release(draft);await pending;assert.equal(output.hidden,true);assert.match(ui.feedback.textContent,/changed/);
+  agreed.checked=true;await ui.click('Prepare private request');assert.equal(output.readOnly,true);assert.equal(output.hidden,false);assert.deepEqual(ui.copied,[]);
+  await ui.click('Copy private draft');assert.equal(ui.copied.length,1);assert.match(ui.copied[0],/^To: privacy@411.ca\nSubject:/);assert.deepEqual(ui.posted,[]);assert.deepEqual(ui.opened,[]);
+  await ui.click('Download private draft');assert.equal(ui.downloads[0].name,'erase-me-ca-411-private-request.txt');assert.match(ui.feedback.textContent,/no email was sent/i);
+});
+test('held audit and official contact panels expose no outbound links or draft actions',()=>{
+  for(const routeId of ['ca-411','gb-bt-phonebook','tr-turkcell-rehber']){
+    const ui=workspaceUIFixture({routeId,item:{held:true,status:'held'}});
+    assert.deepEqual(ui.links(),[]);assert.equal(ui.findText('Prepare private request'),undefined);assert.equal(ui.findText('Prepare procedure question'),undefined);
+    assert.ok(ui.findText('Current route review'));assert.ok(ui.findText('Resume this route'));
+  }
+});
+test('support draft UI exposes no reference field and prepares no identifiers or external action automatically',async()=>{
+  let calls=0;
+  const ui=workspaceUIFixture({routeId:'beenverified',workspace:{privacyDraftRequest:async(_id,input)=>{
+    calls++;assert.deepEqual(JSON.parse(JSON.stringify(input)),{reference:'',own_request:true});return{to:'privacy@example.test',subject:'Privacy request procedure',body:'Please explain the procedure.',source:'https://example.test/privacy'};
+  }}});
+  assert.equal(ui.input('BeenVerified own record reference'),undefined);assert.equal(ui.findText('Prepare private request'),undefined);
+  assert.equal(calls,0);ui.input('BeenVerified privacy draft authorization').checked=true;await ui.click('Prepare procedure question');
+  assert.equal(calls,1);assert.deepEqual(ui.posted,[]);assert.deepEqual(ui.opened,[]);assert.deepEqual(ui.copied,[]);
+  assert.equal(ui.input('BeenVerified private request draft').value.includes('Example Person'),false);
 });

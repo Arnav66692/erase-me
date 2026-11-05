@@ -7,7 +7,12 @@
     searchpeoplefree: {host:'www.searchpeoplefree.com',path:'/opt-out',url:'https://www.searchpeoplefree.com/opt-out',first_name:'#o_first',last_name:'#o_last',email:'#o_email',form:'#o_form',method:'get'},
     fastpeoplesearch: {host:'www.fastpeoplesearch.com',path:'/optout',formPath:'/optout-start-submitted',url:'https://www.fastpeoplesearch.com/optout',first_name:'#firstname',last_name:'#lastname',email:'#email',form:'#optout-start',method:'post'},
     apollo: {host:'www.apollo.io',path:'/privacy-policy/remove',url:'https://www.apollo.io/privacy-policy/remove',business_email:'input#email[name="email"][type="email"]',method:'get',submitText:'Get verification information'},
-    spokeo: {host:'www.spokeo.com',path:'/optout',url:'https://www.spokeo.com/optout',listing_url:'input[name="url"][type="url"]',email:'input[name="email"][type="email"]',method:'get',submitText:'OPT OUT'}
+    spokeo: {host:'www.spokeo.com',path:'/optout',url:'https://www.spokeo.com/optout',listing_url:'input[name="url"][type="url"]',email:'input[name="email"][type="email"]',method:'get',submitText:'OPT OUT'},
+    advancedbackgroundchecks: {host:'www.advancedbackgroundchecks.com',path:'/opt-out',url:'https://www.advancedbackgroundchecks.com/opt-out',first_name:'#sfn',last_name:'#sln',email:'#semail',method:'get',submitText:'Submit',ownRequest:true,selection:{selector:'#mode',value:'subject'}},
+    'tr-nosorgulama': {host:'www.nosorgulama.com.tr',path:'/iletisim/',url:'https://www.nosorgulama.com.tr/iletisim/',full_name:'#ic-ad[name="ad_soyad"]',email:'#ic-email[name="email"]',request_text:'#ic-mesaj[name="mesaj"]',method:'post',submitText:'Mesajı Gönder',ownRequest:true,selection:{selector:'#ic-konu[name="konu"]',value:'profil-kaldir'}},
+    'tr-numaraara': {host:'www.numaraara.com',path:'/iletisim',formPath:'/Contact/ContactFormSend',url:'https://www.numaraara.com/iletisim',form:'form#contactForm',full_name:'#form_AdSoyad[name="form.AdSoyad"]',email:'#form_Eposta[name="form.Eposta"]',request_text:'#form_Mesaj[name="form.Mesaj"]',method:'post',submitText:'Talebi Gönder',ownRequest:true,selection:{selector:'#form_Konu[name="form.Konu"]',value:'Numara Silme Talebi (KVKK)'}},
+    'tr-numarasor': {host:'www.numarasor.com',path:'/numara-kaldirma-talebi',url:'https://www.numarasor.com/numara-kaldirma-talebi',full_name:'#name[name="name"]',email:'#email[name="email"]',phone:'#number[name="number"]',request_text:'#reason[name="reason"]',method:'post',submitText:'Talebi Gönder',ownRequest:true,selection:{selector:'#relation[name="relation"]',value:'Numara sahibiyim'}},
+    'tr-telefonsorgulama': {host:'www.telefonsorgulama.com',path:'/iletisim.html',formPath:'/iletisim-gonder.php',url:'https://www.telefonsorgulama.com/iletisim.html',form:'form#iletisimForm',full_name:'#iletisimForm input[name="name"]',email:'#iletisimForm input[name="email"]',request_text:'#iletisimForm textarea[name="message"]',method:'post',submitText:'Mesajı Gönder',ownRequest:true,selection:{selector:'#iletisimForm select[name="subject"]',value:'kaldirma'}}
   });
   function allowed(url, route) {
     try {
@@ -36,15 +41,23 @@
         ((city.test(parts[1])&&STATE_CODES.test(parts[2]))||(new RegExp('^(?:'+STATE_NAMES+')$','i').test(parts[1])&&city.test(parts[2])));
     }catch(_){return false;}
   }
-  function fieldKeys(route){return ['email','first_name','last_name','business_email','listing_url'].filter(key=>route[key]);}
+  function fieldKeys(route){return ['email','first_name','last_name','business_email','listing_url','full_name','phone','request_text'].filter(key=>route[key]);}
+  function validField(key,value){
+    if(typeof value!=='string'||!value.trim())return false;
+    if(key==='request_text')return value.trim().length>=10&&value.length<=5000&&!/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/.test(value);
+    if(key==='phone')return value.length<=40&&/^\+?[0-9 ().-]+$/.test(value)&&(value.match(/[0-9]/g)||[]).length>=7&&(value.match(/[0-9]/g)||[]).length<=15;
+    return value.length<=(key==='listing_url'?2048:key==='full_name'?120:254)&&!/[\x00-\x1f\x7f<>]/.test(value);
+  }
+  function expectedValue(key,value){return key==='request_text'?value.replace(/\r\n?/g,'\n'):value;}
   function validate(routeId,fields,approval={}){
     const route=ROUTES[routeId];
     if(!route || !fields || typeof fields!=='object' || Array.isArray(fields))throw new Error('Unsupported form.');
     const keys=fieldKeys(route);
-    if(Object.keys(fields).length!==keys.length || Object.keys(fields).some(k=>!keys.includes(k)) || keys.some(k=>typeof fields[k]!=='string'||!fields[k].trim()||fields[k].length>(k==='listing_url'?2048:254)||/[\r\n\x00<>]/.test(fields[k])))throw new Error('Invalid fields.');
+    if(Object.keys(fields).length!==keys.length || Object.keys(fields).some(k=>!keys.includes(k)) || keys.some(k=>!validField(k,fields[k])))throw new Error('Invalid fields.');
     for(const key of ['email','business_email'])if(keys.includes(key)&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(fields[key]))throw new Error('Invalid email.');
     if(routeId==='apollo'&&approval.businessEmailConfirmed!==true)throw new Error('Confirm the business email associated with your own Apollo record.');
     if(routeId==='spokeo'&&(!listingURL(fields.listing_url)||approval.listingConfirmed!==true))throw new Error('Confirm the exact Spokeo listing is your own.');
+    if(route.ownRequest&&approval.ownRequestConfirmed!==true)throw new Error('Confirm that this is your own request and review the exact fields first.');
     return route;
   }
   function formFor(doc,route){return route.form?doc.querySelector(route.form):route.submit?doc.querySelector(route.submit)?.form:doc.querySelector(route[fieldKeys(route)[0]])?.form;}
@@ -119,11 +132,13 @@
       const optional=doc.querySelector(selector);
       if(!optional||optional.form!==form()||optional.value)return {status:'blocked',detail:'The confirmation form contains additional personal fields. Review it directly; no extra details were supplied.'};
     }
-    for(const {key,e} of controls()){
-      if(!ready())return {status:'blocked',detail:'The confirmation form changed before fields could be retained.'};
+    for(const key of Object.keys(selectors)){
+      const e=doc.querySelector(selectors[key]);
+      if(!ready()||e!==doc.querySelector(selectors[key])||e.form!==form())return {status:'blocked',detail:'The confirmation form changed before fields could be retained.'};
       const prototype=key==='state'?env.HTMLSelectElement.prototype:env.HTMLInputElement.prototype;
       Object.getOwnPropertyDescriptor(prototype,'value').set.call(e,fields[key]);
       e.dispatchEvent(new env.Event('input',{bubbles:true}));e.dispatchEvent(new env.Event('change',{bubbles:true}));
+      if(!ready()||e!==doc.querySelector(selectors[key])||e.form!==form())return {status:'blocked',detail:'The confirmation form changed after a field was filled.'};
     }
     if(!ready()||controls().some(({key,e})=>e.value!==fields[key]))return {status:'blocked',detail:'The broker did not retain the approved confirmation fields.'};
     return {status:'prepared',detail:'The authorized name, city, state, ZIP and contact fields are filled. USPhonebook also requires either date of birth or street address: enter one directly on its official form. Erase Me does not collect or autofill it. Review the accuracy statement, complete the broker challenge and choose Confirm Removal Process there. Request acceptance and deletion remain unverified.'};
@@ -133,33 +148,39 @@
     const safe=()=>allowed(env.location.href,route)&&!doc.querySelector('input[type="file"]');
     const wait=ms=>new Promise(resolve=>env.setTimeout(resolve,ms));
     const controls=()=>Object.keys(fields).map(key=>({key,e:doc.querySelector(route[key])}));
-    const ready=()=>safe()&&controls().every(({key,e})=>visible(e)&&!e.disabled&&!e.readOnly&&e.tagName==='INPUT'&&
-      (['email','business_email'].includes(key)?e.type==='email':key==='listing_url'?e.type==='url':e.type==='text'));
+    const ready=()=>safe()&&controls().every(({key,e})=>visible(e)&&!e.disabled&&!e.readOnly&&
+      (key==='request_text'?e.tagName==='TEXTAREA':e.tagName==='INPUT'&&
+      (['email','business_email'].includes(key)?e.type==='email':key==='listing_url'?e.type==='url':key==='phone'?e.type==='tel':e.type==='text')));
     for(let i=0;i<40&&!ready();i++){if(!safe())return {status:'blocked',detail:'The official form changed or requires identity documents.'};await wait(250);}
     if(!ready())return {status:'blocked',detail:'The approved form is unavailable. No details were filled.'};
     if(inspect({routeId},env).success)return {status:'blocked',detail:'An earlier verification step is already visible. No repeat was sent.'};
     const form=formFor(doc,route);
     // SPF uses a reviewed JavaScript submit handler. Other forms must retain their purpose and destination.
     if(!form || controls().some(({e})=>e.form!==form) || !formAllowed(form.action||env.location.href,route))return {status:'blocked',detail:'The form destination changed.'};
-    const exactDestination=()=>formAllowed(form.action||env.location.href,route)&&(!route.method||form.method?.toLowerCase()===route.method)&&
+    const selection=route.selection||(routeId==='usphonebook'?{selector:'#user-type',value:'subject'}:routeId==='fastpeoplesearch'?{selector:'select[name="am"]',value:'subject'}:null);
+    let selectionApplied=false;
+    const selectionReady=()=>!selection||(()=>{const e=doc.querySelector(selection.selector);return visible(e)&&e.tagName==='SELECT'&&e.form===form&&!e.disabled&&!e.readOnly&&
+      [...e.options].some(option=>option.value===selection.value)&&(!selectionApplied||e.value===selection.value);})();
+    const exactDestination=()=>formAllowed(form.action||env.location.href,route)&&(!route.method||form.method?.toLowerCase()===route.method)&&selectionReady()&&
       (!route.submitText||(()=>{const buttons=[...form.querySelectorAll('button[type="submit"]')];return buttons.length===1&&visible(buttons[0])&&buttons[0].form===form&&buttons[0].textContent.trim()===route.submitText;})());
     if(!exactDestination())return {status:'blocked',detail:'The reviewed form purpose or submit control changed.'};
-    const modeSelector=routeId==='usphonebook'?'#user-type':routeId==='fastpeoplesearch'?'select[name="am"]':null;
-    if(modeSelector){
-      const select=doc.querySelector(modeSelector);
-      if(!visible(select)||select.tagName!=='SELECT'||select.form!==form||select.disabled||![...select.options].some(o=>o.value==='subject'))return {status:'blocked',detail:'The approved self-request option is unavailable.'};
+    if(selection){
+      const select=doc.querySelector(selection.selector);
       const setter=Object.getOwnPropertyDescriptor(env.HTMLSelectElement.prototype,'value').set;
-      setter.call(select,'subject');select.dispatchEvent(new env.Event('change',{bubbles:true}));
-      if(select.value!=='subject')return {status:'blocked',detail:'The broker did not retain the self-request option.'};
+      setter.call(select,selection.value);select.dispatchEvent(new env.Event('input',{bubbles:true}));select.dispatchEvent(new env.Event('change',{bubbles:true}));
+      selectionApplied=true;
+      if(!ready()||!exactDestination())return {status:'blocked',detail:'The broker did not retain the approved request purpose.'};
     }
-    for(const {key,e} of controls()){
-      if(!safe()||controls().some(({e})=>e.form!==form)||!exactDestination())return {status:'blocked',detail:'The broker page changed.'};
-      const setter=Object.getOwnPropertyDescriptor(env.HTMLInputElement.prototype,'value').set;
+    for(const key of Object.keys(fields)){
+      const e=doc.querySelector(route[key]);
+      if(!ready()||e!==doc.querySelector(route[key])||e.form!==form||controls().some(({e})=>e.form!==form)||!exactDestination())return {status:'blocked',detail:'The broker page changed.'};
+      const setter=Object.getOwnPropertyDescriptor(key==='request_text'?env.HTMLTextAreaElement.prototype:env.HTMLInputElement.prototype,'value').set;
       setter.call(e,fields[key]);e.dispatchEvent(new env.Event('input',{bubbles:true}));e.dispatchEvent(new env.Event('change',{bubbles:true}));
+      if(!ready()||e!==doc.querySelector(route[key])||e.form!==form||controls().some(({e})=>e.form!==form)||!exactDestination())return {status:'blocked',detail:'The broker page changed after a field was filled.'};
     }
-    if(!ready()||!exactDestination()||controls().some(({key,e})=>e.form!==form||e.value!==fields[key]))return {status:'blocked',detail:'The broker did not retain the approved fields.'};
+    if(!ready()||!exactDestination()||controls().some(({key,e})=>e.form!==form||e.value!==expectedValue(key,fields[key])))return {status:'blocked',detail:'The broker did not retain the approved fields.'};
     armSubmitIntent(payload,route,form,env);
-    if(route.purpose!=='erasure')return {status:'prepared',detail:'Your fields are filled on the official page. Review the agreement, complete any challenge, and submit there. The broker email and record-selection steps are still required.'};
+    if(route.purpose!=='erasure')return {status:'prepared',detail:route.ownRequest?'Your approved request fields are filled on the official page. Review the request, consent and any broker verification before submitting there. The companion has not sent a request or verified deletion.':'Your fields are filled on the official page. Review the agreement, complete any challenge, and submit there. The broker email and record-selection steps are still required.'};
     const button=doc.querySelector(route.submit);
     if(!visible(button)||button.form!==form||!formAllowed(button.form.action||env.location.href,route)||button.disabled||button.type!=='submit'||hasSuccess(doc))return {status:'blocked',detail:'The verification control is unavailable.'};
     button.click();

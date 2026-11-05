@@ -1,9 +1,10 @@
 /* Public route metadata. A researched portal is not proof of a completed removal. */
 (function (root, factory) {
-  const routes = factory();
+  const audit = typeof module === 'object' && module.exports ? require('./broker-audit.js') : root.EraseBrokerAudit;
+  const routes = factory(audit);
   if (typeof module === 'object' && module.exports) module.exports = routes;
   else root.EraseBrokerRoutes = routes;
-})(typeof globalThis === 'object' ? globalThis : this, function () {
+})(typeof globalThis === 'object' ? globalThis : this, function (audit) {
   'use strict';
   const routes = [
     { id: 'peopledatalabs-form', countries: ['*'], name: 'People Data Labs', domain: 'privacy.peopledatalabs.com',
@@ -40,10 +41,43 @@
       "countries": ["US"], "fields": [], "automationLevel": "manual", "availability": "unverified_current", "allowedHosts": ["addresses.com","www.addresses.com"], "manualMethod": "web_form",
       "referenceVerified": false, "referenceCheckedAt": null, "sourceCatalog": "us/addresses.json", "cluster": "peopleconnect", "covers": [],
       "steps": ["Open the linked official privacy or opt-out instructions for your own information.","The broker may ask for full name. Enter any required details directly on that site. Erase Me does not collect them for this manual route.","Complete the broker’s required verification and save its response. No request is sent by Erase Me for this manual route.","Stop if the route requires payment or an identity-document upload."], "evidence": "Official reference route from the existing country pack. Its current form, request acceptance and deletion outcome have not been validated for this browser app." },
-    { "id": "advancedbackgroundchecks", "name": "AdvancedBackgroundChecks", "domain": "advancedbackgroundchecks.com", "url": "https://www.advancedbackgroundchecks.com/opt-out",
-      "countries": ["US"], "fields": [], "automationLevel": "manual", "availability": "unverified_current", "allowedHosts": ["advancedbackgroundchecks.com","www.advancedbackgroundchecks.com"], "manualMethod": "web_form",
-      "referenceVerified": true, "referenceCheckedAt": "2026-10-27", "sourceCatalog": "us/advancedbackgroundchecks.json", "cluster": "tornado-alley", "covers": [],
-      "steps": ["Open the linked official privacy or opt-out instructions for your own information.","The broker may ask for full name, email. Enter any required details directly on that site. Erase Me does not collect them for this manual route.","Complete the broker’s required verification and save its response. No request is sent by Erase Me for this manual route.","Stop if the route requires payment or an identity-document upload."], "evidence": "Official reference route from the existing country pack. Its current form, request acceptance and deletion outcome have not been validated for this browser app." },
+    {
+      "id": "advancedbackgroundchecks",
+      "name": "AdvancedBackgroundChecks",
+      "domain": "advancedbackgroundchecks.com",
+      "url": "https://www.advancedbackgroundchecks.com/opt-out",
+      "countries": [
+        "US"
+      ],
+      "fields": [
+        "first_name",
+        "last_name",
+        "email"
+      ],
+      "automationLevel": "companion",
+      "availability": "reviewed_initial_form",
+      "allowedHosts": [
+        "advancedbackgroundchecks.com",
+        "www.advancedbackgroundchecks.com"
+      ],
+      "manualMethod": "web_form",
+      "referenceVerified": true,
+      "referenceCheckedAt": "2026-10-27",
+      "sourceCatalog": "us/advancedbackgroundchecks.json",
+      "cluster": "tornado-alley",
+      "covers": [],
+      "steps": [
+        "Review your own name and contact email, then complete the official challenge, consent and email/second-form steps. Only the initial form has a reviewed prefill contract.",
+        "Confirm that the target information is your own before filling. Never submit for an unrelated person without explicit authorization.",
+        "Form preparation is not request acceptance or deletion. Review the broker response and complete its required verification."
+      ],
+      "evidence": "The official initial form contract was inspected without entering personal data or submitting. Later identity matching, request acceptance and deletion remain unverified.",
+      "requiredAffirmations": [
+        "own_request"
+      ],
+      "automationMode": "prefill",
+      "inspectedAt": "2026-11-04"
+    },
     { "id": "beenverified", "name": "BeenVerified", "domain": "beenverified.com", "url": "https://www.beenverified.com/app/optout/search",
       "countries": ["US"], "fields": [], "automationLevel": "manual", "availability": "unverified_current", "allowedHosts": ["beenverified.com","www.beenverified.com"], "manualMethod": "web_form",
       "referenceVerified": false, "referenceCheckedAt": null, "sourceCatalog": "us/beenverified.json", "cluster": "beenverified", "covers": [],
@@ -160,27 +194,173 @@
       "countries": ["TR"], "fields": [], "automationLevel": "manual", "availability": "unverified_current", "allowedHosts": ["vodafone.com.tr","www.vodafone.com.tr"], "manualMethod": "phone",
       "referenceVerified": false, "referenceCheckedAt": "2026-10-21", "sourceCatalog": "tr/tr-mobile-operator-rehber.json", "cluster": null, "covers": [],
       "steps": ["Open the linked official privacy or opt-out instructions for your own information.","The broker may ask for full name, phone number. Enter any required details directly on that site. Erase Me does not collect them for this manual route.","Complete the broker’s required verification and save its response. No request is sent by Erase Me for this manual route.","Stop if the route requires payment or an identity-document upload."], "evidence": "Official reference route from the existing country pack. Its current form, request acceptance and deletion outcome have not been validated for this browser app." },
-    { "id": "tr-nosorgulama", "name": "No Sorgulama (nosorgulama.com.tr)", "domain": "nosorgulama.com.tr", "url": "https://www.nosorgulama.com.tr/iletisim",
-      "countries": ["TR"], "fields": [], "automationLevel": "manual", "availability": "unverified_current", "allowedHosts": ["nosorgulama.com.tr","www.nosorgulama.com.tr"], "manualMethod": "web_form",
-      "referenceVerified": true, "referenceCheckedAt": "2026-10-21", "sourceCatalog": "tr/tr-nosorgulama.json", "cluster": null, "covers": [],
-      "steps": ["Open the linked official privacy or opt-out instructions for your own information.","The broker may ask for full name, email, phone number. Enter any required details directly on that site. Erase Me does not collect them for this manual route.","Complete the broker’s required verification and save its response. No request is sent by Erase Me for this manual route.","Stop if the route requires payment or an identity-document upload."], "evidence": "Official reference route from the existing country pack. Its current form, request acceptance and deletion outcome have not been validated for this browser app." },
-    { "id": "tr-numaraara", "name": "NumaraAra", "domain": "numaraara.com", "url": "https://www.numaraara.com/iletisim",
-      "countries": ["TR"], "fields": [], "automationLevel": "manual", "availability": "unverified_current", "allowedHosts": ["numaraara.com","www.numaraara.com"], "manualMethod": "web_form",
-      "referenceVerified": true, "referenceCheckedAt": "2026-10-21", "sourceCatalog": "tr/tr-numaraara.json", "cluster": null, "covers": [],
-      "steps": ["Open the linked official privacy or opt-out instructions for your own information.","The broker may ask for full name, email, phone number. Enter any required details directly on that site. Erase Me does not collect them for this manual route.","Complete the broker’s required verification and save its response. No request is sent by Erase Me for this manual route.","Stop if the route requires payment or an identity-document upload."], "evidence": "Official reference route from the existing country pack. Its current form, request acceptance and deletion outcome have not been validated for this browser app." },
-    { "id": "tr-numarasor", "name": "numarasor.com", "domain": "numarasor.com", "url": "https://www.numarasor.com/numara-kaldirma-talebi",
-      "countries": ["TR"], "fields": [], "automationLevel": "manual", "availability": "unverified_current", "allowedHosts": ["numarasor.com","www.numarasor.com"], "manualMethod": "web_form",
-      "referenceVerified": true, "referenceCheckedAt": "2026-10-21", "sourceCatalog": "tr/tr-numarasor.json", "cluster": null, "covers": [],
-      "steps": ["Open the linked official privacy or opt-out instructions for your own information.","The broker may ask for phone number, full name, email. Enter any required details directly on that site. Erase Me does not collect them for this manual route.","Complete the broker’s required verification and save its response. No request is sent by Erase Me for this manual route.","Stop if the route requires payment or an identity-document upload."], "evidence": "Official reference route from the existing country pack. Its current form, request acceptance and deletion outcome have not been validated for this browser app." },
-    { "id": "tr-telefonsorgulama", "name": "TelefonSorgulama", "domain": "telefonsorgulama.com", "url": "https://www.telefonsorgulama.com/iletisim.html",
-      "countries": ["TR"], "fields": [], "automationLevel": "manual", "availability": "unverified_current", "allowedHosts": ["telefonsorgulama.com","www.telefonsorgulama.com"], "manualMethod": "web_form",
-      "referenceVerified": true, "referenceCheckedAt": "2026-10-21", "sourceCatalog": "tr/tr-telefonsorgulama.json", "cluster": null, "covers": [],
-      "steps": ["Open the linked official privacy or opt-out instructions for your own information.","The broker may ask for full name, email, phone number. Enter any required details directly on that site. Erase Me does not collect them for this manual route.","Complete the broker’s required verification and save its response. No request is sent by Erase Me for this manual route.","Stop if the route requires payment or an identity-document upload."], "evidence": "Official reference route from the existing country pack. Its current form, request acceptance and deletion outcome have not been validated for this browser app." },
+    {
+      "id": "tr-nosorgulama",
+      "name": "No Sorgulama (nosorgulama.com.tr)",
+      "domain": "nosorgulama.com.tr",
+      "url": "https://www.nosorgulama.com.tr/iletisim/",
+      "referenceUrl": "https://www.nosorgulama.com.tr/iletisim",
+      "countries": [
+        "TR"
+      ],
+      "fields": [
+        "full_name",
+        "email",
+        "request_text"
+      ],
+      "automationLevel": "companion",
+      "availability": "reviewed_initial_form",
+      "allowedHosts": [
+        "nosorgulama.com.tr",
+        "www.nosorgulama.com.tr"
+      ],
+      "manualMethod": "web_form",
+      "referenceVerified": true,
+      "referenceCheckedAt": "2026-10-21",
+      "sourceCatalog": "tr/tr-nosorgulama.json",
+      "cluster": null,
+      "covers": [],
+      "steps": [
+        "Write a request for your own number or listing. The companion selects the removal topic and fills only your approved name, contact email and plain request. Review and submit on the official site.",
+        "Confirm that the target information is your own before filling. Never submit for an unrelated person without explicit authorization.",
+        "Form preparation is not request acceptance or deletion. Review the broker response and complete its required verification."
+      ],
+      "evidence": "The official initial form contract was inspected without entering personal data or submitting. Later identity matching, request acceptance and deletion remain unverified.",
+      "requiredAffirmations": [
+        "own_request"
+      ],
+      "automationMode": "prefill",
+      "inspectedAt": "2026-11-04"
+    },
+    {
+      "id": "tr-numaraara",
+      "name": "NumaraAra",
+      "domain": "numaraara.com",
+      "url": "https://www.numaraara.com/iletisim",
+      "countries": [
+        "TR"
+      ],
+      "fields": [
+        "full_name",
+        "email",
+        "request_text"
+      ],
+      "automationLevel": "companion",
+      "availability": "reviewed_initial_form",
+      "allowedHosts": [
+        "numaraara.com",
+        "www.numaraara.com"
+      ],
+      "manualMethod": "web_form",
+      "referenceVerified": true,
+      "referenceCheckedAt": "2026-10-21",
+      "sourceCatalog": "tr/tr-numaraara.json",
+      "cluster": null,
+      "covers": [],
+      "steps": [
+        "Write a request for your own number or listing. Complete the security code and KVKK checkbox yourself on the official site. The companion does not submit or alter hidden fields.",
+        "Confirm that the target information is your own before filling. Never submit for an unrelated person without explicit authorization.",
+        "Form preparation is not request acceptance or deletion. Review the broker response and complete its required verification."
+      ],
+      "evidence": "The official initial form contract was inspected without entering personal data or submitting. Later identity matching, request acceptance and deletion remain unverified.",
+      "requiredAffirmations": [
+        "own_request"
+      ],
+      "automationMode": "prefill",
+      "inspectedAt": "2026-11-04"
+    },
+    {
+      "id": "tr-numarasor",
+      "name": "numarasor.com",
+      "domain": "numarasor.com",
+      "url": "https://www.numarasor.com/numara-kaldirma-talebi",
+      "countries": [
+        "TR"
+      ],
+      "fields": [
+        "full_name",
+        "email",
+        "phone",
+        "request_text"
+      ],
+      "automationLevel": "companion",
+      "availability": "reviewed_initial_form",
+      "allowedHosts": [
+        "numarasor.com",
+        "www.numarasor.com"
+      ],
+      "manualMethod": "web_form",
+      "referenceVerified": true,
+      "referenceCheckedAt": "2026-10-21",
+      "sourceCatalog": "tr/tr-numarasor.json",
+      "cluster": null,
+      "covers": [],
+      "steps": [
+        "Supply your own target phone number and request. The companion selects the number-owner option; complete any further verification yourself. Stop if an ID upload or payment is required.",
+        "Confirm that the target information is your own before filling. Never submit for an unrelated person without explicit authorization.",
+        "Form preparation is not request acceptance or deletion. Review the broker response and complete its required verification."
+      ],
+      "evidence": "The official initial form contract was inspected without entering personal data or submitting. Later identity matching, request acceptance and deletion remain unverified.",
+      "requiredAffirmations": [
+        "own_request"
+      ],
+      "automationMode": "prefill",
+      "inspectedAt": "2026-11-04"
+    },
+    {
+      "id": "tr-telefonsorgulama",
+      "name": "TelefonSorgulama",
+      "domain": "telefonsorgulama.com",
+      "url": "https://www.telefonsorgulama.com/iletisim.html",
+      "countries": [
+        "TR"
+      ],
+      "fields": [
+        "full_name",
+        "email",
+        "request_text"
+      ],
+      "automationLevel": "companion",
+      "availability": "reviewed_initial_form",
+      "allowedHosts": [
+        "telefonsorgulama.com",
+        "www.telefonsorgulama.com"
+      ],
+      "manualMethod": "web_form",
+      "referenceVerified": true,
+      "referenceCheckedAt": "2026-10-21",
+      "sourceCatalog": "tr/tr-telefonsorgulama.json",
+      "cluster": null,
+      "covers": [],
+      "steps": [
+        "Write a removal request for your own number. The companion selects the removal topic; the site retains its CAPTCHA/token and final submission controls.",
+        "Confirm that the target information is your own before filling. Never submit for an unrelated person without explicit authorization.",
+        "Form preparation is not request acceptance or deletion. Review the broker response and complete its required verification."
+      ],
+      "evidence": "The official initial form contract was inspected without entering personal data or submitting. Later identity matching, request acceptance and deletion remain unverified.",
+      "requiredAffirmations": [
+        "own_request"
+      ],
+      "automationMode": "prefill",
+      "inspectedAt": "2026-11-04"
+    },
     { "id": "tr-turkcell-rehber", "name": "Turkcell Rehber and Bilinmeyen Numaralar", "domain": "turkcell.com.tr", "url": "https://www.turkcell.com.tr/servisler/arama-fatura-tl/bilinmeyen-numaralar",
       "countries": ["TR"], "fields": [], "automationLevel": "manual", "availability": "unverified_current", "allowedHosts": ["turkcell.com.tr","www.turkcell.com.tr"], "manualMethod": "phone",
       "referenceVerified": true, "referenceCheckedAt": "2026-10-21", "sourceCatalog": "tr/tr-turkcell-rehber.json", "cluster": null, "covers": [],
       "steps": ["Open the linked official privacy or opt-out instructions for your own information.","The broker may ask for phone number. Enter any required details directly on that site. Erase Me does not collect them for this manual route.","Complete the broker’s required verification and save its response. No request is sent by Erase Me for this manual route.","Stop if the route requires payment or an identity-document upload."], "evidence": "Official reference route from the existing country pack. Its current form, request acceptance and deletion outcome have not been validated for this browser app." }
   ];
+  // Channel inspection is not accepted-request or deletion evidence.
+  for (const route of routes) {
+    const review = audit && audit[route.id];
+    if (!review) continue;
+    route.review = review; route.operationKind = review.operationKind;
+    if (review.privacyContact) route.privacyContact = review.privacyContact;
+    if (review.manualContact) route.manualContact = review.manualContact;
+    if (route.automationLevel === 'manual') {
+      route.steps = [review.summary, review.limits, 'No request is sent automatically. An acknowledgment, registration or provider preference is not verified deletion.'];
+      route.evidence = 'Official-channel review: ' + review.checkedAt + '. ' + review.status + '. No request acceptance or deletion was observed.';
+    }
+  }
   // A common owner is not evidence that one request covers every affiliated
   // service. Only the four brands explicitly named by the inspected portal get
   // a shared manual guide; no action or removal state propagates between them.

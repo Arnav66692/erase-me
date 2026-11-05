@@ -3,8 +3,10 @@
 This document describes the original agent-skill engine and reference-pack contracts.
 The live browser workspace uses separate storage and permissions; see
 [its current scope and interface](PUBLIC_WORKSPACE.md). Its 43 reference routes do not
-imply 43 automated integrations or a verified removal service. The six initial companion
-actions include separately affirmed Apollo business-email and Spokeo listing fields.
+imply 43 automated integrations or a verified removal service. The eleven initial companion
+actions include separately affirmed Apollo business-email, Spokeo listing fields and five
+new own-request forms. AdvancedBackgroundChecks prepares names/email; the Turkish forms
+prepare approved name/email/plain request text, plus the own-number field for NumaraSor.
 Profiles, field affirmations, route holds and history remain browser-local. An explicit
 listing search opens Google with only the name and optional city; it does not scan or
 confirm a record. Route holds survive backup and campaign resume, while operation IDs
@@ -12,11 +14,22 @@ continue to prevent duplicate dispatch.
 
 The companion stores operation references and owned-tab metadata before navigation.
 For People Data Labs and USPhonebook only, a bounded explicit existing-tab observation
-can reconcile fresh verification-email evidence. A passive listener records a nonce-only
+can reconcile fresh verification-email evidence. A passive listener records a nonce-bound
 proof of a trusted native form event with matching approved fields in browser-session
-storage; expected field values stay only in the transient isolated-world closure. The
+storage; expected field values stay in the transient isolated-world closure. USPhonebook
+response correlation additionally uses an opaque HMAC fingerprint and a random key in
+browser-session storage, never raw fields in the local operation journal. The
 observer requires its original baseline, current session and owned-tab/document lineage.
 It never resubmits, polls, reads mail or treats verification initiation as deletion.
+
+The browser loads recursively frozen `broker-audit.js` before `broker-routes.js`. It
+contains official-channel checks for the 37 routes outside the first six: source URLs,
+dates, channel kinds and observed limits. The catalog attaches those reviews and 24 fixed
+contact alternatives. `privacyDraftRequest()` returns only local text: an explicitly
+authorized own-record request for a verified privacy contact, or an identifier-free
+procedure question for a support/registry contact. Only a preparation event is saved.
+Copying or downloading a draft sends nothing and creates no removal evidence. CMA,
+DNCL and TPS registrations and provider-only channels keep their distinct meanings.
 
 The public private-mail pilot keeps receipt checks URL-free. A separate explicit
 USPhonebook continuation revalidates the same authenticated receipt and transiently

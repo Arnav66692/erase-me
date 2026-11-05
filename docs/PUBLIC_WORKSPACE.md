@@ -16,7 +16,8 @@ submit forms. The person starts an individual broker action with its displayed f
 There are no recurring checks, background alarms, inbox polls or automatic resubmissions.
 
 The companion can initiate People Data Labs email verification and prefill the initial
-USPhonebook, SearchPeopleFree, FastPeopleSearch, Apollo and Spokeo forms. Fields prepared is not sent;
+USPhonebook, SearchPeopleFree, FastPeopleSearch, Apollo, Spokeo, AdvancedBackgroundChecks
+and four reviewed Turkish request forms. Fields prepared is not sent;
 opening a portal is not sent. Verification initiation is not a deletion request. The
 private mail pilot can also prepare USPhonebook's reviewed second form after separate
 authorization. Record matching, its final accuracy statement, CAPTCHA and submission
@@ -42,22 +43,37 @@ execution. Storage failures stop actions before dispatch.
 
 ## Country coverage
 
-The catalog has 43 reference routes, with six supported initial companion actions and
-37 manual routes. Reference coverage is separate from live integration or removal evidence.
+The catalog has 43 reference routes, with eleven supported initial companion actions and
+32 other guided channels. Reference coverage is separate from live integration or removal evidence.
 
 | Catalog group | Reference routes | Initial companion actions |
 | --- | --- | --- |
 | Global portals: People Data Labs and Apollo | 2 | 2 |
-| United States | 23 | 4 |
+| United States | 23 | 5 |
 | Canada | 4 | 0 |
 | United Kingdom | 5 | 0 |
 | Germany | 2 | 0 |
-| Turkey | 7 | 0 |
+| Turkey | 7 | 4 |
 
-The 36 added manual references use the existing country-pack source URLs. Their current
-forms, request acceptance and deletion results have not been validated for this app.
-They collect no additional profile fields in Erase Me. Follow their official instructions
-directly and stop if they require payment or an identity-document upload.
+All 37 routes outside the first six now have a source-backed channel review in
+`broker-audit.js`. It records a check date, observed availability, channel kind, sources
+and limits. Five of those reviews support new initial prefills; blocked, unavailable,
+registration and provider channels remain explicit guides. No audit entry establishes
+request acceptance or deletion. Follow current official instructions and stop for payment
+or an identity-document upload.
+
+AdvancedBackgroundChecks requires an own-request affirmation before filling the reviewed
+name/email form. No Sorgulama, NumaraAra and TelefonSorgulama accept an explicitly reviewed
+name, contact email and plain request text. NumaraSor also needs the person’s own target
+phone number. The companion selects only the reviewed self-request/removal option; final
+submission, security codes, consent, CAPTCHA and any later verification remain user steps.
+Request text retains Unicode and line breaks and is set as a field value, never executed.
+Only NumaraSor receives the separately approved phone field; no call or SMS is sent.
+
+CMA Do Not Mail, Canada’s DNCL and the UK’s TPS are marketing-suppression registrations,
+not deletion of broker records. Provider directory preferences, phone, postal and
+subscriber-SMS instructions are also manual and have their own scope and possible
+provider conditions. The application does not perform paid lookups or dial/send messages.
 
 Without a country, only the two global portals appear and the app asks for a country.
 Selecting a pack shows its regional references plus global portals. A country without a
@@ -93,7 +109,9 @@ clearing the hold. Resuming never discards operation IDs or permits a duplicate 
 It sends no form and reads no mailbox. Only People Data Labs and the USPhonebook first
 stage have enabled observation contracts. A supported fresh verification acknowledgment
 requires the companion’s original baseline, browser-session proof and a trusted native
-submission with the approved fields. Missing proof, changed tabs or unsupported broker
+submission with the approved fields. USPhonebook acknowledgment names and email are
+checked against an opaque keyed fingerprint kept only in browser-session storage; raw
+profile fields never enter the local operation journal. Missing proof, changed tabs or unsupported broker
 responses remain unknown. Verification initiation still does not establish acceptance of
 a final removal request or deletion.
 
@@ -101,6 +119,30 @@ PeopleConnect remains a manual personal-use guide for eligible US users. The cur
 portal names Intelius, TruthFinder, InstantCheckmate and USSearch, with limited
 name-search suppression scope. Its guide does not propagate an outcome to affiliated
 records or claim coverage of every search type.
+
+## Official contact drafts
+
+The audit supplies 24 fixed published contact channels. **Current route review** shows
+source links, dates, observations and any provider-only instruction. **Official contact
+alternative** distinguishes a purpose-verified privacy channel from a registry/business
+support address. These sources are evidence of a channel, not acceptance of a request.
+
+For a privacy contact, **Prepare private request** requires an own-information affirmation
+and a public listing or other reference supplied by the person. The local text includes
+the person’s name and that reference. For support contacts, **Prepare procedure question**
+rejects any record reference and creates only a generic procedure inquiry, without the
+profile name or identifiers. The recipient and source are fixed audited metadata.
+
+The draft is returned to the browser for review, **Copy private draft** or **Download
+private draft**. It is not sent, uploaded to the host, added to the activity log or included
+in the saved ledger as a message body. Only the draft-preparation event is recorded. The
+person chooses a suitable account and sends it themselves if they wish. No inbox,
+SMTP/Gmail send permission, email endpoint or scheduled job is involved.
+
+Route holds, country selection, campaign pause, malformed contacts and uncertain previous
+outcomes stop draft preparation. Editing the reference or authorization clears the prior
+visible draft. Preparing, copying or downloading text never changes accepted-request or
+deleted-record counts.
 
 ## Dedicated removal-mail pilot
 
@@ -149,6 +191,10 @@ unlimited public mail service. Free hosting, provider quotas and OAuth restricti
 
 ## Core interface and checks
 
+The public script order is `broker-audit.js`, `broker-routes.js`, `workspace-core.js`,
+`removal-mail-client.js`, `workspace-ui.js`, then `app.js`. The recursively frozen audit
+is static official-channel metadata only; it contains no person or request data.
+
 `workspace-core.js` exposes `EraseWorkspace` in a browser and CommonJS for tests. Its
 `api(path, options)` handles local config, signup, dashboard, location, plan controls,
 user reports and deletion. It never calls fetch. Default exported mutation helpers are
@@ -162,6 +208,8 @@ transport validates its own origin and correlation before calling it.
 
 `holdRoute()` and `resumeRoute()` preserve the last outcome and the no-replay guard.
 `searchRequest()` persists the explicit search event before returning its fixed Google URL.
+`privacyDraftRequest()` validates the route, fixed contact and own-reference authorization
+and returns local text; it records no draft body and sends nothing.
 `observationRequest()` and `recordObservation()` reconcile a supported existing-tab
 verification outcome without starting another broker action.
 

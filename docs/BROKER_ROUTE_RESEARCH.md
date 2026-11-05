@@ -165,6 +165,33 @@ and change events. Do not call `form.submit()` to bypass site handlers.
   broker confirmation email remain user steps. No accepted-request, authenticated
   confirmation-link or independent-deletion contract was observed.
 
+### AdvancedBackgroundChecks
+
+- Official entry: <https://www.advancedbackgroundchecks.com/opt-out>.
+- Exact HTTPS origin and `/opt-out` path; the reviewed containing form uses GET and
+  the same-page action. Inputs are `#sfn`, `#sln` and `#semail`, with a scoped Submit
+  control. The companion selects only `#mode=subject` after an own-request affirmation.
+- This is initial prefill only. Consent, any challenge, email verification and its
+  unobserved second form remain user steps. Neither acceptance nor deletion was observed.
+
+### Turkish request forms
+
+All four require a separate own-request affirmation and review of each displayed field.
+Request text is plain Unicode text, retaining line breaks, not executable content.
+The companion never checks consent, submits, forges hidden tokens, uploads ID or performs
+phone/SMS verification. A later challenge or unfamiliar page remains a user step.
+
+| Route and exact purpose path | Approved fields | Reviewed destination/selection |
+| --- | --- | --- |
+| [No Sorgulama](https://www.nosorgulama.com.tr/iletisim/), `/iletisim/` | `#ic-ad`, `#ic-email`, `#ic-mesaj` | Same-page POST; `#ic-konu=profil-kaldir` |
+| [NumaraAra](https://www.numaraara.com/iletisim), `/iletisim` | `#form_AdSoyad`, `#form_Eposta`, `#form_Mesaj` | `form#contactForm`, POST `/Contact/ContactFormSend`; removal-topic option |
+| [NumaraSor](https://www.numarasor.com/numara-kaldirma-talebi), `/numara-kaldirma-talebi` | `#name`, `#email`, `#number`, `#reason` | Same-page POST; `#relation=Numara sahibiyim` |
+| [TelefonSorgulama](https://www.telefonsorgulama.com/iletisim.html), `/iletisim.html` | Scoped name/email/message fields in `#iletisimForm` | POST `/iletisim-gonder.php`; subject `kaldirma` |
+
+NumaraSor’s target phone number must belong to the requester. The other contracts do
+not add a phone field. Final server validation, record matching, request acceptance and
+deletion remain unverified for all four.
+
 ### PeopleConnect
 
 - Official <https://suppression.peopleconnect.us/> redirects to `/login`.
@@ -197,10 +224,11 @@ these official forms in that same person's browser. This avoids giving the host
 an inbox connection or retaining people's profiles in serverless storage.
 
 It cannot prove broker acceptance or deletion from these initial controls alone.
-The public companion enables six initial actions: the historically observed email
-initiation and five guarded prefill routes. SmartBackgroundChecks remains manual
-after the access failure above. The 36 added country-pack reference links are manual
-guidance, not newly validated browser contracts. Broader
+The public companion enables eleven initial actions: the historically observed email
+initiation and ten guarded prefill routes. The source-backed audit covers all 37 routes
+outside the first six, including blocked pages, manual provider channels, registrations
+and the five additional initial forms. SmartBackgroundChecks remains manual after the
+access failure above. An audit is not proof of an accepted request or automatic removal. Broader
 fully automatic removals need actual accepted-request and absence evidence from
 consenting subjects, not a change to an `enabled` flag. The browser workspace
 should explain where the user's details stay and exactly which broker fields
@@ -213,8 +241,10 @@ The explicit `observe` action reads only the tab reserved for the original opera
 Only People Data Labs and the USPhonebook first stage have enabled success contracts.
 The companion records a pre-action form-present/success-absent baseline and owned tab
 metadata. A trusted native submit event with matching approved fields creates a
-nonce-only proof in browser-session storage. Expected field values remain transient;
-no profile fields enter the operation journal.
+nonce-bound proof in browser-session storage. Expected field values remain transient;
+no profile fields enter the local operation journal. USPhonebook response correlation
+also uses an opaque keyed name/email fingerprint and a random HMAC key kept only in
+browser-session storage; losing that proof leaves the outcome unknown.
 
 Observation requires that current session proof and tab/document lineage. People Data
 Labs requires its same-document exact fresh alert. USPhonebook requires a new document,
@@ -222,3 +252,27 @@ the initial form absent, its specific headings and one exact visible acknowledgm
 paragraph. Missing, stale, forged or unsupported evidence stays unknown. Observation
 never sends a request, reads mail or starts polling, and can establish only verification
 initiation, never final request acceptance or deletion.
+
+
+## Remaining-channel audit and contact alternatives
+
+`webapp/static/broker-audit.js` contains the 37 official-channel reviews, with date,
+source links, observed status, channel kind and limitations. It is recursively frozen
+static metadata with no person or request data. The route catalog attaches these checks;
+manual guidance uses the current review rather than an older generic unverified label.
+A block, redirect or provider procedure is recorded as such, never counted as deletion.
+
+There are 24 fixed contact alternatives. A contact verified for privacy requests can be
+used to prepare a local own-record request after explicit review. Registry or uncertain
+business/support addresses receive only a generic procedure question without identifiers.
+Draft preparation, copy and download are browser-local; there is no sending endpoint.
+Published contacts are not tested deletion endpoints or evidence of accepted requests.
+
+CMA Do Not Mail, Canada’s DNCL and the UK’s TPS are marketing-suppression registrations,
+not removal of underlying broker records. Other provider phone, postal, directory and
+subscriber-SMS instructions remain human actions. The app makes no calls, sends no SMS,
+performs no paid lookup and does not promise a provider channel has no charges.
+
+Validation uses synthetic fixtures and explicitly consenting own-record checks only.
+No removal request is submitted for a random person to test a route. No independently
+verified deletion has been established by these inspections or fixtures.

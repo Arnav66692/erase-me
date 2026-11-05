@@ -6,9 +6,9 @@
 
 Profiles and history stay in this browser on this device. The host serves the interface, not a personal-data database. No email login is required. Clearing browser data deletes the workspace, so export a private backup if you need one. Other people with access to this browser profile can read the saved details.
 
-Use the free [Chrome companion](https://erase-me-preview.vercel.app/companion.html) for supported form actions. Download the ZIP, load it unpacked in desktop Chrome, grant access to the six reviewed broker sites, and refresh the workspace. Source is in `extension/`.
+Use the free [Chrome companion](https://erase-me-preview.vercel.app/companion.html) for supported form actions. Download the ZIP, load it unpacked in desktop Chrome, grant access to the eleven reviewed broker sites, and refresh the workspace. Source is in `extension/`.
 
-The catalog contains **43 reference routes**: two global portals, 23 US routes, four Canadian routes, five UK routes, two German routes and seven Turkish routes. Choose your country to see its routes and the global portals. Other countries can use the workspace and global portals, but have no regional pack yet. A reference link is not a validated integration: **six routes support an initial companion action**, and 37 require manual work. The 36 newly added reference entries have not been validated as current browser-app removal flows.
+The catalog contains **43 reference routes**: two global portals, 23 US routes, four Canadian routes, five UK routes, two German routes and seven Turkish routes. Choose your country to see its routes and the global portals. Other countries can use the workspace and global portals, but have no regional pack yet. A reference link is not a validated integration: **eleven routes support an initial companion action**, and 32 remain other guided channels. All 37 routes outside the first six have now received an official-channel review with sources, a check date and explicit limits. A reviewed channel is not an automated or completed removal.
 
 | Route | Working action | Required next step |
 | --- | --- | --- |
@@ -18,13 +18,19 @@ The catalog contains **43 reference routes**: two global portals, 23 US routes, 
 | FastPeopleSearch | Fill the reviewed first form | You complete the challenge, email and matching-record steps |
 | Apollo | Fill an explicitly entered, separately authorized business email | You submit and complete business-email verification; the profile email is never substituted |
 | Spokeo | Fill your explicitly confirmed direct listing URL and email | You submit, complete any challenge and click the broker confirmation email |
-| SmartBackgroundChecks | Open the official removal route | Current page access was blocked in our research. No companion action is enabled |
+| AdvancedBackgroundChecks | Fill the reviewed first form after confirming your own request | You review consent, submit and complete the challenge, email and second-form steps |
+| No Sorgulama, NumaraAra, NumaraSor and TelefonSorgulama | Fill the reviewed Turkish request forms with approved fields | You submit and complete required security/consent steps; NumaraSor additionally needs your own target phone number |
+| Other audited channels | Official instructions, applicable provider steps and local contact drafts | Blocked pages remain blocked; a registration or procedure question does not establish deletion |
 
-Form preparation, verification initiation, user-reported submission and verified deletion are distinct. A submitted form is never counted as a deletion. No independently verified deletion is established by this release. See [public app behavior](docs/PUBLIC_WORKSPACE.md), [current route research](docs/BROKER_ROUTE_RESEARCH.md) and [earlier evidence](docs/BROKER_VERIFICATION.md).
+Validation uses synthetic fixtures and explicitly consenting own-record checks; requests are never submitted for random people as route tests. Form preparation, verification initiation, user-reported submission and verified deletion are distinct. A submitted form is never counted as a deletion. No independently verified deletion is established by this release. See [public app behavior](docs/PUBLIC_WORKSPACE.md), [current route research](docs/BROKER_ROUTE_RESEARCH.md) and [earlier evidence](docs/BROKER_VERIFICATION.md).
 
 Use **Find my listing** to open an explicit Google search for your name and optional city on the selected broker. Google receives those search terms only when you choose that action. Search results are candidates, not confirmed matches or removals. Spokeo requires you to confirm that its exact listing is yours.
 
 Put any route on **Hold** to stop its new broker, search and mailbox actions. Only an explicit **Resume** releases it; resuming a campaign or restoring a backup does not release route holds or replay an old operation.
+
+The additional forms accept a separately reviewed request for your own information. Request text stays plain text, including Unicode and line breaks; NumaraSor’s phone field is limited to your own number. The companion leaves final submission, security codes, CAPTCHA, consent and any further verification to you.
+
+The **Current route review** section shows official sources and dates. **Official contact alternative** can prepare a local draft for 24 fixed published contacts. A purpose-verified privacy channel requires your own record reference; a registry or uncertain support contact gets only a procedure question without names or record identifiers. Drafts can be copied or downloaded, never sent by Erase Me. CMA, DNCL and TPS registrations set marketing preferences; they do not delete broker records. Provider phone, subscriber SMS and postal steps remain manual, and the app performs no paid lookup.
 
 Managed CAPTCHA challenges, accurate record matching and final submission remain user steps. **Check existing broker tab** can reconcile a supported fresh verification-email acknowledgment after your submission, without sending the form again. Unsupported outcomes remain unknown. The companion has no inbox or alarm permission. It holds interrupted operations rather than repeating them. The workspace has no background polling, automatic re-checks or resubmission.
 

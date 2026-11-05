@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Erase Me Companion",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Fill approved privacy forms in your browser. No inbox access or scheduled work.",
   "permissions": ["scripting", "storage"],
   "optional_host_permissions": [
@@ -10,7 +10,12 @@
     "https://www.searchpeoplefree.com/*",
     "https://www.fastpeoplesearch.com/*",
     "https://www.apollo.io/*",
-    "https://www.spokeo.com/*"
+    "https://www.spokeo.com/*",
+    "https://www.advancedbackgroundchecks.com/*",
+    "https://www.nosorgulama.com.tr/*",
+    "https://www.numaraara.com/*",
+    "https://www.numarasor.com/*",
+    "https://www.telefonsorgulama.com/*"
   ],
   "background": {"service_worker": "background.js"},
   "action": {"default_popup": "popup.html", "default_title": "Erase Me Companion"},

@@ -66,7 +66,7 @@ test('permission denial opens no tab and sends no data',async()=>{
  const c=chromeMock();c.deny();await background.dispatch(message,sender,c);assert.equal(c.count(),0);assert.deepEqual(c.records,{});
 });
 test('Chrome manifest has no inbox, alarms, or broad host access',()=>{
- const m=require('../extension/manifest.json');assert.equal(m.permissions.includes('alarms'),false);assert.equal(m.permissions.includes('tabs'),false);assert.equal(JSON.stringify(m).includes('<all_urls>'),false);assert.equal(m.optional_host_permissions.length,6);
+ const m=require('../extension/manifest.json');assert.equal(m.permissions.includes('alarms'),false);assert.equal(m.permissions.includes('tabs'),false);assert.equal(JSON.stringify(m).includes('<all_urls>'),false);assert.equal(m.optional_host_permissions.length,11);
 });
 
 const continuationMessage={type:'erase-me',action:'continue',routeId:'usphonebook',operationId:'a'.repeat(32),requestId:'b'.repeat(32),receiptRef:'c'.repeat(64),
@@ -258,4 +258,84 @@ test('USPhonebook history, reloads, uncertain navigation and later unrelated doc
  c.state.documentId='later-unrelated-document';
  assert.equal((await background.dispatch(observeMessage,sender,c)).status,'unknown');
  assert.equal(c.state.opens,1);assert.equal(c.state.writes,1);
+});
+
+const structuredCases={
+ advancedbackgroundchecks:{url:'https://www.advancedbackgroundchecks.com/opt-out',method:'get',submit:'Submit',selectors:{first_name:'#sfn',last_name:'#sln',email:'#semail'},
+  fields:{first_name:'Example',last_name:'Person',email:'person@example.test'},selection:['#mode','subject'],untouched:{'input[name="company"]':'page-owned'}},
+ 'tr-nosorgulama':{url:'https://www.nosorgulama.com.tr/iletisim/',method:'post',submit:'Mesajı Gönder',selectors:{full_name:'#ic-ad[name="ad_soyad"]',email:'#ic-email[name="email"]',request_text:'#ic-mesaj[name="mesaj"]'},
+  fields:{full_name:'Örnek Kişi',email:'person@example.test',request_text:'Lütfen bana ait kaydı kaldırın.\nBu kendi bilgilerim için bir taleptir.'},selection:['#ic-konu[name="konu"]','profil-kaldir'],untouched:{'input[name="_csrf"]':'page-owned','input[name="website_url"]':''}},
+ 'tr-numaraara':{url:'https://www.numaraara.com/iletisim',action:'https://www.numaraara.com/Contact/ContactFormSend',method:'post',submit:'Talebi Gönder',selectors:{full_name:'#form_AdSoyad[name="form.AdSoyad"]',email:'#form_Eposta[name="form.Eposta"]',request_text:'#form_Mesaj[name="form.Mesaj"]'},
+  fields:{full_name:'Örnek Kişi',email:'person@example.test',request_text:'Lütfen bana ait numara kaydını kaldırın.'},selection:['#form_Konu[name="form.Konu"]','Numara Silme Talebi (KVKK)'],untouched:{'#form_Kvkk[name="form.Kvkk"]':'','#form_ResimKodu[name="form.ResimKodu"]':'','input[name="__RequestVerificationToken"]':'page-owned'}},
+ 'tr-numarasor':{url:'https://www.numarasor.com/numara-kaldirma-talebi',method:'post',submit:'Talebi Gönder',selectors:{full_name:'#name[name="name"]',email:'#email[name="email"]',phone:'#number[name="number"]',request_text:'#reason[name="reason"]'},
+  fields:{full_name:'Örnek Kişi',email:'person@example.test',phone:'+90 (500) 000-00-00',request_text:'Lütfen bana ait bu numaranın kaydını kaldırın.'},selection:['#relation[name="relation"]','Numara sahibiyim'],untouched:{'input[name="_csrf"]':'page-owned','input[name="website"]':'','#phone[name="phone"]':''}},
+ 'tr-telefonsorgulama':{url:'https://www.telefonsorgulama.com/iletisim.html',action:'https://www.telefonsorgulama.com/iletisim-gonder.php',method:'post',submit:'Mesajı Gönder',selectors:{full_name:'#iletisimForm input[name="name"]',email:'#iletisimForm input[name="email"]',request_text:'#iletisimForm textarea[name="message"]'},
+  fields:{full_name:'Örnek Kişi',email:'person@example.test',request_text:'Lütfen bana ait numara sayfasını kaldırın.'},selection:['#iletisimForm select[name="subject"]','kaldirma'],untouched:{'input#recaptcha_token[name="recaptcha_token"]':'page-owned'}}
+};
+function structuredPage(id){
+ const c=structuredCases[id],map=new Map(),events=[],form={action:c.action||c.url,method:c.method};
+ const visible=extra=>({hidden:false,parentElement:null,getClientRects:()=>[{}],...extra});
+ class Input{constructor(type='text'){Object.assign(this,visible({tagName:'INPUT',type,disabled:false,readOnly:false,form}));this._value='';}get value(){return this._value;}set value(v){this._value=v;}dispatchEvent(e){events.push({key:this.key,type:e.type,value:this.value});this.onEvent?.();}}
+ class Textarea extends Input{constructor(){super();this.tagName='TEXTAREA';this.type='textarea';}get value(){return this._value;}set value(v){this._value=v.replace(/\r\n?/g,'\n');}}
+ class Select extends Input{constructor(){super();this.tagName='SELECT';this.type='select-one';this.options=[{value:''},{value:c.selection[1]}];}get value(){return this._value;}set value(v){this._value=v;}}
+ for(const [key,selector]of Object.entries(c.selectors)){const e=key==='request_text'?new Textarea():new Input(key==='email'?'email':key==='phone'?'tel':'text');e.key=key;map.set(selector,e);}
+ const choice=new Select();choice.key='purpose';map.set(c.selection[0],choice);
+ for(const [selector,value]of Object.entries(c.untouched)){const e=new Input();e._value=value;e.checked=false;map.set(selector,e);}
+ let clicked=0;const button=visible({type:'submit',form,disabled:false,textContent:c.submit,click(){clicked++;}});form.querySelectorAll=()=>[button];
+ if(id==='tr-numaraara')map.set('form#contactForm',form);
+ if(id==='tr-telefonsorgulama')map.set('form#iletisimForm',form);
+ const env={location:{href:c.url},HTMLInputElement:Input,HTMLTextAreaElement:Textarea,HTMLSelectElement:Select,Event:class{constructor(type){this.type=type;}},setTimeout:f=>f(),document:{querySelector:s=>map.get(s)||null,querySelectorAll:()=>[]}};
+ return{c,map,form,choice,button,env,events,clicked:()=>clicked};
+}
+for(const id of Object.keys(structuredCases))test(id+' fills only the own-request fields and exact removal purpose without submitting',async()=>{
+ const p=structuredPage(id);
+ assert.throws(()=>executor.validate(id,p.c.fields),/own request/);
+ assert.throws(()=>executor.validate(id,p.c.fields,{ownRequestConfirmed:false}),/own request/);
+ const result=await executor.execute({routeId:id,fields:p.c.fields,ownRequestConfirmed:true},p.env);
+ assert.equal(result.status,'prepared');assert.equal(p.clicked(),0);assert.equal(p.choice.value,p.c.selection[1]);
+ for(const [key,value]of Object.entries(p.c.fields))assert.equal(p.map.get(p.c.selectors[key]).value,value);
+ for(const [selector,value]of Object.entries(p.c.untouched)){assert.equal(p.map.get(selector).value,value);assert.equal(p.map.get(selector).checked,false);}
+ for(const key of Object.keys(p.c.fields))assert.deepEqual(p.events.filter(e=>e.key===key).map(e=>e.type),['input','change']);
+});
+test('structured prefill rejects changed origins, action methods, purpose controls and foreign fields before personal data is filled',async()=>{
+ for(const id of Object.keys(structuredCases)){
+  for(const change of [p=>{p.env.location.href+='?purpose=export';},p=>{p.form.action='https://foreign.example/collect';},p=>{p.form.method=p.c.method==='get'?'post':'get';},
+   p=>{p.choice.form={};},p=>{p.choice.options=[];},p=>{p.button.textContent='Export data';},p=>{p.map.get(p.c.selectors.email).form={};},p=>{p.map.get(p.c.selectors.email).type='text';}]){
+   const p=structuredPage(id);change(p);
+   assert.equal((await executor.execute({routeId:id,fields:p.c.fields,ownRequestConfirmed:true},p.env)).status,'blocked',id);
+   assert.equal(p.clicked(),0);for(const selector of Object.values(p.c.selectors))assert.equal(p.map.get(selector).value,'');
+  }
+  for(const mutate of [p=>{p.form.action='https://foreign.example/collect';},p=>{p.map.get(p.c.selectors.email).hidden=true;},p=>{p.map.get(p.c.selectors.email).type='hidden';}]){
+   const p=structuredPage(id),firstKey=Object.keys(p.c.fields)[0],first=p.map.get(p.c.selectors[firstKey]);first.onEvent=()=>mutate(p);
+   assert.equal((await executor.execute({routeId:id,fields:p.c.fields,ownRequestConfirmed:true},p.env)).status,'blocked');assert.equal(p.clicked(),0);
+   for(const key of Object.keys(p.c.fields).filter(k=>k!==firstKey))assert.equal(p.map.get(p.c.selectors[key]).value,'');
+  }
+ }
+});
+test('structured values preserve Unicode/newlines and phone literal while rejecting extra details or invalid fields',async()=>{
+ const p=structuredPage('tr-nosorgulama'),fields={...p.c.fields,request_text:'İstek metni <kendi kaydım>\r\nİkinci satır bilgileri.'};
+ assert.equal((await executor.execute({routeId:'tr-nosorgulama',fields,ownRequestConfirmed:true},p.env)).status,'prepared');
+ assert.equal(p.map.get(p.c.selectors.request_text).value,fields.request_text.replace(/\r\n/g,'\n'));
+ for(const bad of [{...p.c.fields,request_text:'short'},{...p.c.fields,request_text:'x'.repeat(5001)},{...p.c.fields,request_text:'unsafe\u0000request'},{...p.c.fields,full_name:'x'.repeat(121)},{...p.c.fields,date_of_birth:'2000-01-01'}])assert.throws(()=>executor.validate('tr-nosorgulama',bad,{ownRequestConfirmed:true}));
+ for(const phone of ['123456','1234567890123456','phone@example.test','+90<script>'])assert.throws(()=>executor.validate('tr-numarasor',{...structuredCases['tr-numarasor'].fields,phone},{ownRequestConfirmed:true}));
+});
+test('background forwards the own-request approval and never stores structured profile fields in its journal',async()=>{
+ const c=chromeMock(),request={...message,routeId:'tr-nosorgulama',fields:structuredCases['tr-nosorgulama'].fields,ownRequestConfirmed:true};let sent;
+ c.scripting.executeScript=async spec=>{if(spec.files)return[];sent=spec.args[0];return[{result:{status:'prepared',detail:'Fields filled.'}}];};
+ await assert.rejects(background.dispatch({...request,ownRequestConfirmed:false},sender,c),/own request/);
+ assert.equal(c.count(),0);assert.deepEqual(c.records,{});
+ assert.equal((await background.dispatch(request,sender,c)).status,'prepared');assert.equal(sent.ownRequestConfirmed,true);
+ assert.equal(JSON.stringify(c.records).includes('Örnek'),false);assert.equal(JSON.stringify(c.records).includes('person@example.test'),false);
+});
+test('replaced controls cannot make a captured foreign node receive later personal fields',async()=>{
+ for(const id of Object.keys(structuredCases)){
+  const p=structuredPage(id),old=p.map.get(p.c.selectors.email),replacement=new old.constructor('email');replacement.key='email';
+  p.map.get(p.c.selectors[Object.keys(p.c.fields)[0]]).onEvent=()=>{old.form={action:'https://foreign.example/collect'};p.map.set(p.c.selectors.email,replacement);};
+  assert.equal((await executor.execute({routeId:id,fields:p.c.fields,ownRequestConfirmed:true},p.env)).status,'prepared');
+  assert.equal(old.value,'');assert.equal(replacement.value,p.c.fields.email);assert.equal(p.clicked(),0);
+ }
+ const p=continuationPage(),old=p.map.get('#subject-email'),replacement=new old.constructor('email');
+ p.map.get('#subject-firstname').onEvent=()=>{old.form={action:'https://foreign.example/collect'};p.map.set('#subject-email',replacement);};
+ assert.equal((await executor.executeContinuation(continuationMessage,p.env)).status,'prepared');
+ assert.equal(old.value,'');assert.equal(replacement.value,continuationMessage.fields.email);assert.equal(p.clicked(),0);
 });

@@ -5,6 +5,12 @@
   const M=()=>globalThis.EraseRemovalMail;
   const mailRoutes=new Set(['usphonebook','searchpeoplefree','fastpeoplesearch']);
   const newMailRoutes=new Set(['usphonebook','fastpeoplesearch']);
+  const fieldSpecs={
+    first_name:{label:'Your first name',type:'text',max:120},last_name:{label:'Your last name',type:'text',max:120},
+    full_name:{label:'Your full name',type:'text',max:120},phone:{label:'Your phone number in the record',type:'tel',max:40},
+    business_email:{label:'Business email associated with your Apollo record',type:'email',max:254},
+    listing_url:{label:'Your confirmed listing URL',type:'url',max:2048},request_text:{label:'Your removal request text',max:5000,textarea:true}
+  };
   let mailStatus=null;
   const $=id=>document.getElementById(id);
   const n=(tag,text,cls)=>{const e=document.createElement(tag);if(text)e.textContent=text;if(cls)e.className=cls;return e;};
@@ -122,6 +128,56 @@
     panel.append(n('p','The key is cleared after each click. Private backups include the scoped mail capability, which permits checking only this operation. Keep backups private.','public-route-note'));
     return panel;
   }
+  function sourceNote(url,label,held){
+    let source;try{source=new URL(url);if(source.protocol!=='https:'||source.username||source.password||source.port)throw new Error();}catch(_){return n('span',label);}
+    const link=n(held?'span':'a',label);if(!held){link.href=source.href;link.target='_blank';link.rel='noopener noreferrer';}return link;
+  }
+  function routeReview(route,item){
+    if(!route.review&&!route.manualContact)return null;
+    const panel=n('details',null,'public-route-review');panel.append(n('summary','Current route review'));
+    if(route.review){
+      panel.append(n('p','Checked '+route.review.checkedAt+'. '+route.review.status.replace(/_/g,' ')+'.','public-route-note'),n('p',route.review.summary,'public-route-note'));
+      if(route.review.limits)panel.append(n('p',route.review.limits,'public-route-note'));
+      if(/registration/.test(route.operationKind||''))panel.append(n('p','This registers a marketing preference. It does not establish deletion of broker records.','public-route-note'));
+      for(const [index,url]of (route.review.sources||[]).entries())panel.append(sourceNote(url,'Official source '+(index+1),item.held));
+    }
+    if(route.manualContact){
+      const contact=route.manualContact,label=contact.kind==='post'?'Postal channel':contact.kind==='subscriber_sms'?'Subscriber SMS instruction':contact.kind==='phone'?'Provider phone channel':'Provider contact';
+      panel.append(n('p',label+': '+contact.value,'public-route-note'),n('p',contact.purpose||'Complete this step directly with the provider. Erase Me does not call, send SMS or post letters.','public-route-note'));
+      if(contact.source)panel.append(sourceNote(contact.source,'Official contact instructions',item.held));
+    }
+    return panel;
+  }
+  function privacyControls(route,item){
+    const contact=route.privacyContact;if(!contact||!['privacy','support'].includes(contact.kind))return null;
+    const panel=n('details',null,'public-privacy-draft');panel.append(n('summary','Official contact alternative'));
+    if(item.held){panel.append(n('p','This route is on hold. Resume it explicitly before preparing a new contact request.','public-route-note'));return panel;}
+    const support=contact.kind==='support';
+    panel.append(n('p','Fixed recipient: '+contact.email+'. Checked '+contact.checkedAt+'.','public-route-note'));
+    if(contact.restriction)panel.append(n('p',contact.restriction,'public-route-note'));
+    panel.append(sourceNote(contact.source,'Official contact source',false));
+    panel.append(n('p',support?'This is a published support or business contact, not a validated deletion endpoint. The draft asks only for the procedure and includes no name or record identifiers.':'Prepare a private request about your own information. Include only a public listing URL or your own listed reference; do not include passwords, verification links, ID numbers or identity documents.','public-route-note'));
+    panel.append(n('p','Nothing is sent. Use an account that meets the broker’s stated requirements; no shared sender is substituted and no personal inbox is connected. Reconcile an uncertain earlier submission before using another request.','public-route-note'));
+    const fields=n('div',null,'public-route-fields');let reference=null;
+    if(!support){const label=n('label','Your own public listing or record reference');label.className='wide';reference=n('input');reference.type='text';reference.maxLength=2048;reference.setAttribute('aria-label',route.name+' own record reference');label.append(reference);fields.append(label);}
+    const review=n('label','This concerns my own information, and I authorize preparing this local draft.');review.className='wide';const agreed=n('input');agreed.type='checkbox';agreed.setAttribute('aria-label',route.name+' privacy draft authorization');review.append(agreed);fields.append(review);panel.append(fields);
+    const output=n('textarea');output.className='public-request-text';output.rows=10;output.readOnly=true;output.hidden=true;output.setAttribute('aria-label',route.name+' private request draft');
+    let draft=null,generation=0;
+    const formatted=()=>{if(!draft)throw new Error('Prepare and review the local draft first.');return 'To: '+draft.to+'\nSubject: '+draft.subject+'\n\n'+draft.body;};
+    const copy=button('Copy private draft',async()=>{const value=formatted();if(!globalThis.navigator?.clipboard?.writeText)throw new Error('Clipboard access is unavailable. Select and copy the visible draft yourself.');await globalThis.navigator.clipboard.writeText(value);feedback('Private draft copied. No email was sent or removal recorded.');});copy.disabled=true;
+    const download=button('Download private draft',()=>{const value=formatted(),url=URL.createObjectURL(new Blob([value],{type:'text/plain;charset=utf-8'})),a=n('a');a.href=url;a.download='erase-me-'+route.id+'-private-request.txt';a.click();URL.revokeObjectURL(url);feedback('Private draft downloaded. Keep it private; no email was sent or removal recorded.');});download.disabled=true;
+    const invalidate=()=>{generation++;draft=null;output.value='';output.hidden=true;copy.disabled=true;download.disabled=true;};
+    if(reference)reference.addEventListener('input',invalidate);agreed.addEventListener('change',invalidate);
+    const prepare=button(support?'Prepare procedure question':'Prepare private request',async()=>{
+      if(!agreed.checked)throw new Error('Confirm this request concerns your own information first.');
+      const current=generation,value=reference?reference.value:'';
+      const result=await W().privacyDraftRequest(route.id,{reference:value,own_request:true});
+      if(current!==generation||!agreed.checked||(reference&&reference.value!==value))throw new Error('The record reference or authorization changed. Review it and prepare again.');
+      draft=result;output.value=formatted();output.hidden=false;copy.disabled=false;download.disabled=false;
+      feedback('Private draft prepared in this browser. Review it before using your chosen removal account. Nothing was sent and no removal was established.');
+    });
+    panel.append(prepare,output,copy,download);return panel;
+  }
   function decorate(items){
     const routes=W().routes();
     for(const [index,row] of [...$('listing-items').children].entries()){
@@ -131,17 +187,18 @@
       const info=row.querySelector('.listing-info'),fields=n('div',null,'public-route-fields'),actions=n('div',null,'public-route-actions');
       const values={},affirmations={};
       for(const key of route.fields.filter(k=>k!=='email')){
-        const label=n('label',key==='listing_url'?'Your confirmed listing URL':key==='business_email'?'Business email associated with your Apollo record':key==='first_name'?'Your first name':'Your last name');
-        const input=n('input');input.type=key==='listing_url'?'url':key==='business_email'?'email':'text';input.maxLength=key==='listing_url'?2048:key==='business_email'?254:120;input.value=item.input_fields?.[key]||'';input.disabled=Boolean(item.operation_id)||item.held===true;
+        const spec=fieldSpecs[key];if(!spec)continue;
+        const label=n('label',spec.label);if(spec.textarea)label.className='wide';
+        const input=n(spec.textarea?'textarea':'input');if(spec.textarea){input.rows=6;input.className='public-request-text';}else input.type=spec.type;input.maxLength=spec.max;input.value=item.input_fields?.[key]||(key==='full_name'?W().profile().name||'':'');input.disabled=Boolean(item.operation_id)||item.held===true;
         input.setAttribute('aria-label',route.name+' '+label.textContent);values[key]=input;label.append(input);fields.append(label);
       }
       for(const key of route.requiredAffirmations){
-        const label=n('label',key==='business_email'?'This is the business email associated with my own Apollo record, and I authorize using it for removal.':'I reviewed this exact listing and confirm it is my own information.');
+        const label=n('label',key==='business_email'?'This is the business email associated with my own Apollo record, and I authorize using it for removal.':key==='own_request'?'I reviewed these fields and confirm this request concerns my own information.':'I reviewed this exact listing and confirm it is my own information.');
         const input=n('input');input.type='checkbox';input.checked=item.affirmations?.[key]===true;input.disabled=Boolean(item.operation_id)||item.held===true;
-        input.setAttribute('aria-label',route.name+' '+(key==='business_email'?'business email authorization':'own listing confirmation'));affirmations[key]=input;label.append(input);fields.append(label);
+        input.setAttribute('aria-label',route.name+' '+(key==='business_email'?'business email authorization':key==='own_request'?'own request authorization':'own listing confirmation'));affirmations[key]=input;label.append(input);fields.append(label);
         for(const value of Object.values(values))value.addEventListener('input',()=>{input.checked=false;});
       }
-      const save=async()=>{const evidence={},confirmed={};for(const [key,input]of Object.entries(values))evidence[key]=input.value.trim();for(const [key,input]of Object.entries(affirmations))confirmed[key]=input.checked===true;const saved=await W().setEvidence(route.id,evidence,confirmed);return{fields:saved,affirmations:confirmed};};
+      const save=async()=>{const evidence={},confirmed={};for(const [key,input]of Object.entries(values))evidence[key]=['request_text','phone'].includes(key)?input.value:input.value.trim();for(const [key,input]of Object.entries(affirmations))confirmed[key]=input.checked===true;const saved=await W().setEvidence(route.id,evidence,confirmed);return{fields:saved,affirmations:confirmed};};
       const open=button('Open official form',async()=>{
         await W().opened(route.id);
         window.open(route.url,'_blank','noopener,noreferrer');changed();feedback('Opening the official broker form was requested. If no tab appears, allow popups for this site. No request has been recorded as sent.');
@@ -156,6 +213,7 @@
           const reviewed=await save();const ping=await companion({action:'ping'});
           if(!ping.routes?.includes(route.id))throw new Error('Open the companion toolbar icon and enable this broker before starting.');
           if(['apollo','spokeo'].includes(route.id)&&!ping.capabilities?.includes('explicit-fields-v1'))throw new Error('Update the companion from the current download and refresh this workspace. No new action started.');
+          if(route.requiredAffirmations.includes('own_request')&&!ping.capabilities?.includes('structured-fields-v1'))throw new Error('Update the companion from the current download to use reviewed structured request fields. No new action started.');
           const operation=await W().prepare(route.id,reviewed);changed();
           let result;
           try{result=await companion({action:'run',...operation});}catch(error){result={status:'unknown',detail:'The companion outcome is unknown. Check the broker tab before doing anything further.'};}
@@ -187,6 +245,8 @@
       if(!item.held&&item.mail_contact&&!item.operation_id)steps.append(button('Use my typed email instead',async()=>{await W().clearMailContact(route.id);changed();feedback('This route will use your typed profile email. No broker was contacted.');}));
       if(item.mail_receipt)steps.append(n('p',item.mail_receipt.status==='held'?(item.mail_receipt.authenticated?(item.mail_receipt.continuation_available?'Authenticated broker mail received; a reviewed confirmation form is available. This does not establish deletion.':'Authenticated broker mail received; confirmation is held for route validation.'):'Imported receipt history is unverified; perform an explicit check to establish its current state.'):'The last explicit check found no qualifying receipt.','public-route-note'));
       const mailPanel=mailControls(route,item);if(mailPanel)steps.append(mailPanel);
+      const audit=routeReview(route,item);if(audit)steps.append(audit);
+      const privacyPanel=privacyControls(route,item);if(privacyPanel)steps.append(privacyPanel);
       steps.append(actions,n('p',route.evidence,'public-route-note'));
       info.append(steps);
     }

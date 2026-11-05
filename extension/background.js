@@ -113,7 +113,7 @@ async function dispatch(message,sender,chromeApi=chrome){
   if(message.action==='ping'){
     const routes=[];
     for(const [routeId,route] of Object.entries(EXEC.ROUTES))if(await chromeApi.permissions.contains({origins:['https://'+route.host+'/*']}))routes.push(routeId);
-    return {status:'connected',version:'0.3.0',routes,capabilities:['usphonebook-continuation-v1','explicit-fields-v1','broker-observation-v1']};
+    return {status:'connected',version:'0.4.0',routes,capabilities:['usphonebook-continuation-v1','explicit-fields-v1','structured-fields-v1','broker-observation-v1']};
   }
   if(!id(message.operationId)||!EXEC.ROUTES[message.routeId])throw new Error('Unsupported operation.');
   const continuation=['continue','continuation-result'].includes(message.action),key=(continuation?'continuation:':'operation:')+message.operationId;
@@ -154,7 +154,7 @@ async function dispatch(message,sender,chromeApi=chrome){
     }
     const payload=continuation?{routeId:message.routeId,operationId:message.operationId,requestId:message.requestId,receiptRef:message.receiptRef,
       confirmationUrl:message.confirmationUrl,contactEmail:message.contactEmail,fields:message.fields,authorized:message.authorized}:
-      {routeId:message.routeId,operationId:message.operationId,observationNonce,fields:message.fields,businessEmailConfirmed:message.businessEmailConfirmed,listingConfirmed:message.listingConfirmed};
+      {routeId:message.routeId,operationId:message.operationId,observationNonce,fields:message.fields,businessEmailConfirmed:message.businessEmailConfirmed,listingConfirmed:message.listingConfirmed,ownRequestConfirmed:message.ownRequestConfirmed};
     const [response]=await chromeApi.scripting.executeScript({target:{tabId:tab.id,...(typeof installed?.documentId==='string'?{documentIds:[installed.documentId]}:{})},
       func:(payload,continueForm)=>continueForm?globalThis.EraseBrokerExecutor.executeContinuation(payload):globalThis.EraseBrokerExecutor.execute(payload),args:[payload,continuation]});
     const result=response?.result;
