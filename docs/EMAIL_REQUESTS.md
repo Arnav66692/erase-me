@@ -24,9 +24,13 @@ pilot](AUTOMATIC_CONFIRMATIONS.md), connected by an operator through [Gmail
 OAuth](GMAIL_OAUTH.md). It has no personal-inbox access or sending permission and
 does not reactivate the archived SMTP/IMAP sending routes above.
 
-Only USPhonebook, SearchPeopleFree and FastPeopleSearch can use an explicitly chosen
+Only USPhonebook and FastPeopleSearch can use an explicitly chosen
 shared removal contact. The original profile email stays unchanged. People Data Labs
-and Apollo keep their record-associated email. A shared contact does not establish
+and Apollo keep their record-associated email. Apollo’s business email is entered and
+authorized separately rather than copied from the profile. SearchPeopleFree uses the
+person’s typed email; new shared contacts are disabled because its consent associates
+the address with the requester. Existing signed references remain available for held-only
+receipt checks. A shared contact does not establish
 ownership of the subject's record or satisfy a broker's ownership terms automatically.
 
 The relay requires private-pilot activation and an operator key for every explicit

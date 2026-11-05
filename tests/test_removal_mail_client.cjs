@@ -19,6 +19,11 @@ test('receipt relay does nothing until an explicit method is called',async()=>{
   assert.equal(calls[0].path,'/api/removal-mail/status');assert.equal(calls[0].options.method,'GET');assert.equal(calls[0].options.body,undefined);
   assert.equal(calls[0].options.headers['X-Erase-Mail-Key'],undefined);
 });
+test('new SearchPeopleFree shared contacts are rejected locally while legacy receipt checks remain available',async()=>{
+  const {client,calls}=fixture({...PENDING,route_id:'searchpeoplefree'});
+  await assert.rejects(()=>client.session({route_id:'searchpeoplefree',operation_id:OPERATION,authorized:true},KEY));assert.equal(calls.length,0);
+  assert.equal((await client.check({capability:CAPABILITY,explicit:true},KEY)).route_id,'searchpeoplefree');assert.equal(calls.length,1);
+});
 test('session sends only scoped references with a private header, never profile data or query tokens',async()=>{
   const {client,calls}=fixture(SESSION);const body={route_id:'usphonebook',operation_id:OPERATION,authorized:true};
   assert.deepEqual(await client.session(body,KEY),SESSION);assert.equal(calls.length,1);

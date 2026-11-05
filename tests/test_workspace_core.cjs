@@ -148,8 +148,8 @@ test('only exact approved broker listing origins and safe paths are accepted', a
   for (const listing_url of ['http://www.spokeo.com/Example-Person', 'https://www.spokeo.com.evil.test/Example-Person', 'https://evil.spokeo.com/Example-Person', 'https://person@www.spokeo.com/Example-Person', 'https://www.spokeo.com/optout', 'https://www.spokeo.com/Example-Person?token=secret', 'https://www.spokeo.com:444/Example-Person']) {
     assert.throws(() => core.setEvidence('spokeo', { listing_url }));
   }
-  core.setEvidence('spokeo', { listing_url: 'https://www.spokeo.com/Example-Person/California/Example-City' });
-  assert.equal(core.prepare('spokeo').fields.listing_url, 'https://www.spokeo.com/Example-Person/California/Example-City');
+  core.setEvidence('spokeo', { listing_url: 'https://www.spokeo.com/Example-Person/California/Example-City/p12345678' },{own_listing:true});
+  assert.equal(core.prepare('spokeo').fields.listing_url, 'https://www.spokeo.com/Example-Person/California/Example-City/p12345678');
   assert.throws(() => core.setEvidence('unknown', {}), /supported broker/);
 });
 
@@ -240,7 +240,7 @@ test('backup roundtrip retains validated location and approved broker inputs bef
   await post(source.core, '/api/profile', { country: 'us', region: 'US-CA', city: 'Example City' });
   source.core.setEvidence('usphonebook', { first_name: 'Example', last_name: 'Person' });
   source.core.recordUser('usphonebook', 'user_reported_requested');
-  source.core.setEvidence('spokeo', { listing_url: 'https://www.spokeo.com/Example-Person/California/Example-City' });
+  source.core.setEvidence('spokeo', { listing_url: 'https://www.spokeo.com/Example-Person/California/Example-City/p12345678' },{own_listing:true});
   const restored = fixture(); restored.core.importData(source.core.exportData());
   const profile = restored.core.profile();
   assert.equal(profile.country, 'US'); assert.equal(profile.region, 'US-CA'); assert.equal(profile.city, 'Example City');
@@ -248,7 +248,9 @@ test('backup roundtrip retains validated location and approved broker inputs bef
   const item = restored.core.dashboard().items.find(row => row.site_id === 'usphonebook');
   assert.deepEqual(item.input_fields, { first_name: 'Example', last_name: 'Person' });
   assert.equal(item.status, 'user_reported_requested'); assert.throws(() => restored.core.prepare('usphonebook'), /already started/);
-  assert.equal(restored.core.prepare('spokeo').fields.listing_url, 'https://www.spokeo.com/Example-Person/California/Example-City');
+  assert.throws(()=>restored.core.prepare('spokeo'),/Confirm that this exact listing/);
+  restored.core.setEvidence('spokeo',restored.core.snapshot().items.spokeo.fields,{own_listing:true});
+  assert.equal(restored.core.prepare('spokeo').fields.listing_url, 'https://www.spokeo.com/Example-Person/California/Example-City/p12345678');
   assert.equal(restored.core.dashboard().counts.requested, 0); assert.equal(restored.core.dashboard().counts.removed, 0);
 });
 
@@ -352,7 +354,7 @@ function workspaceUIFixture(config={}) {
     append(...nodes) { this.children.push(...nodes); }
     replaceChildren(...nodes) { this.children=[...nodes]; }
     addEventListener(type, action) { this.listeners[type] = action; }
-    setAttribute() {}
+    setAttribute(key,value) { (this.attributes ||= new Map()).set(key,value); }
   }
   const route = Routes.find(route => route.id === (config.routeId||'usphonebook'));
   const title = new Element(); title.textContent = route.name;
@@ -376,7 +378,7 @@ function workspaceUIFixture(config={}) {
     postMessage(data, origin) {
       posted.push(data.payload.action);
       queueMicrotask(() => listeners.get('message')?.({ source: window, origin, data: { source: 'erase-companion', requestId: data.requestId,
-        reply: { ok: true, result: data.payload.action === 'ping' ? { routes: [route.id], capabilities:['usphonebook-continuation-v1'] } : { status: 'prepared', detail: 'Prepared fixture.' } } } }));
+        reply: { ok: true, result: data.payload.action === 'ping' ? { routes: [route.id], capabilities:config.capabilities||['usphonebook-continuation-v1','explicit-fields-v1','broker-observation-v1'] } : { status: 'prepared', detail: 'Prepared fixture.' } } } }));
     },
     open: url => opened.push(url)
   };
@@ -391,7 +393,7 @@ function workspaceUIFixture(config={}) {
   const findText=text=>find(info,element=>element.textContent===text)||find(toolbox,element=>element.textContent===text);
   const click = text => findText(text).listeners.click();
   return { click, calls, posted, changes, opened, feedback, resolveSave, resolvePrepare, resolveResult, resolveOpen, rejectOpen,
-    tools:()=>context.EraseWorkspaceUI.tools(),render,findText,keyInput:()=>find(info,element=>element.type==='password') };
+    tools:()=>context.EraseWorkspaceUI.tools(),render,findText,keyInput:()=>find(info,element=>element.type==='password'),input:label=>find(info,element=>element.attributes?.get('aria-label')===label) };
 }
 test('workspace UI waits for saved fields, operation reservation and result persistence', async () => {
   const ui = workspaceUIFixture(), pending = ui.click('Fill with companion');
@@ -426,7 +428,7 @@ test('US location selects only global and US routes without claiming more automa
   const { core } = fixture(); await signup(core); await post(core, '/api/profile', { country: 'us' });
   const data = core.dashboard(), expected = Routes.filter(route => route.countries.includes('*') || route.countries.includes('US'));
   assert.equal(data.items.length, expected.length); assert.equal(data.coverage.countryRouteCount, 23);
-  assert.equal(data.coverage.companionRouteCount, 4); assert.equal(data.coverage.hasCountryPack, true);
+  assert.equal(data.coverage.companionRouteCount, 6); assert.equal(data.coverage.hasCountryPack, true);
   assert.equal(data.questions.length, 0); assert.equal(data.items.some(item => item.site_id === 'canada411'), false);
   assert.equal(data.items.every(item => item.operation_id === null), true);
 });
@@ -434,7 +436,7 @@ test('non-US packs expose their manual routes and block new actions outside that
   for (const [country, selected] of [['CA', 'canada411'], ['GB', '192com'], ['DE', 'de-11880'], ['TR', 'tr-numaraara']]) {
     const { core } = fixture(); await signup(core); await post(core, '/api/profile', { country }); const data = core.dashboard();
     assert.ok(data.items.some(item => item.site_id === selected)); assert.equal(data.items.some(item => item.site_id === 'spokeo'), false);
-    assert.equal(data.coverage.hasCountryPack, true); assert.equal(data.coverage.companionRouteCount, 1);
+    assert.equal(data.coverage.hasCountryPack, true); assert.equal(data.coverage.companionRouteCount, 2);
     core.opened(selected); assert.equal(core.dashboard().counts.requested, 0);
     assert.throws(() => core.prepare('usphonebook'), /outside your selected country/);
     assert.throws(() => core.opened('usphonebook'), /outside your selected country/);
@@ -498,7 +500,7 @@ function contactSession(core,routeId='usphonebook',changes={}) {
   return {status:'ready',request_id,route_id:routeId,operation_id,contact_email,expires_at,
     capability:Buffer.from(JSON.stringify(claims)).toString('base64url')+'.'+'a'.repeat(43),automatic_execution:false};
 }
-test('dedicated contact is explicit, scoped to three directories and never replaces identity email',async()=>{
+test('new dedicated contact is explicit, scoped to two directories and never replaces identity email',async()=>{
   const {core}=await mailFixture();const contact=contactSession(core);
   assert.throws(()=>core.bindMailContact('usphonebook',contact),/Explicitly authorize/);
   const request=core.mailSessionRequest('usphonebook');
@@ -680,4 +682,132 @@ test('continuation UI requires field review and awaits its persisted navigation 
   await new Promise(resolve=>setImmediate(resolve));assert.equal(apiCalls,1);assert.equal(prepareCalls,1);assert.deepEqual(ui.posted,['ping']);assert.equal(ui.keyInput().value,'');
   releasePrepare({operationId:'a'.repeat(32),routeId:'usphonebook',fields:{},authorized:true});await pending;
   assert.deepEqual(ui.posted,['ping','continue']);assert.equal(recordCalls,1);assert.match(ui.feedback.textContent,/Prepared fixture/);
+});
+
+test('Apollo requires an explicit record-associated business address and authorization without a profile-email fallback',async()=>{
+  const f=fixture();await signup(f.core);
+  assert.throws(()=>f.core.prepare('apollo'),/business email associated/);
+  assert.equal(f.core.snapshot().items.apollo.operation_id,null);
+  assert.throws(()=>f.core.setEvidence('apollo',{email:'someone@example.test'}),/not editable/);
+  f.core.setEvidence('apollo',{business_email:'work@example.test'});
+  assert.throws(()=>f.core.prepare('apollo'),/Confirm this is the business email/);
+  f.core.setEvidence('apollo',{business_email:'work@example.test'},{business_email:true});
+  const op=f.core.prepare('apollo');assert.deepEqual(op.fields,{business_email:'work@example.test'});
+  assert.equal(op.businessEmailConfirmed,true);assert.equal(Object.hasOwn(op.fields,'email'),false);
+  assert.equal(f.core.profile().email,'person@example.test');assert.equal(f.core.dashboard().counts.requested,0);
+});
+test('Spokeo requires a specific record path and fresh ownership confirmation for either observed URL layout',async()=>{
+  const valid=['https://www.spokeo.com/Example-Person/California/Example-City/p12345678','https://www.spokeo.com/Example-Person/Example-City/CA/p123456789012345678901234'];
+  for(const url of valid){
+    const {core}=fixture();await signup(core);await post(core,'/api/profile',{country:'US'});
+    core.setEvidence('spokeo',{listing_url:url});assert.throws(()=>core.prepare('spokeo'),/Confirm that this exact listing/);
+    core.setEvidence('spokeo',{listing_url:url},{own_listing:true});const op=core.prepare('spokeo');
+    assert.equal(op.fields.listing_url,url);assert.equal(op.listingConfirmed,true);assert.equal(core.dashboard().counts.found,0);
+  }
+  const {core}=fixture();await signup(core);await post(core,'/api/profile',{country:'US'});
+  for(const path of ['/Example-Person','/Example-Person/California/Example-City','/Example-Person/Imaginary-State/Example-City/p12','/Example-Person/Example-City/ZZ/p12','/Example-Person/California/Example-City/p12/purchase','/Example-Person/California/Example-City/p'+ '1'.repeat(65)])
+    assert.throws(()=>core.setEvidence('spokeo',{listing_url:'https://www.spokeo.com'+path},{own_listing:true}),/record URL/);
+  core.setEvidence('spokeo',{listing_url:valid[0]},{own_listing:true});
+  core.setEvidence('spokeo',{listing_url:valid[1]});assert.throws(()=>core.prepare('spokeo'),/Confirm that this exact listing/);
+});
+test('an in-flight prefill cannot replace the exact fields reviewed before the companion ping',async()=>{
+  const f=fixture();await signup(f.core);const fields={business_email:'first@example.test'},affirmations={business_email:true};
+  f.core.setEvidence('apollo',fields,affirmations);
+  Core.create(f.options).setEvidence('apollo',{business_email:'second@example.test'},affirmations);
+  assert.throws(()=>f.core.prepare('apollo',{fields,affirmations}),/changed in another tab/);
+  assert.equal(f.core.snapshot().items.apollo.operation_id,null);
+});
+test('route holds gate new dispatches and survive campaign resume and private backup restoration',async()=>{
+  const f=await mailFixture();Core.create(f.options).holdRoute('usphonebook');
+  for(const action of [()=>f.core.prepare('usphonebook'),()=>f.core.opened('usphonebook'),()=>f.core.searchRequest('usphonebook'),()=>f.core.mailSessionRequest('usphonebook'),()=>f.core.setEvidence('usphonebook',{first_name:'Other'}),()=>f.core.recordUser('usphonebook','user_reported_requested')])assert.throws(action,/on hold/);
+  await post(f.core,'/api/campaign',{action:'resume'});assert.equal(f.core.dashboard().items.find(i=>i.site_id==='usphonebook').status,'held');
+  assert.equal(f.core.dashboard().counts.blocked,1);
+  const restored=fixture().core;restored.importData(f.core.exportData());assert.equal(restored.snapshot().items.usphonebook.held,true);
+  assert.throws(()=>restored.prepare('usphonebook'),/on hold/);restored.resumeRoute('usphonebook');
+  assert.equal(restored.prepare('usphonebook').routeId,'usphonebook');
+});
+test('a held started operation accepts existing result reconciliation without clearing its hold or allowing a repeat',async()=>{
+  const {core}=fixture();await signup(core);const op=core.prepare(PDL);core.holdRoute(PDL);
+  core.recordCompanion(PDL,op.operationId,{status:'verification_sent',route_verified:true,evidence:'fresh_visible_success'});
+  assert.equal(core.snapshot().items[PDL].status,'verification_sent');assert.equal(core.dashboard().items.find(i=>i.site_id===PDL).status,'held');
+  assert.throws(()=>core.observationRequest(PDL),/on hold/);core.resumeRoute(PDL);assert.throws(()=>core.prepare(PDL),/already started/);
+});
+test('a held confirmation stops mailbox reads and both continuation authorization and navigation',async()=>{
+  const f=await readyContinuation();f.core.mailContinuationRequest('usphonebook',CONFIRM_FIELDS);f.core.holdRoute('usphonebook');
+  for(const action of [()=>f.core.mailCheckRequest('usphonebook'),()=>f.core.mailContinuationRequest('usphonebook',CONFIRM_FIELDS),()=>f.core.prepareMailContinuation('usphonebook',f.response,CONFIRM_FIELDS)])assert.throws(action,/on hold/);
+  assert.equal(f.core.snapshot().items.usphonebook.continuation,undefined);
+});
+test('legacy SearchPeopleFree contacts can be explicitly cleared or checked but never silently reused for a new action',async()=>{
+  const f=await mailFixture();f.core.setEvidence('searchpeoplefree',{first_name:'Example',last_name:'Person'});
+  assert.throws(()=>f.core.mailSessionRequest('searchpeoplefree'),/requires an email you own/);
+  const d=f.core.snapshot(),contact=contactSession(f.core,'searchpeoplefree');d.items.searchpeoplefree.mail_contact=contact;
+  f.values.set(Core.KEY,JSON.stringify(d));const legacy=Core.create(f.options);
+  assert.throws(()=>legacy.prepare('searchpeoplefree'),/old shared contact/);assert.equal(legacy.snapshot().items.searchpeoplefree.operation_id,null);
+  legacy.clearMailContact('searchpeoplefree');assert.equal(legacy.prepare('searchpeoplefree').fields.email,'person@example.test');
+  const started=legacy.snapshot();started.items.searchpeoplefree.mail_contact=contact;f.values.set(Core.KEY,JSON.stringify(started));
+  assert.deepEqual(Core.create(f.options).mailCheckRequest('searchpeoplefree'),{capability:contact.capability,explicit:true});
+});
+test('listing search is an explicit persisted disclosure without match, submission or removal evidence',async()=>{
+  const f=fixture();await signup(f.core);await post(f.core,'/api/profile',{country:'US',city:'Example City'});
+  const request=f.core.searchRequest('spokeo'),url=new URL(request.url);assert.equal(url.origin,'https://www.google.com');assert.equal(url.pathname,'/search');
+  assert.equal(url.searchParams.get('q'),'site:spokeo.com "Example Person" "Example City"');
+  assert.equal(url.href.includes('person%40'),false);assert.equal(f.core.snapshot().items.spokeo.operation_id,null);
+  assert.deepEqual(f.core.dashboard().counts,{found:0,requested:0,removed:0,blocked:0});
+  assert.throws(()=>f.core.searchRequest('apollo'),/unavailable/);f.core.holdRoute('spokeo');assert.throws(()=>f.core.searchRequest('spokeo'),/on hold/);
+  const other=fixture();await signup(other.core);await post(other.core,'/api/profile',{country:'GB'});assert.throws(()=>other.core.searchRequest('spokeo'),/outside your selected country/);
+  const failed=fixture();await signup(failed.core);await post(failed.core,'/api/profile',{country:'US'});failed.storage.setItem=()=>{throw new Error('quota');};
+  assert.throws(()=>failed.core.searchRequest('spokeo'),/could not save/);
+});
+test('existing-tab observations require a matching authorization and preserve preparation when proof is unknown',async()=>{
+  const f=await mailFixture(),op=f.core.prepare('usphonebook');f.core.recordCompanion('usphonebook',op.operationId,{status:'prepared'});
+  assert.throws(()=>f.core.recordObservation('usphonebook',op.operationId,{status:'unknown'}),/authorized existing operation/);
+  f.core.observationRequest('usphonebook');f.core.recordObservation('usphonebook',op.operationId,{status:'unknown'});
+  assert.equal(f.core.snapshot().items.usphonebook.status,'needs_broker_step');
+  assert.throws(()=>f.core.recordObservation('usphonebook',op.operationId,{status:'verification_sent',route_verified:true,evidence:'fresh_visible_success'}),/unverified/);
+  f.core.holdRoute('usphonebook');f.core.recordObservation('usphonebook',op.operationId,{status:'verification_sent',observation_verified:true,route_verified:true,evidence:'fresh_visible_success'});
+  assert.equal(f.core.dashboard().items.find(i=>i.site_id==='usphonebook').status,'held');assert.equal(f.core.dashboard().counts.requested,0);assert.equal(f.core.dashboard().counts.removed,0);
+});
+test('held UI exposes only explicit resume and local result reconciliation',async()=>{
+  const ui=workspaceUIFixture({item:{held:true,operation_id:'a'.repeat(32),status:'held'}});
+  assert.ok(ui.findText('Resume this route'));assert.ok(ui.findText('Read companion result'));
+  for(const label of ['Open official form','Fill with companion','Find my listing','Check existing broker tab','I submitted the request','I finished the broker steps'])assert.equal(ui.findText(label),undefined);
+});
+test('new-route UI clears confirmation on field changes and rejects an old companion before operation preparation',async()=>{
+  const ui=workspaceUIFixture({routeId:'apollo',capabilities:[],item:{input_fields:{business_email:'work@example.test'}},workspace:{setEvidence:async()=>({business_email:'work@example.test'}),prepare:()=>{throw new Error('must not prepare');}}});
+  const email=ui.input('Apollo Business email associated with your Apollo record'),confirmed=ui.input('Apollo business email authorization');
+  confirmed.checked=true;email.listeners.input();assert.equal(confirmed.checked,false);confirmed.checked=true;
+  await ui.click('Fill with companion');assert.deepEqual(ui.posted,['ping']);assert.match(ui.feedback.textContent,/Update the companion/);
+});
+test('a late verification acknowledgment preserves user reports and stores its earlier-stage proof separately',async()=>{
+  for(const reported of ['user_reported_requested','user_reported_completed']){
+    const f=fixture();await signup(f.core);const op=f.core.prepare(PDL);
+    f.core.recordCompanion(PDL,op.operationId,{status:'prepared'});f.core.recordUser(PDL,reported);
+    const prior=f.core.snapshot().items[PDL].evidence;f.core.observationRequest(PDL);
+    f.core.recordObservation(PDL,op.operationId,{status:'verification_sent',observation_verified:true,route_verified:true,evidence:'fresh_visible_success'});
+    const item=f.core.snapshot().items[PDL];assert.equal(item.status,reported);assert.deepEqual(item.evidence,prior);
+    assert.equal(item.verification_evidence.result,'verification_sent');assert.equal(item.verification_evidence.acceptance_verified,false);
+    assert.equal(f.core.dashboard().counts.requested,0);assert.equal(f.core.dashboard().counts.removed,0);
+  }
+});
+test('an email-initiation observation cannot replace acceptance evidence or a later confirmation-form outcome',async()=>{
+  const accepted=fixture();await signup(accepted.core);const op=accepted.core.prepare(PDL);
+  accepted.core.recordCompanion(PDL,op.operationId,{status:'submitted',route_verified:true,evidence:'fresh_visible_success'});accepted.core.observationRequest(PDL);
+  const acknowledgment={status:'verification_sent',observation_verified:true,route_verified:true,evidence:'fresh_visible_success'};
+  accepted.core.recordObservation(PDL,op.operationId,acknowledgment);assert.equal(accepted.core.snapshot().items[PDL].status,'requested');
+  assert.equal(accepted.core.dashboard().counts.requested,1);assert.equal(accepted.core.snapshot().items[PDL].evidence.acceptance_verified,true);
+  const later=await readyContinuation();later.core.mailContinuationRequest('usphonebook',CONFIRM_FIELDS);
+  const continuation=later.core.prepareMailContinuation('usphonebook',later.response,CONFIRM_FIELDS);later.core.recordMailContinuation('usphonebook',continuation.operationId,{status:'prepared'});
+  later.core.observationRequest('usphonebook');later.core.recordObservation('usphonebook',continuation.operationId,acknowledgment);
+  assert.equal(later.core.snapshot().items.usphonebook.status,'needs_broker_step');assert.equal(later.core.snapshot().items.usphonebook.continuation.result,'prepared');
+});
+test('a manual submission report does not require or save prefill fields left empty in the app',async()=>{
+  for(const routeId of ['apollo','spokeo','usphonebook']){
+    let reports=0;
+    const ui=workspaceUIFixture({routeId,item:{input_fields:{}},workspace:{
+      setEvidence:async()=>{throw new Error('Prefill validation must not run for a manual report');},
+      recordUser:async(id,state)=>{assert.equal(id,routeId);assert.equal(state,'user_reported_requested');reports++;}
+    }});
+    await ui.click('I submitted the request');assert.equal(reports,1);assert.deepEqual(ui.posted,[]);assert.deepEqual(ui.opened,[]);
+    assert.match(ui.feedback.textContent,/Broker acceptance and deletion remain unverified/);
+  }
 });

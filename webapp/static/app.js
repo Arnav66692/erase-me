@@ -14,7 +14,7 @@
   let sessionGeneration = 0;
 
   const statusLabels = {
-    ready: 'Ready to start', opened: 'Form opened', uncertain: 'Check broker outcome', verification_sent: 'Finish broker verification',
+    ready: 'Ready to start', opened: 'Form opened', held: 'On hold', uncertain: 'Check broker outcome', verification_sent: 'Finish broker verification',
     user_reported_requested: 'You reported submitting', user_reported_completed: 'You reported completing',
     planned: 'Queued', queued: 'Queued', scanning: 'Checking', found: 'Match found',
     requested: 'Requested', submitted: 'Requested', pending: 'In progress',
@@ -30,7 +30,7 @@
     broker_reported_completed: 'Broker reports completion',
     needs_broker_step: 'Complete broker steps', unverified: 'Completion not verified'
   };
-  const attentionStatuses = new Set(['verification_sent', 'uncertain', 'blocked', 'needs_human', 'needs_info', 'ambiguous', 'rejected', 'failed', 'error', 'awaiting_integration', 'clarification', 'delivery_failed', 'needs_broker_step']);
+  const attentionStatuses = new Set(['held', 'verification_sent', 'uncertain', 'blocked', 'needs_human', 'needs_info', 'ambiguous', 'rejected', 'failed', 'error', 'awaiting_integration', 'clarification', 'delivery_failed', 'needs_broker_step']);
   const completeStatuses = new Set(['removed', 'not_found', 'skipped']);
   const manualMode = () => config?.manual ?? (config?.mode !== 'demo');
 
@@ -135,7 +135,7 @@
       icon.setAttribute('aria-hidden', 'true');
       row.append(icon);
       const info = node('div', 'listing-info');
-      const url = safeURL(item.url);
+      const url = item.held === true || item.status === 'held' ? null : safeURL(item.url);
       const title = node(url ? 'a' : 'span', 'listing-title', item.name || item.domain || 'Site');
       if (url) { title.href = url; title.target = '_blank'; title.rel = 'noopener noreferrer'; title.setAttribute('aria-label', `${item.name || 'Site'} — open ${item.status === 'needs_broker_step' ? 'broker portal' : 'listing'} in a new tab`); }
       info.append(title, node('p', 'listing-domain', item.domain || ''));

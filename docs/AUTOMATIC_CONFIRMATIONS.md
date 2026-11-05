@@ -15,11 +15,24 @@ accepted removal request or verified deletion.
 
 ## Address roles
 
-Only USPhonebook, SearchPeopleFree and FastPeopleSearch can request a dedicated
+Only USPhonebook and FastPeopleSearch can request a new dedicated
 contact address through this interface. The subject must authorize use of that
 address for the specific form and its consent wording. An address shared by a
 service is not automatically an email address owned by each subject. An approved
 contact address does not prove ownership of the original record.
+
+SearchPeopleFree's current [opt-out consent](https://www.searchpeoplefree.com/opt-out)
+identifies the requester as the person associated with the supplied email. Support
+for a shared service contact has not been established. New shared-contact sessions
+are therefore rejected before any Google call. Use an email associated with the
+person, typed into their workspace, and complete the broker's verification directly;
+the app does not read that inbox. Previously issued SearchPeopleFree capabilities
+remain valid for explicit, authenticated receipt checks until their existing expiry,
+but all resulting links stay held and no continuation is available. This preserves
+request history without issuing another address or resubmitting anything.
+The public `/opt-out/email` page displays email-sent instructions even when opened
+without a submission. Its pathname or page text is not evidence that a particular
+request was accepted or an email was sent.
 
 People Data Labs and Apollo use a record-associated email for identification or
 verification. The API rejects those routes. It never silently substitutes a

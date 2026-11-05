@@ -4,6 +4,7 @@
   const W=()=>globalThis.EraseWorkspace;
   const M=()=>globalThis.EraseRemovalMail;
   const mailRoutes=new Set(['usphonebook','searchpeoplefree','fastpeoplesearch']);
+  const newMailRoutes=new Set(['usphonebook','fastpeoplesearch']);
   let mailStatus=null;
   const $=id=>document.getElementById(id);
   const n=(tag,text,cls)=>{const e=document.createElement(tag);if(text)e.textContent=text;if(cls)e.className=cls;return e;};
@@ -81,21 +82,23 @@
   }
   function mailControls(route,item){
     if(!mailRoutes.has(route.id)||!M()||!mailStatus?.enabled)return null;
+    if(item.held)return n('p','Removal-mail actions are on hold for this route. Existing receipt history stays available; explicitly resume before any new mailbox action.','public-route-note');
+    if(route.id==='searchpeoplefree'&&!item.mail_contact)return n('p','SearchPeopleFree requires an email you own. It uses your typed email; a shared removal contact is not offered.','public-route-note');
     const panel=n('details',null,'public-mail-pilot');panel.append(n('summary','Operator removal-mail pilot'));
     panel.append(n('p','A removal contact sends broker mail to Erase Me’s shared, removal-only account. Its operator can read those broker messages. It is not an email address personally owned by you. Review the broker’s consent terms and use it only where an authorized contact address is accepted. Your personal inbox stays disconnected. A reviewed USPhonebook confirmation can open its second form only when you choose to continue.','public-route-note'));
     const label=n('label','Private operator pilot key');const key=n('input');key.type='password';key.maxLength=64;key.autocomplete='off';key.setAttribute('aria-label',route.name+' private operator pilot key');label.append(key);panel.append(label);
     const takeKey=()=>{const value=key.value.trim();key.value='';if(!/^[a-fA-F0-9]{64}$/.test(value))throw new Error('Enter the private operator pilot key. It is cleared after each click and never saved.');return value;};
-    if(!item.operation_id&&(!item.mail_contact||item.mail_contact.expires_at<=Math.floor(Date.now()/1000)))panel.append(button('Use removal-only contact email',async()=>{
+    if(!item.held&&newMailRoutes.has(route.id)&&!item.operation_id&&(!item.mail_contact||item.mail_contact.expires_at<=Math.floor(Date.now()/1000)))panel.append(button('Use removal-only contact email',async()=>{
       const pilotKey=takeKey();const request=await W().mailSessionRequest(route.id);
       const response=await M().session(request,pilotKey);await W().bindMailContact(route.id,response);changed();
       feedback('Removal contact saved: '+response.contact_email+'. Review this address and the broker’s consent wording before using the form. No broker was contacted.');
     }));
-    if(item.mail_contact&&item.operation_id)panel.append(button('Check confirmation email',async()=>{
+    if(!item.held&&item.mail_contact&&item.operation_id)panel.append(button('Check confirmation email',async()=>{
       const pilotKey=takeKey();const request=await W().mailCheckRequest(route.id);
       const result=await M().check(request,pilotKey);await W().recordMailReceipt(route.id,result);changed();
       feedback(result.status==='held'?(result.continuation_available?'An authenticated USPhonebook confirmation is ready. Review the required city, state and ZIP before choosing Continue broker form. No request acceptance or deletion has been established.':'An authenticated removal-related email is held for broker-route validation. No confirmation link was followed, and deletion remains unverified.'):'No qualifying email was found for this operation in this explicit check. No broker action was repeated.');
     }));
-    if(route.id==='usphonebook'&&item.mail_receipt?.authenticated&&item.mail_receipt.continuation_available&&!item.continuation){
+    if(!item.held&&route.id==='usphonebook'&&item.mail_receipt?.authenticated&&item.mail_receipt.continuation_available&&!item.continuation){
       panel.append(n('p','Review the fields the companion will fill on the broker’s second form. USPhonebook also requires either date of birth or street address: enter one directly on its official form. Erase Me does not collect or autofill those details. Then review the broker’s accuracy statement, complete any challenge and submit there.','public-route-note'));
       const profile=W().profile(),inputs={};
       for(const [name,title,initial,max]of [['city','Current city',item.continuation_fields?.city||profile.city||'',120],['state','US state abbreviation',item.continuation_fields?.state||(profile.region||'').replace(/^US-/i,'').toUpperCase(),2],['zip_code','Current ZIP code',item.continuation_fields?.zip_code||'',5]]){
@@ -126,23 +129,34 @@
       const title=row.querySelector('.listing-title');const route=routes.find(r=>r.name===title?.textContent);if(!route)continue;
       const item=items.find(i=>i.site_id===route.id);if(!item)continue;
       const info=row.querySelector('.listing-info'),fields=n('div',null,'public-route-fields'),actions=n('div',null,'public-route-actions');
-      const values={};
+      const values={},affirmations={};
       for(const key of route.fields.filter(k=>k!=='email')){
-        const label=n('label',key==='listing_url'?'Your confirmed listing URL':key==='first_name'?'Your first name':'Your last name');
-        const input=n('input');input.type=key==='listing_url'?'url':'text';input.maxLength=key==='listing_url'?2048:120;input.value=item.input_fields?.[key]||'';input.disabled=Boolean(item.operation_id);
+        const label=n('label',key==='listing_url'?'Your confirmed listing URL':key==='business_email'?'Business email associated with your Apollo record':key==='first_name'?'Your first name':'Your last name');
+        const input=n('input');input.type=key==='listing_url'?'url':key==='business_email'?'email':'text';input.maxLength=key==='listing_url'?2048:key==='business_email'?254:120;input.value=item.input_fields?.[key]||'';input.disabled=Boolean(item.operation_id)||item.held===true;
         input.setAttribute('aria-label',route.name+' '+label.textContent);values[key]=input;label.append(input);fields.append(label);
       }
-      const save=async()=>{const evidence={};for(const [key,input]of Object.entries(values))if(input.value.trim())evidence[key]=input.value.trim();await W().setEvidence(route.id,evidence);};
+      for(const key of route.requiredAffirmations){
+        const label=n('label',key==='business_email'?'This is the business email associated with my own Apollo record, and I authorize using it for removal.':'I reviewed this exact listing and confirm it is my own information.');
+        const input=n('input');input.type='checkbox';input.checked=item.affirmations?.[key]===true;input.disabled=Boolean(item.operation_id)||item.held===true;
+        input.setAttribute('aria-label',route.name+' '+(key==='business_email'?'business email authorization':'own listing confirmation'));affirmations[key]=input;label.append(input);fields.append(label);
+        for(const value of Object.values(values))value.addEventListener('input',()=>{input.checked=false;});
+      }
+      const save=async()=>{const evidence={},confirmed={};for(const [key,input]of Object.entries(values))evidence[key]=input.value.trim();for(const [key,input]of Object.entries(affirmations))confirmed[key]=input.checked===true;const saved=await W().setEvidence(route.id,evidence,confirmed);return{fields:saved,affirmations:confirmed};};
       const open=button('Open official form',async()=>{
         await W().opened(route.id);
         window.open(route.url,'_blank','noopener,noreferrer');changed();feedback('Opening the official broker form was requested. If no tab appears, allow popups for this site. No request has been recorded as sent.');
-      });actions.append(open);
-      const supported=['peopledatalabs-form','usphonebook','searchpeoplefree','fastpeoplesearch'].includes(route.id);
-      if(supported&&!item.operationId&&!item.operation_id){
+      });if(!item.held)actions.append(open);
+      if(!item.held&&route.searchable)actions.append(button('Find my listing',async()=>{
+        const request=await W().searchRequest(route.id);
+        window.open(request.url,'_blank','noopener,noreferrer');changed();feedback('Opening a Google search was requested. Google receives your name and optional city. Review each candidate yourself; no listing match or removal was established.');
+      }));
+      const supported=route.automationLevel==='companion';
+      if(!item.held&&supported&&!item.operationId&&!item.operation_id){
         actions.append(button(route.id==='peopledatalabs-form'?'Start broker verification':'Fill with companion',async()=>{
-          await save();const ping=await companion({action:'ping'});
+          const reviewed=await save();const ping=await companion({action:'ping'});
           if(!ping.routes?.includes(route.id))throw new Error('Open the companion toolbar icon and enable this broker before starting.');
-          const operation=await W().prepare(route.id);changed();
+          if(['apollo','spokeo'].includes(route.id)&&!ping.capabilities?.includes('explicit-fields-v1'))throw new Error('Update the companion from the current download and refresh this workspace. No new action started.');
+          const operation=await W().prepare(route.id,reviewed);changed();
           let result;
           try{result=await companion({action:'run',...operation});}catch(error){result={status:'unknown',detail:'The companion outcome is unknown. Check the broker tab before doing anything further.'};}
           await W().recordCompanion(route.id,operation.operationId,result);changed();feedback(result.detail||'The companion step is recorded. Finish the broker steps.');
@@ -151,14 +165,26 @@
       const operationId=item.operationId||item.operation_id;
       if(operationId&&!item.status.startsWith('user_reported'))actions.append(button('Read companion result',async()=>{const result=await companion({action:'result',routeId:route.id,operationId});await W().recordCompanion(route.id,operationId,result);changed();feedback(result.detail||'Companion result checked.');}));
       if(operationId&&item.continuation)actions.append(button('Read confirmation-form result',async()=>{const result=await companion({action:'continuation-result',routeId:route.id,operationId});await W().recordMailContinuation(route.id,operationId,result);changed();feedback(result.detail||'Confirmation-form result checked. No action was repeated.');}));
-      actions.append(button('I submitted the request',async()=>{if(!item.operation_id)await save();await W().recordUser(route.id,'user_reported_requested');changed();feedback('Your report of submitting a request is saved. Broker acceptance and deletion remain unverified.');}));
-      actions.append(button('I finished the broker steps',async()=>{await W().recordUser(route.id,'user_reported_completed');changed();feedback('Your completion report is saved. It is not counted as a verified deletion.');}));
+      if(!item.held&&operationId)actions.append(button('Check existing broker tab',async()=>{
+        const ping=await companion({action:'ping'});if(!ping.capabilities?.includes('broker-observation-v1'))throw new Error('Update the companion to check an existing broker tab without repeating its action.');
+        const request=await W().observationRequest(route.id),result=await companion({action:'observe',...request});await W().recordObservation(route.id,operationId,result);changed();feedback(result.detail||'The existing broker outcome was checked. No action was repeated.');
+      }));
+      if(!item.held){
+        actions.append(button('I submitted the request',async()=>{await W().recordUser(route.id,'user_reported_requested');changed();feedback('Your report of submitting a request is saved. Broker acceptance and deletion remain unverified.');}));
+        actions.append(button('I finished the broker steps',async()=>{await W().recordUser(route.id,'user_reported_completed');changed();feedback('Your completion report is saved. It is not counted as a verified deletion.');}));
+        actions.append(button('Hold this route',async()=>{await W().holdRoute(route.id);changed();feedback('This route is on hold. No new broker or mailbox action will start until you explicitly resume it.');}));
+      }else actions.append(button('Resume this route',async()=>{await W().resumeRoute(route.id);changed();feedback('This route was explicitly resumed. Its existing operation references still prevent repeated actions.');}));
       const steps=n('details',null,'public-broker-steps');
       steps.append(n('summary','Request steps'),n('p',route.steps.join(' '),'public-route-note'));
       if(fields.children.length)steps.append(fields);
+      if(route.searchable)steps.append(n('p','Find my listing opens a Google search only when you choose it. Google receives your name and optional city. Review candidates yourself; a search is not evidence that a listing belongs to you.','public-route-note'));
+      if(route.manualGroup==='peopleconnect'){
+        const explanation=n('p','Use the Intelius / PeopleConnect route for one manual personal-use suppression session covering the four named report brands. Other brands and report types are not automatically covered.','public-route-note');
+        steps.append(explanation);
+      }
       if(route.fields.includes('email'))steps.append(n('p','Email to use for this broker: '+(item.mail_contact?.contact_email||W().profile().email)+(item.mail_contact?' (separate removal-only contact)':' (your typed profile email)'),'public-field-disclosure'));
       if(item.mail_contact)steps.append(n('p','Removal contact expires '+new Date(item.mail_contact.expires_at*1000).toISOString()+'. It does not prove ownership of a broker record.','public-route-note'));
-      if(item.mail_contact&&!item.operation_id)steps.append(button('Use my typed email instead',async()=>{await W().clearMailContact(route.id);changed();feedback('This route will use your typed profile email. No broker was contacted.');}));
+      if(!item.held&&item.mail_contact&&!item.operation_id)steps.append(button('Use my typed email instead',async()=>{await W().clearMailContact(route.id);changed();feedback('This route will use your typed profile email. No broker was contacted.');}));
       if(item.mail_receipt)steps.append(n('p',item.mail_receipt.status==='held'?(item.mail_receipt.authenticated?(item.mail_receipt.continuation_available?'Authenticated broker mail received; a reviewed confirmation form is available. This does not establish deletion.':'Authenticated broker mail received; confirmation is held for route validation.'):'Imported receipt history is unverified; perform an explicit check to establish its current state.'):'The last explicit check found no qualifying receipt.','public-route-note'));
       const mailPanel=mailControls(route,item);if(mailPanel)steps.append(mailPanel);
       steps.append(actions,n('p',route.evidence,'public-route-note'));

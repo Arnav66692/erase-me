@@ -109,15 +109,48 @@ def test_dedicated_attestation_and_valid_private_secret_are_required(connected, 
     assert not mail.configured()
 
 
-def test_session_binds_random_alias_route_operation_and_expiry(connected):
-    result = issued()
+@pytest.mark.parametrize('route', ['usphonebook', 'fastpeoplesearch'])
+def test_session_binds_random_alias_route_operation_and_expiry(connected, route):
+    result = issued(route)
     claims = mail.verify_capability(result['capability'])
-    assert claims['route_id'] == 'usphonebook' and claims['operation_id'] == OPERATION
+    assert claims['route_id'] == route and claims['operation_id'] == OPERATION
     assert result['contact_email'] == 'removals+erase-' + result['request_id'] + '@example.test'
     assert len(result['request_id']) == 32 and claims['expires_at'] == NOW + mail.CAPABILITY_LIFETIME
-    assert result['capability'] != issued()['capability']
+    assert result['capability'] != issued(route)['capability']
     for secret in ('fixture-secret', 'fixture-refresh', 'abababab'):
         assert secret not in json.dumps(result)
+
+
+def test_searchpeoplefree_new_alias_is_rejected_before_google_access(connected, monkeypatch, http_client):
+    def unexpected_google(*args, **kwargs):
+        pytest.fail('A new SearchPeopleFree contact must be rejected before Google access')
+    monkeypatch.setattr(mail, '_request_json', unexpected_google)
+    with pytest.raises(mail.MailError) as error:
+        issued('searchpeoplefree')
+    assert error.value.status == 400
+    assert 'typed email' in str(error.value)
+    code, answer = http_client('/api/removal-mail/session', {
+        'route_id': 'searchpeoplefree', 'operation_id': OPERATION, 'authorized': True})
+    assert code == 400 and 'typed email' in answer['error']
+
+
+def test_existing_searchpeoplefree_capability_can_check_held_receipts_without_continuation(connected, monkeypatch):
+    claims = mail.verify_capability(issued()['capability'])
+    claims['route_id'] = 'searchpeoplefree'
+    legacy_capability = resign(claims)
+    assert mail.verify_capability(legacy_capability)['route_id'] == 'searchpeoplefree'
+    raw = raw_message(claims, sender='privacy@searchpeoplefree.com',
+                      auth='mx.google.com; dmarc=pass header.from=searchpeoplefree.com; dkim=pass header.d=searchpeoplefree.com',
+                      link='https://www.searchpeoplefree.com/opt-out/confirm?token=private-fixture-token')
+    calls = google_fixture(monkeypatch, claims, [raw])
+    result = mail.check({'capability': legacy_capability, 'explicit': True}, pilot_key=PILOT)
+    assert result['status'] == 'held' and result['authenticated'] is True
+    assert result['continuation_available'] is False and 'confirmation_url' not in result
+    provider_calls = len(calls)
+    with pytest.raises(mail.MailError) as error:
+        mail.continue_confirmation({'capability': legacy_capability, 'explicit': True,
+                                    'receipt_ref': result['receipt_ref']}, pilot_key=PILOT)
+    assert error.value.status == 409 and len(calls) == provider_calls
 
 
 @pytest.mark.parametrize('route', ['peopledatalabs-form', 'apollo', 'spokeo', 'evil'])

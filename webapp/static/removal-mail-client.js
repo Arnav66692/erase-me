@@ -6,6 +6,7 @@
 })(typeof globalThis === 'object' ? globalThis : this, function (root) {
   'use strict';
   const ROUTES = new Set(['usphonebook', 'searchpeoplefree', 'fastpeoplesearch']);
+  const NEW_CONTACT_ROUTES = new Set(['usphonebook', 'fastpeoplesearch']);
   const OPERATION = /^[a-f0-9-]{32,40}$/;
   const CAPABILITY = /^[A-Za-z0-9_-]{1,1800}\.[A-Za-z0-9_-]{43}$/;
   class RelayError extends Error {}
@@ -67,7 +68,7 @@
       return value;
     }
     async function session(body, pilotKey) {
-      if (!object(body, ['route_id', 'operation_id', 'authorized']) || !ROUTES.has(body.route_id) ||
+      if (!object(body, ['route_id', 'operation_id', 'authorized']) || !NEW_CONTACT_ROUTES.has(body.route_id) ||
           typeof body.operation_id !== 'string' || !OPERATION.test(body.operation_id) || body.authorized !== true) throw new Error('Authorize a supported removal contact operation first.');
       const value = await request('session', body, pilotKey);
       if (!object(value, ['status', 'capability', 'request_id', 'route_id', 'operation_id', 'contact_email', 'expires_at', 'automatic_execution']) ||

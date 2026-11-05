@@ -232,12 +232,25 @@ test('hosted workspace fails closed when its local core script is unavailable', 
 });
 
 
-test('Needs you includes broker verification and interrupted outcomes', async () => {
-  for (const status of ['verification_sent', 'uncertain']) {
+test('Needs you includes held routes, broker verification and interrupted outcomes', async () => {
+  for (const status of ['held', 'verification_sent', 'uncertain']) {
     const { get, filters } = await boot({ items: [{ site_id: 'example-broker', name: 'Example Broker', status }] });
     filters.find(e => e.dataset.filter === 'blocked').listeners.get('click')();
     assert.equal(get('listing-items').children[0].children.length, 1);
     filters.find(e => e.dataset.filter === 'pending').listeners.get('click')();
     assert.equal(get('listing-items').children[0].children.length, 0);
+  }
+});
+
+test('a held route title never opens the broker even when its prior outcome remains visible', async () => {
+  for (const item of [
+    { status: 'held' },
+    { status: 'needs_broker_step', held: true }
+  ]) {
+    const { get } = await boot({ items: [{ site_id: 'example-broker', name: 'Example Broker', url: 'https://broker.example/optout', ...item }] });
+    const title = get('listing-items').children[0].children[0].children[1].children[0];
+    assert.equal(title.textContent, 'Example Broker');
+    assert.equal(title.href, undefined);
+    assert.equal(title.target, undefined);
   }
 });

@@ -6,9 +6,9 @@
 
 Profiles and history stay in this browser on this device. The host serves the interface, not a personal-data database. No email login is required. Clearing browser data deletes the workspace, so export a private backup if you need one. Other people with access to this browser profile can read the saved details.
 
-Use the free [Chrome companion](https://erase-me-preview.vercel.app/companion.html) for supported form actions. Download the ZIP, load it unpacked in desktop Chrome, grant access to the four reviewed broker sites, and refresh the workspace. Source is in `extension/`.
+Use the free [Chrome companion](https://erase-me-preview.vercel.app/companion.html) for supported form actions. Download the ZIP, load it unpacked in desktop Chrome, grant access to the six reviewed broker sites, and refresh the workspace. Source is in `extension/`.
 
-The catalog contains **43 reference routes**: two global portals, 23 US routes, four Canadian routes, five UK routes, two German routes and seven Turkish routes. Choose your country to see its routes and the global portals. Other countries can use the workspace and global portals, but have no regional pack yet. A reference link is not a validated integration: **four routes support an initial companion action**, and 39 require manual work. The 36 newly added reference entries have not been validated as current browser-app removal flows.
+The catalog contains **43 reference routes**: two global portals, 23 US routes, four Canadian routes, five UK routes, two German routes and seven Turkish routes. Choose your country to see its routes and the global portals. Other countries can use the workspace and global portals, but have no regional pack yet. A reference link is not a validated integration: **six routes support an initial companion action**, and 37 require manual work. The 36 newly added reference entries have not been validated as current browser-app removal flows.
 
 | Route | Working action | Required next step |
 | --- | --- | --- |
@@ -16,19 +16,23 @@ The catalog contains **43 reference routes**: two global portals, 23 US routes, 
 | USPhonebook | Fill the first form; the private mail pilot can also prepare authorized fields in its reviewed second form | Enter either date of birth or street address directly on the broker site, review the matching details, accuracy statement and CAPTCHA, then submit there |
 | SearchPeopleFree | Fill the reviewed first form | You complete the challenge, email and record-removal session |
 | FastPeopleSearch | Fill the reviewed first form | You complete the challenge, email and matching-record steps |
-| Apollo | Open the official removal portal | Business-email verification, completed by you |
-| Spokeo | Open the official opt-out route | Confirm your exact listing and complete the broker steps. Current page access was blocked in our research |
+| Apollo | Fill an explicitly entered, separately authorized business email | You submit and complete business-email verification; the profile email is never substituted |
+| Spokeo | Fill your explicitly confirmed direct listing URL and email | You submit, complete any challenge and click the broker confirmation email |
 | SmartBackgroundChecks | Open the official removal route | Current page access was blocked in our research. No companion action is enabled |
 
 Form preparation, verification initiation, user-reported submission and verified deletion are distinct. A submitted form is never counted as a deletion. No independently verified deletion is established by this release. See [public app behavior](docs/PUBLIC_WORKSPACE.md), [current route research](docs/BROKER_ROUTE_RESEARCH.md) and [earlier evidence](docs/BROKER_VERIFICATION.md).
 
-Managed CAPTCHA challenges, accurate record matching and final submission remain user steps. The companion has no inbox or alarm permission. It holds interrupted operations rather than repeating them. The workspace has no background polling, automatic re-checks or resubmission.
+Use **Find my listing** to open an explicit Google search for your name and optional city on the selected broker. Google receives those search terms only when you choose that action. Search results are candidates, not confirmed matches or removals. Spokeo requires you to confirm that its exact listing is yours.
+
+Put any route on **Hold** to stop its new broker, search and mailbox actions. Only an explicit **Resume** releases it; resuming a campaign or restoring a backup does not release route holds or replay an old operation.
+
+Managed CAPTCHA challenges, accurate record matching and final submission remain user steps. **Check existing broker tab** can reconcile a supported fresh verification-email acknowledgment after your submission, without sending the form again. Unsupported outcomes remain unknown. The companion has no inbox or alarm permission. It holds interrupted operations rather than repeating them. The workspace has no background polling, automatic re-checks or resubmission.
 
 ## Optional removal-only mail pilot
 
 A separate Gmail account can be connected by an operator through the [private OAuth setup](docs/GMAIL_OAUTH.md). The [receipt relay](docs/AUTOMATIC_CONFIRMATIONS.md) is a gated private pilot, disabled until separately configured and explicitly enabled. It requires a private operator key for each session or check. The public app does not offer anonymous access to a shared mailbox. OAuth tokens stay on the operator's machine or in private deployment settings; the browser never receives them.
 
-USPhonebook, SearchPeopleFree and FastPeopleSearch can use an explicitly chosen removal-only contact where the broker accepts it. The app displays the address before use and explains that it belongs to a shared service account, not the person. People Data Labs and Apollo retain the email associated with the record. The personal inbox remains untouched.
+USPhonebook and FastPeopleSearch can use an explicitly chosen removal-only contact where the broker accepts it. The app displays the address before use and explains that it belongs to a shared service account, not the person. People Data Labs and Apollo retain the email associated with the record. SearchPeopleFree uses the person’s typed email because its consent associates that address with the requester; new shared contacts are disabled. Existing signed references can still be checked, with links held. The personal inbox remains untouched.
 
 Checks happen only when requested and return no confirmation URL. USPhonebook has one reviewed continuation: a separate explicit action revalidates the same authenticated receipt, opens its exact official second form and fills the authorized first name, last name, city, state, ZIP and removal contact. USPhonebook additionally requires either date of birth or street address. The person enters one directly on the broker site; Erase Me does not collect or autofill those details. The person reviews the accuracy statement, completes the challenge and submits there. Other confirmation routes remain held.
 

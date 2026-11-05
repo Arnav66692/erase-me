@@ -18,11 +18,17 @@ test('catalog routes have unique IDs and exact HTTPS official entry hosts', () =
     assert.ok(Object.isFrozen(route.fields)); assert.ok(Object.isFrozen(route.allowedHosts));
   }
 });
-test('only the four reviewed initial actions have companion support', () => {
+test('only the six reviewed initial actions have companion support', () => {
   assert.deepEqual(routes.filter(route => route.automationLevel === 'companion').map(route => route.id).sort(),
-    ['peopledatalabs-form', 'usphonebook', 'searchpeoplefree', 'fastpeoplesearch'].sort());
+    ['peopledatalabs-form', 'usphonebook', 'searchpeoplefree', 'fastpeoplesearch', 'apollo', 'spokeo'].sort());
   assert.deepEqual(routes.filter(route => route.countries.includes('*')).map(route => route.id).sort(), ['apollo', 'peopledatalabs-form']);
   assert.deepEqual([...new Set(routes.flatMap(route => route.countries).filter(country => country !== '*'))].sort(), ['CA', 'DE', 'GB', 'TR', 'US']);
+});
+test('PeopleConnect group guidance is manual and never propagates coverage or completion', () => {
+  const grouped=routes.filter(route=>route.manualGroup==='peopleconnect');
+  assert.deepEqual(grouped.map(route=>route.id).sort(),['intelius','truthfinder','instantcheckmate','ussearch'].sort());
+  for(const route of grouped){assert.equal(route.automationLevel,'manual');assert.equal(route.groupRouteId,'intelius');assert.deepEqual(route.covers,[]);}
+  for(const id of ['addresses','zabasearch'])assert.equal(routes.find(route=>route.id===id).manualGroup,undefined);
 });
 test('the US reference catalog is fully represented as automation or explicit manual guidance', () => {
   const sourceIds = fs.readdirSync(path.join(referenceRoot, 'us')).filter(name => name.endsWith('.json')).map(name => JSON.parse(fs.readFileSync(path.join(referenceRoot, 'us', name), 'utf8')).id).sort();

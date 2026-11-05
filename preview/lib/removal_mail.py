@@ -32,6 +32,7 @@ REQUIRED = ('ERASE_REMOVAL_INBOX', 'ERASE_GMAIL_CLIENT_ID', 'ERASE_GMAIL_CLIENT_
             'ERASE_GMAIL_REFRESH_TOKEN', 'ERASE_MAIL_CAPABILITY_SECRET')
 ROUTES = MappingProxyType({
     'usphonebook': {'sender_domains': ('usphonebook.com',), 'hosts': ('www.usphonebook.com', 'usphonebook.com')},
+    # Retained for receipt checks on existing capabilities, not new aliases.
     'searchpeoplefree': {'sender_domains': ('searchpeoplefree.com',), 'hosts': ('www.searchpeoplefree.com', 'searchpeoplefree.com')},
     'fastpeoplesearch': {'sender_domains': ('fastpeoplesearch.com',), 'hosts': ('www.fastpeoplesearch.com', 'fastpeoplesearch.com')},
 })
@@ -148,6 +149,11 @@ def session(body, *, now=None, pilot_key=None):
     route_id = body.get('route_id')
     if not isinstance(route_id, str) or route_id not in ROUTES:
         raise MailError('This route cannot substitute a dedicated contact mailbox.', 400)
+    if route_id == 'searchpeoplefree':
+        # Its current consent identifies the person associated with the email.
+        # Shared-contact support has not been established, so fail before Google
+        # access while preserving receipt checks for previously issued references.
+        raise MailError('SearchPeopleFree needs an email associated with you. Use your typed email and complete verification on the broker site; a shared removal contact is not available.', 400)
     operation_id = body.get('operation_id')
     if not isinstance(operation_id, str) or not re.fullmatch(r'[a-f0-9-]{32,40}', operation_id):
         raise MailError('Choose a valid workspace operation.', 400)

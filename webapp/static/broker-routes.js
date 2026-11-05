@@ -17,7 +17,7 @@
       evidence: 'Official first form, authenticated verification email and second form inspected. Live validation rejected the final form without either date of birth or street address, despite neither field being marked required in the HTML. Final request acceptance and deletion remain unverified.' },
     { id: 'searchpeoplefree', countries: ['US'], name: 'SearchPeopleFree', domain: 'searchpeoplefree.com', url: 'https://www.searchpeoplefree.com/opt-out',
       fields: ['first_name', 'last_name', 'email'], automationLevel: 'companion', automationMode: 'prefill', inspectedAt: '2026-11-04', allowedHosts: ['www.searchpeoplefree.com', 'searchpeoplefree.com'],
-      steps: ['Enter your own name and email in the official opt-out form.', 'Complete the broker challenge and email verification.', 'Find your record and remove it during the broker session.'],
+      steps: ['Enter your own name and an email address you personally own in the official opt-out form. Shared removal-service contacts are not offered for this route.', 'Complete the broker challenge and email verification yourself.', 'Find your record and remove it during the broker session.'],
       evidence: 'Official first form inspected. Completing email verification alone does not remove a record.' },
     { id: 'smartbackgroundchecks', countries: ['US'], name: 'SmartBackgroundChecks', domain: 'smartbackgroundchecks.com', url: 'https://www.smartbackgroundchecks.com/remove',
       fields: ['first_name', 'last_name', 'email'], automationLevel: 'manual', availability: 'blocked_in_research', inspectedAt: '2026-11-04', allowedHosts: ['www.smartbackgroundchecks.com', 'smartbackgroundchecks.com'],
@@ -28,13 +28,13 @@
       steps: ['Choose the subject option for your own information.', 'Enter your name and email, then complete the broker challenge.', 'Complete the broker email and matching-record steps.'],
       evidence: 'Official initial form inspected. Submission and removal outcomes remain unverified.' },
     { id: 'spokeo', countries: ['US'], name: 'Spokeo', domain: 'spokeo.com', url: 'https://www.spokeo.com/optout',
-      fields: ['listing_url', 'email'], automationLevel: 'manual', allowedHosts: ['www.spokeo.com', 'spokeo.com'],
-      steps: ['Find and confirm your own matching listing first.', 'Provide its exact URL and your email in the official opt-out form.', 'Complete the broker challenge and confirmation email for each listing.'],
-      evidence: 'Listing URL and broker verification are required. A name alone is insufficient.' },
+      fields: ['listing_url', 'email'], requiredAffirmations: ['own_listing'], automationLevel: 'companion', automationMode: 'prefill', inspectedAt: '2026-11-04', allowedHosts: ['www.spokeo.com', 'spokeo.com'],
+      steps: ['Find your own matching listing and explicitly confirm that it belongs to you.', 'Supply its exact official record URL and your typed email for the reviewed opt-out form.', 'Review and submit on Spokeo, then complete its challenge and confirmation email for each listing.', 'If the form is inaccessible, Spokeo’s official opt-out page also lists privacy@spokeo.com for assistance. Contact that address from your chosen removal account and identify only your confirmed listing. Erase Me does not send this email or connect to your personal inbox. Reconcile any uncertain earlier submission first.'],
+      evidence: 'Official initial opt-out form inspected. Prefill requires your explicit record selection; URL syntax alone never proves identity, acceptance or deletion.' },
     { id: 'apollo', countries: ['*'], name: 'Apollo', domain: 'apollo.io', url: 'https://www.apollo.io/privacy-policy/remove',
-      fields: ['email'], automationLevel: 'manual', inspectedAt: '2026-11-04', allowedHosts: ['www.apollo.io', 'apollo.io'],
-      steps: ['Open Apollo’s official removal portal and enter the business email associated with its record.', 'Apollo may require the business email associated with its record.', 'Complete its verification yourself. A typed personal email may not identify a business record.'],
-      evidence: 'The official removal portal loaded on November 4 and requests a business email. Manual submission and verification are required. No email is sent from your account.' },
+      fields: ['business_email'], requiredAffirmations: ['business_email'], automationLevel: 'companion', automationMode: 'prefill', inspectedAt: '2026-11-04', allowedHosts: ['www.apollo.io', 'apollo.io'],
+      steps: ['Explicitly supply the business email associated with your own Apollo record and authorize using it for this request.', 'The companion can fill that address in the reviewed official form. Your profile email and the shared removal contact are never substituted.', 'Submit and complete Apollo’s verification directly. Prefilling the address does not establish acceptance or deletion.'],
+      evidence: 'Official business-email removal form inspected. Its submission and verification remain manual; no accepted-request or deletion result has been established.' },
     // Manual references add geographic coverage, not automation claims.
     { "id": "addresses", "name": "Addresses.com", "domain": "addresses.com", "url": "https://www.addresses.com/optout.php",
       "countries": ["US"], "fields": [], "automationLevel": "manual", "availability": "unverified_current", "allowedHosts": ["addresses.com","www.addresses.com"], "manualMethod": "web_form",
@@ -181,6 +181,25 @@
       "referenceVerified": true, "referenceCheckedAt": "2026-10-21", "sourceCatalog": "tr/tr-turkcell-rehber.json", "cluster": null, "covers": [],
       "steps": ["Open the linked official privacy or opt-out instructions for your own information.","The broker may ask for phone number. Enter any required details directly on that site. Erase Me does not collect them for this manual route.","Complete the broker’s required verification and save its response. No request is sent by Erase Me for this manual route.","Stop if the route requires payment or an identity-document upload."], "evidence": "Official reference route from the existing country pack. Its current form, request acceptance and deletion outcome have not been validated for this browser app." }
   ];
+  // A common owner is not evidence that one request covers every affiliated
+  // service. Only the four brands explicitly named by the inspected portal get
+  // a shared manual guide; no action or removal state propagates between them.
+  const peopleConnectBrands = ['intelius', 'truthfinder', 'instantcheckmate', 'ussearch'];
+  const searchableDirectories = new Set(['ca-411', 'canada411', '192com', 'gb-peopletraceuk', 'ukphonebook', 'tr-nosorgulama', 'tr-numaraara', 'tr-numarasor', 'tr-telefonsorgulama']);
+  for (const route of routes) route.searchable = route.countries.includes('US') || searchableDirectories.has(route.id);
+  for (const route of routes.filter(item => item.cluster === 'peopleconnect')) {
+    route.covers = [];
+    if (peopleConnectBrands.includes(route.id)) {
+      route.manualGroup = 'peopleconnect'; route.groupRouteId = 'intelius';
+      route.steps = ['Use the PeopleConnect self-service suppression center once for your own request. It names Intelius, TruthFinder, Instant Checkmate and US Search.',
+        'The portal describes suppression of name-based background reports. It does not promise removal from every phone, address or email report, or other affiliated brands.',
+        'Enter required details and complete verification directly on the official portal. This is a manual personal-use route for eligible US users. No request is sent by Erase Me for this manual route, and no shared-mail automation is offered.',
+        'Stop if the portal requires payment, an identity-document upload or access that is not authorized.'];
+      route.evidence = 'Official self-service login and four-brand description inspected. Later matching, request acceptance and deletion have not been validated. No request is sent by Erase Me for this manual route.';
+    } else {
+      route.steps.push('A historical PeopleConnect affiliation does not establish that the current suppression center covers this brand. Confirm its official instructions separately.');
+    }
+  }
   return Object.freeze(routes.map(route => Object.freeze({ ...route,
-    countries: Object.freeze(route.countries), covers: Object.freeze(route.covers || []), fields: Object.freeze(route.fields), allowedHosts: Object.freeze(route.allowedHosts), steps: Object.freeze(route.steps) })));
+    countries: Object.freeze(route.countries), covers: Object.freeze(route.covers || []), requiredAffirmations: Object.freeze(route.requiredAffirmations || []), fields: Object.freeze(route.fields), allowedHosts: Object.freeze(route.allowedHosts), steps: Object.freeze(route.steps) })));
 });

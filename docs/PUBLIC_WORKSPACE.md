@@ -1,5 +1,7 @@
 # Public browser workspace
 
+Updated November 4, 2026.
+
 The hosted app accepts a self-attested profile and keeps it in this browser's local
 storage. It needs no service account, email login, password or hosting database. It
 does not upload the profile or ledger to the hosting API. Anyone using this browser
@@ -14,7 +16,7 @@ submit forms. The person starts an individual broker action with its displayed f
 There are no recurring checks, background alarms, inbox polls or automatic resubmissions.
 
 The companion can initiate People Data Labs email verification and prefill the initial
-USPhonebook, SearchPeopleFree and FastPeopleSearch forms. Fields prepared is not sent;
+USPhonebook, SearchPeopleFree, FastPeopleSearch, Apollo and Spokeo forms. Fields prepared is not sent;
 opening a portal is not sent. Verification initiation is not a deletion request. The
 private mail pilot can also prepare USPhonebook's reviewed second form after separate
 authorization. Record matching, its final accuracy statement, CAPTCHA and submission
@@ -26,6 +28,11 @@ accepted history and receipt evidence to unverified history. Neither a receipt n
 HTTP 404 establishes removal. The current public workspace has no independent listing
 scanner or verified deletion state: found and removed counts remain zero.
 
+Apollo requires an explicitly entered business email and a separate authorization for
+that route; neither a profile email nor a service alias is substituted. Spokeo requires a
+direct person-record URL and explicit confirmation that the listing belongs to the person.
+Changing either editable field clears its prior affirmation until it is confirmed again.
+
 The operation ID is saved before companion dispatch. Interrupted operations are held,
 not repeated. An explicit result read can reconcile the same operation later. Browser
 mutations use an origin-wide exclusive Web Lock and reread current storage inside it;
@@ -35,13 +42,13 @@ execution. Storage failures stop actions before dispatch.
 
 ## Country coverage
 
-The catalog has 43 reference routes, with four supported initial companion actions and
-39 manual routes. Reference coverage is separate from live integration or removal evidence.
+The catalog has 43 reference routes, with six supported initial companion actions and
+37 manual routes. Reference coverage is separate from live integration or removal evidence.
 
 | Catalog group | Reference routes | Initial companion actions |
 | --- | --- | --- |
-| Global portals: People Data Labs and Apollo | 2 | 1 |
-| United States | 23 | 3 |
+| Global portals: People Data Labs and Apollo | 2 | 2 |
+| United States | 23 | 4 |
 | Canada | 4 | 0 |
 | United Kingdom | 5 | 0 |
 | Germany | 2 | 0 |
@@ -62,9 +69,38 @@ only through an explicit plan refresh.
 
 First and last names are explicit broker fields, never inferred by splitting a full name.
 Names and cities retain Unicode characters; email local-part case is preserved and domains
-are normalized. A Spokeo listing URL must have an approved HTTPS host and direct listing
-path, without credentials, query parameters or fragment. A name or typed email alone does
+are normalized. A Spokeo listing URL must have an approved HTTPS host and a direct person-record
+path ending in `/p` plus digits, using a reviewed state/city ordering, without credentials,
+query parameters or fragment. A name or typed email alone does
 not prove ownership of a broker record.
+
+## Discovery, holds and existing-tab checks
+
+**Find my listing** is an explicit search action on routes marked searchable. It opens a
+fixed Google search URL containing only the broker domain, quoted profile name and
+optional quoted city. Google receives those terms when the person chooses the action.
+Erase Me does not fetch the results or infer a match. The action records a search-open
+event without changing discovery, request or removal counts. Country, active-campaign,
+route-hold and storage checks run before a URL is returned.
+
+**Hold this route** saves a hold independently of its last outcome. A held route is displayed
+as “On hold” and included in “Needs you.” New form, search, mailbox and continuation
+actions stop until **Resume this route** is explicitly chosen. Holds survive private backups
+and campaign pause/resume. Existing local results may still be reconciled without
+clearing the hold. Resuming never discards operation IDs or permits a duplicate action.
+
+**Check existing broker tab** observes only the tab reserved for the original operation.
+It sends no form and reads no mailbox. Only People Data Labs and the USPhonebook first
+stage have enabled observation contracts. A supported fresh verification acknowledgment
+requires the companion’s original baseline, browser-session proof and a trusted native
+submission with the approved fields. Missing proof, changed tabs or unsupported broker
+responses remain unknown. Verification initiation still does not establish acceptance of
+a final removal request or deletion.
+
+PeopleConnect remains a manual personal-use guide for eligible US users. The current
+portal names Intelius, TruthFinder, InstantCheckmate and USSearch, with limited
+name-search suppression scope. Its guide does not propagate an outcome to affiliated
+records or claim coverage of every search type.
 
 ## Dedicated removal-mail pilot
 
@@ -75,12 +111,14 @@ Configuration alone does not enable the private pilot. Session issuance and chec
 require explicit server activation and a separate operator access key.
 
 The availability button is an explicit status read. When the pilot is enabled, operator
-controls let a person authorize a dedicated contact for USPhonebook, SearchPeopleFree or
-FastPeopleSearch. The address and shared-account disclosure appear before use. The person
+controls let a person authorize a dedicated contact for USPhonebook or FastPeopleSearch. The address and shared-account disclosure appear before use. The person
 must review the broker's email-ownership and consent wording. The original profile email
 is unchanged; People Data Labs and Apollo never receive a substituted contact address.
 Before a broker action starts, the person can switch back to the typed email. After the
-operation starts, its recipient stays fixed.
+operation starts, its recipient stays fixed. SearchPeopleFree requires the person’s typed
+email; new shared contacts are disabled. Existing signed SearchPeopleFree capabilities
+remain valid for held-only receipt checks. An unstarted old shared contact must be
+explicitly removed before choosing the typed email; no silent fallback occurs.
 
 The private pilot key is entered in a password field and cleared on each click. It is never
 stored in the workspace, backup or URL. OAuth credentials never enter the browser. The
@@ -118,9 +156,14 @@ asynchronous because they acquire Web Locks; callers must await them. The `creat
 test helper retains synchronous local mutations.
 
 `prepare(routeId)` persists the operation boundary before returning approved companion
-fields. `recordCompanion()` requires matching operation correlation; acceptance also
+fields and required route-specific affirmations. `recordCompanion()` requires matching operation correlation; acceptance also
 requires `route_verified: true` and `evidence: "fresh_visible_success"`. The companion
 transport validates its own origin and correlation before calling it.
+
+`holdRoute()` and `resumeRoute()` preserve the last outcome and the no-replay guard.
+`searchRequest()` persists the explicit search event before returning its fixed Google URL.
+`observationRequest()` and `recordObservation()` reconcile a supported existing-tab
+verification outcome without starting another broker action.
 
 `mailSessionRequest()` saves explicit contact authorization before any server request.
 `bindMailContact()` validates the returned route, operation, alias, expiry and capability

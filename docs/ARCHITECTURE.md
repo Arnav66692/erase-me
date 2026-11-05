@@ -3,7 +3,20 @@
 This document describes the original agent-skill engine and reference-pack contracts.
 The live browser workspace uses separate storage and permissions; see
 [its current scope and interface](PUBLIC_WORKSPACE.md). Its 43 reference routes do not
-imply 43 automated integrations or a verified removal service.
+imply 43 automated integrations or a verified removal service. The six initial companion
+actions include separately affirmed Apollo business-email and Spokeo listing fields.
+Profiles, field affirmations, route holds and history remain browser-local. An explicit
+listing search opens Google with only the name and optional city; it does not scan or
+confirm a record. Route holds survive backup and campaign resume, while operation IDs
+continue to prevent duplicate dispatch.
+
+The companion stores operation references and owned-tab metadata before navigation.
+For People Data Labs and USPhonebook only, a bounded explicit existing-tab observation
+can reconcile fresh verification-email evidence. A passive listener records a nonce-only
+proof of a trusted native form event with matching approved fields in browser-session
+storage; expected field values stay only in the transient isolated-world closure. The
+observer requires its original baseline, current session and owned-tab/document lineage.
+It never resubmits, polls, reads mail or treats verification initiation as deletion.
 
 The public private-mail pilot keeps receipt checks URL-free. A separate explicit
 USPhonebook continuation revalidates the same authenticated receipt and transiently

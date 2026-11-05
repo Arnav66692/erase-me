@@ -12,6 +12,7 @@
   const USER_STATES = new Set(['user_reported_requested', 'user_reported_completed']);
   const RESULT_STATES = new Set(['prepared', 'verification_sent', 'submitted', 'captcha', 'id_required', 'unsupported', 'pending', 'unknown', 'error', 'blocked']);
   const MAIL_ROUTES = new Set(['usphonebook', 'searchpeoplefree', 'fastpeoplesearch']);
+  const NEW_MAIL_ROUTES = new Set(['usphonebook', 'fastpeoplesearch']);
   const OPERATION = /^[a-f0-9-]{32,40}$/;
   const TEXT = {
     ready: 'Ready to open the official broker form. No request has been sent.',
@@ -24,7 +25,8 @@
     user_reported_requested: 'You reported submitting a removal request. Broker acceptance has not been independently verified.',
     user_reported_completed: 'You reported finishing the broker steps. Deletion has not been independently verified.',
     blocked: 'The broker needs your attention. No completed removal has been established.',
-    uncertain: 'The action outcome is unknown. Do not repeat it until you check the broker result.'
+    uncertain: 'The action outcome is unknown. Do not repeat it until you check the broker result.',
+    held: 'You put this route on hold. No new broker or mailbox action will start until you explicitly resume it.'
   };
   class WorkspaceError extends Error {
     constructor(message, status = 400) { super(message); this.status = status; }
@@ -64,22 +66,36 @@
         /^\/(?:optout|opt-out|privacy|account|login|remove|removal|policies)(?:\/|$)/i.test(url.pathname)) {
       throw new WorkspaceError('Use a direct HTTPS listing URL on this broker’s approved domain, without query parameters.');
     }
+    if (route.id === 'spokeo') {
+      const segments = url.pathname.slice(1).split('/'), slug = /^[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*$/;
+      const states = new Set('Alabama Alaska Arizona Arkansas California Colorado Connecticut Delaware Florida Georgia Hawaii Idaho Illinois Indiana Iowa Kansas Kentucky Louisiana Maine Maryland Massachusetts Michigan Minnesota Mississippi Missouri Montana Nebraska Nevada Ohio Oklahoma Oregon Pennsylvania Tennessee Texas Utah Vermont Virginia Washington Wisconsin Wyoming New-Hampshire New-Jersey New-Mexico New-York North-Carolina North-Dakota Rhode-Island South-Carolina South-Dakota West-Virginia District-of-Columbia'.toLowerCase().split(' '));
+      const abbreviation = /^(AL|AK|AZ|AR|CA|CO|CT|DE|DC|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY)$/;
+      if (url.hostname !== 'www.spokeo.com' || segments.length !== 4 || !/^[A-Za-z0-9]+(?:-[A-Za-z0-9]+)+$/.test(segments[0]) ||
+          !/^p\d{1,64}$/.test(segments[3]) || !(slug.test(segments[1]) && abbreviation.test(segments[2]) || states.has(segments[1].toLowerCase()) && slug.test(segments[2])))
+        throw new WorkspaceError('Use the exact Spokeo person record URL, including its state, city and p-number. Confirm it is your own record.');
+    }
     return url.href;
   }
   function appliesToCountry(route, country) {
     return route.countries.includes('*') || Boolean(country && route.countries.includes(country));
   }
   function operationStarted(item) {
-    return Boolean(item.operation_id) || USER_STATES.has(item.status) || ['running', 'verification_sent', 'requested', 'uncertain', 'needs_broker_step'].includes(item.status);
+    return item.held === true || Boolean(item.operation_id) || USER_STATES.has(item.status) || ['running', 'verification_sent', 'requested', 'uncertain', 'needs_broker_step'].includes(item.status);
   }
   function approvedFields(route, fields) {
     if (!fields || typeof fields !== 'object' || Array.isArray(fields)) throw new WorkspaceError('Supply approved broker fields.');
     const approved = {};
     for (const [key, value] of Object.entries(fields)) {
       if (!route.fields.includes(key) || key === 'email') throw new WorkspaceError('This broker field is not editable here.');
-      approved[key] = key === 'listing_url' ? listingURL(value, route) : text(value, 120);
+      approved[key] = key === 'listing_url' ? listingURL(value, route) : key === 'business_email' ? email(value) : text(value, 120);
     }
     return approved;
+  }
+  function approvedAffirmations(route, value) {
+    if (!value || typeof value !== 'object' || Array.isArray(value) ||
+        Object.entries(value).some(([key, confirmed]) => !route.requiredAffirmations.includes(key) || typeof confirmed !== 'boolean'))
+      throw new WorkspaceError('Review only the confirmations required by this broker.');
+    return { ...value };
   }
   function locationFields(body) {
     const next = {};
@@ -162,6 +178,8 @@
         for (const [id, item] of Object.entries(parsed.items)) {
           const knownRoute = routeFor(id);
           if (!item || item.site_id !== id || !Object.hasOwn(TEXT, item.status)) throw new Error();
+          if (item.held !== undefined && typeof item.held !== 'boolean') throw new Error();
+          if (item.affirmations) item.affirmations = approvedAffirmations(knownRoute, item.affirmations);
           item.url = knownRoute.url; item.name = knownRoute.name; item.domain = knownRoute.domain;
           if (item.mail_contact) item.mail_contact = mailContact(item.mail_contact, id, item.operation_id || item.id, Math.floor(Date.parse(clock()) / 1000), true);
         }
@@ -199,6 +217,9 @@
       };
     }
     function itemFor(id) { active(); routeFor(id); const item = state.items[id]; if (!item) throw new WorkspaceError('Run your route plan first.', 409); return item; }
+    function requireNotHeld(item) {
+      if (item.held === true) throw new WorkspaceError('This route is on hold. Explicitly resume it before starting or changing an action.', 409);
+    }
     function requireCountryRoute(route, item) {
       if (!appliesToCountry(route, state.profile.country) && !operationStarted(item))
         throw new WorkspaceError('This route is outside your selected country. Update your location to choose the applicable routes.', 409);
@@ -222,14 +243,15 @@
       const eligible = routes.filter(route => appliesToCountry(route, country));
       const historical = Object.values(state.items).filter(item => !appliesToCountry(routeFor(item.site_id), country) && operationStarted(item));
       const items = Object.values(state.items).filter(item => appliesToCountry(routeFor(item.site_id), country) || operationStarted(item)).map(({ fields, operation_id, operation_started_at, evidence, mail_contact, ...item }) => ({
-        ...item, input_fields: clone(fields || {}), automationLevel: routeFor(item.site_id).automationLevel, fields_needed: routeFor(item.site_id).fields,
+        ...item, status: item.held ? 'held' : item.status, detail: item.held ? TEXT.held : item.detail,
+        input_fields: clone(fields || {}), automationLevel: routeFor(item.site_id).automationLevel, fields_needed: routeFor(item.site_id).fields,
         operation_id, evidence: evidence ? clone(evidence) : null,
         mail_contact: mail_contact ? { ...mail_contact, capability: undefined } : null
       }));
       return { mode: 'browser', profile: clone(state.profile), campaign: { status: state.campaign.status,
         authorized_at: state.profile.authorized_at, next_check_at: null, run_in_progress: false },
         counts: { found: 0, requested: items.filter(item => item.evidence && item.evidence.acceptance_verified === true).length, removed: 0,
-          blocked: items.filter(item => ['blocked', 'uncertain', 'verification_sent', 'needs_broker_step'].includes(item.status)).length },
+          blocked: items.filter(item => ['held', 'blocked', 'uncertain', 'verification_sent', 'needs_broker_step'].includes(item.status)).length },
         coverage: { country, supportedCountries: [...new Set(routes.flatMap(route => route.countries).filter(value => value !== '*'))].sort(),
           globalRouteCount: eligible.filter(route => route.countries.includes('*')).length,
           countryRouteCount: eligible.filter(route => !route.countries.includes('*')).length,
@@ -242,33 +264,51 @@
         items, questions: country ? [] : [{ id: 'country', field: 'country', prompt: 'Which country do you live in? This selects the regional privacy routes. Global portals are available meanwhile.' }],
         activity: clone(state.activity) };
     }
-    function setEvidence(id, fields) {
+    function setEvidence(id, fields, affirmations = {}) {
       const route = routeFor(id), item = itemFor(id);
+      requireNotHeld(item);
       if (item.operation_id) throw new WorkspaceError('This action has already started. Check its result before changing submitted fields.', 409);
       const approved = approvedFields(route, fields);
-      item.fields = { ...item.fields, ...approved }; item.updated_at = clock(); save(); return clone(item.fields);
+      const confirmations = approvedAffirmations(route, affirmations);
+      item.fields = { ...item.fields, ...approved }; item.affirmations = confirmations;
+      item.updated_at = clock(); save(); return clone(item.fields);
     }
-    function prepare(id) {
+    function prepare(id, reviewed) {
       const route = routeFor(id), item = itemFor(id);
+      requireNotHeld(item);
       requireCountryRoute(route, item);
       if (state.campaign.status !== 'active') throw new WorkspaceError('Allow checks before starting a broker action.', 409);
       if (item.operation_id || USER_STATES.has(item.status)) throw new WorkspaceError('This broker action has already started. Refresh its result or finish its broker steps instead of resending.', 409);
+      if (reviewed !== undefined) {
+        if (!reviewed || typeof reviewed !== 'object' || Array.isArray(reviewed) || Object.keys(reviewed).length !== 2 || !Object.hasOwn(reviewed, 'fields') || !Object.hasOwn(reviewed, 'affirmations'))
+          throw new WorkspaceError('Review the broker fields again before starting.');
+        const reviewedFields = approvedFields(route, reviewed.fields), reviewedAffirmations = approvedAffirmations(route, reviewed.affirmations);
+        if (Object.keys(reviewedFields).length !== Object.keys(item.fields).length || Object.entries(reviewedFields).some(([key, value]) => item.fields[key] !== value) ||
+            route.requiredAffirmations.some(key => reviewedAffirmations[key] !== true || item.affirmations?.[key] !== true))
+          throw new WorkspaceError('The broker fields changed in another tab. Review them again before starting.', 409);
+      }
       const contact = item.mail_contact ? mailContact(item.mail_contact, id, item.id, Math.floor(Date.parse(clock()) / 1000)) : null;
+      if (id === 'searchpeoplefree' && contact)
+        throw new WorkspaceError('SearchPeopleFree requires an email you own. Explicitly remove this old shared contact before choosing your typed email. No fallback was sent.', 409);
+      if (route.requiredAffirmations.some(key => item.affirmations?.[key] !== true))
+        throw new WorkspaceError(id === 'apollo' ? 'Confirm this is the business email associated with your own Apollo record.' : 'Confirm that this exact listing belongs to you.');
       const fields = {};
       for (const key of route.fields) {
         const value = key === 'email' ? (contact?.contact_email || state.profile.email) : item.fields[key];
         if (!value) throw new WorkspaceError('Provide the broker’s required ' + key.replace(/_/g, ' ') + ' first.');
-        fields[key] = key === 'listing_url' ? listingURL(value, route) : text(value, key === 'email' ? 254 : 120);
+        fields[key] = key === 'listing_url' ? listingURL(value, route) : ['email', 'business_email'].includes(key) ? email(value) : text(value, 120);
       }
       // The route's pre-existing UUID also deduplicates simultaneous tab dispatches.
       item.operation_id = item.id; item.operation_started_at = clock(); changed(item, 'running');
       event('You started the ' + route.name + ' broker action. Its result is not yet established.'); save();
-      return { routeId: id, operationId: item.operation_id, fields, authorized: true };
+      return { routeId: id, operationId: item.operation_id, fields, authorized: true,
+        ...(id === 'apollo' ? { businessEmailConfirmed: true } : {}), ...(id === 'spokeo' ? { listingConfirmed: true } : {}) };
     }
     function mailSessionRequest(id) {
       const route = routeFor(id), item = itemFor(id);
+      requireNotHeld(item);
       requireCountryRoute(route, item);
-      if (!MAIL_ROUTES.has(id)) throw new WorkspaceError('This broker needs its record-associated email. A removal contact cannot replace it.');
+      if (!NEW_MAIL_ROUTES.has(id)) throw new WorkspaceError(id === 'searchpeoplefree' ? 'SearchPeopleFree requires an email you own. Use your explicitly typed email; new shared removal contacts are unavailable.' : 'This broker needs its record-associated email. A removal contact cannot replace it.');
       if (state.campaign.status !== 'active') throw new WorkspaceError('Allow checks before choosing a removal contact.', 409);
       if (operationStarted(item)) throw new WorkspaceError('This action has already started. Its contact email cannot be changed.', 409);
       if (!OPERATION.test(item.id)) throw new WorkspaceError('This workspace operation has no valid private reference.', 409);
@@ -279,7 +319,9 @@
     }
     function bindMailContact(id, response) {
       const item = itemFor(id);
+      requireNotHeld(item);
       requireCountryRoute(routeFor(id), item);
+      if (!NEW_MAIL_ROUTES.has(id)) throw new WorkspaceError('New shared removal contacts are not available for this route.');
       if (state.campaign.status !== 'active' || operationStarted(item)) throw new WorkspaceError('This action is paused or already started. Its contact email cannot be changed.', 409);
       if (!item.mail_contact_authorized_at) throw new WorkspaceError('Explicitly authorize the dedicated contact address first.');
       const contact = mailContact(response, id, item.id, Math.floor(Date.parse(clock()) / 1000));
@@ -290,6 +332,7 @@
     }
     function clearMailContact(id) {
       const item = itemFor(id);
+      requireNotHeld(item);
       if (operationStarted(item)) throw new WorkspaceError('This action has already started. Its contact email cannot be changed.', 409);
       delete item.mail_contact; delete item.mail_contact_authorized_at;
       event('You chose your typed profile email for ' + routeFor(id).name + '. No broker was contacted.'); save();
@@ -297,6 +340,7 @@
     }
     function mailCheckRequest(id) {
       const item = itemFor(id);
+      requireNotHeld(item);
       if (state.campaign.status !== 'active') throw new WorkspaceError('Allow checks before reading a removal receipt.', 409);
       if (!item.operation_id || !item.mail_contact) throw new WorkspaceError('Start the matching broker action before checking its removal contact.', 409);
       const contact = mailContact(item.mail_contact, id, item.operation_id, Math.floor(Date.parse(clock()) / 1000));
@@ -326,6 +370,7 @@
     }
     function continuationContext(id) {
       const item = itemFor(id);
+      requireNotHeld(item);
       if (id !== 'usphonebook' || state.campaign.status !== 'active' || !item.operation_id || !item.mail_contact ||
           !item.mail_receipt?.authenticated || item.mail_receipt.continuation_available !== true || item.status === 'user_reported_completed')
         throw new WorkspaceError('Choose a current authenticated confirmation for this active operation.', 409);
@@ -394,18 +439,73 @@
       item.evidence = { source: 'browser_companion', result: result.status, observed_at: clock(), acceptance_verified: status === 'requested' };
       changed(item, status); event(routeFor(id).name + '. ' + TEXT[status]); save(); return dashboard();
     }
+    function observationRequest(id) {
+      const item = itemFor(id);
+      requireNotHeld(item);
+      if (state.campaign.status !== 'active' || !item.operation_id)
+        throw new WorkspaceError('Resume this active operation before reading its broker tab.', 409);
+      item.observation_authorized_at = clock(); save();
+      return { routeId: id, operationId: item.operation_id, authorized: true };
+    }
+    function recordObservation(id, operationId, result) {
+      const item = itemFor(id);
+      if (!item.operation_id || item.operation_id !== operationId || !item.observation_authorized_at || !result || !['unknown', 'verification_sent'].includes(result.status))
+        throw new WorkspaceError('The observed result does not match an authorized existing operation.', 409);
+      if (result.status === 'verification_sent') {
+        if (!['peopledatalabs-form', 'usphonebook'].includes(id) || result.observation_verified !== true || result.route_verified !== true || result.evidence !== 'fresh_visible_success')
+          throw new WorkspaceError('The observed broker response is unverified.');
+        const proof = { source: 'browser_companion_observation', result: 'verification_sent', observed_at: clock(), acceptance_verified: false, deletion_verified: false };
+        item.verification_evidence = proof;
+        // An email-initiation acknowledgment is an earlier stage than a user
+        // report, authenticated receipt, second form or accepted request. Keep
+        // its proof without replacing the later outcome or its evidence.
+        if (!USER_STATES.has(item.status) && item.status !== 'requested' && !item.continuation &&
+            !item.mail_receipt?.authenticated && item.evidence?.acceptance_verified !== true) {
+          item.evidence = { ...proof };
+          changed(item, 'verification_sent');
+        }
+      }
+      item.last_observation = { at: clock(), status: result.status };
+      event(routeFor(id).name + (result.status === 'verification_sent' ? '. The existing broker tab reports a verification-email step, not deletion.' : '. The broker-tab outcome remains unconfirmed. No action was repeated.'));
+      save(); return dashboard();
+    }
+    function searchRequest(id) {
+      const route = routeFor(id), item = itemFor(id);
+      requireNotHeld(item); requireCountryRoute(route, item);
+      if (state.campaign.status !== 'active' || route.searchable !== true)
+        throw new WorkspaceError('Listing search is unavailable for this route or paused workspace.', 409);
+      const quoted = value => '"' + text(value, 120).replace(/["\\]/g, '') + '"';
+      const terms = ['site:' + route.domain, quoted(state.profile.name)];
+      if (state.profile.city) terms.push(quoted(state.profile.city));
+      const url = new URL('https://www.google.com/search'); url.searchParams.set('q', terms.join(' '));
+      event('You opened a listing search for ' + route.name + '. Google receives the name and optional city; no match or removal is established.');
+      save(); return { url: url.href, routeId: id };
+    }
     function recordUser(id, value) {
       if (!USER_STATES.has(value)) throw new WorkspaceError('A user report cannot establish verified deletion.');
       const item = itemFor(id);
+      requireNotHeld(item);
       if (!item.operation_id) { item.operation_id = item.id; item.operation_started_at = clock(); }
       changed(item, value); event(routeFor(id).name + '. ' + TEXT[value]); save(); return dashboard();
     }
     function opened(id) {
       const item = itemFor(id);
+      requireNotHeld(item);
       requireCountryRoute(routeFor(id), item);
       if (state.campaign.status !== 'active') throw new WorkspaceError('Allow checks before opening a broker action.', 409);
       if (!item.operation_id && !USER_STATES.has(item.status)) changed(item, 'opened');
       event('You opened the ' + routeFor(id).name + ' official form. No submission was established.'); save(); return dashboard();
+    }
+    function holdRoute(id) {
+      const item = itemFor(id);
+      item.held = true; item.held_at = clock();
+      event('You put ' + routeFor(id).name + ' on hold. No new broker or mailbox action will start.'); save(); return dashboard();
+    }
+    function resumeRoute(id) {
+      const item = itemFor(id);
+      if (item.held !== true) throw new WorkspaceError('This route is not on hold.', 409);
+      item.held = false; item.resumed_at = clock();
+      event('You explicitly resumed ' + routeFor(id).name + '. Existing operation references still prevent repeats.'); save(); return dashboard();
     }
     function exportData() { active(); return JSON.stringify({ version: VERSION, exported_at: clock(), profile: clone(state.profile), items: clone(state.items), activity: clone(state.activity) }, null, 2); }
     function importData(raw) {
@@ -420,6 +520,7 @@
       for (const [id, item] of Object.entries(data.items)) {
         const route = routeFor(id);
         if (!item || forbidden.has(item.status) || !Object.hasOwn(TEXT, item.status)) throw new WorkspaceError('Imports cannot establish verified removal or listing absence.');
+        if (item.held !== undefined && typeof item.held !== 'boolean') throw new WorkspaceError('Invalid imported hold state.');
         restoredFields[id] = approvedFields(route, item.fields === undefined ? {} : item.fields);
         if (item.mail_contact) restoredContacts[id] = mailContact(item.mail_contact, id, item.operation_id || item.id, Math.floor(Date.parse(clock()) / 1000), true);
       }
@@ -436,6 +537,10 @@
       for (const [id, imported] of Object.entries(data.items)) {
         const item = state.items[id];
         item.fields = restoredFields[id];
+        item.affirmations = {};
+        if (imported.held === true || imported.status === 'held') {
+          item.held = true; item.held_at = typeof imported.held_at === 'string' && Number.isFinite(Date.parse(imported.held_at)) ? new Date(imported.held_at).toISOString() : clock();
+        }
         if (restoredContacts[id]) {
           item.id = restoredContacts[id].operation_id; item.mail_contact = restoredContacts[id];
           if (imported.mail_receipt && ['held', 'pending'].includes(imported.mail_receipt.status)) item.mail_receipt = {
@@ -448,6 +553,7 @@
             acceptance_verified: false, deletion_verified: false, source: 'imported_user_history' };
         }
         if (imported.status === 'opened') changed(item, 'opened');
+        else if (imported.status === 'held' && !imported.operation_id) changed(item, 'ready');
         else if (imported.status !== 'ready') {
           const report = USER_STATES.has(imported.status) ? imported.status :
             imported.status === 'requested' ? 'user_reported_requested' : 'uncertain';
@@ -505,9 +611,9 @@
       }
     }
     return Object.freeze({ api, snapshot: () => clone(read()), profile: () => clone(active().profile), routes: () => clone(routes),
-      setEvidence, prepare, mailSessionRequest, bindMailContact, clearMailContact, mailCheckRequest, recordMailReceipt,
+      setEvidence, prepare, holdRoute, resumeRoute, mailSessionRequest, bindMailContact, clearMailContact, mailCheckRequest, recordMailReceipt,
       mailContinuationRequest, prepareMailContinuation, recordMailContinuation,
-      recordCompanion, recordUser, opened, exportData, importData, remove, dashboard,
+      recordCompanion, observationRequest, recordObservation, searchRequest, recordUser, opened, exportData, importData, remove, dashboard,
       updateRoute: setEvidence, applyCompanionResult: recordCompanion });
   }
   let instance;
@@ -519,9 +625,9 @@
     if (!locks || typeof locks.request !== 'function') throw new WorkspaceError('This browser cannot safely coordinate workspace changes. Use a current browser with Web Locks support.', 503);
     return locks.request(KEY + '-write', { mode: 'exclusive' }, action);
   }
-  const mutators = new Set(['setEvidence', 'prepare', 'mailSessionRequest', 'bindMailContact', 'clearMailContact', 'mailCheckRequest', 'recordMailReceipt', 'mailContinuationRequest', 'prepareMailContinuation', 'recordMailContinuation', 'recordCompanion', 'recordUser', 'opened', 'importData', 'remove', 'updateRoute', 'applyCompanionResult']);
+  const mutators = new Set(['setEvidence', 'prepare', 'holdRoute', 'resumeRoute', 'mailSessionRequest', 'bindMailContact', 'clearMailContact', 'mailCheckRequest', 'recordMailReceipt', 'mailContinuationRequest', 'prepareMailContinuation', 'recordMailContinuation', 'recordCompanion', 'observationRequest', 'recordObservation', 'searchRequest', 'recordUser', 'opened', 'importData', 'remove', 'updateRoute', 'applyCompanionResult']);
   const exported = { create, KEY, AUTHORIZATION, WorkspaceError, routes: () => clone(routes), listingURL };
-  for (const name of ['snapshot', 'profile', 'setEvidence', 'prepare', 'mailSessionRequest', 'bindMailContact', 'clearMailContact', 'mailCheckRequest', 'recordMailReceipt', 'mailContinuationRequest', 'prepareMailContinuation', 'recordMailContinuation', 'recordCompanion', 'recordUser', 'opened', 'exportData', 'importData', 'remove', 'dashboard', 'updateRoute', 'applyCompanionResult']) {
+  for (const name of ['snapshot', 'profile', 'setEvidence', 'prepare', 'holdRoute', 'resumeRoute', 'mailSessionRequest', 'bindMailContact', 'clearMailContact', 'mailCheckRequest', 'recordMailReceipt', 'mailContinuationRequest', 'prepareMailContinuation', 'recordMailContinuation', 'recordCompanion', 'observationRequest', 'recordObservation', 'searchRequest', 'recordUser', 'opened', 'exportData', 'importData', 'remove', 'dashboard', 'updateRoute', 'applyCompanionResult']) {
     exported[name] = (...args) => mutators.has(name) ? exclusive(() => defaults()[name](...args)) : defaults()[name](...args);
   }
   exported.api = async (...args) => {
