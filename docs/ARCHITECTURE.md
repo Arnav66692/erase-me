@@ -12,6 +12,23 @@ listing search opens Google with only the name and optional city; it does not sc
 confirm a record. Route holds survive backup and campaign resume, while operation IDs
 continue to prevent duplicate dispatch.
 
+The public workspace also offers a reviewed form batch over the same eleven initial
+contracts. `fillPreview()` validates current route eligibility and exact fields without
+reserving an operation. Its snapshot binds the route, stable operation reference,
+workspace identity, country, effective contact email, remaining fields and affirmations.
+After one explicit approval of the selected forms, `form-batch.js` calls
+`prepareReviewed()` immediately before each sequential companion dispatch. That mutation
+rereads and compares the snapshot under the existing Web Lock, preserving route holds,
+campaign pause and cross-tab no-replay checks. No whole-batch reservation is made.
+
+The queue and its approvals remain in page memory; they are excluded from local storage
+and backups. Stop or closing the review leaves unstarted forms untouched after the current
+action settles. A stale preview, unknown result or failed result persistence stops the
+remaining queue. Reloading never resumes it. The executor contracts and broker evidence
+levels are unchanged: form preparation and verification initiation do not establish a
+completed removal. `form-batch.js` loads after `removal-mail-client.js` and before
+`workspace-ui.js`.
+
 The companion stores operation references and owned-tab metadata before navigation.
 For People Data Labs and USPhonebook only, a bounded explicit existing-tab observation
 can reconcile fresh verification-email evidence. A passive listener records a nonce-bound

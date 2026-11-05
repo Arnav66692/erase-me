@@ -177,13 +177,25 @@
     const uuid = options.uuid || (() => root.crypto.randomUUID());
     let state;
     let cachedRaw;
+    let deferredRecovery = false;
     function empty() { return { version: VERSION, profile: null, campaign: { status: 'active' }, items: {}, activity: [] }; }
-    function read() {
+    function recoverRunning() {
+      deferredRecovery = false;
+      let changed = false;
+      for (const item of Object.values(state.items)) if (item.status === 'running') {
+        item.status = 'uncertain'; item.detail = TEXT.uncertain; changed = true;
+      }
+      if (changed) save();
+    }
+    function read(recover = true) {
       let raw;
       try { raw = storage.getItem(KEY); } catch (_) { throw new WorkspaceError('Browser storage is unavailable. Enable local storage to save your workspace.', 503); }
-      if (state && raw === cachedRaw) return state;
+      if (state && raw === cachedRaw) {
+        if (recover && deferredRecovery) recoverRunning();
+        return state;
+      }
       cachedRaw = raw;
-      if (!raw) { state = empty(); return state; }
+      if (!raw) { state = empty(); deferredRecovery = false; return state; }
       try {
         const parsed = JSON.parse(raw);
         if (!parsed || parsed.version !== VERSION || !parsed.items || !Array.isArray(parsed.activity) ||
@@ -204,15 +216,13 @@
         }
         state = parsed;
         // A browser closed during a write cannot safely establish its outcome.
-        let changed = false;
-        for (const item of Object.values(state.items)) if (options.recoverInterrupted !== false && item.status === 'running') {
-          item.status = 'uncertain'; item.detail = TEXT.uncertain; changed = true;
-        }
-        if (changed) save();
+        // A read-only preview defers that write until the next normal read.
+        deferredRecovery = options.recoverInterrupted !== false && Object.values(state.items).some(item => item.status === 'running');
+        if (recover && deferredRecovery) recoverRunning();
         return state;
       } catch (error) {
         if (error instanceof WorkspaceError && error.status === 503) throw error;
-        state = undefined;
+        state = undefined; deferredRecovery = false;
         throw new WorkspaceError('Saved workspace data could not be read. Export or clear this workspace before starting again.', 409);
       }
     }
@@ -223,8 +233,8 @@
       }
       catch (_) { state = undefined; throw new WorkspaceError('Your browser could not save this change. No broker action should start until storage works.', 503); }
     }
-    function active() {
-      const current = read();
+    function active(recover = true) {
+      const current = read(recover);
       if (!current.profile) throw new WorkspaceError('Create a workspace on this browser first.', 401);
       return current;
     }
@@ -235,7 +245,7 @@
         url: route.url, updated_at: clock(), fields: {}, operation_id: null, operation_started_at: null, evidence: null
       };
     }
-    function itemFor(id) { active(); routeFor(id); const item = state.items[id]; if (!item) throw new WorkspaceError('Run your route plan first.', 409); return item; }
+    function itemFor(id, recover = true) { active(recover); routeFor(id); const item = state.items[id]; if (!item) throw new WorkspaceError('Run your route plan first.', 409); return item; }
     function requireNotHeld(item) {
       if (item.held === true) throw new WorkspaceError('This route is on hold. Explicitly resume it before starting or changing an action.', 409);
     }
@@ -292,8 +302,8 @@
       item.fields = { ...item.fields, ...approved }; item.affirmations = confirmations;
       item.updated_at = clock(); save(); return clone(item.fields);
     }
-    function prepare(id, reviewed) {
-      const route = routeFor(id), item = itemFor(id);
+    function preparation(id, reviewed, recover = true) {
+      const route = routeFor(id), item = itemFor(id, recover);
       requireNotHeld(item);
       requireCountryRoute(route, item);
       if (state.campaign.status !== 'active') throw new WorkspaceError('Allow checks before starting a broker action.', 409);
@@ -317,12 +327,41 @@
         if (!value) throw new WorkspaceError('Provide the broker’s required ' + key.replace(/_/g, ' ') + ' first.');
         fields[key] = brokerField(route, key, value);
       }
+      return { route, item, fields };
+    }
+    function prepare(id, reviewed) {
+      const { route, item, fields } = preparation(id, reviewed);
       // The route's pre-existing UUID also deduplicates simultaneous tab dispatches.
       item.operation_id = item.id; item.operation_started_at = clock(); changed(item, 'running');
       event('You started the ' + route.name + ' broker action. Its result is not yet established.'); save();
       return { routeId: id, operationId: item.operation_id, fields, authorized: true,
         ...(id === 'apollo' ? { businessEmailConfirmed: true } : {}), ...(id === 'spokeo' ? { listingConfirmed: true } : {}),
         ...(route.requiredAffirmations.includes('own_request') ? { ownRequestConfirmed: true } : {}) };
+    }
+    function fillPreview(id) {
+      if (routeFor(id).automationLevel !== 'companion')
+        throw new WorkspaceError('This route has no reviewed companion form action. Use its official manual steps.');
+      // Reviewing a batch never reserves operations or persists recovery updates.
+      const { route, item, fields } = preparation(id, undefined, false);
+      return clone({ routeId: id, operationId: item.id, profileId: state.profile.id, country: state.profile.country || null,
+        fields, reviewed: { fields: approvedFields(route, item.fields || {}),
+          affirmations: Object.fromEntries(route.requiredAffirmations.map(key => [key, item.affirmations[key]])) } });
+    }
+    function prepareReviewed(snapshot) {
+      const exactKeys = (value, keys) => value !== null && typeof value === 'object' && !Array.isArray(value) &&
+        Object.keys(value).length === keys.length && keys.every(key => Object.hasOwn(value, key));
+      if (!exactKeys(snapshot, ['routeId', 'operationId', 'profileId', 'country', 'fields', 'reviewed']) ||
+          typeof snapshot.routeId !== 'string' || typeof snapshot.operationId !== 'string' || typeof snapshot.profileId !== 'string' ||
+          !(snapshot.country === null || typeof snapshot.country === 'string' && /^[A-Z]{2}$/.test(snapshot.country)) ||
+          !exactKeys(snapshot.reviewed, ['fields', 'affirmations']))
+        throw new WorkspaceError('Review the broker fields again before starting.');
+      const current = fillPreview(snapshot.routeId);
+      const sameFields = (left, right) => exactKeys(left, Object.keys(right)) && Object.keys(right).every(key => left[key] === right[key]);
+      if (snapshot.operationId !== current.operationId || snapshot.profileId !== current.profileId || snapshot.country !== current.country ||
+          !sameFields(snapshot.fields, current.fields) || !sameFields(snapshot.reviewed.fields, current.reviewed.fields) ||
+          !sameFields(snapshot.reviewed.affirmations, current.reviewed.affirmations))
+        throw new WorkspaceError('The reviewed broker fields or workspace changed. Review this batch entry again before starting.', 409);
+      return prepare(snapshot.routeId, current.reviewed);
     }
     function mailSessionRequest(id) {
       const route = routeFor(id), item = itemFor(id);
@@ -665,7 +704,7 @@
       }
     }
     return Object.freeze({ api, snapshot: () => clone(read()), profile: () => clone(active().profile), routes: () => clone(routes),
-      setEvidence, prepare, holdRoute, resumeRoute, mailSessionRequest, bindMailContact, clearMailContact, mailCheckRequest, recordMailReceipt,
+      setEvidence, prepare, fillPreview, prepareReviewed, holdRoute, resumeRoute, mailSessionRequest, bindMailContact, clearMailContact, mailCheckRequest, recordMailReceipt,
       mailContinuationRequest, prepareMailContinuation, recordMailContinuation,
       recordCompanion, observationRequest, recordObservation, searchRequest, privacyDraftRequest, recordUser, opened, exportData, importData, remove, dashboard,
       updateRoute: setEvidence, applyCompanionResult: recordCompanion });
@@ -679,9 +718,9 @@
     if (!locks || typeof locks.request !== 'function') throw new WorkspaceError('This browser cannot safely coordinate workspace changes. Use a current browser with Web Locks support.', 503);
     return locks.request(KEY + '-write', { mode: 'exclusive' }, action);
   }
-  const mutators = new Set(['setEvidence', 'prepare', 'holdRoute', 'resumeRoute', 'mailSessionRequest', 'bindMailContact', 'clearMailContact', 'mailCheckRequest', 'recordMailReceipt', 'mailContinuationRequest', 'prepareMailContinuation', 'recordMailContinuation', 'recordCompanion', 'observationRequest', 'recordObservation', 'searchRequest', 'privacyDraftRequest', 'recordUser', 'opened', 'importData', 'remove', 'updateRoute', 'applyCompanionResult']);
+  const mutators = new Set(['setEvidence', 'prepare', 'prepareReviewed', 'holdRoute', 'resumeRoute', 'mailSessionRequest', 'bindMailContact', 'clearMailContact', 'mailCheckRequest', 'recordMailReceipt', 'mailContinuationRequest', 'prepareMailContinuation', 'recordMailContinuation', 'recordCompanion', 'observationRequest', 'recordObservation', 'searchRequest', 'privacyDraftRequest', 'recordUser', 'opened', 'importData', 'remove', 'updateRoute', 'applyCompanionResult']);
   const exported = { create, KEY, AUTHORIZATION, WorkspaceError, routes: () => clone(routes), listingURL };
-  for (const name of ['snapshot', 'profile', 'setEvidence', 'prepare', 'holdRoute', 'resumeRoute', 'mailSessionRequest', 'bindMailContact', 'clearMailContact', 'mailCheckRequest', 'recordMailReceipt', 'mailContinuationRequest', 'prepareMailContinuation', 'recordMailContinuation', 'recordCompanion', 'observationRequest', 'recordObservation', 'searchRequest', 'privacyDraftRequest', 'recordUser', 'opened', 'exportData', 'importData', 'remove', 'dashboard', 'updateRoute', 'applyCompanionResult']) {
+  for (const name of ['snapshot', 'profile', 'setEvidence', 'prepare', 'fillPreview', 'prepareReviewed', 'holdRoute', 'resumeRoute', 'mailSessionRequest', 'bindMailContact', 'clearMailContact', 'mailCheckRequest', 'recordMailReceipt', 'mailContinuationRequest', 'prepareMailContinuation', 'recordMailContinuation', 'recordCompanion', 'observationRequest', 'recordObservation', 'searchRequest', 'privacyDraftRequest', 'recordUser', 'opened', 'exportData', 'importData', 'remove', 'dashboard', 'updateRoute', 'applyCompanionResult']) {
     exported[name] = (...args) => mutators.has(name) ? exclusive(() => defaults()[name](...args)) : defaults()[name](...args);
   }
   exported.api = async (...args) => {

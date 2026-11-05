@@ -1,6 +1,6 @@
 # Public browser workspace
 
-Updated November 4, 2026.
+Updated November 5, 2026.
 
 The hosted app accepts a self-attested profile and keeps it in this browser's local
 storage. It needs no service account, email login, password or hosting database. It
@@ -12,7 +12,8 @@ backup out of GitHub and shared storage.
 ## Actions and evidence
 
 Saving a profile, editing location, opening the app and preparing a route plan do not
-submit forms. The person starts an individual broker action with its displayed fields.
+submit forms. The person starts an individual broker action or authorizes a reviewed
+batch with its displayed fields.
 There are no recurring checks, background alarms, inbox polls or automatic resubmissions.
 
 The companion can initiate People Data Labs email verification and prefill the initial
@@ -40,6 +41,40 @@ mutations use an origin-wide exclusive Web Lock and reread current storage insid
 browsers without that support fail closed. Another tab deleting the workspace prevents
 a stale dispatch. The companion also reserves the stable operation ID to prevent duplicate
 execution. Storage failures stop actions before dispatch.
+
+## Reviewed form batch
+
+**Review form batch** collects the current form details and route-specific confirmations,
+then shows the official destination and exact outgoing fields for each eligible form.
+It explains why held, already-started, incomplete and manual routes are excluded. Required
+own-listing, business-email and own-request confirmations still apply; the app does not
+infer a record match, split a full name or substitute a contact address.
+
+The person can deselect forms, then check the initially unchecked batch authorization and
+choose **Fill selected forms**. Changing the selection clears that authorization. The
+companion checks access to every selected broker before starting and fills one form at a
+time while the workspace page remains open. Each form keeps its existing contract:
+People Data Labs can initiate its verification email; other initial forms are prepared
+for the person's remaining consent, submission, challenge and verification steps. This
+does not add automatic final submission or establish deletion.
+
+The review binds each selected route to its current workspace identity, country, stable
+operation reference, exact effective email, other approved fields and route affirmations.
+Immediately before each dispatch, the core validates that snapshot against current
+storage, including any hold, pause or action started in another tab. It reserves the
+operation only for the form about to run. A stale review or failed validation stops the
+remaining queue; no changed fields are sent under an earlier approval.
+
+**Stop after current form** lets the current action settle and leaves later forms
+untouched. Closing the review also requests that stop. A known blocked form is recorded
+for attention while other approved forms may continue. An unknown outcome, interrupted
+companion connection or failed result persistence stops the remaining work for review.
+Started operations remain protected from replay.
+
+Batch selections, approved snapshots and queue progress live only in page memory. They
+are not saved in local storage or private backups, and refreshing or reopening the page
+never resumes an unfinished batch. Recorded per-route outcomes and operation references
+remain in the normal ledger. No mailbox poll, scheduled retry or ID upload is introduced.
 
 ## Country coverage
 
@@ -192,7 +227,7 @@ unlimited public mail service. Free hosting, provider quotas and OAuth restricti
 ## Core interface and checks
 
 The public script order is `broker-audit.js`, `broker-routes.js`, `workspace-core.js`,
-`removal-mail-client.js`, `workspace-ui.js`, then `app.js`. The recursively frozen audit
+`removal-mail-client.js`, `form-batch.js`, `workspace-ui.js`, then `app.js`. The recursively frozen audit
 is static official-channel metadata only; it contains no person or request data.
 
 `workspace-core.js` exposes `EraseWorkspace` in a browser and CommonJS for tests. Its
@@ -205,6 +240,13 @@ test helper retains synchronous local mutations.
 fields and required route-specific affirmations. `recordCompanion()` requires matching operation correlation; acceptance also
 requires `route_verified: true` and `evidence: "fresh_visible_success"`. The companion
 transport validates its own origin and correlation before calling it.
+
+`fillPreview(routeId)` performs the same field and eligibility validation without
+reserving or saving an operation. `prepareReviewed(snapshot)` rereads and compares the
+complete approved preview under the mutation Web Lock, then persists the operation before
+returning its companion payload. `form-batch.js` supplies the memory-only sequential
+queue; it uses those helpers and `recordCompanion()` rather than adding a broker endpoint
+or changing the companion executor's permissions.
 
 `holdRoute()` and `resumeRoute()` preserve the last outcome and the no-replay guard.
 `searchRequest()` persists the explicit search event before returning its fixed Google URL.
@@ -230,7 +272,7 @@ and response shapes, no redirects and explicit calls. It has no polling or accou
 flow. Run:
 
 ```sh
-node --test tests/test_workspace_core.cjs tests/test_manual_ui.cjs tests/test_companion.cjs tests/test_broker_catalog.cjs tests/test_removal_mail_client.cjs
+node --test tests/*.cjs
 ```
 
 These are synthetic and local checks. Passing them does not demonstrate that a real broker

@@ -12,12 +12,14 @@
     listing_url:{label:'Your confirmed listing URL',type:'url',max:2048},request_text:{label:'Your removal request text',max:5000,textarea:true}
   };
   let mailStatus=null;
+  let batchView=null;
+  const formEditors=new Map(),fillActions=new Set();
   const $=id=>document.getElementById(id);
   const n=(tag,text,cls)=>{const e=document.createElement(tag);if(text)e.textContent=text;if(cls)e.className=cls;return e;};
   const changed=()=>document.dispatchEvent(new CustomEvent('erase-workspace-change'));
   const feedback=message=>{$('campaign-feedback').textContent=message;$('campaign-feedback').hidden=false;};
   function report(error){feedback(error?.message||'This action could not be completed.');}
-  function button(label,action){const e=n('button',label,'button button-secondary');e.type='button';e.addEventListener('click',async()=>{e.disabled=true;try{await action();}catch(error){report(error);}finally{e.disabled=false;}});return e;}
+  function button(label,action,enabled){const e=n('button',label,'button button-secondary');e.type='button';e.addEventListener('click',async()=>{e.disabled=true;try{await action();}catch(error){report(error);}finally{e.disabled=enabled?!enabled():false;}});return e;}
   function companion(payload){
     return new Promise((resolve,reject)=>{
       const requestId=crypto.randomUUID();
@@ -31,6 +33,100 @@
       window.addEventListener('message',listener);
       window.postMessage({source:'erase-workspace',requestId,payload},location.origin);
     });
+  }
+  const batchRunning=()=>batchView?.running===true;
+  function setFillActions(){for(const action of fillActions)action.disabled=batchRunning();}
+  function batchDialog(){
+    if(batchView)return batchView;
+    const dialog=n('dialog');dialog.id='form-batch-dialog';dialog.setAttribute('aria-labelledby','form-batch-heading');
+    const body=n('div',null,'dialog-body'),heading=n('h2','Review your form batch');heading.id='form-batch-heading';
+    const description=n('p','Review the exact fields and destinations below. Selected forms run one at a time while this page stays open. Filling a form does not establish a submitted request or deletion. Broker agreements, CAPTCHA checks, record matching and verification may still need you.');
+    const list=n('div',null,'form-batch-list'),results=n('div',null,'form-batch-status');results.setAttribute('role','status');results.setAttribute('aria-live','polite');
+    const label=n('label');label.className='checkbox-label';
+    const approval=n('input');approval.type='checkbox';approval.id='form-batch-approval';label.setAttribute('for',approval.id);label.append(approval,n('span','I reviewed the selected brokers and exact fields. I authorize these form actions for my own information.'));
+    const start=button('Fill selected forms',async()=>{
+      if(batchRunning())return;
+      if(!approval.checked){results.textContent='Review the selected forms and authorize this batch first.';return;}
+      const selected=view.pending.filter(entry=>entry.select.checked).map(entry=>entry.preview);
+      if(!selected.length){results.textContent='Select at least one eligible form.';return;}
+      view.running=true;approval.checked=false;approval.disabled=true;start.disabled=true;stop.hidden=false;
+      for(const entry of view.pending)entry.select.disabled=true;
+      setFillActions();
+      stop.focus({preventScroll:true});
+      let controller;
+      try{
+        controller=globalThis.EraseFormBatch.create({workspace:W(),companion,onUpdate:snapshot=>{
+          if(view.controller!==controller)return;
+          results.replaceChildren(n('p',snapshot.status==='running'?'Form batch running.':'Form batch '+snapshot.status+'.'));
+          if(snapshot.detail)results.append(n('p',snapshot.detail));
+          for(const entry of snapshot.entries){const route=W().routes().find(route=>route.id===entry.routeId);results.append(n('p',(route?.name||entry.routeId)+': '+entry.status.replace(/_/g,' ')+(entry.detail?' — '+entry.detail:'')));}
+        }});
+        view.controller=controller;
+        await controller.run(selected,{authorized:true});
+      }catch(error){results.textContent=error?.message||'The form batch stopped. Check the existing broker tabs before starting another action.';}
+      finally{
+        view.running=false;view.stopping=false;stop.hidden=true;setFillActions();
+        view.pending=[];list.replaceChildren();approval.checked=false;approval.disabled=true;
+        start.disabled=true;results.append(n('p','Review a new batch to start any remaining forms. No action will repeat automatically.'));
+        const focused=document.activeElement;
+        let hidden=false;for(let parent=focused;parent&&parent!==dialog;parent=parent.parentElement)if(parent.hidden)hidden=true;
+        if(dialog.open&&(!focused||focused===document.body||[start,stop,approval].includes(focused)||!focused.isConnected||focused.disabled||hidden))close.focus({preventScroll:true});
+        changed();
+      }
+    },()=>!view.running&&view.pending.some(entry=>entry.select.checked));start.id='form-batch-start';
+    const stop=button('Stop after current form',()=>{view.stopping=true;view.controller?.stop();results.append(n('p','Stopping after the current form. Unstarted forms will stay untouched.'));close.focus({preventScroll:true});},()=>!view.stopping);stop.id='form-batch-stop';stop.hidden=true;
+    const close=button('Close review',()=>dialog.close());close.id='form-batch-close';
+    const actions=n('div',null,'dialog-actions');actions.append(start,stop,close);body.append(heading,description,list,label,results,actions);dialog.append(body);document.body.append(dialog);
+    const view={dialog,list,results,approval,start,stop,pending:[],running:false,reviewing:false,stopping:false,controller:null,opener:null};
+    const cancelRemaining=()=>{if(batchRunning())view.controller?.stop();view.pending=[];list.replaceChildren();approval.checked=false;start.disabled=true;};
+    dialog.addEventListener('cancel',cancelRemaining);
+    dialog.addEventListener('close',()=>{cancelRemaining();const opener=view.opener?.isConnected?view.opener:$('review-form-batch');opener?.focus({preventScroll:true});});
+    batchView=view;return view;
+  }
+  async function reviewFormBatch(opener){
+    const view=batchDialog();if(view.reviewing)return;view.opener=opener||document.activeElement;
+    if(batchRunning()){if(!view.dialog.open)view.dialog.showModal();return;}
+    view.reviewing=true;
+    try{
+    view.pending=[];view.controller=null;view.list.replaceChildren();view.results.replaceChildren();view.approval.checked=false;view.approval.disabled=false;view.start.disabled=true;view.stop.hidden=true;view.stop.disabled=false;
+    const dashboard=W().dashboard(),routes=W().routes(),candidates=[];
+    const skipped=n('details',null,'form-batch-skips'),summary=n('summary','Forms needing attention and guided routes');skipped.append(summary);let skippedCount=0;
+    const exclude=section=>{skipped.append(section);skippedCount++;};
+    // Read every visible editor before awaiting persistence. A rerender cannot
+    // replace a later route's fields halfway through this explicit review.
+    for(const item of dashboard.items){
+      const route=routes.find(route=>route.id===item.site_id);if(!route)continue;
+      const eligibleCountry=route.countries.includes('*')||route.countries.includes(dashboard.profile.country);
+      if(!eligibleCountry)continue;
+      const section=n('section',null,'form-batch-entry');section.append(n('h3',route.name));
+      if(route.automationLevel!=='companion'){section.append(n('p','Guided route: use the official instructions. Automatic form filling is unavailable.'));exclude(section);continue;}
+      if(item.held===true||item.status==='held'){section.append(n('p','On hold. This route is excluded until you explicitly resume it.'));exclude(section);continue;}
+      if(item.operation_id||['running','verification_sent','requested','uncertain','needs_broker_step','user_reported_requested','user_reported_completed'].includes(item.status)){section.append(n('p','Already started. Check the existing broker result; this action will not be repeated.'));exclude(section);continue;}
+      const editor=formEditors.get(route.id);
+      candidates.push({route,section,editable:editor?editor.read():null});
+    }
+    for(const {route,section,editable}of candidates){
+      try{
+        if(editable){
+          for(const key of route.fields.filter(key=>key!=='email'))if(!editable.fields[key]?.trim())throw new Error('Provide '+(fieldSpecs[key]?.label||key.replace(/_/g,' '))+' in this route’s Request steps first.');
+          await W().setEvidence(route.id,editable.fields,editable.affirmations);
+        }
+        const preview=await W().fillPreview(route.id);
+        const select=n('input');select.type='checkbox';select.checked=true;select.setAttribute('aria-label','Include '+route.name+' in this form batch');
+        const selected=n('label');selected.className='checkbox-label';selected.append(select,n('span','Include '+route.name));section.append(selected);
+        section.append(n('p','Official form: '+route.url,'public-route-note'));
+        const fields=n('dl',null,'form-batch-fields');for(const [key,value]of Object.entries(preview.fields))fields.append(n('dt',fieldSpecs[key]?.label||(key==='email'?'Contact email':key.replace(/_/g,' '))),n('dd',value));section.append(fields);
+        section.append(n('p',route.id==='peopledatalabs-form'?'Starts the broker’s verification-email step. Complete the later deletion steps with the broker.':'Fills the reviewed fields. Complete the broker’s submission, agreements and verification steps there.','public-route-note'));
+        view.pending.push({preview,select});
+        view.list.append(section);
+        select.addEventListener('change',()=>{view.approval.checked=false;view.start.disabled=!view.pending.some(entry=>entry.select.checked);});
+      }catch(error){section.append(n('p','Needs detail: '+(error?.message||'Review this route’s required fields before filling.')));exclude(section);}
+    }
+    if(skippedCount){summary.textContent=skippedCount+' forms needing attention or guided routes';view.list.append(skipped);}
+    view.start.disabled=view.pending.length===0;
+    view.results.textContent=view.pending.length?view.pending.length+' forms are ready for your review. No broker has been contacted.':'No eligible forms are ready. Complete the required details and route confirmations, then review again.';
+    if(!view.dialog.open)view.dialog.showModal();
+    }finally{view.reviewing=false;}
   }
   function configure(){
     $('mode-badge').textContent='Browser workspace';
@@ -82,6 +178,7 @@
       const data=W().exportData();const blob=new Blob([typeof data==='string'?data:JSON.stringify(data,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=n('a');a.href=url;a.download='erase-me-private-backup.json';a.click();URL.revokeObjectURL(url);
     });
     box.append(n('p','For automatic form filling, install the desktop Chrome companion once. Official forms also work without it. Broker email and CAPTCHA steps remain yours.','public-route-note'),download,instructions,connect,exportButton);
+    if(globalThis.EraseFormBatch){const review=button('Review form batch',()=>reviewFormBatch(review));review.id='review-form-batch';box.append(review);}
     if(M())box.append(button('Check removal-mail availability',async()=>{
       mailStatus=await M().status();changed();
       feedback(mailStatus.enabled?'The removal-mail relay is available as a private operator pilot. It checks receipts on demand. Reviewed USPhonebook confirmations can open its second form after you review the required fields.':mailStatus.configured?'The dedicated mailbox is configured, but the private pilot is disabled. Personal inboxes stay disconnected.':'The dedicated removal mailbox is not connected. Use the broker’s own email steps. Personal inboxes stay disconnected.');
@@ -180,6 +277,7 @@
     panel.append(prepare,output,copy,download);return panel;
   }
   function decorate(items){
+    formEditors.clear();fillActions.clear();
     const routes=W().routes();
     for(const [index,row] of [...$('listing-items').children].entries()){
       // Filtering can change row order, so associate the stable site name.
@@ -199,7 +297,9 @@
         input.setAttribute('aria-label',route.name+' '+label.textContent);affirmations[key]=input;label.append(input);fields.append(label);
         for(const value of Object.values(values))value.addEventListener('input',()=>{input.checked=false;});
       }
-      const save=async()=>{const evidence={},confirmed={};for(const [key,input]of Object.entries(values))evidence[key]=['request_text','phone'].includes(key)?input.value:input.value.trim();for(const [key,input]of Object.entries(affirmations))confirmed[key]=input.checked===true;const saved=await W().setEvidence(route.id,evidence,confirmed);return{fields:saved,affirmations:confirmed};};
+      const read=()=>{const evidence={},confirmed={};for(const [key,input]of Object.entries(values))evidence[key]=['request_text','phone'].includes(key)?input.value:input.value.trim();for(const [key,input]of Object.entries(affirmations))confirmed[key]=input.checked===true;return{fields:evidence,affirmations:confirmed};};
+      formEditors.set(route.id,{read});
+      const save=async()=>{const candidate=read(),saved=await W().setEvidence(route.id,candidate.fields,candidate.affirmations);return{fields:saved,affirmations:candidate.affirmations};};
       const open=button('Open official form',async()=>{
         await W().opened(route.id);
         window.open(route.url,'_blank','noopener,noreferrer');changed();feedback('Opening the official broker form was requested. If no tab appears, allow popups for this site. No request has been recorded as sent.');
@@ -210,7 +310,8 @@
       }));
       const supported=route.automationLevel==='companion';
       if(!item.held&&supported&&!item.operationId&&!item.operation_id){
-        actions.append(button(route.id==='peopledatalabs-form'?'Start broker verification':'Fill with companion',async()=>{
+        const fill=button(route.id==='peopledatalabs-form'?'Start broker verification':'Fill with companion',async()=>{
+          if(batchRunning())throw new Error('Wait for the current form batch or stop its remaining forms first.');
           const reviewed=await save();const ping=await companion({action:'ping'});
           if(!ping.routes?.includes(route.id))throw new Error('Open the companion toolbar icon and enable this broker before starting.');
           if(['apollo','spokeo'].includes(route.id)&&!ping.capabilities?.includes('explicit-fields-v1'))throw new Error('Update the companion from the current download and refresh this workspace. No new action started.');
@@ -219,7 +320,7 @@
           let result;
           try{result=await companion({action:'run',...operation});}catch(error){result={status:'unknown',detail:'The companion outcome is unknown. Check the broker tab before doing anything further.'};}
           await W().recordCompanion(route.id,operation.operationId,result);changed();feedback(result.detail||'The companion step is recorded. Finish the broker steps.');
-        }));
+        });fill.disabled=batchRunning();fillActions.add(fill);actions.append(fill);
       }
       const operationId=item.operationId||item.operation_id;
       if(operationId&&!item.status.startsWith('user_reported'))actions.append(button('Read companion result',async()=>{const result=await companion({action:'result',routeId:route.id,operationId});await W().recordCompanion(route.id,operationId,result);changed();feedback(result.detail||'Companion result checked.');}));

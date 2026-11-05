@@ -17,12 +17,14 @@ Erase Me combines a browser workspace, a narrowly permissioned Chrome extension 
 
 1. Open [Erase Me](https://erase-me-preview.vercel.app/) and create a workspace with your own details.
 2. Select your country and prepare a route plan.
-3. Find and confirm your own listings, then start individual broker actions.
+3. Find and confirm your own listings, then start a broker action or review a form batch.
 4. Complete the broker's verification steps and record the result.
 
 The workspace requires no account or email login. Your profile and ledger stay in this browser. Export a private backup before clearing site data or changing devices.
 
 For supported form filling, install the free [Chrome companion](https://erase-me-preview.vercel.app/companion.html). Load the unpacked extension in desktop Chrome and grant access to its reviewed broker sites. Mobile browsers can use the workspace and official links, but companion actions require desktop Chrome. Updating an older copy requires replacing its extracted files and reloading the extension.
+
+To fill several forms, complete their required details and own-record confirmations, then choose **Review form batch**. Review the selected brokers and exact outgoing fields, authorize the batch once and choose **Fill selected forms**. The companion works through eligible forms one at a time while the page stays open. Held, already-started, incomplete and manual routes are excluded with reasons. **Stop after current form** leaves the remaining forms untouched. Closing or reloading does not resume a batch.
 
 ### Agent skill
 
@@ -51,7 +53,7 @@ Open [localhost:8766](http://127.0.0.1:8766). This mode uses a separate local da
 | Component | Available behavior | Boundary |
 | --- | --- | --- |
 | Workspace | Country-specific route plans, explicit listing searches, private backups and individual route holds | Searches return candidates. They do not establish identity or deletion. |
-| Chrome companion | Fill reviewed forms with the fields you authorize and initiate supported verification steps | No ID uploads, paid solvers, background retries or general browser access. |
+| Chrome companion | Fill individual forms or a reviewed batch, and initiate supported verification steps | Eleven initial contracts; final submission and verification still need your participation. No ID uploads, paid solvers or background retries. |
 | Contact drafts | Prepare, copy or download a request for a fixed published contact | Drafts are local. Erase Me does not send them. |
 | Existing-tab checks | Reconcile narrowly supported, fresh broker acknowledgments | Unknown or unsupported results remain unverified. Forms are not resent. |
 | Agent skill | Consent records, reference-based plans, request drafts and private reports | Requires an agent capable of running Python. Browser and submission permissions remain explicit. |
@@ -95,6 +97,7 @@ A blocked page, empty search, HTTP 404, confirmation email or completed form is 
 - **Local state:** the agent skill stores its records outside the repository with private file permissions. The local Python app uses its own data directory. Private backups can contain personal information and scoped mail capabilities.
 - **Agent processing:** your selected agent and its service provider may process the details you supply and the pages the agent reads.
 - **Holds and retries:** a held route stays held across backups and campaign resume. Interrupted actions retain their operation references and are not automatically repeated.
+- **Batch approval:** selected sites and exact fields are checked again before each form. Batch selections and approval stay in memory, outside backups. Changed fields, uncertain outcomes or failed result storage stop the remaining work for review.
 - **No recurring work:** the workspace does not poll an inbox, schedule re-checks or resubmit listings in the background.
 
 Use the tool only for your own information or within the skill's recorded family-consent workflow. Tests use synthetic fixtures and explicitly authorized own-record checks. Never submit requests for unrelated people as a test.
@@ -117,9 +120,7 @@ source .venv/bin/activate
 python -m pip install pytest coverage
 
 python tools/build_preview.py
-node --test tests/test_manual_ui.cjs tests/test_workspace_core.cjs \
-  tests/test_companion.cjs tests/test_broker_catalog.cjs \
-  tests/test_removal_mail_client.cjs
+node --test tests/*.cjs
 python -m pytest -m "not network"
 python skills/erase-me/scripts/erase_me.py validate
 ```

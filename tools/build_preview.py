@@ -7,7 +7,7 @@ root = Path(__file__).resolve().parents[1]
 destination = root / 'preview' / 'public'
 destination.mkdir(exist_ok=True)
 files = ['index.html', 'app.js', 'hero.js', 'styles.css', 'broker-audit.js', 'broker-routes.js',
-         'workspace-core.js', 'removal-mail-client.js', 'workspace-ui.js', 'companion.html', 'companion.css']
+         'workspace-core.js', 'removal-mail-client.js', 'form-batch.js', 'workspace-ui.js', 'companion.html', 'companion.css']
 files += ['fonts/' + p.name for p in (root / 'webapp/static/fonts').iterdir()
           if p.is_file() and p.suffix in ('.woff2', '.ttf', '.txt')]
 for filename in files:
@@ -16,7 +16,7 @@ for filename in files:
     shutil.copyfile(root / 'webapp' / 'static' / filename, target)
 page = destination / 'index.html'
 scripts = ''.join(f'<script src="/{name}" defer></script>\n  '
-                  for name in ('broker-audit.js', 'broker-routes.js', 'workspace-core.js', 'removal-mail-client.js', 'workspace-ui.js'))
+                  for name in ('broker-audit.js', 'broker-routes.js', 'workspace-core.js', 'removal-mail-client.js', 'form-batch.js', 'workspace-ui.js'))
 page.write_text(page.read_text().replace('id="signup-email" name="email" type="email"', 'id="signup-email" name="email" type="text" inputmode="email"').replace('<html lang="en">', '<html lang="en" data-browser-workspace="true">').replace('<script src="/app.js" defer></script>',
                                        scripts + '<script src="/app.js" defer></script>'))
 downloads = destination / 'downloads'
