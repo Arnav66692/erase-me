@@ -7,7 +7,7 @@
 })(typeof globalThis === 'object' ? globalThis : this, function (automatic) {
   'use strict';
   const copy = value => JSON.parse(JSON.stringify(value));
-  function create({ workspace, companion, onUpdate = () => {}, afterResult }) {
+  function create({ workspace, companion, onUpdate = () => {}, afterResult, afterForms }) {
     let running = false, stopping = false;
     let state = { status: 'idle', entries: [], current: null, detail: '' };
     const snapshot = () => copy(state);
@@ -29,6 +29,8 @@
       }
       // Freeze the approved values before the first asynchronous boundary.
       const queue = copy(previews);
+      const completed = [];
+      let recordedCount = 0;
       running = true; stopping = false;
       state = { status: 'running', current: null, detail: '',
         entries: queue.map(preview => ({ routeId: preview.routeId, status: 'queued', detail: 'Waiting for this batch.' })) };
@@ -70,6 +72,11 @@
           }
           entry.status = result.status;
           entry.detail = String(result.detail || (result.status === 'prepared' ? 'Fields filled. Complete the remaining broker steps.' : 'Review this broker’s remaining steps.')).slice(0, 600);
+          recordedCount++;
+          if (result.status === 'verification_sent') completed.push({ routeId: preview.routeId, operationId: operation.operationId,
+            result: { status: result.status, route_verified: true, evidence: 'fresh_visible_success' } });
+          if (result.status === 'submission_attempted') completed.push({ routeId: preview.routeId, operationId: operation.operationId,
+            result: { status: result.status, attempt_verified: true, stage: contract.stage } });
           emit();
           if (result.status === 'unknown') { stopping = true; break; }
           if(!stopping && afterResult && ['verification_sent','submission_attempted'].includes(result.status)){
@@ -79,6 +86,21 @@
               if(followup?.status==='unknown'){stopping=true;break;}
             }catch(_){entry.detail+=' The removal-mail step could not be completed. Check the existing operation before continuing.';stopping=true;break;}
           }
+        }
+        // One optional foreground pass runs only after the entire approved queue
+        // has durable outcomes. It never resumes a stopped or uncertain batch.
+        if (!stopping && recordedCount === queue.length && afterForms) {
+          state.current = null; state.detail = 'Checking the approved final session steps.'; emit();
+          if (!stopping) {
+            try {
+              const followup = await afterForms({ entries: copy(completed), isStopped: () => stopping });
+              state.detail = followup?.detail ? String(followup.detail).slice(0, 600) : '';
+              if (followup?.status === 'unknown') stopping = true;
+            } catch (_) {
+              state.detail = 'The final session step could not be completed. Check the existing operations before continuing.';
+              stopping = true;
+            }
+          } else state.detail = 'The final session step was not started.';
         }
       } catch (error) {
         stopping = true;

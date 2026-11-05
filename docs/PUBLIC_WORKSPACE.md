@@ -59,6 +59,14 @@ It explains why held, already-started, incomplete and manual routes are excluded
 own-listing, business-email and own-request confirmations still apply; the app does not
 infer a record match, split a full name or substitute a contact address.
 
+The review also offers optional **Prepare selected removal contacts** for eligible
+FastPeopleSearch and USPhonebook routes. The operator selects routes and enters the
+private pilot key once. This prepares contact addresses without broker navigation,
+submission or message reads. Existing contacts are kept; holds, started actions, campaign
+pause and country restrictions remain effective. Preparation rebuilds the review with
+the exact new addresses and fields, and resets the form approval, submission automation
+and mail option to unchecked. Contact setup does not approve a broker action.
+
 The person can deselect forms, then check the initially unchecked batch authorization and
 choose **Fill selected forms**. Changing the selection clears that authorization. The
 companion checks access to every selected broker before starting and fills one form at a
@@ -245,9 +253,11 @@ email; new shared contacts are disabled. Existing signed SearchPeopleFree capabi
 remain valid for held-only receipt checks. An unstarted old shared contact must be
 explicitly removed before choosing the typed email; no silent fallback occurs.
 
-Per-route controls clear the private pilot key after each click. The optional batch or
-mail-only pass takes the key from its password field, holds it only in session memory,
-and clears it when the session is disposed. It is never stored in the workspace, backup
+Per-route controls clear the private pilot key after each click. Optional batch contact
+preparation takes the key once and can retain access only in memory for that open review;
+the freshly rebuilt field review still needs a new explicit form and mail approval.
+A batch or mail-only pass can also take its key directly from the password field.
+Closing, stopping or completing the review disposes session access. The key is never stored in the workspace, backup
 or URL. OAuth credentials never enter the browser. The
 browser sends only route and operation references to obtain an alias, and a scoped bearer
 capability to check it. The capability stays in private local storage and backups; it does
@@ -259,11 +269,13 @@ the sole reviewed continuation. An authorized `/continue` re-reads and authentic
 the same correlated receipt, then returns that form URL transiently to the browser. Other
 links remain held. The URL never enters workspace history or private backups.
 
-The batch can opt into one removal-mail pass after a supported verification initiation
-or guarded submission attempt. A mail-only pass checks already-bound started operations
+The batch can opt into one final removal-mail pass after all selected form outcomes
+are saved. Only qualifying verification-initiation or guarded submission-attempt operations
+with selected bound contacts are checked. Stopped queues, failed preparation, unknown
+outcomes and failed result storage skip the final pass. A mail-only pass checks already-bound started operations
 without opening or resending their initial forms. Each operation is checked once per
-session. Aliases remain separately authorized per route; a session never creates one
-silently. Pending mail produces `awaiting_mail` and starts no polling or later check.
+session. Contact creation needs its own selected-route authorization before a fresh review;
+no alias is silently substituted during execution. Pending mail produces `awaiting_mail` and starts no polling or later check.
 Unknown results, stop, campaign pause and route holds prevent further work. The held
 USPhonebook pilot is excluded.
 
@@ -285,7 +297,7 @@ unlimited public mail service. Free hosting, provider quotas and OAuth restricti
 ## Core interface and checks
 
 The public build loads the broker catalog before the workspace core, automatic-contract
-metadata before the form-batch runner, and removal-mail/session modules before the
+metadata before the form-batch runner, and removal-mail, session and contact-setup modules before the
 workspace UI. The shared `app.js` controller runs last. The recursively frozen audit is
 static official-channel metadata only; it contains no person or request data.
 
@@ -308,7 +320,9 @@ reserving or saving an operation. `prepareReviewed(snapshot)` rereads and compar
 complete approved preview under the mutation Web Lock, then persists the operation before
 returning its companion payload. `form-batch.js` supplies the memory-only sequential
 queue; it uses those helpers and `recordCompanion()` rather than adding a public broker
-submission endpoint. The optional local helper adds a separate `nativeMessaging` grant;
+submission endpoint. Its optional `afterForms` callback receives detached, minimal references
+to qualifying operations after all form results are persisted, and never reruns a form.
+The optional local helper adds a separate `nativeMessaging` grant;
 the eleven approved broker origins are unchanged.
 
 `matchRequest()` records the approved Spokeo candidate and identity before the companion
@@ -330,6 +344,13 @@ shape. The server verifies its signature and dedicated mailbox identity. `mailCh
 validates storage and the saved capability before dispatch. `recordMailReceipt()` saves
 only pending or held metadata. `clearMailContact()` permits a local undo before the broker
 action starts. These mutations share the same Web Lock as other writes.
+
+`contact-setup.js` orchestrates a selected, sequential `mailSessionRequest()` → relay
+`session()` → `bindMailContact()` pass. It checks the frozen profile, country, route,
+operation, fields, affirmations and existing contact before and after asynchronous steps.
+Stop or changed context prevents further issuance or binding. Unknown outcomes are not
+retried automatically. Progress contains only route IDs and fixed statuses/messages;
+aliases and capabilities persist only through the core's existing contact contract.
 
 For USPhonebook, `mailContinuationRequest()` saves the separately approved city, state
 and ZIP before `/continue`. `prepareMailContinuation()` validates the transient response

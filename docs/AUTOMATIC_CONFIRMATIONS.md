@@ -2,8 +2,8 @@
 
 The optional private-pilot receipt relay reads only a separately connected removal-only
 Gmail account. It does not connect to the user's personal inbox. The user authorizes
-each broker operation and can approve one session over already-bound contacts, or
-start a single route check. No polling loop,
+each broker operation and can prepare selected eligible contacts together, approve
+one session over bound contacts, or start a single route check. No polling loop,
 cron, background alarm or recurring timer is started. The public website does not
 provide unrestricted shared-mailbox access. Credential configuration alone never
 enables the relay.
@@ -111,15 +111,36 @@ nothing and starts no broker request.
 
 ## One authorized browser session
 
-Companion 0.5.0 can use an optional removal-mail step after a supported verification
-initiation or guarded submission attempt. The batch review requires a separate mail
-authorization and private operator key. A mail-only pass can check existing bound
-operations without filling or resending their forms. Neither control issues contact
-aliases automatically: each alias must already have been approved for its route.
+The web workspace can prepare selected FastPeopleSearch and USPhonebook contacts in
+one pass through `contact-setup.js`. The operator selects the eligible routes and enters
+the private key once. Each selected route is explicitly authorized before its alias is
+requested and bound. The setup checks every selection before starting, keeps existing
+contacts, and excludes held, started, paused or out-of-country routes. It freezes the
+workspace identity, country, operation reference, fields and affirmations before the first
+asynchronous step and checks for changes before issuing or binding a contact. An uncertain
+outcome stops setup rather than automatically requesting another address. This phase
+does not navigate to a broker, send a form or read messages.
+
+After setup, the workspace rebuilds the exact-address and field review. The main form
+approval, optional submission mode and optional mail pass are unchecked; creating an
+address does not authorize its disclosure to a broker. The operator reviews the new
+values and selects the desired actions. The key can remain only in memory for this open
+review so this sequence does not require entering it again. Closing, stopping or completing
+the review disposes that access. This web update does not change companion 0.5.0.
+
+The optional mail pass runs only after all selected form outcomes have been saved.
+`form-batch.js` supplies `afterForms` with minimal operation references only for verified
+verification-initiation or guarded submission-attempt outcomes. The UI checks the selected,
+bound contacts in that final pass. Stopped queues, failed preparation, unknown form outcomes
+and failed result persistence skip it. A mail-only pass can check existing bound operations
+without filling or resending their forms. No alias is substituted for a record-associated
+email, and contact preparation never enables mail checks by itself.
 
 `removal-session.js` keeps the operator key only in page memory for this authorized
-session and clears it on disposal. The input is cleared when the session takes the
-key; it never enters the workspace, backup, URL or public frontend configuration.
+session and clears it on disposal. The input is cleared when contact preparation or a
+mail session takes the key; it never enters the workspace, backup, URL or public frontend
+configuration. `contact-setup.js` exposes only route IDs, bounded statuses and fixed
+messages in its progress and result; it never returns the key or profile fields.
 Each route/operation is checked at most once per session. Holds, campaign pause,
 stop and missing operation references prevent further mail actions.
 

@@ -21,7 +21,8 @@ function fixture(overrides = {}) {
     calls.push([payload.action, payload.routeId]);
     return payload.action === 'ping' ? { routes: ['first', 'second'], capabilities: [] } : { status: 'prepared', detail: 'Fields filled; broker steps remain.' };
   });
-  const batch = Batch.create({ workspace, companion, onUpdate: update => updates.push(update) });
+  const batch = Batch.create({ workspace, companion, onUpdate: update => { updates.push(update); overrides.onUpdate?.(update); },
+    ...(overrides.afterResult ? { afterResult: overrides.afterResult } : {}), ...(overrides.afterForms ? { afterForms: overrides.afterForms } : {}) });
   const previews = routes.map((route, index) => ({ routeId: route.id, operationId: String(index + 1).repeat(32), profileId: 'p'.repeat(32), country: 'US', fields: { email: 'person@example.test' }, reviewed: { fields: {}, affirmations: {} } }));
   return { batch, calls, updates, previews, routes };
 }
@@ -248,4 +249,121 @@ test('one after-result step runs only after persisted proof and respects Stop',a
 test('automatic mode requires the new companion before reserving any form',async()=>{
   const f=fixture();const result=await f.batch.run(f.previews,{authorized:true,automate:true});
   assert.equal(result.status,'stopped');assert.deepEqual(f.calls,[['ping',undefined]]);
+});
+
+test('one final callback follows all persisted forms and receives detached minimal qualifying outcomes', async () => {
+  let callbacks = 0, f;
+  const verified = { status: 'verification_sent', route_verified: true, evidence: 'fresh_visible_success', detail: 'Broker receipt',
+    fields: { email: 'never-pass@example.test' }, privateValue: 'do not forward' };
+  f = fixture({ companion: async payload => {
+    if (payload.action === 'ping') return { routes: ['first', 'second'], capabilities: [] };
+    return payload.routeId === 'first' ? verified : { status: 'blocked' };
+  }, afterForms: async ({ entries, isStopped }) => {
+    callbacks++;
+    assert.deepEqual(f.calls.filter(call => call[0] === 'record'), [['record', 'first', 'verification_sent'], ['record', 'second', 'blocked']]);
+    assert.equal(isStopped(), false);
+    assert.deepEqual(entries, [{ routeId: 'first', operationId: '1'.repeat(32),
+      result: { status: 'verification_sent', route_verified: true, evidence: 'fresh_visible_success' } }]);
+    entries[0].routeId = 'changed'; entries[0].result.status = 'removed'; entries.push({ routeId: 'injected' });
+    assert.equal(verified.status, 'verification_sent');
+    return { detail: 'One explicit final pass finished.' };
+  } });
+  const result = await f.batch.run(f.previews, { authorized: true });
+  assert.equal(callbacks, 1);
+  assert.equal(result.status, 'finished');
+  assert.equal(result.detail, 'One explicit final pass finished.');
+  assert.deepEqual(result.entries.map(entry => [entry.routeId, entry.status]), [['first', 'verification_sent'], ['second', 'blocked']]);
+  assert.equal(JSON.stringify(f.updates).includes('never-pass@example.test'), false);
+  assert.equal(JSON.stringify(f.updates).includes('do not forward'), false);
+});
+
+test('normal prepared and blocked forms complete a final pass with no invented qualifying mail operations', async () => {
+  let callbacks = 0;
+  const f = fixture({ companion: async payload => payload.action === 'ping' ? { routes: ['first', 'second'], capabilities: [] } :
+    { status: payload.routeId === 'first' ? 'prepared' : 'blocked' },
+  afterForms: async ({ entries }) => { callbacks++; assert.deepEqual(entries, []); return { detail: 'Nothing required a receipt check.' }; } });
+  const result = await f.batch.run(f.previews, { authorized: true });
+  assert.equal(callbacks, 1); assert.equal(result.status, 'finished');
+});
+
+test('preflight, preparation, persistence, unknown outcomes and after-result failures prevent the final pass', async () => {
+  for (const failure of ['preflight', 'prepare', 'persist', 'unknown', 'afterResultUnknown', 'afterResultThrows']) {
+    let callbacks = 0;
+    const options = { companion: async payload => {
+      if (payload.action === 'ping') return { routes: failure === 'preflight' ? ['first'] : ['first', 'second'], capabilities: [] };
+      return payload.routeId === 'second' && failure === 'unknown' ? { status: 'unknown' } :
+        { status: 'verification_sent', route_verified: true, evidence: 'fresh_visible_success' };
+    }, afterForms: async () => { callbacks++; } };
+    if (failure === 'prepare') options.workspace = { prepareReviewed: async () => { throw new Error('Held'); } };
+    if (failure === 'persist') options.workspace = { recordCompanion: async id => { if (id === 'second') throw new Error('Storage unavailable'); } };
+    if (failure === 'afterResultUnknown') options.afterResult = async () => ({ status: 'unknown' });
+    if (failure === 'afterResultThrows') options.afterResult = async () => { throw new Error('Relay unavailable'); };
+    const f = fixture(options), result = await f.batch.run(f.previews, { authorized: true });
+    assert.equal(callbacks, 0, failure); assert.equal(result.status, 'stopped', failure);
+  }
+});
+
+test('Stop during the last persisted form or final-pass announcement prevents the final callback', async () => {
+  for (const timing of ['record', 'announce']) {
+    let callbacks = 0, f;
+    const options = { afterForms: async () => { callbacks++; } };
+    if (timing === 'record') options.workspace = { recordCompanion: async id => { if (id === 'second') f.batch.stop(); } };
+    if (timing === 'announce') options.onUpdate = update => { if (update.detail === 'Checking the approved final session steps.') f.batch.stop(); };
+    f = fixture(options);
+    const result = await f.batch.run(f.previews, { authorized: true });
+    assert.equal(callbacks, 0, timing); assert.equal(result.status, 'stopped', timing);
+    assert.deepEqual(result.entries.map(entry => entry.status), ['prepared', 'prepared']);
+  }
+});
+
+test('Stop while a final pass is pending is visible through isStopped and never resumes forms', async () => {
+  const gate = deferred(); let callbacks = 0, stopped;
+  const f = fixture({ afterForms: async ({ isStopped }) => {
+    callbacks++; assert.equal(isStopped(), false); await gate.promise; stopped = isStopped(); return { detail: 'The session stopped.' };
+  } });
+  const run = f.batch.run(f.previews, { authorized: true });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(callbacks, 1); assert.equal(f.batch.isRunning(), true);
+  f.batch.stop(); gate.resolve(); const result = await run;
+  assert.equal(stopped, true); assert.equal(result.status, 'stopped');
+  assert.equal(f.calls.filter(call => call[0] === 'prepare').length, 2);
+});
+
+test('a final-pass unknown result or exception stops without repeating or replacing persisted form outcomes', async () => {
+  for (const throws of [false, true]) {
+    const f = fixture({ afterForms: async () => {
+      if (throws) throw new Error('private relay error must not leak');
+      return { status: 'unknown', detail: 'Check the existing operations.' };
+    } });
+    const result = await f.batch.run(f.previews, { authorized: true });
+    assert.equal(result.status, 'stopped');
+    assert.deepEqual(result.entries.map(entry => entry.status), ['prepared', 'prepared']);
+    assert.equal(f.calls.filter(call => call[0] === 'run').length, 2);
+    assert.doesNotMatch(result.detail, /private relay error/);
+  }
+});
+
+test('final-pass summaries stay bounded and do not change request or deletion evidence', async () => {
+  const core = await realWorkspace(); let callbacks = 0;
+  core.setEvidence('fastpeoplesearch', { first_name: 'Example', last_name: 'Person' });
+  const ids = ['peopledatalabs-form', 'fastpeoplesearch'];
+  const batch = Batch.create({ workspace: core, companion: async payload => {
+    if (payload.action === 'ping') return { routes: ids, capabilities: ['automatic-submit-v1'] };
+    return payload.routeId === 'peopledatalabs-form' ? { status: 'verification_sent', route_verified: true, evidence: 'fresh_visible_success' } :
+      { status: 'submission_attempted', attempt_verified: true, stage: 'verification_initiation' };
+  }, afterForms: async ({ entries, isStopped }) => {
+    callbacks++; assert.equal(isStopped(), false);
+    assert.deepEqual(entries, [
+      { routeId: 'peopledatalabs-form', operationId: core.snapshot().items['peopledatalabs-form'].operation_id,
+        result: { status: 'verification_sent', route_verified: true, evidence: 'fresh_visible_success' } },
+      { routeId: 'fastpeoplesearch', operationId: core.snapshot().items.fastpeoplesearch.operation_id,
+        result: { status: 'submission_attempted', attempt_verified: true, stage: 'verification_initiation' } }
+    ]);
+    assert.equal(core.snapshot().items['peopledatalabs-form'].evidence.result, 'verification_sent');
+    assert.equal(core.snapshot().items.fastpeoplesearch.evidence.result, 'submission_attempted');
+    return { detail: 'x'.repeat(800) };
+  } });
+  const result = await batch.run(ids.map(id => core.fillPreview(id)), { authorized: true, automate: true });
+  assert.equal(callbacks, 1); assert.equal(result.status, 'finished'); assert.equal(result.detail.length, 600);
+  assert.equal(core.dashboard().counts.requested, 0); assert.equal(core.dashboard().counts.removed, 0);
 });

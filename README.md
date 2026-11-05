@@ -112,7 +112,9 @@ Use the tool only for your own information or within the skill's recorded family
 
 An operator can connect a separate removal-only Gmail account through the [OAuth setup](docs/GMAIL_OAUTH.md). This is a gated private pilot, not a public shared-mailbox service or personal-inbox connection.
 
-An authorized session can check already-bound removal contacts once, including after a supported submission attempt. Its operator key stays in memory for that session and is cleared afterward. Pending mail starts no future check. The optional mail-only pass uses the same scoped operations. New contact aliases still require separate per-route approval.
+The batch review can prepare selected FastPeopleSearch and USPhonebook removal contacts together. Select eligible routes and enter the private operator key once. Contact preparation sends no broker request and reads no mail. It then rebuilds the review with the exact new addresses and fields; form, submission and mail approvals start unchecked again. Existing contacts are kept, and held or already-started routes are excluded.
+
+For that open review, the key remains in memory so an optional mail pass can follow without another key entry. After every selected form outcome is saved, the pass checks qualifying bound operations once. A stopped queue, unknown outcome or failed result storage prevents the final pass. Closing or completing the review clears its key. Pending mail starts no future check; a separate authorized mail-only pass can check existing operations later.
 
 Only USPhonebook has a reviewed confirmation-form destination. It still requires additional identity details and final broker steps; the held pilot request stays held. FastPeopleSearch links remain held, SearchPeopleFree cannot issue new shared aliases, and People Data Labs and Apollo retain their record-associated email requirements. OAuth credentials and the operator key remain outside public assets and backups.
 

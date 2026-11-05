@@ -21,6 +21,21 @@ After one explicit approval of the selected forms, `form-batch.js` calls
 rereads and compares the snapshot under the existing Web Lock, preserving route holds,
 campaign pause and cross-tab no-replay checks. No whole-batch reservation is made.
 
+The optional `contact-setup.js` phase prepares selected FastPeopleSearch and USPhonebook
+contact aliases before the final form review. It freezes the workspace profile, country,
+route operation, fields, affirmations and existing contact, then sequentially calls
+`mailSessionRequest()`, the relay's `session()` and `bindMailContact()`. All selections are
+checked before issuance; holds, started routes, pause, context changes and Stop prevent
+further work. Existing contacts are kept and unknown outcomes are not retried. This phase
+does not navigate to brokers, start forms or read messages. Its progress contains only
+route IDs and fixed statuses/messages.
+
+After contact setup, the UI rebuilds the exact-address/fields review with form approval,
+submission automation and mail checks unchecked. Operator access may remain only in memory
+for that open review, avoiding another key entry; close, stop and completion dispose it.
+Contact approval never substitutes for approval to disclose fields to a broker. A
+record-associated email is never silently replaced, and the held USPhonebook pilot remains held.
+
 The queue and its approvals remain in page memory; they are excluded from local storage
 and backups. Stop or closing the review leaves unstarted forms untouched after the current
 action settles. A stale preview, unknown result or failed result persistence stops the
@@ -29,8 +44,16 @@ FastPeopleSearch or NumaraAra agreement before one native submit event.
 `submission_attempted` records that event separately from delivery, acceptance and
 deletion. No generic alert or navigation promotes it to an accepted request.
 `automatic-executor.js` supplies the same frozen contracts to the review and companion;
-`removal-session.js` supplies one authorized scoped-mail pass. Both load before
-`form-batch.js` and `workspace-ui.js`.
+`removal-session.js` supplies one authorized scoped-mail pass. These modules and
+`contact-setup.js` load before `workspace-ui.js`.
+
+The UI attaches an optional `afterForms` callback to `form-batch.js`. It receives only
+detached, qualifying operation references after every selected form outcome has been
+saved, then checks selected bound removal contacts once. A stopped queue, preparation
+failure, unknown result or failed result storage skips the final pass. A separate mail-only
+pass can check existing operations without opening forms. Mail arriving after a pass
+requires another explicitly authorized check; no polling, push subscription, recurring
+timer or background retry is installed. Companion 0.5.0 remains unchanged by this web update.
 
 The optional native host `org.eraseme.challenge` recognizes bounded text/audio media
 with existing local tools. The reviewed Chrome integration currently sends only
