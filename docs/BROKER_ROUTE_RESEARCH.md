@@ -154,8 +154,10 @@ these official forms in that same person's browser. This avoids giving the host
 an inbox connection or retaining people's profiles in serverless storage.
 
 It cannot prove broker acceptance or deletion from these initial controls alone.
-For today's validated scope, represent one historically observed email
-initiation and four current prefill contracts, with explicit user steps. Broader
+The public companion enables four initial actions: the historically observed email
+initiation and three directory prefill routes. SmartBackgroundChecks remains manual
+after the access failure above. The 36 added country-pack reference links are manual
+guidance, not newly validated browser contracts. Broader
 fully automatic removals need actual accepted-request and absence evidence from
 consenting subjects, not a change to an `enabled` flag. The browser workspace
 should explain where the user's details stay and exactly which broker fields

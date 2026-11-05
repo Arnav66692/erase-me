@@ -221,3 +221,14 @@ test('hosted workspace fails closed when its local core script is unavailable', 
   await get('signup-form').listeners.get('submit')({ preventDefault() {}, submitter: new Element() });
   assert.equal(counters.requests, 0, 'Personal fields must never fall back to hosting API');
 });
+
+
+test('Needs you includes broker verification and interrupted outcomes', async () => {
+  for (const status of ['verification_sent', 'uncertain']) {
+    const { get, filters } = await boot({ items: [{ site_id: 'example-broker', name: 'Example Broker', status }] });
+    filters.find(e => e.dataset.filter === 'blocked').listeners.get('click')();
+    assert.equal(get('listing-items').children[0].children.length, 1);
+    filters.find(e => e.dataset.filter === 'pending').listeners.get('click')();
+    assert.equal(get('listing-items').children[0].children.length, 0);
+  }
+});

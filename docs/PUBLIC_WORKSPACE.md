@@ -1,66 +1,125 @@
 # Public browser workspace
 
-The hosted app accepts a real self-attested profile and keeps it in this browser's
-local storage. It needs no service account, email login, password or hosting database.
-It does not upload the profile or its ledger to the Vercel API. Anyone who can use this
-browser profile can read that local workspace. Clearing site data removes it. Explicit
-export creates a personal JSON file. Keep that file private.
+The hosted app accepts a self-attested profile and keeps it in this browser's local
+storage. It needs no service account, email login, password or hosting database. It
+does not upload the profile or ledger to the hosting API. Anyone using this browser
+profile can read that workspace. Clearing site data removes it. Explicit export
+creates a private JSON backup; an opted-in mail capability is included, so keep the
+backup out of GitHub and shared storage.
 
 ## Actions and evidence
 
-Saving a profile, editing its location, opening the app and pressing Run check do not
-submit forms. Run check prepares the route plan. The person starts an individual broker
-action with its exact fields. No background alarms, scheduled runs or inbox reads are
-part of this architecture.
+Saving a profile, editing location, opening the app and preparing a route plan do not
+submit forms. The person starts an individual broker action with its displayed fields.
+There are no recurring checks, background alarms, inbox polls or automatic resubmissions.
 
-The public catalog distinguishes researched official portals from functioning automated
-removals. The browser companion may fill supported forms in an official broker tab.
-Fields prepared is not sent. Opening a portal is not sent. People Data Labs verification
-initiation is not a completed deletion request. The person finishes any CAPTCHA, email
-verification and later broker forms.
+The companion can initiate People Data Labs email verification and prefill the initial
+USPhonebook, SearchPeopleFree and FastPeopleSearch forms. Fields prepared is not sent;
+opening a portal is not sent. Verification initiation is not a deletion request. CAPTCHA,
+record matching, later broker forms and confirmation links remain user steps. ID uploads
+are excluded.
 
 Only a correlated companion result with fresh, visible broker acceptance evidence may
 establish request acceptance. User reports remain self-reported. Imports downgrade
-accepted broker history to self-reported history. No import, user button, network error
-or HTTP 404 can establish removal. The current browser workspace has no verified deletion
-state or independent public-listing scanner, and its found and removed counts remain zero.
+accepted history and receipt evidence to unverified history. Neither a receipt nor an
+HTTP 404 establishes removal. The current public workspace has no independent listing
+scanner or verified deletion state: found and removed counts remain zero.
 
-An operation ID is saved before the companion is called. An uncertain write is held and
-is not resent automatically, including after a page reload. Refresh may reconcile that
-same operation with a later companion result. Each route uses its stable private item UUID
-as the operation ID, so simultaneous browser tabs share the companion deduplication key.
-The core reloads storage changes before dispatch and refuses actions after another tab deletes
-the workspace. Extension-side operation reservation remains necessary for a simultaneous race. A storage failure prevents dispatch.
+The operation ID is saved before companion dispatch. Interrupted operations are held,
+not repeated. An explicit result read can reconcile the same operation later. Browser
+mutations use an origin-wide exclusive Web Lock and reread current storage inside it;
+browsers without that support fail closed. Another tab deleting the workspace prevents
+a stale dispatch. The companion also reserves the stable operation ID to prevent duplicate
+execution. Storage failures stop actions before dispatch.
 
-## Routes
+## Country coverage
 
-The browser catalog currently includes People Data Labs, USPhonebook, SearchPeopleFree,
-SmartBackgroundChecks, FastPeopleSearch, Spokeo and Apollo. Their capability labels describe the
-work actually supported. People Data Labs can initiate verification. USPhonebook, SearchPeopleFree and FastPeopleSearch support companion prefill. SmartBackgroundChecks returned a 403 during the latest inspection and remains manual. Spokeo and Apollo are manual routes. Apollo requires the business email associated with its record. Research notes about a portal do not imply an accepted request
-or completed removal. First and last names are explicit fields. They are never inferred
-by splitting a full name. A Spokeo listing URL must use the exact approved HTTPS domain
-and a direct listing path, with no credentials, query parameters or fragment.
+The catalog has 43 reference routes, with four supported initial companion actions and
+39 manual routes. Reference coverage is separate from live integration or removal evidence.
 
-No identity documents, purchases, login flows or account deletions are authorized by the
-public workspace. Entering an email never proves ownership or becomes enough evidence
-to identify a public listing.
+| Catalog group | Reference routes | Initial companion actions |
+| --- | --- | --- |
+| Global portals: People Data Labs and Apollo | 2 | 1 |
+| United States | 23 | 3 |
+| Canada | 4 | 0 |
+| United Kingdom | 5 | 0 |
+| Germany | 2 | 0 |
+| Turkey | 7 | 0 |
 
-## Core interface
+The 36 added manual references use the existing country-pack source URLs. Their current
+forms, request acceptance and deletion results have not been validated for this app.
+They collect no additional profile fields in Erase Me. Follow their official instructions
+directly and stop if they require payment or an identity-document upload.
 
-`workspace-core.js` exposes `EraseWorkspace` in a browser and CommonJS for tests.
-`api(path, options)` returns a response-like object with `ok`, `status` and async `json()`.
-It handles config, signup, dashboard, location, on-demand plan controls, confirmation
-reports and deletion. It never calls fetch.
+Without a country, only the two global portals appear and the app asks for a country.
+Selecting a pack shows its regional references plus global portals. A country without a
+pack sees an explicit coverage notice. This supports using the workspace internationally;
+it does not guarantee that a global broker holds a person's record or accepts their request.
+Started operations remain available for follow-up after a country change. Older inactive
+route history stays in private exports. Existing workspaces add newly available routes
+only through an explicit plan refresh.
 
-Explicit helpers are `routes()`, `snapshot()`, `profile()`, `setEvidence(routeId, fields)`,
-`prepare(routeId)`, `recordCompanion(routeId, operationId, result)`,
-`recordUser(routeId, state)`, `opened(routeId)`, `exportData()`, `importData(text)` and
-`remove()`. `prepare()` returns `{routeId, operationId, fields, authorized: true}` only
-after saving the operation boundary. `recordCompanion()` accepts `prepared`,
-`verification_sent`, `submitted`, challenge/unsupported states and uncertain outcomes.
-Acceptance requires `route_verified: true` and `evidence: "fresh_visible_success"`.
-The companion transport must validate its own origin and request correlation before
-calling this method. It must never accept arbitrary page-supplied scripts or destinations.
+First and last names are explicit broker fields, never inferred by splitting a full name.
+Names and cities retain Unicode characters; email local-part case is preserved and domains
+are normalized. A Spokeo listing URL must have an approved HTTPS host and direct listing
+path, without credentials, query parameters or fragment. A name or typed email alone does
+not prove ownership of a broker record.
 
-Run `node --test tests/test_workspace_core.cjs` for the pure core's persistence, consent,
-no-resend, import, evidence and URL-boundary checks.
+## Dedicated removal-mail pilot
+
+The optional relay uses a separate, removal-only Gmail account. It never connects to a
+personal inbox. Connection uses [private OAuth setup](GMAIL_OAUTH.md); deployment and
+receipt authentication are described in [the relay contract](AUTOMATIC_CONFIRMATIONS.md).
+Configuration alone does not enable the private pilot. Session issuance and checks also
+require explicit server activation and a separate operator access key.
+
+The availability button is an explicit status read. When the pilot is enabled, operator
+controls let a person authorize a dedicated contact for USPhonebook, SearchPeopleFree or
+FastPeopleSearch. The address and shared-account disclosure appear before use. The person
+must review the broker's email-ownership and consent wording. The original profile email
+is unchanged; People Data Labs and Apollo never receive a substituted contact address.
+Before a broker action starts, the person can switch back to the typed email. After the
+operation starts, its recipient stays fixed.
+
+The private pilot key is entered in a password field and cleared on each click. It is never
+stored in the workspace, backup or URL. OAuth credentials never enter the browser. The
+browser sends only route and operation references to obtain an alias, and a scoped bearer
+capability to check it. The capability stays in private local storage and backups; it does
+not grant relay access without the operator key.
+
+An explicit confirmation-email check can return pending or authenticated held metadata.
+No message body or confirmation URL is returned, and no link is followed. Broker-specific
+confirmation contracts are still unvalidated. Receipt checks establish neither accepted
+removal requests nor deleted records. They are a private pilot, not a public unlimited
+mail service. Free hosting, provider quotas and OAuth restrictions apply.
+
+## Core interface and checks
+
+`workspace-core.js` exposes `EraseWorkspace` in a browser and CommonJS for tests. Its
+`api(path, options)` handles local config, signup, dashboard, location, plan controls,
+user reports and deletion. It never calls fetch. Default exported mutation helpers are
+asynchronous because they acquire Web Locks; callers must await them. The `create()`
+test helper retains synchronous local mutations.
+
+`prepare(routeId)` persists the operation boundary before returning approved companion
+fields. `recordCompanion()` requires matching operation correlation; acceptance also
+requires `route_verified: true` and `evidence: "fresh_visible_success"`. The companion
+transport validates its own origin and correlation before calling it.
+
+`mailSessionRequest()` saves explicit contact authorization before any server request.
+`bindMailContact()` validates the returned route, operation, alias, expiry and capability
+shape. The server verifies its signature and dedicated mailbox identity. `mailCheckRequest()`
+validates storage and the saved capability before dispatch. `recordMailReceipt()` saves
+only pending or held metadata. `clearMailContact()` permits a local undo before the broker
+action starts. These mutations share the same Web Lock as other writes.
+
+`removal-mail-client.js` permits only fixed same-origin HTTPS endpoints, strict request
+and response shapes, no redirects and explicit calls. It has no polling or account-login
+flow. Run:
+
+```sh
+node --test tests/test_workspace_core.cjs tests/test_manual_ui.cjs tests/test_companion.cjs tests/test_broker_catalog.cjs tests/test_removal_mail_client.cjs
+```
+
+These are synthetic and local checks. Passing them does not demonstrate that a real broker
+accepted a request or completed a removal.

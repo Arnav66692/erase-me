@@ -27,7 +27,7 @@ jobs:
       - name: Build public workspace
         run: python tools/build_preview.py
       - name: Check interface behavior
-        run: node --test tests/test_manual_ui.cjs tests/test_workspace_core.cjs tests/test_companion.cjs
+        run: node --test tests/test_manual_ui.cjs tests/test_workspace_core.cjs tests/test_companion.cjs tests/test_broker_catalog.cjs tests/test_removal_mail_client.cjs
       - name: Run tests
         run: python -m pytest -m "not network"
       - name: Validate reference data

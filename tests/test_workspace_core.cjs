@@ -29,7 +29,7 @@ test('signup accepts a real typed profile locally without OTP, ownership proof o
   const profile = core.profile();
   assert.equal(profile.email, 'person@example.test'); assert.equal(profile.email_verified, false);
   assert.equal(profile.verification_method, 'self_attested_browser'); assert.equal(profile.id, 'test-operation-1');
-  assert.equal(core.dashboard().items.length, Routes.length);
+  assert.equal(core.dashboard().items.length, Routes.filter(route => route.countries.includes('*')).length);
   assert.deepEqual(core.dashboard().counts, { found: 0, requested: 0, removed: 0, blocked: 0 });
   assert.equal(core.dashboard().campaign.next_check_at, null);
   assert.equal(JSON.parse(values.get(Core.KEY)).profile.email, profile.email);
@@ -135,7 +135,7 @@ test('user reports never become verified or accepted broker evidence', async () 
 });
 
 test('names are explicit broker fields, never inferred from a full name', async () => {
-  const { core } = fixture(); await signup(core);
+  const { core } = fixture(); await signup(core); await post(core, '/api/profile', { country: 'US' });
   assert.throws(() => core.prepare('usphonebook'), /first name/);
   core.setEvidence('usphonebook', { first_name: 'Example', last_name: 'Person' });
   const operation = core.prepare('usphonebook');
@@ -144,7 +144,7 @@ test('names are explicit broker fields, never inferred from a full name', async 
 });
 
 test('only exact approved broker listing origins and safe paths are accepted', async () => {
-  const { core } = fixture(); await signup(core);
+  const { core } = fixture(); await signup(core); await post(core, '/api/profile', { country: 'US' });
   for (const listing_url of ['http://www.spokeo.com/Example-Person', 'https://www.spokeo.com.evil.test/Example-Person', 'https://evil.spokeo.com/Example-Person', 'https://person@www.spokeo.com/Example-Person', 'https://www.spokeo.com/optout', 'https://www.spokeo.com/Example-Person?token=secret', 'https://www.spokeo.com:444/Example-Person']) {
     assert.throws(() => core.setEvidence('spokeo', { listing_url }));
   }
@@ -191,7 +191,7 @@ test('export/import retains only self-reported history and cannot import verifie
 });
 
 test('explicit name fields survive a reload and are exposed without sharing mutable state', async () => {
-  const { core, options } = fixture(); await signup(core);
+  const { core, options } = fixture(); await signup(core); await post(core, '/api/profile', { country: 'US' });
   core.setEvidence('usphonebook', { first_name: 'Example', last_name: 'Person' });
   const reopened = Core.create(options);
   const item = reopened.dashboard().items.find(row => row.site_id === 'usphonebook');
@@ -266,4 +266,342 @@ test('import rejects unknown broker inputs, invalid listing URLs and invalid loc
     assert.equal(target.core.snapshot().profile, null);
     assert.equal(target.values.has(Core.KEY), false);
   }
+});
+
+
+test('email keeps the local part while normalizing the international domain', async () => {
+  const { core } = fixture();
+  const response = await post(core, '/api/signup', { name: 'Example Person', age: 35, email: 'CaseSensitive@EXÄMPLE.test', authorized: true });
+  assert.equal(response.ok, true);
+  assert.equal(core.profile().email, 'CaseSensitive@xn--exmple-cua.test');
+  assert.equal(core.prepare(PDL).fields.email, 'CaseSensitive@xn--exmple-cua.test');
+  for (const invalid of ['Case@example.test/path', 'Case@example..test', 'Case@example.test:443']) {
+    assert.equal((await post(fixture().core, '/api/signup', { name: 'Example Person', age: 35, email: invalid, authorized: true })).status, 400);
+  }
+});
+
+test('backup retains a valid held operation reference without importing accepted evidence', async () => {
+  const source = fixture(); let sequence = 0;
+  source.core = Core.create({ ...source.options, uuid: () => (++sequence).toString(16).padStart(32, '0') });
+  await signup(source.core); const original = source.core.prepare(PDL);
+  source.core.recordCompanion(PDL, original.operationId, { status: 'unknown' });
+  const restored = fixture(); restored.core.importData(source.core.exportData());
+  const item = restored.core.dashboard().items.find(item => item.site_id === PDL);
+  assert.equal(item.operation_id, original.operationId);
+  assert.equal(restored.core.snapshot().items[PDL].operation_started_at, source.core.snapshot().items[PDL].operation_started_at);
+  assert.equal(item.status, 'uncertain'); assert.equal(item.evidence, null);
+  assert.equal(restored.core.dashboard().counts.requested, 0);
+  restored.core.recordCompanion(PDL, original.operationId, { status: 'verification_sent', route_verified: true, evidence: 'fresh_visible_success' });
+  assert.equal(restored.core.dashboard().items.find(item => item.site_id === PDL).status, 'verification_sent');
+  assert.throws(() => restored.core.prepare(PDL), /already started/);
+});
+
+function browserTab(storage, locks, uuid) {
+  const vm = require('node:vm'), fs = require('node:fs'), path = require('node:path');
+  const context = { localStorage: storage, crypto: { randomUUID: uuid }, navigator: locks ? { locks } : {}, URL, EraseBrokerRoutes: Routes };
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../webapp/static/workspace-core.js'), 'utf8'), context);
+  return context.EraseWorkspace;
+}
+function sharedLocks() {
+  let tail = Promise.resolve(), active = 0, maxActive = 0, calls = 0;
+  return { manager: { request(name, options, callback) {
+    assert.equal(name, Core.KEY + '-write'); assert.equal(options.mode, 'exclusive'); calls += 1;
+    const task = tail.then(async () => {
+      active += 1; maxActive = Math.max(maxActive, active);
+      try { await new Promise(resolve => setImmediate(resolve)); return await callback(); }
+      finally { active -= 1; }
+    }); tail = task.catch(() => {}); return task;
+  } }, maxActive: () => maxActive, calls: () => calls };
+}
+test('default browser mutations hold one shared cross-tab lock and reread inside it', async () => {
+  const { storage, values } = fixture(), locks = sharedLocks(); let sequence = 0;
+  const uuid = () => (++sequence).toString(16).padStart(32, '0');
+  const a = browserTab(storage, locks.manager, uuid), b = browserTab(storage, locks.manager, uuid);
+  assert.equal((await signup(a)).ok, true); b.dashboard();
+  const results = await Promise.all([
+    post(a, '/api/profile', { country: 'GB', region: 'GB-LND', city: 'London' }),
+    b.prepare(PDL),
+    a.setEvidence('usphonebook', { first_name: 'Example', last_name: 'Person' })
+  ]);
+  assert.equal(results[0].ok, true); assert.equal(locks.maxActive(), 1);
+  const saved = JSON.parse(values.get(Core.KEY));
+  assert.equal(saved.profile.city, 'London'); assert.equal(saved.items[PDL].operation_id, results[1].operationId);
+  assert.equal(saved.items.usphonebook.fields.first_name, 'Example');
+  await assert.rejects(a.prepare(PDL), /already started/);
+  assert.ok(locks.calls() >= 5);
+});
+test('a browser without Web Locks fails closed before changing workspace state', async () => {
+  const { storage, values } = fixture(); const browser = browserTab(storage, null, () => 'a'.repeat(32));
+  const response = await signup(browser);
+  assert.equal(response.ok, false); assert.equal(response.status, 503);
+  assert.match((await response.json()).error, /Web Locks/);
+  assert.equal(values.has(Core.KEY), false);
+  await assert.rejects(browser.prepare(PDL), /Web Locks/);
+});
+test('default read-only access does not write recovery state outside the lock', async () => {
+  const { core, storage, values } = fixture(); await signup(core); const operation = core.prepare(PDL);
+  const before = values.get(Core.KEY), browser = browserTab(storage, sharedLocks().manager, () => 'b'.repeat(32));
+  assert.equal(browser.dashboard().items.find(item => item.site_id === PDL).operation_id, operation.operationId);
+  assert.equal(values.get(Core.KEY), before);
+});
+
+function workspaceUIFixture(config={}) {
+  const vm = require('node:vm'), fs = require('node:fs'), path = require('node:path');
+  class Element {
+    constructor() { this.children = []; this.listeners = {}; this.className = ''; this.textContent = ''; this.value = ''; }
+    append(...nodes) { this.children.push(...nodes); }
+    replaceChildren(...nodes) { this.children=[...nodes]; }
+    addEventListener(type, action) { this.listeners[type] = action; }
+    setAttribute() {}
+  }
+  const route = Routes.find(route => route.id === (config.routeId||'usphonebook'));
+  const title = new Element(); title.textContent = route.name;
+  const info = new Element(), row = new Element(); row.querySelector = selector => selector === '.listing-title' ? title : info;
+  const listing = new Element(); listing.children = [row];
+  const feedback = new Element(), toolbox=new Element(), elements = new Map([['listing-items', listing], ['campaign-feedback', feedback],['public-tools',toolbox]]);
+  const posted = [], changes = [], opened = [], listeners = new Map();
+  let resolveSave, resolvePrepare, resolveResult, resolveOpen, rejectOpen;
+  const saveGate = new Promise(resolve => { resolveSave = resolve; });
+  const prepareGate = new Promise(resolve => { resolvePrepare = resolve; });
+  const resultGate = new Promise(resolve => { resolveResult = resolve; });
+  const openGate = new Promise((resolve, reject) => { resolveOpen = resolve; rejectOpen = reject; });
+  const calls = { saves: 0, prepares: 0, results: 0 };
+  const workspace = { routes: () => [route], profile: () => ({ email: 'person@example.test' }),
+    setEvidence: () => { calls.saves++; return saveGate; }, prepare: () => { calls.prepares++; return prepareGate; },
+    recordCompanion: () => { calls.results++; return resultGate; }, opened: () => openGate,
+    dashboard:()=>({coverage:null}),...config.workspace };
+  const window = {
+    addEventListener: (type, callback) => listeners.set(type, callback),
+    removeEventListener: type => listeners.delete(type),
+    postMessage(data, origin) {
+      posted.push(data.payload.action);
+      queueMicrotask(() => listeners.get('message')?.({ source: window, origin, data: { source: 'erase-companion', requestId: data.requestId,
+        reply: { ok: true, result: data.payload.action === 'ping' ? { routes: [route.id] } : { status: 'prepared', detail: 'Prepared fixture.' } } } }));
+    },
+    open: url => opened.push(url)
+  };
+  const context = { window, location: { origin: 'https://erase-me-preview.vercel.app' }, crypto: { randomUUID: () => 'a'.repeat(32) },
+    setTimeout, clearTimeout, CustomEvent: class { constructor(type) { this.type = type; } },
+    document: { getElementById: id => elements.get(id), createElement: () => new Element(), dispatchEvent: event => changes.push(event.type) },
+    EraseWorkspace: workspace,EraseRemovalMail:config.mail };
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../webapp/static/workspace-ui.js'), 'utf8'), context);
+  const item={ site_id: route.id, status: 'ready', input_fields: { first_name: 'Example', last_name: 'Person' },...config.item };
+  const render=()=>{info.replaceChildren();context.EraseWorkspaceUI.decorate([item]);};render();
+  function find(element, predicate) { if (predicate(element)) return element; for (const child of element.children) { const found = find(child, predicate); if (found) return found; } }
+  const findText=text=>find(info,element=>element.textContent===text)||find(toolbox,element=>element.textContent===text);
+  const click = text => findText(text).listeners.click();
+  return { click, calls, posted, changes, opened, feedback, resolveSave, resolvePrepare, resolveResult, resolveOpen, rejectOpen,
+    tools:()=>context.EraseWorkspaceUI.tools(),render,findText,keyInput:()=>find(info,element=>element.type==='password') };
+}
+test('workspace UI waits for saved fields, operation reservation and result persistence', async () => {
+  const ui = workspaceUIFixture(), pending = ui.click('Fill with companion');
+  assert.equal(ui.calls.saves, 1); assert.deepEqual(ui.posted, []);
+  ui.resolveSave(); await new Promise(resolve => setImmediate(resolve));
+  assert.equal(ui.calls.prepares, 1); assert.deepEqual(ui.posted, ['ping']);
+  ui.resolvePrepare({ operationId: 'b'.repeat(32), routeId: 'usphonebook', fields: { email: 'person@example.test' }, authorized: true });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(ui.calls.results, 1); assert.deepEqual(ui.posted, ['ping', 'run']);
+  assert.equal(ui.feedback.textContent, ''); assert.equal(ui.changes.length, 1);
+  ui.resolveResult(); await pending;
+  assert.equal(ui.feedback.textContent, 'Prepared fixture.'); assert.equal(ui.changes.length, 2);
+});
+test('workspace UI never opens a broker before paused or failed-storage validation', async () => {
+  const ui = workspaceUIFixture(), pending = ui.click('Open official form');
+  assert.deepEqual(ui.opened, []);
+  ui.rejectOpen(new Error('Allow checks before opening a broker action.')); await pending;
+  assert.deepEqual(ui.opened, []); assert.match(ui.feedback.textContent, /Allow checks/);
+});
+
+
+test('country is requested before regional routes appear and global portals remain available', async () => {
+  const { core } = fixture(); await signup(core); const data = core.dashboard();
+  assert.deepEqual(data.items.map(item => item.site_id), ['peopledatalabs-form', 'apollo']);
+  assert.equal(data.questions[0].field, 'country'); assert.equal(data.coverage.country, null);
+  assert.equal(data.coverage.globalRouteCount, 2); assert.equal(data.coverage.countryRouteCount, 0);
+  assert.equal(data.coverage.independentDeletionVerification, false);
+  assert.throws(() => core.opened('usphonebook'), /outside your selected country/);
+  assert.throws(() => core.prepare('usphonebook'), /outside your selected country/);
+});
+test('US location selects only global and US routes without claiming more automation', async () => {
+  const { core } = fixture(); await signup(core); await post(core, '/api/profile', { country: 'us' });
+  const data = core.dashboard(), expected = Routes.filter(route => route.countries.includes('*') || route.countries.includes('US'));
+  assert.equal(data.items.length, expected.length); assert.equal(data.coverage.countryRouteCount, 23);
+  assert.equal(data.coverage.companionRouteCount, 4); assert.equal(data.coverage.hasCountryPack, true);
+  assert.equal(data.questions.length, 0); assert.equal(data.items.some(item => item.site_id === 'canada411'), false);
+  assert.equal(data.items.every(item => item.operation_id === null), true);
+});
+test('non-US packs expose their manual routes and block new actions outside that country', async () => {
+  for (const [country, selected] of [['CA', 'canada411'], ['GB', '192com'], ['DE', 'de-11880'], ['TR', 'tr-numaraara']]) {
+    const { core } = fixture(); await signup(core); await post(core, '/api/profile', { country }); const data = core.dashboard();
+    assert.ok(data.items.some(item => item.site_id === selected)); assert.equal(data.items.some(item => item.site_id === 'spokeo'), false);
+    assert.equal(data.coverage.hasCountryPack, true); assert.equal(data.coverage.companionRouteCount, 1);
+    core.opened(selected); assert.equal(core.dashboard().counts.requested, 0);
+    assert.throws(() => core.prepare('usphonebook'), /outside your selected country/);
+    assert.throws(() => core.opened('usphonebook'), /outside your selected country/);
+  }
+});
+test('a country without a pack has explicit limited coverage and keeps Unicode profiles intact', async () => {
+  const { core } = fixture();
+  const created = await post(core, '/api/signup', { name: '李 小龙', age: 35, email: 'Li.Person@EXAMPLE.test', authorized: true });
+  assert.equal(created.ok, true); await post(core, '/api/profile', { country: 'JP', city: '東京都' });
+  const data = core.dashboard(); assert.equal(data.coverage.hasCountryPack, false); assert.equal(data.coverage.countryRouteCount, 0);
+  assert.equal(data.coverage.routeCount, 2); assert.equal(data.items.length, 2);
+  assert.equal(data.profile.name, '李 小龙'); assert.equal(data.profile.city, '東京都'); assert.equal(data.profile.email, 'Li.Person@example.test');
+  assert.equal(data.questions.length, 0); assert.equal(data.coverage.country, 'JP');
+});
+test('changing country retains started operations for follow-up and keeps other history in the backup', async () => {
+  const { core } = fixture(); await signup(core); await post(core, '/api/profile', { country: 'US' });
+  core.setEvidence('usphonebook', { first_name: 'Example', last_name: 'Person' });
+  const operation = core.prepare('usphonebook'); core.opened('spokeo');
+  await post(core, '/api/profile', { country: 'CA' });
+  let data = core.dashboard(); assert.equal(data.coverage.historicalRouteCount, 1);
+  assert.ok(data.items.some(item => item.site_id === 'usphonebook')); assert.equal(data.items.some(item => item.site_id === 'spokeo'), false);
+  assert.equal(core.snapshot().items.spokeo.status, 'opened');
+  assert.doesNotThrow(() => core.opened('usphonebook'));
+  assert.throws(() => core.prepare('usphonebook'), /already started/);
+  core.recordCompanion('usphonebook', operation.operationId, { status: 'unknown' });
+  assert.equal(core.dashboard().counts.blocked, 1);
+  await post(core, '/api/profile', { country: 'JP' }); data = core.dashboard();
+  assert.equal(data.coverage.hasCountryPack, false); assert.equal(data.coverage.historicalRouteCount, 1);
+  assert.equal(data.items.length, 3);
+  const exported = JSON.parse(core.exportData()); assert.equal(exported.items.usphonebook.operation_id, operation.operationId);
+  await post(core, '/api/profile', { country: 'US' });
+  assert.equal(core.dashboard().items.find(item => item.site_id === 'spokeo').status, 'opened');
+});
+
+
+test('an older workspace reports new country routes until an explicit plan refresh adds them', async () => {
+  const { core, values, options } = fixture(); await signup(core); await post(core, '/api/profile', { country: 'US' });
+  const old = JSON.parse(values.get(Core.KEY));
+  for (const route of Routes.filter(route => route.sourceCatalog)) delete old.items[route.id];
+  values.set(Core.KEY, JSON.stringify(old)); const reopened = Core.create(options);
+  assert.equal(reopened.dashboard().coverage.unplannedRouteCount, 18);
+  const before = values.get(Core.KEY); reopened.dashboard(); assert.equal(values.get(Core.KEY), before);
+  await post(reopened, '/api/campaign', { action: 'run' });
+  assert.equal(reopened.dashboard().coverage.unplannedRouteCount, 0);
+  assert.equal(reopened.dashboard().items.length, 25);
+  assert.ok(reopened.dashboard().items.every(item => item.operation_id === null));
+});
+
+async function mailFixture() {
+  const fixtureData=fixture();let sequence=0;
+  fixtureData.core=Core.create({...fixtureData.options,uuid:()=> (++sequence).toString(16).padStart(32,'0')});
+  await signup(fixtureData.core);await post(fixtureData.core,'/api/profile',{country:'US'});
+  fixtureData.core.setEvidence('usphonebook',{first_name:'Example',last_name:'Person'});
+  return fixtureData;
+}
+function contactSession(core,routeId='usphonebook',changes={}) {
+  const request_id='b'.repeat(32),operation_id=core.snapshot().items[routeId].id;
+  const issued_at=Math.floor(Date.parse('2026-11-04T23:00:00.000Z')/1000),expires_at=issued_at+7*86400;
+  const contact_email='erase.contact+erase-'+request_id+'@example.test';
+  const claims={v:1,request_id,route_id:routeId,operation_id,recipient:contact_email,issued_at,expires_at,...changes};
+  return {status:'ready',request_id,route_id:routeId,operation_id,contact_email,expires_at,
+    capability:Buffer.from(JSON.stringify(claims)).toString('base64url')+'.'+'a'.repeat(43),automatic_execution:false};
+}
+test('dedicated contact is explicit, scoped to three directories and never replaces identity email',async()=>{
+  const {core}=await mailFixture();const contact=contactSession(core);
+  assert.throws(()=>core.bindMailContact('usphonebook',contact),/Explicitly authorize/);
+  const request=core.mailSessionRequest('usphonebook');
+  assert.deepEqual(request,{route_id:'usphonebook',operation_id:core.snapshot().items.usphonebook.id,authorized:true});
+  core.bindMailContact('usphonebook',contact);
+  const item=core.dashboard().items.find(row=>row.site_id==='usphonebook');
+  assert.equal(item.mail_contact.contact_email,contact.contact_email);assert.equal(item.mail_contact.capability,undefined);
+  assert.equal(core.profile().email,'person@example.test');assert.equal(item.operation_id,null);
+  assert.equal(core.prepare('usphonebook').fields.email,contact.contact_email);
+  assert.throws(()=>core.mailSessionRequest('usphonebook'),/already started/);
+  assert.throws(()=>core.bindMailContact('usphonebook',contact),/already started/);
+  assert.throws(()=>core.clearMailContact('usphonebook'),/already started/);
+  for(const route of [PDL,'apollo','spokeo'])assert.throws(()=>core.mailSessionRequest(route),/record-associated email/);
+  assert.equal(core.prepare(PDL).fields.email,'person@example.test');
+});
+test('a removal contact can be declined before starting, without changing the profile',async()=>{
+  const {core}=await mailFixture();core.mailSessionRequest('usphonebook');core.bindMailContact('usphonebook',contactSession(core));
+  core.clearMailContact('usphonebook');assert.equal(core.snapshot().items.usphonebook.mail_contact,undefined);
+  assert.equal(core.prepare('usphonebook').fields.email,'person@example.test');assert.equal(core.profile().email,'person@example.test');
+});
+test('contact capability and expiry validation rejects mismatched routes, operations and aliases',async()=>{
+  for(const change of [
+    {route_id:'fastpeoplesearch'},{operation_id:'c'.repeat(32)},{request_id:'c'.repeat(32)},
+    {recipient:'personal@example.test'},{expires_at:0},{issued_at:0},{v:2}
+  ]){
+    const {core}=await mailFixture();core.mailSessionRequest('usphonebook');
+    assert.throws(()=>core.bindMailContact('usphonebook',contactSession(core,'usphonebook',change)),/does not match/);
+    assert.equal(core.snapshot().items.usphonebook.mail_contact,undefined);
+  }
+  const {core}=await mailFixture();core.mailSessionRequest('usphonebook');
+  const malformed=contactSession(core);malformed.capability='not-a-capability';
+  assert.throws(()=>core.bindMailContact('usphonebook',malformed),/does not match/);
+  const expired=contactSession(core);expired.expires_at-=8*86400;
+  const payload=JSON.parse(Buffer.from(expired.capability.split('.')[0],'base64url').toString());
+  payload.issued_at-=8*86400;payload.expires_at=expired.expires_at;
+  expired.capability=Buffer.from(JSON.stringify(payload)).toString('base64url')+'.'+'a'.repeat(43);
+  assert.throws(()=>core.bindMailContact('usphonebook',expired),/expired/);
+});
+test('receipt checks require a saved started operation and held mail never establishes removal',async()=>{
+  const {core}=await mailFixture();core.mailSessionRequest('usphonebook');const contact=contactSession(core);core.bindMailContact('usphonebook',contact);
+  assert.throws(()=>core.mailCheckRequest('usphonebook'),/Start the matching/);
+  const operation=core.prepare('usphonebook');core.recordCompanion('usphonebook',operation.operationId,{status:'prepared'});
+  assert.deepEqual(core.mailCheckRequest('usphonebook'),{capability:contact.capability,explicit:true});
+  const result={status:'held',route_id:'usphonebook',operation_id:operation.operationId,request_id:contact.request_id,
+    reason:'route_validation_required',received_at:Math.floor(Date.parse('2026-11-04T23:00:00.000Z')/1000),
+    receipt_ref:'c'.repeat(64),authenticated:true,automatic_execution:false};
+  assert.throws(()=>core.recordMailReceipt('usphonebook',{...result,request_id:'d'.repeat(32)}),/does not match/);
+  assert.throws(()=>core.recordMailReceipt('usphonebook',{...result,authenticated:false}),/could not be validated/);
+  assert.throws(()=>core.recordMailReceipt('usphonebook',{...result,status:'removed'}),/does not match/);
+  core.recordMailReceipt('usphonebook',result);
+  assert.equal(core.snapshot().items.usphonebook.status,'blocked');assert.equal(core.snapshot().items.usphonebook.mail_receipt.authenticated,true);
+  assert.deepEqual(core.dashboard().counts,{found:0,requested:0,removed:0,blocked:1});
+  core.recordMailReceipt('usphonebook',{status:'pending',route_id:'usphonebook',operation_id:operation.operationId,request_id:contact.request_id,automatic_execution:false});
+  assert.equal(core.snapshot().items.usphonebook.mail_receipt.status,'held');assert.throws(()=>core.prepare('usphonebook'),/already started/);
+});
+test('private backup preserves scoped contact and original operation but never authenticated receipt evidence',async()=>{
+  const {core}=await mailFixture();core.mailSessionRequest('usphonebook');const contact=contactSession(core);core.bindMailContact('usphonebook',contact);
+  const waiting=fixture().core;waiting.importData(core.exportData());
+  assert.equal(waiting.snapshot().items.usphonebook.id,contact.operation_id);
+  assert.equal(waiting.prepare('usphonebook').fields.email,contact.contact_email);
+  core.recordUser('usphonebook','user_reported_requested');
+  core.recordMailReceipt('usphonebook',{status:'held',route_id:'usphonebook',operation_id:contact.operation_id,request_id:contact.request_id,
+    reason:'route_validation_required',received_at:Math.floor(Date.parse('2026-11-04T23:00:00.000Z')/1000),receipt_ref:'c'.repeat(64),authenticated:true,automatic_execution:false});
+  const restored=fixture().core;restored.importData(core.exportData());const item=restored.snapshot().items.usphonebook;
+  assert.equal(item.operation_id,contact.operation_id);assert.equal(item.mail_contact.capability,contact.capability);
+  assert.equal(item.mail_receipt.authenticated,false);assert.equal(item.mail_receipt.source,'imported_user_history');
+  assert.equal(item.evidence,null);assert.equal(restored.dashboard().counts.requested,0);assert.equal(restored.dashboard().counts.removed,0);
+  assert.equal(restored.mailCheckRequest('usphonebook').capability,contact.capability);
+  const malicious=JSON.parse(core.exportData());malicious.items.searchpeoplefree.mail_contact=malicious.items.usphonebook.mail_contact;
+  const target=fixture();assert.throws(()=>target.core.importData(JSON.stringify(malicious)),/does not match/);
+  assert.equal(target.values.has(Core.KEY),false);
+});
+test('expired backup is recoverable but cannot dispatch with its expired contact',async()=>{
+  const {core,options}=await mailFixture();core.mailSessionRequest('usphonebook');core.bindMailContact('usphonebook',contactSession(core));
+  const restored=Core.create({...fixture().options,now:()=> '2026-11-13T23:00:00.000Z'});restored.importData(core.exportData());
+  assert.throws(()=>restored.prepare('usphonebook'),/expired/);
+  assert.ok(restored.exportData().includes('erase.contact+erase-'));
+  assert.doesNotThrow(()=>restored.mailSessionRequest('usphonebook'));
+});
+test('mail dispatch preflights respect paused campaigns and storage failure',async()=>{
+  const {core,storage}=await mailFixture();await post(core,'/api/campaign',{action:'pause'});
+  assert.throws(()=>core.mailSessionRequest('usphonebook'),/Allow checks/);
+  await post(core,'/api/campaign',{action:'resume'});storage.setItem=()=>{throw new Error('quota');};
+  assert.throws(()=>core.mailSessionRequest('usphonebook'),/could not save/);
+});
+test('pilot UI requires explicit availability and clears the key before a storage failure can block dispatch',async()=>{
+  let statusCalls=0,sessionCalls=0;
+  const ui=workspaceUIFixture({mail:{status:async()=>{statusCalls++;return {configured:true,enabled:true};},session:async()=>{sessionCalls++;}},
+    workspace:{mailSessionRequest:async()=>{throw new Error('Your browser could not save this change.');}}});
+  assert.equal(statusCalls,0);assert.equal(ui.findText('Use removal-only contact email'),undefined);
+  ui.tools();await ui.click('Check removal-mail availability');ui.render();assert.equal(statusCalls,1);
+  const key=ui.keyInput();key.value='f'.repeat(64);await ui.click('Use removal-only contact email');
+  assert.equal(key.value,'');assert.equal(sessionCalls,0);assert.match(ui.feedback.textContent,/could not save/);
+  assert.deepEqual(ui.posted,[]);
+});
+test('pilot UI waits for receipt persistence before showing a mailbox outcome',async()=>{
+  let recordCalls=0,releaseRecord;
+  const recordGate=new Promise(resolve=>{releaseRecord=resolve;});
+  const ui=workspaceUIFixture({item:{operation_id:'a'.repeat(32),mail_contact:{contact_email:'erase@example.test',expires_at:1800000000}},
+    mail:{status:async()=>({configured:true,enabled:true}),check:async()=>({status:'held'})},
+    workspace:{mailCheckRequest:async()=>({capability:'private',explicit:true}),recordMailReceipt:async()=>{recordCalls++;return recordGate;}}});
+  ui.tools();await ui.click('Check removal-mail availability');ui.render();
+  const previous=ui.feedback.textContent,key=ui.keyInput();key.value='f'.repeat(64);const pending=ui.click('Check confirmation email');
+  await new Promise(resolve=>setImmediate(resolve));assert.equal(recordCalls,1);assert.equal(key.value,'');assert.equal(ui.feedback.textContent,previous);
+  releaseRecord();await pending;assert.match(ui.feedback.textContent,/held for broker-route validation/);assert.deepEqual(ui.posted,[]);
 });

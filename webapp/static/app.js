@@ -30,7 +30,7 @@
     broker_reported_completed: 'Broker reports completion',
     needs_broker_step: 'Complete broker steps', unverified: 'Completion not verified'
   };
-  const attentionStatuses = new Set(['blocked', 'needs_human', 'needs_info', 'ambiguous', 'rejected', 'failed', 'error', 'awaiting_integration', 'clarification', 'delivery_failed', 'needs_broker_step']);
+  const attentionStatuses = new Set(['verification_sent', 'uncertain', 'blocked', 'needs_human', 'needs_info', 'ambiguous', 'rejected', 'failed', 'error', 'awaiting_integration', 'clarification', 'delivery_failed', 'needs_broker_step']);
   const completeStatuses = new Set(['removed', 'not_found', 'skipped']);
   const manualMode = () => config?.manual ?? (config?.mode !== 'demo');
 

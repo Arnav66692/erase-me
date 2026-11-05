@@ -85,12 +85,16 @@ The original SMTP/IMAP setup helpers are retained for explicit operator configur
 
 ## Vercel and public hosting
 
-The public deployment runs a browser-local workspace. Build it with `python3 tools/build_preview.py`, then deploy `preview/` to Vercel. The generated public HTML loads the local workspace core before the shared interface controller and fails closed if that core is missing. Public CSP blocks native HTML form submissions. The hosted API only describes capabilities and rejects personal-data writes without parsing or storing their bodies.
+The public deployment runs a browser-local workspace. Build it with `python3 tools/build_preview.py`, then deploy `preview/` to Vercel. The generated public HTML loads the route catalog, workspace core, optional removal-mail client and workspace UI before the shared interface controller. It fails closed if the core is missing. Public CSP blocks native HTML form submissions. The hosted API rejects personal-profile writes without parsing or storing their bodies.
 
-No database, authentication service, inbox, paid API, cron or persistent hosted browser is needed. Supported form actions run through the open-source Chrome companion in the user's own browser. The companion ZIP is generated from an explicit file allowlist and served at `/downloads/erase-me-companion.zip`. The source and install instructions are public. No Chrome Web Store purchase is required for loading the unpacked extension.
+No database, account login, inbox, paid API, cron or persistent hosted browser is needed for the workspace and companion. Its catalog has 43 reference routes: two global portals plus US, Canadian, UK, German and Turkish packs. Only four initial actions have companion support; 39 routes require manual work. Other countries see the global portals and an explicit coverage limit. The companion ZIP is generated from an explicit file allowlist and served at `/downloads/erase-me-companion.zip`. No Chrome Web Store purchase is required for loading the unpacked extension.
+
+The optional hosted receipt relay is a separate, disabled-by-default private pilot. It uses a dedicated Gmail account connected through [OAuth](GMAIL_OAUTH.md), private server secrets and a separate operator access key. The public app has no personal-inbox connection. Profile data is not sent to the relay; it accepts only scoped operation references and capabilities. The API entry point is `preview/api/index.py`; its trusted helper is `preview/lib/removal_mail.py`, outside Vercel's independently discovered API directory. Keep both in the deployment source.
+
+An enabled relay only checks receipts after an explicit request. Confirmation links stay held until broker-specific contracts are validated; no email receipt proves deletion. Follow [the relay deployment contract](AUTOMATIC_CONFIRMATIONS.md). Never put OAuth tokens, client secrets, pilot keys, private capability backups or mailbox configuration into public assets. Free provider and hosting quotas apply. The private pilot is not an unrestricted public mail service.
 
 Never expose the separate local Python API or its session-recovery mode publicly. Do not copy local configuration, profiles or SQLite data into the deployment.
 
-Current scope is documented in [PUBLIC_WORKSPACE.md](PUBLIC_WORKSPACE.md). Broker verification and CAPTCHA steps remain with the user, and no independently verified deletion is established by this release.
+Current scope is documented in [PUBLIC_WORKSPACE.md](PUBLIC_WORKSPACE.md). Broker verification, CAPTCHA and record matching remain user steps. No independently verified deletion is established by this release.
 
 The application is MIT-licensed. Browser, recognition binaries, fonts and model weights retain their own licenses. See [third-party licenses](../THIRD_PARTY_LICENSES.md).

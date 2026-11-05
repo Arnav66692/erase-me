@@ -1847,3 +1847,160 @@ body:has(#dashboard-view:not([hidden])) {
 .public-broker-steps{margin-top:14px;border-top:1px solid currentColor;padding-top:8px}
 .public-broker-steps>summary{cursor:pointer;min-height:44px;display:list-item;padding:10px 0;font-family:var(--mono);font-size:14px}
 .public-field-disclosure{font:13px/1.5 var(--mono);overflow-wrap:anywhere;margin:14px 0}
+/* A compact tool rail keeps working controls distinct from editorial headings. */
+.public-tools {
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:10px;
+  padding:18px 0 22px;
+  margin-bottom:26px;
+}
+.public-tools>p {
+  grid-column:1/-1;
+  max-width:780px;
+  margin:0 0 6px;
+  font:15px/1.45 var(--sans);
+  color:var(--muted);
+}
+.public-tools>.button,.public-tools>button,.public-tools>a {
+  width:100%;
+  min-width:0;
+  min-height:46px;
+  justify-content:center;
+  text-align:center;
+  padding:10px 12px;
+  font:14px/1.35 var(--sans);
+  white-space:normal;
+}
+.public-tools>.button:hover,.public-tools>button:hover,.public-tools>a:hover {
+  background:var(--ink);
+  color:var(--paper);
+  text-decoration:none;
+}
+.public-country-filter {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  min-width:0;
+}
+.public-country-filter select,.public-tools select {
+  min-height:44px;
+  max-width:100%;
+  padding:9px 32px 9px 12px;
+  border:1px solid var(--ink);
+  border-radius:0;
+  background:var(--paper);
+  color:var(--ink);
+  font:16px/1.35 var(--sans);
+}
+.public-broker-steps {
+  margin-top:16px;
+  padding-top:0;
+}
+.public-broker-steps>summary {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:20px;
+  padding:13px 0;
+  min-height:48px;
+  list-style:none;
+  font:13px/1.4 var(--mono);
+}
+.public-broker-steps>summary::-webkit-details-marker { display:none; }
+.public-broker-steps>summary::after {
+  content:'+';
+  font:26px/1 var(--term);
+  flex:none;
+}
+.public-broker-steps[open]>summary::after { content:'−'; }
+.public-broker-steps[open]>summary { border-bottom:1px solid currentColor; }
+.public-broker-steps>summary:hover { text-decoration:underline; text-underline-offset:4px; }
+.public-route-fields {
+  gap:0 16px;
+  margin-top:8px;
+}
+.public-route-fields input { min-height:46px; }
+.public-route-actions {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  align-items:stretch;
+  gap:9px;
+  margin-top:16px;
+}
+.public-route-actions .button,.public-route-actions button:not(.button),.public-route-actions a:not(.button) {
+  width:100%;
+  min-width:0;
+  justify-content:space-between;
+  padding:11px 12px;
+  min-height:46px;
+  font:19px/1.12 var(--term);
+  white-space:normal;
+  text-align:left;
+}
+.public-route-actions .button::after { font-size:17px; }
+.public-route-actions .button:hover {
+  background:var(--ink);
+  color:var(--paper);
+  text-decoration:none;
+}
+.public-field-disclosure {
+  margin:18px 0 0;
+  padding-top:12px;
+  border-top:1px dotted var(--muted);
+  color:var(--muted);
+}
+.listing-info { min-width:0; }
+.listing-domain { margin-top:5px; color:var(--muted); }
+.listing-meta { align-items:baseline; }
+.listing-time { color:var(--muted); }
+input:disabled { opacity:1; color:var(--muted); background:var(--panel, var(--paper)); }
+#restore-workspace {
+  margin:20px 0 0;
+  width:100%;
+  font:14px/1.35 var(--sans);
+  padding:10px 12px;
+  background:transparent;
+  color:var(--ink);
+}
+#restore-workspace:hover { background:var(--ink); color:var(--paper); text-decoration:none; }
+@media(max-width:1100px) {
+  .public-tools { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@media(max-width:760px) {
+  .public-tools { gap:8px; padding:16px 0 20px; }
+  .public-tools>p { font-size:14px; margin-bottom:6px; }
+  .public-tools>.button,.public-tools>button,.public-tools>a { font-size:14px; min-height:48px; }
+  .public-country-filter { align-items:stretch; flex-direction:column; gap:7px; }
+  .public-country-filter select { width:100%; }
+  .public-route-actions { grid-template-columns:1fr; }
+  .public-route-actions .button { font-size:21px; min-height:48px; }
+  .public-broker-steps>summary { font-size:12px; }
+}
+.public-coverage,#coverage-note {
+  grid-column:1/-1;
+  width:100%;
+  margin:0 0 6px;
+  padding:12px 0;
+  border-bottom:1px solid var(--ink);
+  font:15px/1.45 var(--sans);
+  color:var(--ink);
+  overflow-wrap:anywhere;
+}
+.public-coverage strong,#coverage-note strong { font-weight:600; }
+.clarification-panel { scroll-margin-top:84px; }
+.clarification-panel form,.location-fields>div { min-width:0; }
+.clarification-panel input { max-width:100%; }
+@media(max-width:760px) {
+  .public-coverage,#coverage-note { font-size:14px; }
+  .clarification-panel { padding:22px 18px; gap:20px; }
+  .clarification-panel h2 { font-size:38px; line-height:1.05; }
+  .location-fields { grid-template-columns:1fr; gap:0; }
+  .location-fields>div:last-child { grid-column:auto; }
+}
+@media(max-width:760px) {
+  .dashboard-header { gap:20px; }
+  .dashboard-header h1 { font-size:56px; line-height:1; }
+  .dashboard-description { font-size:17px; line-height:1.35; }
+  .dash-band .metrics { margin-top:18px; }
+}

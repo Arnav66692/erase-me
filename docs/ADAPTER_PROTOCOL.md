@@ -1,5 +1,12 @@
 # Browser and inbox adapter contract
 
+This is the separate local Python worker's adapter protocol, including optional
+operator modes. It does not describe enabled public-site capabilities. The default
+local setup and public workspace run on demand with recurring timers off. See
+[local deployment](DEPLOYMENT.md), [public workspace scope](PUBLIC_WORKSPACE.md) and
+[the held-only dedicated-mail pilot](AUTOMATIC_CONFIRMATIONS.md). The public Chrome
+companion does not implement this worker's full scan/confirm/check protocol.
+
 The web application persists work; a trusted, operator-installed adapter performs site interactions. The existing skill engine remains a local catalog and drafting engine. The web worker never reads a person's files under `~/.erase-me`.
 
 Set `ERASE_ME_ADAPTER` to an absolute executable path. The worker invokes it directly, with no shell and no command-line personal information. One JSON request arrives on stdin. Return one JSON object on stdout. Exit nonzero on an unrecoverable error. Do not log personal information or email confirmation tokens. Stdout is limited to 64 KiB; the process group is terminated after 90 seconds.

@@ -1,4 +1,4 @@
-/* Browser-only privacy workspace. Personal data is never sent to the hosting API. */
+/* Browser-local profile. Optional receipt checks send only scoped operation references. */
 (function (root, factory) {
   const routes = typeof module === 'object' && module.exports ? require('./broker-routes.js') : root.EraseBrokerRoutes;
   const api = factory(root, routes);
@@ -8,9 +8,11 @@
   'use strict';
   const KEY = 'erase-me-workspace-v1';
   const VERSION = 1;
-  const AUTHORIZATION = 'I request removal of my own information. I authorize only the broker actions I explicitly start using the fields shown. My email is self-reported. I will complete broker verification myself. No inbox access, ID uploads, account deletions or recurring checks are authorized.';
+  const AUTHORIZATION = 'I request removal of my own information. I authorize only the broker actions I explicitly start using the fields shown. My email is self-reported. I will complete broker verification myself. Dedicated removal-mail receipt checks require separate explicit authorization. No personal inbox access, ID uploads, account deletions or recurring checks are authorized.';
   const USER_STATES = new Set(['user_reported_requested', 'user_reported_completed']);
   const RESULT_STATES = new Set(['prepared', 'verification_sent', 'submitted', 'captcha', 'id_required', 'unsupported', 'pending', 'unknown', 'error', 'blocked']);
+  const MAIL_ROUTES = new Set(['usphonebook', 'searchpeoplefree', 'fastpeoplesearch']);
+  const OPERATION = /^[a-f0-9-]{32,40}$/;
   const TEXT = {
     ready: 'Ready to open the official broker form. No request has been sent.',
     opened: 'The official form was opened. Opening it does not send a removal request.',
@@ -35,9 +37,18 @@
     return result;
   }
   function email(value) {
-    const result = text(value, 254).toLowerCase();
+    const result = text(value, 254);
     if (!/^[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+$/.test(result)) throw new WorkspaceError('Enter a valid email address.');
-    return result;
+    const [local, suppliedDomain] = result.split('@');
+    let domain;
+    try {
+      if (/[\\/:?#%]/.test(suppliedDomain)) throw new Error();
+      domain = new URL('https://' + suppliedDomain).hostname;
+      if (domain.length > 253 || !domain.split('.').every(label => /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(label))) throw new Error();
+    } catch (_) { throw new WorkspaceError('Enter a valid email address.'); }
+    const normalized = local + '@' + domain;
+    if (normalized.length > 254) throw new WorkspaceError('Enter a valid email address.');
+    return normalized;
   }
   function routeFor(id) {
     const route = routes.find(item => item.id === id);
@@ -54,6 +65,12 @@
       throw new WorkspaceError('Use a direct HTTPS listing URL on this broker’s approved domain, without query parameters.');
     }
     return url.href;
+  }
+  function appliesToCountry(route, country) {
+    return route.countries.includes('*') || Boolean(country && route.countries.includes(country));
+  }
+  function operationStarted(item) {
+    return Boolean(item.operation_id) || USER_STATES.has(item.status) || ['running', 'verification_sent', 'requested', 'uncertain', 'needs_broker_step'].includes(item.status);
   }
   function approvedFields(route, fields) {
     if (!fields || typeof fields !== 'object' || Array.isArray(fields)) throw new WorkspaceError('Supply approved broker fields.');
@@ -74,6 +91,36 @@
       next[key] = value ? (key === 'country' ? value.toUpperCase() : value) : null;
     }
     return next;
+  }
+  function mailContact(value, routeId, operationId, now, allowExpired = false) {
+    if (!MAIL_ROUTES.has(routeId) || !OPERATION.test(operationId) || !value || typeof value !== 'object' || Array.isArray(value))
+      throw new WorkspaceError('Choose a supported removal contact operation.');
+    const { capability, request_id, route_id, operation_id, contact_email, expires_at } = value;
+    if (route_id !== routeId || operation_id !== operationId || typeof request_id !== 'string' || !/^[a-f0-9]{32}$/.test(request_id) ||
+        typeof capability !== 'string' || capability.length > 2048 || !/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]{43}$/.test(capability) ||
+        !Number.isSafeInteger(expires_at) || typeof contact_email !== 'string') throw new WorkspaceError('The removal contact does not match this operation.');
+    let claims;
+    try {
+      const encoded = capability.split('.')[0], alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+      if (encoded.length > 1800 || encoded.length % 4 === 1) throw new Error();
+      let bits = 0, count = 0, decoded = '';
+      for (const char of encoded) {
+        bits = (bits << 6) | alphabet.indexOf(char); count += 6;
+        if (count >= 8) { count -= 8; decoded += String.fromCharCode((bits >>> count) & 255); }
+      }
+      claims = JSON.parse(decoded);
+    } catch (_) { throw new WorkspaceError('The removal contact capability is malformed.'); }
+    const keys = ['v', 'request_id', 'route_id', 'operation_id', 'recipient', 'issued_at', 'expires_at'];
+    if (!claims || typeof claims !== 'object' || Array.isArray(claims) || Object.keys(claims).length !== keys.length || !keys.every(key => Object.hasOwn(claims, key)) ||
+        claims.v !== 1 || claims.request_id !== request_id || claims.route_id !== routeId || claims.operation_id !== operationId ||
+        claims.recipient !== contact_email || claims.expires_at !== expires_at || !Number.isSafeInteger(claims.issued_at) ||
+        expires_at - claims.issued_at !== 7 * 86400 || claims.issued_at > now + 60 ||
+        email(contact_email) !== contact_email || !new RegExp('^[a-z0-9._-]{1,25}\\+erase-' + request_id + '@').test(contact_email))
+      throw new WorkspaceError('The removal contact does not match this operation.');
+    if (!allowExpired && expires_at <= now) throw new WorkspaceError('This removal contact has expired. No request was repeated.', 410);
+    // The server verifies the signature; this local check prevents accidental
+    // route/recipient mixups and never establishes broker acceptance.
+    return { capability, request_id, route_id, operation_id, contact_email, expires_at };
   }
   function create(options = {}) {
     const storage = options.storage || {
@@ -106,11 +153,12 @@
           const knownRoute = routeFor(id);
           if (!item || item.site_id !== id || !Object.hasOwn(TEXT, item.status)) throw new Error();
           item.url = knownRoute.url; item.name = knownRoute.name; item.domain = knownRoute.domain;
+          if (item.mail_contact) item.mail_contact = mailContact(item.mail_contact, id, item.operation_id || item.id, Math.floor(Date.parse(clock()) / 1000), true);
         }
         state = parsed;
         // A browser closed during a write cannot safely establish its outcome.
         let changed = false;
-        for (const item of Object.values(state.items)) if (item.status === 'running') {
+        for (const item of Object.values(state.items)) if (options.recoverInterrupted !== false && item.status === 'running') {
           item.status = 'uncertain'; item.detail = TEXT.uncertain; changed = true;
         }
         if (changed) save();
@@ -141,6 +189,10 @@
       };
     }
     function itemFor(id) { active(); routeFor(id); const item = state.items[id]; if (!item) throw new WorkspaceError('Run your route plan first.', 409); return item; }
+    function requireCountryRoute(route, item) {
+      if (!appliesToCountry(route, state.profile.country) && !operationStarted(item))
+        throw new WorkspaceError('This route is outside your selected country. Update your location to choose the applicable routes.', 409);
+    }
     function changed(item, status, detail) { item.status = status; item.detail = detail || TEXT[status]; item.updated_at = clock(); }
     function signup(data) {
       read();
@@ -156,15 +208,29 @@
     }
     function dashboard() {
       active();
-      const items = Object.values(state.items).map(({ fields, operation_id, operation_started_at, evidence, ...item }) => ({
+      const country = state.profile.country;
+      const eligible = routes.filter(route => appliesToCountry(route, country));
+      const historical = Object.values(state.items).filter(item => !appliesToCountry(routeFor(item.site_id), country) && operationStarted(item));
+      const items = Object.values(state.items).filter(item => appliesToCountry(routeFor(item.site_id), country) || operationStarted(item)).map(({ fields, operation_id, operation_started_at, evidence, mail_contact, ...item }) => ({
         ...item, input_fields: clone(fields || {}), automationLevel: routeFor(item.site_id).automationLevel, fields_needed: routeFor(item.site_id).fields,
-        operation_id, evidence: evidence ? clone(evidence) : null
+        operation_id, evidence: evidence ? clone(evidence) : null,
+        mail_contact: mail_contact ? { ...mail_contact, capability: undefined } : null
       }));
       return { mode: 'browser', profile: clone(state.profile), campaign: { status: state.campaign.status,
         authorized_at: state.profile.authorized_at, next_check_at: null, run_in_progress: false },
         counts: { found: 0, requested: items.filter(item => item.evidence && item.evidence.acceptance_verified === true).length, removed: 0,
           blocked: items.filter(item => ['blocked', 'uncertain', 'verification_sent'].includes(item.status)).length },
-        items, questions: [], activity: clone(state.activity) };
+        coverage: { country, supportedCountries: [...new Set(routes.flatMap(route => route.countries).filter(value => value !== '*'))].sort(),
+          globalRouteCount: eligible.filter(route => route.countries.includes('*')).length,
+          countryRouteCount: eligible.filter(route => !route.countries.includes('*')).length,
+          companionRouteCount: eligible.filter(route => route.automationLevel === 'companion').length,
+          manualRouteCount: eligible.filter(route => route.automationLevel === 'manual').length,
+          routeCount: eligible.length, historicalRouteCount: historical.length,
+          unplannedRouteCount: eligible.filter(route => !state.items[route.id]).length,
+          hasCountryPack: Boolean(country && eligible.some(route => !route.countries.includes('*'))),
+          independentDeletionVerification: false },
+        items, questions: country ? [] : [{ id: 'country', field: 'country', prompt: 'Which country do you live in? This selects the regional privacy routes. Global portals are available meanwhile.' }],
+        activity: clone(state.activity) };
     }
     function setEvidence(id, fields) {
       const route = routeFor(id), item = itemFor(id);
@@ -174,11 +240,13 @@
     }
     function prepare(id) {
       const route = routeFor(id), item = itemFor(id);
+      requireCountryRoute(route, item);
       if (state.campaign.status !== 'active') throw new WorkspaceError('Allow checks before starting a broker action.', 409);
       if (item.operation_id || USER_STATES.has(item.status)) throw new WorkspaceError('This broker action has already started. Refresh its result or finish its broker steps instead of resending.', 409);
+      const contact = item.mail_contact ? mailContact(item.mail_contact, id, item.id, Math.floor(Date.parse(clock()) / 1000)) : null;
       const fields = {};
       for (const key of route.fields) {
-        const value = key === 'email' ? state.profile.email : item.fields[key];
+        const value = key === 'email' ? (contact?.contact_email || state.profile.email) : item.fields[key];
         if (!value) throw new WorkspaceError('Provide the broker’s required ' + key.replace(/_/g, ' ') + ' first.');
         fields[key] = key === 'listing_url' ? listingURL(value, route) : text(value, key === 'email' ? 254 : 120);
       }
@@ -186,6 +254,63 @@
       item.operation_id = item.id; item.operation_started_at = clock(); changed(item, 'running');
       event('You started the ' + route.name + ' broker action. Its result is not yet established.'); save();
       return { routeId: id, operationId: item.operation_id, fields, authorized: true };
+    }
+    function mailSessionRequest(id) {
+      const route = routeFor(id), item = itemFor(id);
+      requireCountryRoute(route, item);
+      if (!MAIL_ROUTES.has(id)) throw new WorkspaceError('This broker needs its record-associated email. A removal contact cannot replace it.');
+      if (state.campaign.status !== 'active') throw new WorkspaceError('Allow checks before choosing a removal contact.', 409);
+      if (operationStarted(item)) throw new WorkspaceError('This action has already started. Its contact email cannot be changed.', 409);
+      if (!OPERATION.test(item.id)) throw new WorkspaceError('This workspace operation has no valid private reference.', 409);
+      if (item.mail_contact && item.mail_contact.expires_at > Math.floor(Date.parse(clock()) / 1000)) throw new WorkspaceError('This operation already has a removal contact.', 409);
+      item.mail_contact_authorized_at = clock();
+      event('You authorized a dedicated contact address for ' + route.name + '. No broker was contacted.'); save();
+      return { route_id: id, operation_id: item.id, authorized: true };
+    }
+    function bindMailContact(id, response) {
+      const item = itemFor(id);
+      requireCountryRoute(routeFor(id), item);
+      if (state.campaign.status !== 'active' || operationStarted(item)) throw new WorkspaceError('This action is paused or already started. Its contact email cannot be changed.', 409);
+      if (!item.mail_contact_authorized_at) throw new WorkspaceError('Explicitly authorize the dedicated contact address first.');
+      const contact = mailContact(response, id, item.id, Math.floor(Date.parse(clock()) / 1000));
+      if (item.mail_contact && item.mail_contact.expires_at > Math.floor(Date.parse(clock()) / 1000)) throw new WorkspaceError('This operation already has a removal contact.', 409);
+      item.mail_contact = contact; item.updated_at = clock();
+      event('The dedicated contact address is saved for ' + routeFor(id).name + '. Review it before starting the broker form.'); save();
+      return dashboard();
+    }
+    function clearMailContact(id) {
+      const item = itemFor(id);
+      if (operationStarted(item)) throw new WorkspaceError('This action has already started. Its contact email cannot be changed.', 409);
+      delete item.mail_contact; delete item.mail_contact_authorized_at;
+      event('You chose your typed profile email for ' + routeFor(id).name + '. No broker was contacted.'); save();
+      return dashboard();
+    }
+    function mailCheckRequest(id) {
+      const item = itemFor(id);
+      if (state.campaign.status !== 'active') throw new WorkspaceError('Allow checks before reading a removal receipt.', 409);
+      if (!item.operation_id || !item.mail_contact) throw new WorkspaceError('Start the matching broker action before checking its removal contact.', 409);
+      const contact = mailContact(item.mail_contact, id, item.operation_id, Math.floor(Date.parse(clock()) / 1000));
+      item.mail_check_authorized_at = clock(); save();
+      return { capability: contact.capability, explicit: true };
+    }
+    function recordMailReceipt(id, result) {
+      const item = itemFor(id), now = Math.floor(Date.parse(clock()) / 1000);
+      if (!item.mail_contact || !item.operation_id) throw new WorkspaceError('No matching removal contact operation is saved.', 409);
+      const contact = mailContact(item.mail_contact, id, item.operation_id, now, true);
+      if (!result || result.route_id !== id || result.operation_id !== item.operation_id || result.request_id !== contact.request_id ||
+          !['pending', 'held'].includes(result.status) || result.automatic_execution !== false) throw new WorkspaceError('The mailbox result does not match this operation.');
+      const receipt = { status: result.status, checked_at: clock(), acceptance_verified: false, deletion_verified: false };
+      if (result.status === 'held') {
+        if (result.authenticated !== true || !['route_validation_required', 'confirmation_link_unvalidated'].includes(result.reason) ||
+            !Number.isSafeInteger(result.received_at) || result.received_at < contact.expires_at - 7 * 86400 || result.received_at > now + 300 ||
+            typeof result.receipt_ref !== 'string' || !/^[a-f0-9]{64}$/.test(result.receipt_ref)) throw new WorkspaceError('The removal receipt could not be validated.');
+        Object.assign(receipt, { authenticated: true, reason: result.reason, received_at: result.received_at, receipt_ref: result.receipt_ref });
+        changed(item, 'blocked', 'An authenticated removal-related email was received. Confirmation is held pending broker-route validation; no link was followed and deletion is unverified.');
+      }
+      // A later empty check must not erase a previously observed held receipt.
+      if (item.mail_receipt?.status !== 'held' || result.status === 'held') item.mail_receipt = receipt;
+      event(routeFor(id).name + (result.status === 'held' ? '. A removal email is held for route validation.' : '. No qualifying removal receipt was found in this explicit check.'));
+      save(); return dashboard();
     }
     function recordCompanion(id, operationId, result) {
       const item = itemFor(id);
@@ -212,6 +337,7 @@
     }
     function opened(id) {
       const item = itemFor(id);
+      requireCountryRoute(routeFor(id), item);
       if (state.campaign.status !== 'active') throw new WorkspaceError('Allow checks before opening a broker action.', 409);
       if (!item.operation_id && !USER_STATES.has(item.status)) changed(item, 'opened');
       event('You opened the ' + routeFor(id).name + ' official form. No submission was established.'); save(); return dashboard();
@@ -225,11 +351,12 @@
       try { data = JSON.parse(raw); } catch (_) { throw new WorkspaceError('Invalid workspace export.'); }
       if (!data || data.version !== VERSION || !data.profile || !data.items || typeof data.items !== 'object' || Array.isArray(data.items)) throw new WorkspaceError('Invalid workspace export.');
       const forbidden = new Set(['removed', 'verified_removed', 'not_found']);
-      const restoredFields = {};
+      const restoredFields = {}, restoredContacts = {};
       for (const [id, item] of Object.entries(data.items)) {
         const route = routeFor(id);
         if (!item || forbidden.has(item.status) || !Object.hasOwn(TEXT, item.status)) throw new WorkspaceError('Imports cannot establish verified removal or listing absence.');
         restoredFields[id] = approvedFields(route, item.fields === undefined ? {} : item.fields);
+        if (item.mail_contact) restoredContacts[id] = mailContact(item.mail_contact, id, item.operation_id || item.id, Math.floor(Date.parse(clock()) / 1000), true);
       }
       const input = data.profile;
       const candidate = { name: text(input.name, 120), email: email(input.email), age: input.age, authorized: true };
@@ -244,12 +371,24 @@
       for (const [id, imported] of Object.entries(data.items)) {
         const item = state.items[id];
         item.fields = restoredFields[id];
+        if (restoredContacts[id]) {
+          item.id = restoredContacts[id].operation_id; item.mail_contact = restoredContacts[id];
+          if (imported.mail_receipt && ['held', 'pending'].includes(imported.mail_receipt.status)) item.mail_receipt = {
+            status: imported.mail_receipt.status, checked_at: clock(), source: 'imported_user_history', authenticated: false,
+            acceptance_verified: false, deletion_verified: false
+          };
+        }
         if (imported.status === 'opened') changed(item, 'opened');
         else if (imported.status !== 'ready') {
           const report = USER_STATES.has(imported.status) ? imported.status :
             imported.status === 'requested' ? 'user_reported_requested' : 'uncertain';
           changed(item, report, 'Imported history is self-reported. Check the broker outcome before starting another action.');
-          item.operation_id = uuid(); item.operation_started_at = clock();
+          // Keep the reference needed to reconcile the same held operation with
+          // the companion. Importing its reference does not import its evidence.
+          item.operation_id = typeof imported.operation_id === 'string' && /^[a-f0-9-]{32,40}$/.test(imported.operation_id)
+            ? imported.operation_id : uuid();
+          item.operation_started_at = typeof imported.operation_started_at === 'string' && imported.operation_started_at.length <= 40 && Number.isFinite(Date.parse(imported.operation_started_at))
+            ? new Date(imported.operation_started_at).toISOString() : clock();
         }
       }
       event('Workspace imported as self-reported history. No broker was contacted and no deletion was verified.'); save(); return dashboard();
@@ -297,12 +436,30 @@
       }
     }
     return Object.freeze({ api, snapshot: () => clone(read()), profile: () => clone(active().profile), routes: () => clone(routes),
-      setEvidence, prepare, recordCompanion, recordUser, opened, exportData, importData, remove, dashboard,
+      setEvidence, prepare, mailSessionRequest, bindMailContact, clearMailContact, mailCheckRequest, recordMailReceipt,
+      recordCompanion, recordUser, opened, exportData, importData, remove, dashboard,
       updateRoute: setEvidence, applyCompanionResult: recordCompanion });
   }
   let instance;
-  const defaults = () => { if (!instance) instance = create(); return instance; };
+  // Default browser mutations share an origin-wide exclusive lock. Read-only
+  // access must not persist recovery updates outside that lock.
+  const defaults = () => { if (!instance) instance = create({ recoverInterrupted: false }); return instance; };
+  async function exclusive(action) {
+    const locks = root.navigator?.locks;
+    if (!locks || typeof locks.request !== 'function') throw new WorkspaceError('This browser cannot safely coordinate workspace changes. Use a current browser with Web Locks support.', 503);
+    return locks.request(KEY + '-write', { mode: 'exclusive' }, action);
+  }
+  const mutators = new Set(['setEvidence', 'prepare', 'mailSessionRequest', 'bindMailContact', 'clearMailContact', 'mailCheckRequest', 'recordMailReceipt', 'recordCompanion', 'recordUser', 'opened', 'importData', 'remove', 'updateRoute', 'applyCompanionResult']);
   const exported = { create, KEY, AUTHORIZATION, WorkspaceError, routes: () => clone(routes), listingURL };
-  for (const name of ['api', 'snapshot', 'profile', 'setEvidence', 'prepare', 'recordCompanion', 'recordUser', 'opened', 'exportData', 'importData', 'remove', 'dashboard', 'updateRoute', 'applyCompanionResult']) exported[name] = (...args) => defaults()[name](...args);
+  for (const name of ['snapshot', 'profile', 'setEvidence', 'prepare', 'mailSessionRequest', 'bindMailContact', 'clearMailContact', 'mailCheckRequest', 'recordMailReceipt', 'recordCompanion', 'recordUser', 'opened', 'exportData', 'importData', 'remove', 'dashboard', 'updateRoute', 'applyCompanionResult']) {
+    exported[name] = (...args) => mutators.has(name) ? exclusive(() => defaults()[name](...args)) : defaults()[name](...args);
+  }
+  exported.api = async (...args) => {
+    try { return await exclusive(() => defaults().api(...args)); }
+    catch (error) {
+      return { ok: false, status: error instanceof WorkspaceError ? error.status : 503,
+        json: async () => ({ error: error instanceof WorkspaceError ? error.message : 'Browser workspace coordination is unavailable.' }) };
+    }
+  };
   return Object.freeze(exported);
 });

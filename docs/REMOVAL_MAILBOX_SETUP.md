@@ -1,11 +1,14 @@
-# Dedicated removal-only mailbox setup
+# Older IMAP removal-only mailbox preparation
+
+For the hosted private receipt pilot, use [Gmail OAuth setup](GMAIL_OAUTH.md) and
+[the relay contract](AUTOMATIC_CONFIRMATIONS.md). The IMAP helper below is a separate
+local preparation tool; its configuration is not used by the hosted OAuth relay.
 
 This prepares a separate IMAP mailbox for removal-related messages. It does not
 connect to a personal inbox, send mail, read messages, install a service or schedule
-work. A separate mailbox is now permitted by the product requirements. No actual
-mailbox address or provider has been supplied for this setup yet.
+work. It does not create a provider account or connect one on the user's behalf.
 
-The public workspace and companion do not yet use this connection. Saving settings
+The public workspace and companion do not use this IMAP connection. Saving settings
 is preparation, not evidence that hosted automatic confirmations are operational.
 Mailbox processing needs separately reviewed broker sender and confirmation-link
 contracts, request correlation and an explicit user-triggered processing action.

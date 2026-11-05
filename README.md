@@ -1,12 +1,14 @@
 # Erase Me
 
-[Open the live workspace](https://erase-me-preview.vercel.app). Enter your own details, keep a private request ledger in your browser, and start each broker action explicitly. No inbox connection, server profile, subscription or scheduled checks.
+[Open the live workspace](https://erase-me-preview.vercel.app). Enter your own details, keep a private request ledger in your browser, and start each broker action explicitly. No personal inbox connection, server profile, subscription or scheduled checks.
 
 ## Public browser workspace
 
 Profiles and history stay in this browser on this device. The host serves the interface, not a personal-data database. No email login is required. Clearing browser data deletes the workspace, so export a private backup if you need one. Other people with access to this browser profile can read the saved details.
 
 Use the free [Chrome companion](https://erase-me-preview.vercel.app/companion.html) for supported form actions. Download the ZIP, load it unpacked in desktop Chrome, grant access to the four reviewed broker sites, and refresh the workspace. Source is in `extension/`.
+
+The catalog contains **43 reference routes**: two global portals, 23 US routes, four Canadian routes, five UK routes, two German routes and seven Turkish routes. Choose your country to see its routes and the global portals. Other countries can use the workspace and global portals, but have no regional pack yet. A reference link is not a validated integration: **four routes support an initial companion action**, and 39 require manual work. The 36 newly added reference entries have not been validated as current browser-app removal flows.
 
 | Route | Working action | Required next step |
 | --- | --- | --- |
@@ -22,11 +24,13 @@ Form preparation, verification initiation, user-reported submission and verified
 
 Managed CAPTCHA challenges, broker email links and identity checks remain user steps. The companion has no inbox or alarm permission. It holds interrupted operations rather than repeating them. The workspace has no background polling, automatic re-checks or resubmission.
 
-## Optional removal-only mailbox
+## Optional removal-only mail pilot
 
-A separate, removal-only mailbox is now an authorized optional connection. Personal inboxes remain excluded. [Private setup](docs/REMOVAL_MAILBOX_SETUP.md) prepares an IMAP-only configuration and an explicitly requested read-only connection test. It does not enable a hosted email service, submit requests, start polling or process confirmation links automatically.
+A separate Gmail account can be connected by an operator through the [private OAuth setup](docs/GMAIL_OAUTH.md). The [receipt relay](docs/AUTOMATIC_CONFIRMATIONS.md) is a gated private pilot, disabled until separately configured and explicitly enabled. It requires a private operator key for each session or check. The public app does not offer anonymous access to a shared mailbox. OAuth tokens stay on the operator's machine or in private deployment settings; the browser never receives them.
 
-The mailbox must be provisioned and connected before live email processing can be validated. Broker-specific sender and confirmation-purpose contracts must also be established. Record-associated addresses, including People Data Labs and Apollo lookup emails, must not be silently replaced by an unrelated contact mailbox.
+USPhonebook, SearchPeopleFree and FastPeopleSearch can use an explicitly chosen removal-only contact where the broker accepts it. The app displays the address before use and explains that it belongs to a shared service account, not the person. People Data Labs and Apollo retain the email associated with the record. The personal inbox remains untouched.
+
+Checks happen only when requested. Authenticated, correlated removal emails are **held for broker-route validation**: no confirmation link is followed, and a receipt never counts as deletion. Automatic confirmations and independently verified removals are not established by this release. The [older IMAP preparation helper](docs/REMOVAL_MAILBOX_SETUP.md) is separate from the hosted OAuth relay.
 
 ## Local Python app
 
@@ -39,12 +43,12 @@ python3 tools/run_service.py
 
 Open http://127.0.0.1:8766. See [local setup](docs/DEPLOYMENT.md) and [local app behavior](docs/WEB_APP.md).
 
-The application is MIT-licensed. Dependencies and bundled fonts keep their licenses. No paid service is needed for the public workspace or unpacked companion.
+The application is MIT-licensed. Dependencies and bundled fonts keep their licenses. No paid service is needed for the public workspace or unpacked companion. Free account, OAuth and hosting quotas still apply; this is not an unlimited hosted removal service.
 
 ## Original agent skill
 
 The documentation below describes the original manual-approval skill. Its permissions
-are separate from the web app's one-time authorization.
+are separate from the web app's browser workspace and explicit per-action authorization.
 
 An open-source Agent Skill that removes you, or a family member who agrees, from people-search sites, data brokers, caller-ID apps and search results. It runs inside the coding agent you already use and follows the privacy law where that person lives.
 
@@ -82,7 +86,7 @@ You say one sentence. The agent then works through these steps, and stops to ask
 
 It works in agents that can run Python and read a skill folder, such as Claude Code, Codex, Cursor and Gemini CLI. With a browser tool, the agent opens pages and fills forms itself. Without one, it gives you the links and records what you report back.
 
-## Works in any country
+## Country-aware references
 
 Most removal tools we found are built for the United States. Erase Me starts from where the person lives.
 
@@ -95,7 +99,7 @@ The jurisdiction engine reads one file per privacy law in `skills/erase-me/refer
 
 A law file that could not be checked against official text is marked unverified. The agent tells you so and does not quote its deadline as fact. A law that exists but is not yet in force is reported and never used for a letter.
 
-Where no law gives an erasure right, the global channels and site opt-outs still work.
+Where no applicable law reference or country pack is available, the skill can offer contributed global channels and official site opt-outs. Whether a broker holds the person's data or accepts a request must be checked separately. Neither the skill nor the public app guarantees coverage or removal in every country.
 
 ## What it refuses
 

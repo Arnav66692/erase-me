@@ -58,7 +58,7 @@ The server binds to loopback and rejects local mode on public origins. The same 
 keeps its session. Email alone cannot recover a profile; the machine owner can use
 `python3 tools/local_access.py` to reopen it locally without sending email.
 
-The public site now runs a separate browser-local workspace for real profiles, with supported actions through the Chrome companion. See [PUBLIC_WORKSPACE.md](PUBLIC_WORKSPACE.md). It does not expose this local server or its authentication API.
+The public site runs a separate browser-local workspace with 43 reference routes and four supported initial Chrome-companion actions. Country selection chooses regional routes; countries without a pack see the global portals and a coverage notice. This does not expose the local server or its authentication API. The optional dedicated Gmail receipt relay is a separate private pilot; it does not connect a personal inbox, follow confirmation links or verify deletion. See [public workspace behavior](PUBLIC_WORKSPACE.md) and [receipt relay scope](AUTOMATIC_CONFIRMATIONS.md).
 
 The app uses Python 3.10+ and the standard library. Run verification with
 `.venv/bin/python -m pytest -q` and `node --test tests/test_manual_ui.cjs`.

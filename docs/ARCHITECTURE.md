@@ -1,5 +1,10 @@
 # Erase Me architecture and data contracts
 
+This document describes the original agent-skill engine and reference-pack contracts.
+The live browser workspace uses separate storage and permissions; see
+[its current scope and interface](PUBLIC_WORKSPACE.md). Its 43 reference routes do not
+imply 43 automated integrations or a verified removal service.
+
 This file is the contract between the engine, the data packs, the templates and SKILL.md. If you change a field here, change every consumer.
 
 Dates are ISO `YYYY-MM-DD`. Country codes are ISO 3166-1 alpha-2 uppercase (`US`, `GB`, `TR`). Region codes are ISO 3166-2 (`US-CA`, `CA-QC`). All JSON is UTF-8, 2-space indent, no comments.
