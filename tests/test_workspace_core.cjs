@@ -393,11 +393,12 @@ function workspaceUIFixture(config={}) {
   const item={ site_id: route.id, status: 'ready', input_fields: { first_name: 'Example', last_name: 'Person' },...config.item };
   const render=()=>{info.replaceChildren();context.EraseWorkspaceUI.decorate([item]);};render();
   function find(element, predicate) { if (predicate(element)) return element; for (const child of element.children) { const found = find(child, predicate); if (found) return found; } }
+  const agreements=()=>{const result=[];find(info,e=>{if(e.tagName==='LABEL'){const input=e.children.find(c=>c.type==='checkbox');if(input)result.push({visible:e.textContent,name:input.attributes?.get('aria-label')||e.textContent});}return false;});return result;};
   const findText=text=>find(info,element=>element.textContent===text)||find(toolbox,element=>element.textContent===text);
   const click = text => findText(text).listeners.click();
   const allLinks=element=>[...(element.href?[element.href]:[]),...element.children.flatMap(allLinks)];
   return { click, calls, posted, changes, opened, copied,downloads,links:()=>allLinks(info),feedback, resolveSave, resolvePrepare, resolveResult, resolveOpen, rejectOpen,
-    tools:()=>context.EraseWorkspaceUI.tools(),render,findText,keyInput:()=>find(info,element=>element.type==='password'),input:label=>find(info,element=>element.attributes?.get('aria-label')===label) };
+    agreements,tools:()=>context.EraseWorkspaceUI.tools(),render,findText,keyInput:()=>find(info,element=>element.type==='password'),input:label=>find(info,element=>element.attributes?.get('aria-label')===label) };
 }
 test('workspace UI waits for saved fields, operation reservation and result persistence', async () => {
   const ui = workspaceUIFixture(), pending = ui.click('Fill with companion');
@@ -778,7 +779,7 @@ test('held UI exposes only explicit resume and local result reconciliation',asyn
 });
 test('new-route UI clears confirmation on field changes and rejects an old companion before operation preparation',async()=>{
   const ui=workspaceUIFixture({routeId:'apollo',capabilities:[],item:{input_fields:{business_email:'work@example.test'}},workspace:{setEvidence:async()=>({business_email:'work@example.test'}),prepare:()=>{throw new Error('must not prepare');}}});
-  const email=ui.input('Apollo Business email associated with your Apollo record'),confirmed=ui.input('Apollo business email authorization');
+  const email=ui.input('Apollo Business email associated with your Apollo record'),confirmed=ui.input('Apollo This is the business email associated with my own Apollo record, and I authorize using it for removal.');
   confirmed.checked=true;email.listeners.input();assert.equal(confirmed.checked,false);confirmed.checked=true;
   await ui.click('Fill with companion');assert.deepEqual(ui.posted,['ping']);assert.match(ui.feedback.textContent,/Update the companion/);
 });
@@ -902,7 +903,7 @@ test('structured UI uses a request textarea, clears own-request approval on edit
     setEvidence:async(_id,fields,flags)=>{assert.equal(fields.full_name,'Örnek Kişi');assert.equal(flags.own_request,true);return fields;},
     prepare:()=>{prepares++;throw new Error('An old companion must not dispatch');}
   }});
-  const name=ui.input(route.name+' Your full name'),body=ui.input(route.name+' Your removal request text'),agreed=ui.input(route.name+' own request authorization');
+  const name=ui.input(route.name+' Your full name'),body=ui.input(route.name+' Your removal request text'),agreed=ui.input(route.name+' I reviewed these fields and confirm this request concerns my own information.');
   assert.equal(name.value,'Örnek Kişi');assert.equal(body.tagName,'TEXTAREA');assert.equal(body.maxLength,5000);
   agreed.checked=true;body.listeners.input();assert.equal(agreed.checked,false);agreed.checked=true;
   await ui.click('Fill with companion');assert.equal(prepares,0);assert.deepEqual(ui.posted,['ping']);assert.match(ui.feedback.textContent,/Update the companion/);
@@ -911,7 +912,7 @@ test('private draft UI waits for persistence, discards changed references and co
   let requested=0,release;
   const gate=new Promise(resolve=>{release=resolve;}),draft={to:'privacy@411.ca',subject:'Personal information removal request — 411.ca',body:'A private own-record request.',source:'https://www.411.ca/privacy-policy'};
   const ui=workspaceUIFixture({routeId:'ca-411',workspace:{privacyDraftRequest:async(_id,input)=>{requested++;assert.equal(input.own_request,true);return requested===1?gate:draft;}}});
-  const reference=ui.input('411.ca own record reference'),agreed=ui.input('411.ca privacy draft authorization'),output=ui.input('411.ca private request draft');
+  const reference=ui.input('411.ca own record reference'),agreed=ui.input('411.ca This concerns my own information, and I authorize preparing this local draft.'),output=ui.input('411.ca private request draft');
   await ui.click('Prepare private request');assert.equal(requested,0);assert.deepEqual(ui.copied,[]);
   reference.value='My own reference';agreed.checked=true;const pending=ui.click('Prepare private request');await new Promise(resolve=>setImmediate(resolve));
   assert.equal(requested,1);assert.equal(output.hidden,true);assert.deepEqual(ui.copied,[]);assert.deepEqual(ui.downloads,[]);
@@ -933,7 +934,19 @@ test('support draft UI exposes no reference field and prepares no identifiers or
     calls++;assert.deepEqual(JSON.parse(JSON.stringify(input)),{reference:'',own_request:true});return{to:'privacy@example.test',subject:'Privacy request procedure',body:'Please explain the procedure.',source:'https://example.test/privacy'};
   }}});
   assert.equal(ui.input('BeenVerified own record reference'),undefined);assert.equal(ui.findText('Prepare private request'),undefined);
-  assert.equal(calls,0);ui.input('BeenVerified privacy draft authorization').checked=true;await ui.click('Prepare procedure question');
+  assert.equal(calls,0);ui.input('BeenVerified This concerns my own information, and I authorize preparing this local draft.').checked=true;await ui.click('Prepare procedure question');
   assert.equal(calls,1);assert.deepEqual(ui.posted,[]);assert.deepEqual(ui.opened,[]);assert.deepEqual(ui.copied,[]);
   assert.equal(ui.input('BeenVerified private request draft').value.includes('Example Person'),false);
+});
+
+
+test('route consent accessible names include the full visible agreement',()=>{
+  for(const routeId of ['apollo','spokeo','tr-numaraara','ca-411','beenverified']){
+    const ui=workspaceUIFixture({routeId});
+    assert.ok(ui.agreements().length>0);
+    for(const agreement of ui.agreements()){
+      assert.ok(agreement.visible.length>30);
+      assert.ok(agreement.name.includes(agreement.visible),`Missing visible agreement: ${agreement.visible}`);
+    }
+  }
 });

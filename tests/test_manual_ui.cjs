@@ -7,8 +7,11 @@ const vm = require('node:vm');
 // Exercise the browser entry point with a small DOM and a fake local API. No
 // browser timers execute, and no broker or mailbox is contacted.
 class Element {
-  constructor(id = '') {
+  constructor(id = '', tag = 'div', ownerDocument = null) {
     this.id = id;
+    this.tagName = tag.toUpperCase();
+    this.ownerDocument = ownerDocument;
+    this.parentElement = null;
     this.hidden = false;
     this.disabled = false;
     this.textContent = '';
@@ -21,22 +24,48 @@ class Element {
     this.dataset = {};
   }
   setAttribute(key, value) { this.attributes.set(key, value); }
+  getAttribute(key) { return this.attributes.get(key) ?? null; }
   removeAttribute(key) { this.attributes.delete(key); }
-  append(...children) { this.children.push(...children); }
-  replaceChildren(...children) { this.children = children; }
+  append(...children) { for (const child of children) { child.parentElement = this; this.children.push(child); } }
+  replaceChildren(...children) { for (const child of this.children) child.parentElement = null; this.children = []; this.append(...children); }
   addEventListener(type, callback) { this.listeners.set(type, callback); }
+  matches(selector) {
+    if (selector.startsWith('.')) return (this.className || '').split(/\s+/).includes(selector.slice(1));
+    if (selector.startsWith('#')) return this.id === selector.slice(1);
+    return this.tagName === selector.toUpperCase();
+  }
+  querySelectorAll(selector) {
+    const selectors = selector.split(',').map(value => value.trim());
+    const matches = [];
+    const visit = parent => {
+      for (const child of parent.children) {
+        if (selectors.some(value => {
+          if (value.includes(' > ')) { const [ancestor, target] = value.split(' > '); return child.matches(target) && child.parentElement.matches(ancestor); }
+          return child.matches(value);
+        })) matches.push(child);
+        visit(child);
+      }
+    };
+    visit(this); return matches;
+  }
   querySelector(selector) {
+    const actual = this.querySelectorAll(selector)[0];
+    if (actual) return actual;
     if (!this.queries.has(selector)) this.queries.set(selector, new Element(selector));
     return this.queries.get(selector);
   }
-  focus() {}
-  closest(selector) { return this.querySelector(selector); }
+  contains(element) { return Boolean(element && (element === this || this.children.some(child => child.contains(element)))); }
+  focus() { if (this.ownerDocument) { this.ownerDocument.activeElement = this; this.ownerDocument.dispatch('focusin', { target: this }); } }
+  closest(selector) {
+    for (let element = this; element; element = element.parentElement) if (element.matches(selector)) return element;
+    return selector === '.login-switch' ? this.querySelector(selector) : null;
+  }
 }
 
-async function boot({ publicMarker = false, browserWorkspace = false, manual = true, localOnly = false, signedIn = true, fragment = '', questions = [], items = [] } = {}) {
+async function boot({ publicMarker = false, browserWorkspace = false, manual = true, localOnly = false, signedIn = true, fragment = '', questions = [], items = [], decorate = null, tools = null } = {}) {
   const elements = new Map();
   const get = id => {
-    if (!elements.has(id)) elements.set(id, new Element(id));
+    if (!elements.has(id)) elements.set(id, new Element(id, 'div', document));
     return elements.get(id);
   };
   const filters = ['all', 'pending', 'removed', 'blocked'].map(name => {
@@ -46,14 +75,20 @@ async function boot({ publicMarker = false, browserWorkspace = false, manual = t
   const location = { hash: fragment, pathname: '/', search: '' };
   const history = { replaceState(_state, _title, url) { assert.equal(url, '/'); location.hash = ''; } };
   const campaign = { status: 'active', run_in_progress: false, next_check_at: '2027-01-01T00:00:00Z' };
+  const documentListeners = new Map();
+  let dashboardGate = null;
   const document = {
     hidden: false, activeElement: null, documentElement: { dataset: { browserWorkspace: publicMarker ? 'true' : '' } },
     getElementById: get,
-    createElement: () => new Element(),
-    createDocumentFragment: () => new Element(),
+    createElement: tag => new Element('', tag, document),
+    createDocumentFragment: () => new Element('', 'fragment', document),
     querySelectorAll: selector => selector === '[data-filter]' ? filters : [],
-    addEventListener() {}
+    addEventListener(type, callback) { documentListeners.set(type, callback); },
+    dispatch(type, event = {}) { return documentListeners.get(type)?.(event); }
   };
+  document.body = new Element('', 'body', document);
+  document.activeElement = document.body;
+  for (const button of filters) button.ownerDocument = document;
   const context = {
     document, URL, console, location, history,
     setTimeout: () => { counters.scheduled += 1; return counters.scheduled; },
@@ -66,6 +101,7 @@ async function boot({ publicMarker = false, browserWorkspace = false, manual = t
         data = { manual, browser_workspace: browserWorkspace, local_only: localOnly, mode: manual ? 'live' : 'demo', email_configured: !localOnly, automation_configured: true };
       } else if (url === '/api/dashboard') {
         counters.dashboardReads += 1;
+        if (dashboardGate) await dashboardGate;
         if (!signedIn) return { ok: false, status: 401, json: async () => ({ error: 'No profile yet' }) };
         data = { profile: { name: 'Example Person', email: 'person@example.test' }, campaign: { ...campaign },
           mode: manual ? 'live' : 'demo', counts: { removed: 0 }, items, questions, activity: [] };
@@ -91,9 +127,14 @@ async function boot({ publicMarker = false, browserWorkspace = false, manual = t
       return { ok: true, json: async () => data };
     }
   };
+  if (decorate || tools) context.EraseWorkspaceUI = { decorate: () => decorate?.(document, items), tools: () => tools?.(document), configure() {} };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../webapp/static/app.js'), 'utf8'), context);
   await new Promise(resolve => setImmediate(resolve));
-  return { get, counters, campaign, filters };
+  return { get, counters, campaign, filters, document, delayDashboard() {
+    let release;
+    dashboardGate = new Promise(resolve => { release = resolve; });
+    return () => { dashboardGate = null; release(); };
+  } };
 }
 
 test('manual mode never schedules polling and refresh only reads status', async () => {
@@ -125,6 +166,136 @@ test('preparing a browser route plan keeps its label after the action finishes',
   assert.equal(get('run-button').textContent, 'Prepare route plan');
   assert.match(get('campaign-feedback').textContent, /No broker has been contacted/);
   assert.equal(counters.scheduled, 0);
+});
+
+function decorateRoute(document, items) {
+  for (const row of document.getElementById('listing-items').querySelectorAll('.listing-item')) {
+    const item = items.find(entry => entry.site_id === row.dataset.siteId);
+    const details = document.createElement('details'); details.className = 'public-broker-steps';
+    const summary = document.createElement('summary'); summary.textContent = 'Request steps';
+    const input = document.createElement('input'); input.setAttribute('aria-label', 'Own listing URL');
+    const approval = document.createElement('input'); approval.type = 'checkbox'; approval.checked = false;
+    const action = document.createElement('button');
+    action.textContent = item.held ? 'Resume this route' : 'Hold this route';
+    details.append(summary, input, approval, action);
+    if (!item.operation_id) {
+      const fill = document.createElement('button'); fill.textContent = 'Fill with companion'; details.append(fill);
+    }
+    const review = document.createElement('details'); review.className = 'public-route-review';
+    const reviewSummary = document.createElement('summary'); reviewSummary.textContent = 'Current route review';
+    review.append(reviewSummary); details.append(review);
+    row.querySelector('.listing-info').append(details);
+  }
+}
+const routeItem = () => ({ site_id: 'example-broker', name: 'Example Broker', status: 'ready', url: 'https://broker.example/optout' });
+
+test('returning to a browser workspace preserves unfinished fields without a status refresh', async () => {
+  const { get, counters, document } = await boot({ browserWorkspace: true, items: [routeItem()], decorate: decorateRoute });
+  const details = get('listing-items').querySelector('details'); details.open = true;
+  const input = details.querySelector('input'); input.value = 'https://broker.example/my-own-record'; input.focus();
+  const approval = details.querySelectorAll('input')[1]; approval.checked = true;
+  document.hidden = true; document.dispatch('visibilitychange');
+  document.hidden = false; await document.dispatch('visibilitychange');
+  assert.equal(counters.dashboardReads, 1);
+  assert.equal(get('listing-items').querySelector('details'), details);
+  assert.equal(input.value, 'https://broker.example/my-own-record');
+  assert.equal(approval.checked, true); assert.equal(details.open, true);
+  await get('refresh-button').listeners.get('click')();
+  assert.equal(counters.dashboardReads, 2, 'Explicit refresh remains available');
+});
+
+test('returning to a local service still reads its current status without scheduling work', async () => {
+  const { document, counters } = await boot();
+  document.hidden = true; document.dispatch('visibilitychange');
+  document.hidden = false; await document.dispatch('visibilitychange');
+  assert.equal(counters.dashboardReads, 2); assert.equal(counters.runs, 0); assert.equal(counters.scheduled, 0);
+});
+
+test('route updates preserve expanded sections and keyboard focus without restoring fields or approvals', async () => {
+  const item = routeItem();
+  const { get, document, delayDashboard } = await boot({ browserWorkspace: true, items: [item], decorate: decorateRoute });
+  const before = get('listing-items').querySelector('details'); before.open = true;
+  before.querySelector('.public-route-review').open = true;
+  before.querySelector('input').value = 'Unsaved reference';
+  before.querySelectorAll('input')[1].checked = true;
+  const hold = before.querySelector('button'); hold.focus(); hold.disabled = true;
+  document.activeElement = document.body; // Chromium can blur an action when it becomes disabled.
+  item.held = true; item.status = 'held';
+  const release = delayDashboard(), pending = document.dispatch('erase-workspace-change');
+  hold.disabled = false; // The action wrapper finishes before the API response.
+  release(); await pending;
+  const after = get('listing-items').querySelector('details');
+  assert.notEqual(after, before); assert.equal(after.open, true);
+  assert.equal(after.querySelector('.public-route-review').open, true);
+  assert.equal(document.activeElement.textContent, 'Resume this route');
+  assert.equal(after.querySelector('input').value, '');
+  assert.equal(after.querySelectorAll('input')[1].checked, false);
+  item.held = false; item.status = 'ready';
+  await document.dispatch('erase-workspace-change');
+  assert.equal(document.activeElement.textContent, 'Hold this route');
+});
+
+test('a disappearing route action falls back to its summary without stealing unrelated focus', async () => {
+  const item = routeItem();
+  const { get, document } = await boot({ browserWorkspace: true, items: [item], decorate: decorateRoute });
+  const details = get('listing-items').querySelector('details'); details.open = true;
+  details.querySelectorAll('button')[1].focus();
+  item.operation_id = 'fixture-operation';
+  await document.dispatch('erase-workspace-change');
+  assert.equal(document.activeElement.textContent, 'Request steps');
+  get('refresh-button').focus();
+  await get('refresh-button').listeners.get('click')();
+  assert.equal(document.activeElement, get('refresh-button'));
+  get('profile-city').focus();
+  await document.dispatch('erase-workspace-change');
+  assert.equal(document.activeElement, get('profile-city'));
+});
+
+test('browser route links are announced as official routes rather than matched listings', async () => {
+  const { get } = await boot({ browserWorkspace: true, items: [routeItem()] });
+  const title = get('listing-items').querySelector('.listing-title');
+  assert.equal(title.getAttribute('aria-label'), 'Example Broker — open official broker route in a new tab');
+});
+
+test('an intentional focus change during a route refresh is not replaced by the initiating action', async () => {
+  const item = routeItem();
+  const { get, document, delayDashboard } = await boot({ browserWorkspace: true, items: [item], decorate: decorateRoute });
+  const hold = get('listing-items').querySelector('button'); hold.focus(); hold.disabled = true;
+  document.activeElement = document.body;
+  const release = delayDashboard(), pending = document.dispatch('erase-workspace-change');
+  hold.disabled = false; get('profile-city').focus();
+  release(); await pending;
+  assert.equal(document.activeElement, get('profile-city'));
+});
+
+test('holding the last in-progress route returns focus to its selected filter', async () => {
+  const item = routeItem();
+  const { get, filters, document, delayDashboard } = await boot({ browserWorkspace: true, items: [item], decorate: decorateRoute });
+  const pendingFilter = filters.find(button => button.dataset.filter === 'pending');
+  pendingFilter.focus(); pendingFilter.listeners.get('click')();
+  const hold = get('listing-items').querySelector('button'); hold.focus(); hold.disabled = true;
+  document.activeElement = document.body; item.held = true; item.status = 'held';
+  const release = delayDashboard(), pending = document.dispatch('erase-workspace-change');
+  hold.disabled = false; release(); await pending;
+  assert.equal(get('listing-items').querySelectorAll('.listing-item').length, 0);
+  assert.equal(document.activeElement, pendingFilter);
+});
+
+test('workspace tools retain button focus after an explicit availability update', async () => {
+  const tools = document => {
+    const action = document.createElement('button'); action.textContent = 'Check removal-mail availability';
+    document.getElementById('public-tools').replaceChildren(action);
+  };
+  const { get, document, delayDashboard } = await boot({ browserWorkspace: true, tools });
+  const before = get('public-tools').querySelector('button'); before.focus(); before.disabled = true;
+  document.activeElement = document.body;
+  const release = delayDashboard(), pending = document.dispatch('erase-workspace-change');
+  before.disabled = false; release(); await pending;
+  const after = get('public-tools').querySelector('button');
+  assert.notEqual(after, before); assert.equal(document.activeElement, after); assert.equal(after.disabled, false);
+  get('profile-city').focus();
+  await document.dispatch('erase-workspace-change');
+  assert.equal(document.activeElement, get('profile-city'));
 });
 
 test('broker reply questions do not display an unrelated location form', async () => {

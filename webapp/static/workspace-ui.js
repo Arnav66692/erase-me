@@ -37,6 +37,7 @@
     $('signup-heading').textContent='Keep your privacy work here.';
     $('signup-panel').querySelector('button[type="submit"]').textContent='Create private workspace';
     $('signup-panel').querySelector('.form-description').textContent='Saved in this browser on this device. Your profile is not uploaded to Erase Me.';
+    $('signup-consent').nextElementSibling.textContent='I’m requesting removal of my own information. I authorize only the broker actions I explicitly start, using the fields shown.';
     $('signup-panel').querySelector('.card-footnote').textContent='Use your own details. Broker verification happens on each broker’s site and in emails you open yourself.';
     $('privacy-dialog').querySelector('.dialog-body > p').textContent='Your profile and request history stay in this browser’s storage on this device. Erase Me has no server copy. Other people using this browser profile can see them. Clearing browser data removes the workspace. Export a private backup if you need one.';
     $('demo-banner').hidden=false;
@@ -160,7 +161,7 @@
     panel.append(n('p','Nothing is sent. Use an account that meets the broker’s stated requirements; no shared sender is substituted and no personal inbox is connected. Reconcile an uncertain earlier submission before using another request.','public-route-note'));
     const fields=n('div',null,'public-route-fields');let reference=null;
     if(!support){const label=n('label','Your own public listing or record reference');label.className='wide';reference=n('input');reference.type='text';reference.maxLength=2048;reference.setAttribute('aria-label',route.name+' own record reference');label.append(reference);fields.append(label);}
-    const review=n('label','This concerns my own information, and I authorize preparing this local draft.');review.className='wide';const agreed=n('input');agreed.type='checkbox';agreed.setAttribute('aria-label',route.name+' privacy draft authorization');review.append(agreed);fields.append(review);panel.append(fields);
+    const review=n('label','This concerns my own information, and I authorize preparing this local draft.');review.className='wide';const agreed=n('input');agreed.type='checkbox';agreed.setAttribute('aria-label',route.name+' '+review.textContent);review.append(agreed);fields.append(review);panel.append(fields);
     const output=n('textarea');output.className='public-request-text';output.rows=10;output.readOnly=true;output.hidden=true;output.setAttribute('aria-label',route.name+' private request draft');
     let draft=null,generation=0;
     const formatted=()=>{if(!draft)throw new Error('Prepare and review the local draft first.');return 'To: '+draft.to+'\nSubject: '+draft.subject+'\n\n'+draft.body;};
@@ -195,7 +196,7 @@
       for(const key of route.requiredAffirmations){
         const label=n('label',key==='business_email'?'This is the business email associated with my own Apollo record, and I authorize using it for removal.':key==='own_request'?'I reviewed these fields and confirm this request concerns my own information.':'I reviewed this exact listing and confirm it is my own information.');
         const input=n('input');input.type='checkbox';input.checked=item.affirmations?.[key]===true;input.disabled=Boolean(item.operation_id)||item.held===true;
-        input.setAttribute('aria-label',route.name+' '+(key==='business_email'?'business email authorization':key==='own_request'?'own request authorization':'own listing confirmation'));affirmations[key]=input;label.append(input);fields.append(label);
+        input.setAttribute('aria-label',route.name+' '+label.textContent);affirmations[key]=input;label.append(input);fields.append(label);
         for(const value of Object.values(values))value.addEventListener('input',()=>{input.checked=false;});
       }
       const save=async()=>{const evidence={},confirmed={};for(const [key,input]of Object.entries(values))evidence[key]=['request_text','phone'].includes(key)?input.value:input.value.trim();for(const [key,input]of Object.entries(affirmations))confirmed[key]=input.checked===true;const saved=await W().setEvidence(route.id,evidence,confirmed);return{fields:saved,affirmations:confirmed};};

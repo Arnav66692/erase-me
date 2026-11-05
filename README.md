@@ -1,171 +1,157 @@
 # Erase Me
 
-[Open the live workspace](https://erase-me-preview.vercel.app). Enter your own details, keep a private request ledger in your browser, and start each broker action explicitly. No personal inbox connection, server profile, subscription or scheduled checks.
+Tools for finding and requesting removal of your own personal information from data brokers and public directories.
 
-## Public browser workspace
+[![CI](https://github.com/Arnav66692/erase-me/actions/workflows/ci.yml/badge.svg)](https://github.com/Arnav66692/erase-me/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-Profiles and history stay in this browser on this device. The host serves the interface, not a personal-data database. No email login is required. Clearing browser data deletes the workspace, so export a private backup if you need one. Other people with access to this browser profile can read the saved details.
+[Open the workspace](https://erase-me-preview.vercel.app/) · [Install the companion](https://erase-me-preview.vercel.app/companion.html) · [Documentation](docs/PUBLIC_WORKSPACE.md) · [Contributing](CONTRIBUTING.md)
 
-Use the free [Chrome companion](https://erase-me-preview.vercel.app/companion.html) for supported form actions. Download the ZIP, load it unpacked in desktop Chrome, grant access to the eleven reviewed broker sites, and refresh the workspace. Source is in `extension/`.
+Erase Me combines a browser workspace, a narrowly permissioned Chrome extension and an installable agent skill. It keeps a private record of the actions you authorize and separates form preparation, broker verification and removal evidence.
 
-The catalog contains **43 reference routes**: two global portals, 23 US routes, four Canadian routes, five UK routes, two German routes and seven Turkish routes. Choose your country to see its routes and the global portals. Other countries can use the workspace and global portals, but have no regional pack yet. A reference link is not a validated integration: **eleven routes support an initial companion action**, and 32 remain other guided channels. All 37 routes outside the first six have now received an official-channel review with sources, a check date and explicit limits. A reviewed channel is not an automated or completed removal.
+**Current scope:** companion 0.4.0 supports 11 reviewed initial form actions. Broker verification and final submission require your participation. No independently verified broker deletion has been established by this release.
 
-| Route | Working action | Required next step |
-| --- | --- | --- |
-| People Data Labs | Start the official deletion portal’s verification email | You open the email and finish the portal |
-| USPhonebook | Fill the first form; the private mail pilot can also prepare authorized fields in its reviewed second form | Enter either date of birth or street address directly on the broker site, review the matching details, accuracy statement and CAPTCHA, then submit there |
-| SearchPeopleFree | Fill the reviewed first form | You complete the challenge, email and record-removal session |
-| FastPeopleSearch | Fill the reviewed first form | You complete the challenge, email and matching-record steps |
-| Apollo | Fill an explicitly entered, separately authorized business email | You submit and complete business-email verification; the profile email is never substituted |
-| Spokeo | Fill your explicitly confirmed direct listing URL and email | You submit, complete any challenge and click the broker confirmation email |
-| AdvancedBackgroundChecks | Fill the reviewed first form after confirming your own request | You review consent, submit and complete the challenge, email and second-form steps |
-| No Sorgulama, NumaraAra, NumaraSor and TelefonSorgulama | Fill the reviewed Turkish request forms with approved fields | You submit and complete required security/consent steps; NumaraSor additionally needs your own target phone number |
-| Other audited channels | Official instructions, applicable provider steps and local contact drafts | Blocked pages remain blocked; a registration or procedure question does not establish deletion |
+## Get started
 
-Validation uses synthetic fixtures and explicitly consenting own-record checks; requests are never submitted for random people as route tests. Form preparation, verification initiation, user-reported submission and verified deletion are distinct. A submitted form is never counted as a deletion. No independently verified deletion is established by this release. See [public app behavior](docs/PUBLIC_WORKSPACE.md), [current route research](docs/BROKER_ROUTE_RESEARCH.md) and [earlier evidence](docs/BROKER_VERIFICATION.md).
+### Browser workspace
 
-Use **Find my listing** to open an explicit Google search for your name and optional city on the selected broker. Google receives those search terms only when you choose that action. Search results are candidates, not confirmed matches or removals. Spokeo requires you to confirm that its exact listing is yours.
+1. Open [Erase Me](https://erase-me-preview.vercel.app/) and create a workspace with your own details.
+2. Select your country and prepare a route plan.
+3. Find and confirm your own listings, then start individual broker actions.
+4. Complete the broker's verification steps and record the result.
 
-Put any route on **Hold** to stop its new broker, search and mailbox actions. Only an explicit **Resume** releases it; resuming a campaign or restoring a backup does not release route holds or replay an old operation.
+The workspace requires no account or email login. Your profile and ledger stay in this browser. Export a private backup before clearing site data or changing devices.
 
-The additional forms accept a separately reviewed request for your own information. Request text stays plain text, including Unicode and line breaks; NumaraSor’s phone field is limited to your own number. The companion leaves final submission, security codes, CAPTCHA, consent and any further verification to you.
+For supported form filling, install the free [Chrome companion](https://erase-me-preview.vercel.app/companion.html). Load the unpacked extension in desktop Chrome and grant access to its reviewed broker sites. Mobile browsers can use the workspace and official links, but companion actions require desktop Chrome. Updating an older copy requires replacing its extracted files and reloading the extension.
 
-The **Current route review** section shows official sources and dates. **Official contact alternative** can prepare a local draft for 24 fixed published contacts. A purpose-verified privacy channel requires your own record reference; a registry or uncertain support contact gets only a procedure question without names or record identifiers. Drafts can be copied or downloaded, never sent by Erase Me. CMA, DNCL and TPS registrations set marketing preferences; they do not delete broker records. Provider phone, subscriber SMS and postal steps remain manual, and the app performs no paid lookup.
-
-Managed CAPTCHA challenges, accurate record matching and final submission remain user steps. **Check existing broker tab** can reconcile a supported fresh verification-email acknowledgment after your submission, without sending the form again. Unsupported outcomes remain unknown. The companion has no inbox or alarm permission. It holds interrupted operations rather than repeating them. The workspace has no background polling, automatic re-checks or resubmission.
-
-## Optional removal-only mail pilot
-
-A separate Gmail account can be connected by an operator through the [private OAuth setup](docs/GMAIL_OAUTH.md). The [receipt relay](docs/AUTOMATIC_CONFIRMATIONS.md) is a gated private pilot, disabled until separately configured and explicitly enabled. It requires a private operator key for each session or check. The public app does not offer anonymous access to a shared mailbox. OAuth tokens stay on the operator's machine or in private deployment settings; the browser never receives them.
-
-USPhonebook and FastPeopleSearch can use an explicitly chosen removal-only contact where the broker accepts it. The app displays the address before use and explains that it belongs to a shared service account, not the person. People Data Labs and Apollo retain the email associated with the record. SearchPeopleFree uses the person’s typed email because its consent associates that address with the requester; new shared contacts are disabled. Existing signed references can still be checked, with links held. The personal inbox remains untouched.
-
-Checks happen only when requested and return no confirmation URL. USPhonebook has one reviewed continuation: a separate explicit action revalidates the same authenticated receipt, opens its exact official second form and fills the authorized first name, last name, city, state, ZIP and removal contact. USPhonebook additionally requires either date of birth or street address. The person enters one directly on the broker site; Erase Me does not collect or autofill those details. The person reviews the accuracy statement, completes the challenge and submits there. Other confirmation routes remain held.
-
-Live pilot evidence reaches first-form acceptance and a correlated authenticated email. The final form rejected a submission without either date of birth or street address, although neither field was marked required in its HTML. Final removal-request acceptance and deletion remain unverified. Neither receiving an email nor preparing the second form counts as deletion. The [older IMAP preparation helper](docs/REMOVAL_MAILBOX_SETUP.md) is separate from the hosted OAuth relay.
-
-## Local Python app
-
-The separate local app remains available with its existing data and permissions.
+### Agent skill
 
 ```sh
-python3 tools/configure_service.py --local
-python3 tools/run_service.py
-```
-
-Open http://127.0.0.1:8766. See [local setup](docs/DEPLOYMENT.md) and [local app behavior](docs/WEB_APP.md).
-
-The application is MIT-licensed. Dependencies and bundled fonts keep their licenses. No paid service is needed for the public workspace or unpacked companion. Free account, OAuth and hosting quotas still apply; this is not an unlimited hosted removal service.
-
-## Original agent skill
-
-The documentation below describes the original manual-approval skill. Its permissions
-are separate from the web app's browser workspace and explicit per-action authorization.
-
-An open-source Agent Skill that removes you, or a family member who agrees, from people-search sites, data brokers, caller-ID apps and search results. It runs inside the coding agent you already use and follows the privacy law where that person lives.
-
-[Türkçe](README.tr.md)
-
-## Quickstart
-
-```
 npx skills add Arnav66692/erase-me --skill erase-me
 ```
 
-Then tell your agent:
+Choose Claude Code, Codex or another supported agent. The skill engine requires Python 3.9 or newer and uses the standard library only. In Claude Code, start a new session and use `/erase-me`.
 
-> Erase my mom from the internet. She agreed.
+The skill can assist with your own information or a consenting family member's information. It records consent, builds a country-aware plan, maintains a private ledger and drafts requests. Its submission approvals are separate from the web workspace. See [the skill instructions](skills/erase-me/SKILL.md) and [playbooks](skills/erase-me/references/playbooks.md).
 
-## Claude Code installation
+### Local Python app
 
-Install with the command above and choose Claude Code, or copy the `skills/erase-me` folder into `~/.claude/skills/erase-me`. Start a new session and use `/erase-me`. The skill needs Python 3.9 or newer. Its engine has no runtime packages. A browser-capable session can assist with supported pages.
+With Python 3.10 or newer, run from a repository checkout:
 
-The installable skill uses the manual consent and submission workflow below. The local web app is a separate interface with the coverage described above. Neither guarantees deletion from every broker.
-
-## What it does
-
-You say one sentence. The agent then works through these steps, and stops to ask you at each one that matters:
-
-1. **Records consent.** It asks who the person is and how they agreed. Nothing else runs without a consent record.
-2. **Asks for the minimum.** Country and region, name with local spellings, cities lived in, an age range. Phone and email only if you want them checked.
-3. **Works out which laws apply.** It names the strongest free legal channel for that place, the response deadline and the regulator to complain to.
-4. **Scans.** It opens search pages on people-search sites, caller-ID apps and search engines, and records each listing it finds with its URL. CAPTCHAs come to you in one batch.
-5. **Removes.** It fills opt-out forms one at a time. Before each one it shows you the exact fields it will send and waits for your yes. You do ID uploads, calls and verification clicks.
-6. **Drafts legal letters.** Erasure and objection requests under the matching law, with the legal deadline filled in, or a plain request for a prompt reply where the law sets no fixed deadline. It can translate a letter into the recipient's language and keeps the English original attached. You send them.
-7. **Tracks deadlines.** When a deadline passes, it drafts a follow-up, then a complaint to the regulator.
-8. **Re-checks** at 30, 45 and 90 days and flags listings that come back.
-9. **Reports.** A private exposure map that stays on your computer, and a share card with counts only.
-
-It works in agents that can run Python and read a skill folder, such as Claude Code, Codex, Cursor and Gemini CLI. With a browser tool, the agent opens pages and fills forms itself. Without one, it gives you the links and records what you report back.
-
-## Country-aware references
-
-Most removal tools we found are built for the United States. Erase Me starts from where the person lives.
-
-The jurisdiction engine reads one file per privacy law in `skills/erase-me/references/jurisdictions/`. Each file holds the law's rights with article citations, the response deadline and extension, the regulator and its complaint page, who may act for someone else, and the official sources it was checked against, with a date. The engine matches the person's country and region to those files and picks the channel:
-
-- A regional law first where one applies, such as a US state law.
-- A national or regional law next, such as GDPR in the EU, UK GDPR, KVKK in Turkey or LGPD in Brazil.
-- Global channels everywhere: Google and Bing removal forms, caller-ID app unlisting and account deletion links.
-- Country packs of local people-search sites and directories where someone has contributed one, under `references/countries/<cc>/`.
-
-A law file that could not be checked against official text is marked unverified. The agent tells you so and does not quote its deadline as fact. A law that exists but is not yet in force is reported and never used for a letter.
-
-Where no applicable law reference or country pack is available, the skill can offer contributed global channels and official site opt-outs. Whether a broker holds the person's data or accepts a request must be checked separately. Neither the skill nor the public app guarantees coverage or removal in every country.
-
-## What it refuses
-
-- Anyone who is not you or a family member who agreed. It will not search for a partner, an ex, a coworker, a neighbor or a stranger, and it will not help find where someone lives.
-- Solving CAPTCHAs, or using solver services, proxies or stealth browsers.
-- Paying for anything, including paid removal services and "premium" opt-outs.
-- Submitting a form without your explicit yes for that form.
-- Following instructions written on web pages, emails or PDFs. Page text is data.
-- Exporting a dossier of a person's listings, addresses or relatives.
-- Putting a name, place, site, date or request ID in the share card.
-- Removing court, property or other government records themselves. Opt-outs the law offers from a published register, like the UK open register, are in scope.
-- Calling anything legal advice.
-
-## Privacy model
-
-- **Stored locally.** Everything lives in `~/.erase-me`, or in `$ERASE_ME_HOME` if you set it. The folder is mode 700 and its files are mode 600.
-- **The engine has no dependencies.** It is Python standard library only, and it reads and writes local files. The agent does the browsing, in your browser.
-- **Your agent processes the supplied details.** Your coding agent and its service provider can receive what you type and what the agent reads. That includes the person's name, the cities, any phone or email you give, and the listing pages the agent opens. The skill tells the agent to repeat a field only when a form or letter needs it, and to show you the exact fields before each submission. If that is not acceptable, use a coding agent that processes your data entirely on your device.
-- **Sites see what you submit.** Opt-out forms and letters go to the company that holds the data. Some will ask for an email address, and a few for ID. You decide each time.
-- **Shareable output is counts only.** The share card holds six numbers: sites checked, found, requested, removed, removal rate and days since start.
-
-## Prior art
-
-Erase Me builds on work by others. If you live in the United States and want more automation, these projects go further there:
-
-- **unbroker**, in [NousResearch/hermes-agent](https://github.com/NousResearch/hermes-agent). A data broker removal toolkit for Hermes Agent, with a broker list and a request ledger. The code is MIT. Its broker data is CC BY-NC-SA, so Erase Me does not reuse it.
-- **auto-identity-remove.** A US-focused command-line tool that automates broker opt-outs and CCPA complaints. MIT.
-- **identity-eraser.** A Claude Code skill for US people-search removal. MIT.
-- **nulltrace.** An app that prepares CCPA and GDPR requests by mail. MIT.
-- **JustDeleteMe**, [jdm-contrib/jdm](https://github.com/jdm-contrib/jdm). The directory of account deletion links. Erase Me's account data comes from it. MIT.
-
-The [Big Ass Data Broker Opt-Out List](https://github.com/yaelwrites/Big-Ass-Data-Broker-Opt-Out-List) is a well-known manual guide. It states no license, so Erase Me links to it and copies nothing from it.
-
-Erase Me differs in three ways. It matches requests to the law where the person lives, it runs in any agent that reads skills, and it asks you before every submission. See [NOTICE.md](NOTICE.md) for the data it reuses.
-
-## Contributing a country pack
-
-The most useful contribution is a country you know. A pack is a folder of small JSON files, one per site, with the search URL pattern, the opt-out method and the date you checked it. Law files follow the same idea, one per law, checked against the official text.
-
-Read [CONTRIBUTING.md](CONTRIBUTING.md), then open a pull request with the "add a country" template. Run this before you push:
-
+```sh
+python3 tools/configure_service.py --local
+python3 tools/run_service.py --check
+python3 tools/run_service.py
 ```
-python skills/erase-me/scripts/erase_me.py validate
+
+Open [localhost:8766](http://127.0.0.1:8766). This mode uses a separate local database and starts no recurring removal schedule. Close the terminal to stop the server. See [deployment and local setup](docs/DEPLOYMENT.md).
+
+## Capabilities
+
+| Component | Available behavior | Boundary |
+| --- | --- | --- |
+| Workspace | Country-specific route plans, explicit listing searches, private backups and individual route holds | Searches return candidates. They do not establish identity or deletion. |
+| Chrome companion | Fill reviewed forms with the fields you authorize and initiate supported verification steps | No ID uploads, paid solvers, background retries or general browser access. |
+| Contact drafts | Prepare, copy or download a request for a fixed published contact | Drafts are local. Erase Me does not send them. |
+| Existing-tab checks | Reconcile narrowly supported, fresh broker acknowledgments | Unknown or unsupported results remain unverified. Forms are not resent. |
+| Agent skill | Consent records, reference-based plans, request drafts and private reports | Requires an agent capable of running Python. Browser and submission permissions remain explicit. |
+
+The companion covers initial actions for People Data Labs, USPhonebook, SearchPeopleFree, FastPeopleSearch, Apollo, Spokeo, AdvancedBackgroundChecks, No Sorgulama, NumaraAra, NumaraSor and TelefonSorgulama.
+
+Apollo requires a separately entered business email. Spokeo requires a confirmed direct listing URL. The additional structured forms require an own-request affirmation. CAPTCHA, security codes, final consent and subsequent identity checks stay with the person completing the request.
+
+[Current route contracts](docs/BROKER_ROUTE_RESEARCH.md) document the observed controls and their limits.
+
+## Coverage and evidence
+
+| Catalog measure | Current scope |
+| --- | ---: |
+| Reference routes | 43 |
+| Reviewed initial companion actions | 11 |
+| Other guided channels | 32 |
+| Published contact-draft channels | 24 |
+| Source-backed channel assessments | 37 |
+
+Regional packs cover the United States, Canada, the United Kingdom, Germany and Turkey, alongside two global portals. A country without a pack receives the global portals and an explicit coverage notice. Reference coverage does not guarantee that a broker holds your information or accepts a request.
+
+Some entries are provider preferences or marketing registrations. CMA Do Not Mail, Canada's DNCL and the UK's TPS are not broker-record deletion services. Other channels require a subscriber, postal request or manual self-service session.
+
+Erase Me uses distinct evidence levels:
+
+| Recorded event | What it establishes |
+| --- | --- |
+| Form or draft prepared | Approved fields or request text are ready. No final request acceptance is established. |
+| Verification initiated | The broker reported a supported email-verification step. Later steps remain outstanding. |
+| User-reported submission or completion | The person's report is recorded without promoting it to independently verified evidence. |
+| Broker acceptance or completion | Requires correlated evidence of that specific outcome. An acknowledgment alone is insufficient. |
+| Independently verified deletion | Requires checking the previously matched record. This has not been demonstrated by the release. |
+
+A blocked page, empty search, HTTP 404, confirmation email or completed form is not proof of deletion. See [workspace behavior](docs/PUBLIC_WORKSPACE.md) and [verification notes](docs/BROKER_VERIFICATION.md).
+
+## Privacy and execution model
+
+- **Browser workspace:** the hosted API does not receive or store the profile and ledger. Other people using the same browser profile can read them.
+- **Explicit disclosure:** broker actions send only the displayed, approved fields to the selected official form. Listing searches disclose the name and optional city to Google when opened.
+- **Local state:** the agent skill stores its records outside the repository with private file permissions. The local Python app uses its own data directory. Private backups can contain personal information and scoped mail capabilities.
+- **Agent processing:** your selected agent and its service provider may process the details you supply and the pages the agent reads.
+- **Holds and retries:** a held route stays held across backups and campaign resume. Interrupted actions retain their operation references and are not automatically repeated.
+- **No recurring work:** the workspace does not poll an inbox, schedule re-checks or resubmit listings in the background.
+
+Use the tool only for your own information or within the skill's recorded family-consent workflow. Tests use synthetic fixtures and explicitly authorized own-record checks. Never submit requests for unrelated people as a test.
+
+### Optional dedicated-mail pilot
+
+An operator can connect a separate removal-only Gmail account through the [OAuth setup](docs/GMAIL_OAUTH.md). This is a gated private pilot, not a public shared-mailbox service or personal-inbox connection.
+
+The relay requires a private operator key and scoped operation reference for each action. It checks receipts on demand. One reviewed USPhonebook continuation can return its official second-form URL transiently to the authorized browser. It does not establish final acceptance or deletion. OAuth credentials and the operator key remain outside public assets and backups.
+
+See [the relay contract and deployment limits](docs/AUTOMATIC_CONFIRMATIONS.md). The public workspace and unpacked companion need no paid service. Optional account and hosting quotas still apply.
+
+## Development
+
+Use Python 3.10 or newer, Node.js 22 and the test dependencies below. CI tests Python 3.10 and 3.12. The skill engine has no runtime packages.
+
+```sh
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install pytest coverage
+
+python tools/build_preview.py
+node --test tests/test_manual_ui.cjs tests/test_workspace_core.cjs \
+  tests/test_companion.cjs tests/test_broker_catalog.cjs \
+  tests/test_removal_mail_client.cjs
 python -m pytest -m "not network"
+python skills/erase-me/scripts/erase_me.py validate
 ```
 
-## Not legal advice
+The public build writes generated assets to `preview/public/` and creates the companion ZIP from an explicit file allowlist. Tests and the mock broker must not use real profiles, credentials or live broker submissions. Passing tests establish implementation behavior, not a real-world deletion result.
 
-Erase Me is software, not a lawyer. The law files summarize official texts and can be wrong or out of date. Each one shows the date it was checked and its sources, so you can read the text yourself. Every letter it drafts ends with a line saying it is not legal advice. For a dispute, contact a lawyer or the regulator named in the law file.
+| Location | Purpose |
+| --- | --- |
+| `webapp/static/` | Browser workspace, route catalog and channel assessments |
+| `extension/` | Chrome companion and guarded form execution |
+| `preview/` | Public deployment and optional receipt API |
+| `skills/erase-me/` | Installable skill, Python engine, references and templates |
+| `tools/` | Build, local setup and operator utilities |
+| `tests/`, `tools/mock_broker/` | Synthetic fixtures and regression tests |
 
-## License
+## Documentation and support
 
-MIT. See [LICENSE](LICENSE).
+- [Architecture](docs/ARCHITECTURE.md)
+- [Public workspace behavior](docs/PUBLIC_WORKSPACE.md)
+- [Local app](docs/WEB_APP.md) and [deployment](docs/DEPLOYMENT.md)
+- [Broker contracts](docs/BROKER_ROUTE_RESEARCH.md) and [evidence](docs/BROKER_VERIFICATION.md)
+- [Contributing](CONTRIBUTING.md) and [security reporting](SECURITY.md)
+- [Türkçe documentation](README.tr.md)
 
-## Design references
+Use issues for reproducible bugs and changed broker routes. Do not include real personal information in issues, screenshots or test fixtures. Report vulnerabilities through the private process in [SECURITY.md](SECURITY.md).
 
-The interface combines the editorial grid, serif headings and rules studied at [Locomotive](https://locomotive.ca) with the terminal windows and data presentation studied at [Typesafe](https://typesafe.ai). Original interface code and free, licensed fonts. Live counts never shuffle.
+## License and acknowledgments
+
+MIT. See [LICENSE](LICENSE). Data, fonts and other third-party material retain their applicable licenses and attribution in [NOTICE.md](NOTICE.md) and [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
+
+Related work includes [unbroker](https://github.com/NousResearch/hermes-agent), alongside the licensed projects credited in the notices. Erase Me does not reuse unbroker's broker data or the unlicensed Big Ass Data Broker Opt-Out List.
+
+Privacy-law references are informational and may become outdated. Check their official sources. This software does not provide legal advice.
+
+*Documentation reviewed November 5, 2026. Capability counts describe companion 0.4.0.*

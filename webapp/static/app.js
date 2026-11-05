@@ -12,6 +12,8 @@
   let loadingDashboard = false;
   let locationOpen = false;
   let sessionGeneration = 0;
+  let lastWorkspaceFocus = null;
+  let focusRevision = 0;
 
   const statusLabels = {
     ready: 'Ready to start', opened: 'Form opened', held: 'On hold', uncertain: 'Check broker outcome', verification_sent: 'Finish broker verification',
@@ -85,6 +87,7 @@
   function signedOut() {
     sessionGeneration += 1;
     dashboard = null;
+    lastWorkspaceFocus = null;
     stopPolling();
     show($('dashboard-view'), false);
     show($('welcome-view'));
@@ -123,7 +126,64 @@
     const tone = attentionStatuses.has(status) ? ' attention' : (status === 'removed' ? '' : ' neutral');
     return node('span', 'status-pill' + tone, statusLabels[status] || 'In progress');
   }
-  function renderListings() {
+  function detailKey(details) {
+    return `${details.className || ''}\n${details.querySelector('summary')?.textContent || ''}`;
+  }
+  function workspaceFocus(container) {
+    const active = document.activeElement;
+    // Disabling an action can move focus to the body before its update arrives.
+    // Remember it only while that exact disabled control remains in this panel.
+    return container?.contains(active) ? active : active === document.body &&
+      lastWorkspaceFocus?.disabled && container?.contains(lastWorkspaceFocus) ? lastWorkspaceFocus : null;
+  }
+  function routePresentation() {
+    if (!config?.browser_workspace) return null;
+    const list = $('listing-items');
+    const focused = workspaceFocus(list);
+    const focusedRow = focused?.closest('.listing-item');
+    const rows = new Map([...list.querySelectorAll('.listing-item')].map(row => [row.dataset.siteId,
+      new Set([...row.querySelectorAll('details')].filter(details => details.open).map(detailKey))]));
+    return { rows, focus: focusedRow ? {
+      siteId: focusedRow.dataset.siteId, tag: focused.tagName,
+      label: focused.getAttribute('aria-label'), text: focused.textContent
+    } : null };
+  }
+  function workspacePresentation() {
+    if (!config?.browser_workspace) return null;
+    const focused = workspaceFocus($('public-tools'));
+    return { routes: routePresentation(), toolLabel: focused?.tagName === 'BUTTON' ? focused.textContent : null, focusRevision };
+  }
+  function restoreRoutePresentation(state) {
+    if (!state) return;
+    let restoredFocus = false;
+    for (const row of $('listing-items').querySelectorAll('.listing-item')) {
+      const expanded = state.rows.get(row.dataset.siteId);
+      for (const details of row.querySelectorAll('details')) details.open = Boolean(expanded?.has(detailKey(details)));
+      if (row.dataset.siteId !== state.focus?.siteId) continue;
+      const focus = state.focus;
+      const nextText = focus.text === 'Hold this route' ? 'Resume this route' :
+        focus.text === 'Resume this route' ? 'Hold this route' : focus.text;
+      const controls = [...row.querySelectorAll('button, summary, input, textarea, a')];
+      const exact = controls.find(control => !control.disabled && control.tagName === focus.tag &&
+        (focus.label ? control.getAttribute('aria-label') === focus.label : control.textContent === focus.text));
+      const counterpart = controls.find(control => !control.disabled && control.tagName === 'BUTTON' && control.textContent === nextText);
+      const target = exact || counterpart || row.querySelector('.public-broker-steps > summary');
+      if (target) {
+        // A surviving control inside a closed section must be visible to focus.
+        for (let parent = target.parentElement; parent && parent !== row; parent = parent.parentElement) {
+          if (parent.tagName === 'DETAILS' && target.tagName !== 'SUMMARY') parent.open = true;
+        }
+        target.focus({ preventScroll: true });
+        restoredFocus = true;
+      }
+    }
+    if (state.focus && !restoredFocus) {
+      // A status change can remove the route from the selected filter.
+      [...document.querySelectorAll('[data-filter]')].find(button => button.dataset.filter === filter)
+        ?.focus({ preventScroll: true });
+    }
+  }
+  function renderListings(presentation = routePresentation()) {
     const items = Array.isArray(dashboard.items) ? dashboard.items : [];
     const selected = items.filter(item => filter === 'all' || (filter === 'removed' && item.status === 'removed') ||
       (filter === 'blocked' && attentionStatuses.has(item.status)) ||
@@ -131,13 +191,14 @@
     const fragment = document.createDocumentFragment();
     for (const item of selected) {
       const row = node('article', 'listing-item');
+      row.dataset.siteId = item.site_id || '';
       const icon = node('span', 'site-icon', (item.name || 'Site').slice(0, 1));
       icon.setAttribute('aria-hidden', 'true');
       row.append(icon);
       const info = node('div', 'listing-info');
       const url = item.held === true || item.status === 'held' ? null : safeURL(item.url);
       const title = node(url ? 'a' : 'span', 'listing-title', item.name || item.domain || 'Site');
-      if (url) { title.href = url; title.target = '_blank'; title.rel = 'noopener noreferrer'; title.setAttribute('aria-label', `${item.name || 'Site'} — open ${item.status === 'needs_broker_step' ? 'broker portal' : 'listing'} in a new tab`); }
+      if (url) { title.href = url; title.target = '_blank'; title.rel = 'noopener noreferrer'; title.setAttribute('aria-label', `${item.name || 'Site'} — open ${config?.browser_workspace ? 'official broker route' : item.status === 'needs_broker_step' ? 'broker portal' : 'listing'} in a new tab`); }
       info.append(title, node('p', 'listing-domain', item.domain || ''));
       if (item.detail) info.append(node('p', 'listing-detail', item.detail));
       if (config?.local_only && !config?.browser_workspace && ['awaiting_confirmation', 'needs_broker_step'].includes(item.status) && typeof item.site_id === 'string') {
@@ -166,6 +227,7 @@
     }
     $('listing-items').replaceChildren(fragment);
     if (config?.browser_workspace && typeof EraseWorkspaceUI !== 'undefined') EraseWorkspaceUI.decorate(items);
+    restoreRoutePresentation(presentation);
     setText('listing-total', `${items.length} ${items.length === 1 ? 'site' : 'sites'}`);
     show($('listings-empty'), selected.length === 0);
     const empty = $('listings-empty');
@@ -209,7 +271,7 @@
     $('run-button').disabled = campaign.status === 'paused' || setupNeeded || Boolean(campaign.run_in_progress);
     setText('run-button', config?.browser_workspace ? 'Prepare route plan' : campaign.run_in_progress ? 'Check running' : 'Run check');
   }
-  function renderDashboard() {
+  function renderDashboard(presentation = null) {
     const profile = dashboard.profile || {};
     const campaign = dashboard.campaign || {};
     const paused = campaign.status === 'paused';
@@ -227,8 +289,14 @@
     setText('next-check-date', paused ? 'Paused until you allow checks' : setupNeeded ? 'Waiting for service setup' : manualMode() ?
       (campaign.run_in_progress ? 'One check is running. Refresh status to see its progress.' : 'Choose Run check when you’re ready. No recurring checks are scheduled.') :
       (dateLabel(campaign.next_check_at, true) || 'Waiting for the first scan'));
-    renderListings(); renderActivity(); renderQuestions();
-    if (config?.browser_workspace && typeof EraseWorkspaceUI !== 'undefined') EraseWorkspaceUI.tools();
+    renderListings(presentation?.routes); renderActivity(); renderQuestions();
+    if (config?.browser_workspace && typeof EraseWorkspaceUI !== 'undefined') {
+      const focused = presentation ? null : workspaceFocus($('public-tools'));
+      const label = presentation ? presentation.toolLabel : focused?.tagName === 'BUTTON' ? focused.textContent : null;
+      EraseWorkspaceUI.tools();
+      if (label) [...$('public-tools').querySelectorAll('button')]
+        .find(button => !button.disabled && button.textContent === label)?.focus({ preventScroll: true });
+    }
     show($('welcome-view'), false); show($('dashboard-view')); show($('logout-button'), !config?.local_only);
     show($('edit-location'), !config?.synthetic_only);
     if(config?.browser_workspace) { setText('run-button', 'Prepare route plan'); setText('next-check-date', 'Choose a broker action below. Nothing runs on a schedule.'); }
@@ -241,12 +309,16 @@
     if (loadingDashboard) return;
     loadingDashboard = true;
     const generation = sessionGeneration;
+    // Capture the initiating action before awaiting the local API: its wrapper
+    // may re-enable the blurred button before the response is rendered.
+    let presentation = workspacePresentation();
     try {
       const data = await api('/api/dashboard');
       if (generation !== sessionGeneration) return;
       dashboard = data;
       errorAt('page-error', '');
-      renderDashboard();
+      if (presentation && presentation.focusRevision !== focusRevision) presentation = workspacePresentation();
+      renderDashboard(presentation);
     } catch (error) {
       if (generation !== sessionGeneration) return;
       if (error.status === 401) {
@@ -363,7 +435,16 @@
     } catch (error) { errorAt('delete-error', error.message); }
   }));
   document.addEventListener('erase-workspace-change', () => loadDashboard());
-  document.addEventListener('visibilitychange', () => { if (document.hidden) stopPolling(); else if (dashboard) loadDashboard(); });
+  document.addEventListener('focusin', event => {
+    if (event.target !== document.body) {
+      focusRevision += 1;
+      lastWorkspaceFocus = $('listing-items').contains(event.target) || $('public-tools')?.contains(event.target) ? event.target : null;
+    }
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) stopPolling();
+    else if (dashboard && !config?.browser_workspace) loadDashboard();
+  });
 
   async function init() {
     // Fragments never reach the HTTP server. Remove the recovery credential from
