@@ -1,8 +1,10 @@
 /* Explicit operations and explicit, bounded reconciliation. No scheduled work. */
-if(typeof importScripts==='function')importScripts('broker-executor.js','automatic-executor.js');
+if(typeof importScripts==='function')importScripts('broker-executor.js','automatic-executor.js','identity-details.js','final-executor.js');
 const APP='https://erase-me-preview.vercel.app';
 const EXEC=typeof EraseBrokerExecutor!=='undefined'?EraseBrokerExecutor:require('./broker-executor.js');
 const AUTO=typeof EraseAutomaticExecutor!=='undefined'?EraseAutomaticExecutor:require('./automatic-executor.js');
+const FINAL=typeof EraseFinalExecutor!=='undefined'?EraseFinalExecutor:require('./final-executor.js');
+const IDENTITY=typeof EraseIdentityDetails!=='undefined'?EraseIdentityDetails:require('./identity-details.js');
 const NATIVE_HOST='org.eraseme.challenge';
 const active=new Set(),sessions=new WeakMap(),observationKeys=new WeakMap();
 const OBSERVABLE=new Set(['peopledatalabs-form','usphonebook']);
@@ -204,6 +206,107 @@ async function focusExisting(message,chromeApi){
     return {status:'focused',routeId:message.routeId,stage:message.stage,detail:'The existing broker form is open. Complete the requested information there.'};
   }catch(_){return focusUnavailable(message);}finally{active.delete(proofKey);}
 }
+async function ownedFinalContext(reference,chromeApi,fields){
+  const journalKey='continuation:'+reference.operationId,proofKey='focus:continuation:'+reference.operationId;
+  const record=(await chromeApi.storage.local.get(journalKey))[journalKey],session=await browserSession(chromeApi);
+  const proof=chromeApi.storage.session&&(await chromeApi.storage.session.get(proofKey))[proofKey];
+  if(!focusRecordMatches(record,reference)||!session||!proof||proof.session!==session||proof.routeId!==reference.routeId||
+    proof.operationId!==reference.operationId||proof.stage!=='continuation'||proof.tabId!==record.tabId||proof.requestId!==reference.requestId||proof.receiptRef!==reference.receiptRef||
+    typeof proof.documentId!=='string'||!proof.documentId||!/^[a-f0-9]{64}$/.test(proof.urlHmac||''))return null;
+  const permission={origins:['https://www.fastpeoplesearch.com/*']},tab=await chromeApi.tabs.get(record.tabId);
+  const stillAuthorized=async()=>{
+    const current=(await chromeApi.storage.local.get(journalKey))[journalKey],fresh=(await chromeApi.storage.session.get(proofKey))[proofKey];
+    if(!focusRecordMatches(current,reference)||current.tabId!==record.tabId||JSON.stringify(fresh)!==JSON.stringify(proof)||
+      await browserSession(chromeApi)!==session||!await chromeApi.permissions.contains(permission))return false;
+    const key=await observationKey(chromeApi,session),currentTab=await chromeApi.tabs.get(record.tabId);
+    return !!key&&currentTab.id===record.tabId&&currentTab.status==='complete'&&currentTab.url===tab.url&&
+      EXEC.continuationURL(currentTab.url,reference.routeId,fields)&&await focusDigest(key,currentTab.url)===proof.urlHmac&&
+      await sameFocusDocument(chromeApi,record.tabId,proof.documentId,currentTab.url);
+  };
+  if(!await stillAuthorized())return null;
+  return {record,proof,tab,stillAuthorized,target:{tabId:record.tabId,documentIds:[proof.documentId]}};
+}
+function requirementsUnavailable(message){return{status:'unavailable',routeId:message.routeId,operationId:message.operationId,detail:'The original matching form or its requirements could not be verified. Review its existing tab; no new form or request was opened.'};}
+async function identityRequirements(message,chromeApi){
+  const keys=['type','action','routeId','operationId','requestId','receiptRef','authorized'];
+  if(message.authorized!==true||message.routeId!=='fastpeoplesearch'||!/^[a-f0-9]{32}$/.test(message.requestId||'')||!/^[a-f0-9]{64}$/.test(message.receiptRef||'')||
+    Object.keys(message).length!==keys.length||!keys.every(key=>Object.hasOwn(message,key)))throw new Error('Authorize reading the current matching-form requirements first.');
+  const reference={routeId:message.routeId,operationId:message.operationId,requestId:message.requestId,receiptRef:message.receiptRef,stage:'continuation'};
+  try{
+    if(active.has('final-operation:'+message.operationId)||(await chromeApi.storage.local.get('final-operation:'+message.operationId))['final-operation:'+message.operationId])return requirementsUnavailable(message);
+    const owned=await ownedFinalContext(reference,chromeApi);if(!owned)return requirementsUnavailable(message);
+    const installed=await chromeApi.scripting.executeScript({target:owned.target,files:['broker-executor.js','identity-details.js','final-executor.js']});
+    if(!Array.isArray(installed)||installed.length!==1||installed[0].documentId!==owned.proof.documentId||!await owned.stillAuthorized())return requirementsUnavailable(message);
+    const [response]=await chromeApi.scripting.executeScript({target:owned.target,func:url=>globalThis.EraseFinalExecutor.describe(url),args:[owned.tab.url]});
+    if(response?.documentId!==owned.proof.documentId||response.result?.status!=='ready'||Object.keys(response.result).length!==2||!await owned.stillAuthorized())return requirementsUnavailable(message);
+    const requirements=IDENTITY.validateRequirements(response.result.requirements);
+    if(active.has('final-operation:'+message.operationId)||(await chromeApi.storage.local.get('final-operation:'+message.operationId))['final-operation:'+message.operationId])return requirementsUnavailable(message);
+    return {status:'ready',routeId:message.routeId,operationId:message.operationId,requirements};
+  }catch(_){return requirementsUnavailable(message);}
+}
+async function submitDetails(message,chromeApi){
+  const keys=['type','action','routeId','operationId','requestId','receiptRef','submissionId','authorized','consentId','fields','details','requirements'];
+  if(Object.keys(message).length!==keys.length||!keys.every(key=>Object.hasOwn(message,key)))throw new Error('Review the exact final-form fields first.');
+  // Clone before the first await. Details never enter either journal.
+  const payload=JSON.parse(JSON.stringify(Object.fromEntries(keys.filter(key=>!['type','action'].includes(key)).map(key=>[key,message[key]]))));
+  FINAL.validate(payload);
+  const boundary='final-operation:'+payload.operationId,submission='final:'+payload.submissionId;
+  if(active.has(boundary)||active.has(submission))return unknown('A final action for this request already started. No repeat was sent.');
+  active.add(boundary);active.add(submission);
+  let entry;
+  try{
+    const previous=(await chromeApi.storage.local.get(boundary))[boundary],saved=(await chromeApi.storage.local.get(submission))[submission];
+    if(previous||saved){
+      const same=previous?.routeId===payload.routeId&&previous.submissionId===payload.submissionId&&previous.requestId===payload.requestId&&previous.receiptRef===payload.receiptRef&&
+        saved?.routeId===payload.routeId&&saved.operationId===payload.operationId&&saved.submissionId===payload.submissionId&&JSON.stringify(saved.result)===JSON.stringify(previous.result);
+      return same?recordedFinalResult(previous.result):unknown('A final action for this original request already started. No repeat was sent.');
+    }
+    const reference={routeId:payload.routeId,operationId:payload.operationId,stage:'continuation',requestId:payload.requestId,receiptRef:payload.receiptRef};
+    const owned=await ownedFinalContext(reference,chromeApi,payload.fields);
+    if(!owned)return {status:'blocked',detail:'The original matching form changed or is unavailable. No personal fields were filled or request repeated.'};
+    const {proof,tab,target,stillAuthorized}=owned;
+    entry={routeId:payload.routeId,operationId:payload.operationId,requestId:payload.requestId,receiptRef:payload.receiptRef,submissionId:payload.submissionId,
+      result:unknown('The final action started. Check its existing broker tab if interrupted; no repeat is allowed.')};
+    // Both stable original-operation and fresh submission boundaries precede any
+    // personal write. A different caller UUID cannot replay the original request.
+    await chromeApi.storage.local.set({[boundary]:entry,[submission]:entry});
+    if(!await stillAuthorized())return entry.result;
+    const installed=await chromeApi.scripting.executeScript({target,files:['broker-executor.js','identity-details.js','final-executor.js']});
+    if(!Array.isArray(installed)||installed.length!==1||installed[0].documentId!==proof.documentId||!await stillAuthorized())return entry.result;
+    const [response]=await chromeApi.scripting.executeScript({target,
+      func:(value,url)=>globalThis.EraseFinalExecutor.execute(value,url),args:[payload,tab.url]});
+    if(response?.documentId!==proof.documentId)return entry.result;
+    const result=response.result;
+    if(!result||!['blocked','unknown','submission_attempted'].includes(result.status)||
+      result.status==='submission_attempted'&&(result.attempt_verified!==true||result.stage!=='final_request_submission'))return entry.result;
+    const completed={...entry,result:{status:result.status,detail:finalDetail(result.status),
+      ...(result.status==='submission_attempted'?{attempt_verified:true,stage:'final_request_submission'}:{})}};
+    await chromeApi.storage.local.set({[boundary]:completed,[submission]:completed});entry=completed;
+    return entry.result;
+  }catch(_){return entry?.result||unknown('The final action could not be verified. No request was repeated.');}
+  finally{active.delete(boundary);active.delete(submission);}
+}
+function finalDetail(status){
+  return status==='submission_attempted'?'A guarded final-form submit event was observed. Broker acceptance and deletion remain unverified.':
+    status==='blocked'?'The final form needs review in its existing broker tab. No automatic repeat will be sent.':
+      'The final action is unconfirmed. Check its existing broker tab; no automatic repeat will be sent.';
+}
+function recordedFinalResult(result){
+  if(!result||!['blocked','unknown','submission_attempted'].includes(result.status)||
+    result.status==='submission_attempted'&&(result.attempt_verified!==true||result.stage!=='final_request_submission'))return unknown('No verified final result is stored. No request was repeated.');
+  return {status:result.status,detail:finalDetail(result.status),
+    ...(result.status==='submission_attempted'?{attempt_verified:true,stage:'final_request_submission'}:{})};
+}
+async function identityResult(message,chromeApi){
+  const keys=['type','action','routeId','operationId','submissionId','authorized'];
+  if(message.authorized!==true||message.routeId!=='fastpeoplesearch'||!id(message.submissionId)||Object.keys(message).length!==keys.length||!keys.every(key=>Object.hasOwn(message,key)))
+    throw new Error('Authorize reading the existing final action first.');
+  const boundary=(await chromeApi.storage.local.get('final-operation:'+message.operationId))['final-operation:'+message.operationId];
+  const saved=(await chromeApi.storage.local.get('final:'+message.submissionId))['final:'+message.submissionId];
+  if(!boundary||!saved||boundary.routeId!==message.routeId||saved.routeId!==message.routeId||boundary.operationId!==message.operationId||saved.operationId!==message.operationId||
+    boundary.submissionId!==message.submissionId||saved.submissionId!==message.submissionId||JSON.stringify(boundary.result)!==JSON.stringify(saved.result))return unknown('No matching final action is stored. No request was repeated.');
+  return recordedFinalResult(saved.result);
+}
 async function captureIntent(message,sender,chromeApi=chrome){
   if(!message||!sender||message.type!=='erase-broker-submit-intent'||!id(message.operationId)||!OBSERVABLE.has(message.routeId)||
     typeof message.fieldsMatch!=='boolean'||!/^[a-f0-9]{32}$/.test(message.nonce||'')||
@@ -262,10 +365,13 @@ async function dispatch(message,sender,chromeApi=chrome){
   if(message.action==='ping'){
     const routes=[];
     for(const [routeId,route] of Object.entries(EXEC.ROUTES))if(await chromeApi.permissions.contains({origins:['https://'+route.host+'/*']}))routes.push(routeId);
-    return {status:'connected',version:'0.7.0',routes,capabilities:['usphonebook-continuation-v1','fastpeoplesearch-continuation-v1','explicit-fields-v1','structured-fields-v1','broker-observation-v1','automatic-submit-v1','structured-record-match-v1','owned-tab-focus-v1']};
+    return {status:'connected',version:'0.8.0',routes,capabilities:['usphonebook-continuation-v1','fastpeoplesearch-continuation-v1','explicit-fields-v1','structured-fields-v1','broker-observation-v1','automatic-submit-v1','structured-record-match-v1','owned-tab-focus-v1','identity-submit-v1','identity-requirements-v1']};
   }
   if(message.action==='helper-status')return helperStatus(chromeApi);
   if(!id(message.operationId)||!EXEC.ROUTES[message.routeId])throw new Error('Unsupported operation.');
+  if(message.action==='identity-requirements')return identityRequirements(message,chromeApi);
+  if(message.action==='identity-result')return identityResult(message,chromeApi);
+  if(message.action==='submit-details')return submitDetails(message,chromeApi);
   if(message.action==='focus-existing')return focusExisting(message,chromeApi);
   if(message.action==='match')return matchRecord(message,chromeApi);
   const continuation=['continue','continuation-result'].includes(message.action),key=(continuation?'continuation:':'operation:')+message.operationId;

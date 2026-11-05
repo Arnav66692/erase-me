@@ -16,9 +16,22 @@ continue to prevent duplicate dispatch.
 New operations snapshot their outbound email and whether it was the profile,
 business or removal-only address. Earlier typed-email operations without a snapshot
 show an unknown original recipient rather than borrowing a current profile address.
-Imported history cannot produce an authenticated missing-identity prompt. Prepared
-matching forms can ask for a full date of birth or street address on the official
-form; the workspace does not collect those additional values.
+Imported history cannot produce an authenticated missing-identity prompt. Companion 0.8.0 adds a proof-bound read-only `identity-requirements` probe and the
+`identity-dialog.js` collector for FastPeopleSearch's matching continuation. The shared
+`extension/identity-details.js` validator normalizes the explicitly reviewed fields.
+The core reserves a `final_submission` reference before disclosure, keeping identity
+values transient. `final-executor.js` rechecks the original session, document, private
+URL proof, exact form/consent and native requirement flags before writes and submission.
+A native submit event records an attempt only; `identity-result` can read the stored
+result without replay. Native validation and genuine challenge requirements stay intact.
+The broker's contradictory DOB/address/phone requirements are disclosed before collection.
+The optional expected-preview guard for holding a dialog is checked inside the same
+exclusive mutation lock, preventing a stale dialog from holding a replacement request.
+
+`footprint-planner.js` and `footprint-ui.js` add a local account/content cleanup plan.
+Own-list imports, keep/export/remove choices and user reports share workspace storage,
+private backups and deletion. They perform no account or content mutation. See
+[the staged roadmap](CLEANUP_ROADMAP.md).
 
 The explicit `focus-existing` companion action accepts operation references only.
 After a safe same-document preparation, the companion may keep a session-only proof

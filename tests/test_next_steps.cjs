@@ -94,9 +94,11 @@ test('authenticated confirmation is reviewed before opening and only prepared ma
   for(const id of ['fastpeoplesearch','usphonebook']){
     const f=await fixture();f.contact(id);f.start(id);f.receipt(id);
     const ready=f.cards()[0];assert.equal(ready.kind,'confirmation_ready');assert.equal(ready.action,'review');assert.equal(ready.stage,null);
-    f.matchingForm(id);const card=f.cards()[0];assert.equal(card.kind,'detail_required');assert.equal(card.action,'focus');assert.equal(card.stage,'continuation');
+    f.matchingForm(id);const card=f.cards()[0];assert.equal(card.kind,id==='fastpeoplesearch'?'collect_information':'detail_required');assert.equal(card.action,id==='fastpeoplesearch'?'collect':'focus');assert.equal(card.stage,'continuation');
     assert.equal(card.email,f.core.snapshot().items[id].mail_contact.contact_email);
-    assert.match(card.detail,/full date of birth or your current street address/);assert.match(card.detail,/City, state and ZIP/);
+    if(id==='fastpeoplesearch'){assert.match(card.detail,/date of birth/);assert.match(card.detail,/street address or phone/);assert.match(card.detail,/app checks/);}
+    else assert.match(card.detail,/full date of birth or your current street address/);
+    assert.match(card.detail,/city, state and ZIP/i);
     assert.equal(card.detail.includes('18'),false);assert.equal(f.core.dashboard().counts.removed,0);
   }
 });
@@ -175,7 +177,7 @@ test('a missing, changed or imported receipt reference never produces an identit
     if(change==='changed')saved.items.fastpeoplesearch.mail_receipt.receipt_ref='e'.repeat(64);
     if(change==='imported')saved.items.fastpeoplesearch.continuation.source='imported_user_history';
     f.values.set(Core.KEY,JSON.stringify(saved));
-    assert.notEqual(f.cards()[0].kind,'detail_required');assert.equal(f.cards()[0].action,'review');
+    assert.notEqual(f.cards()[0].kind,'detail_required');assert.notEqual(f.cards()[0].kind,'collect_information');assert.equal(f.cards()[0].action,'review');
     assert.throws(()=>f.core.focusRequest('fastpeoplesearch','continuation'),/current authenticated/);
   }
 });

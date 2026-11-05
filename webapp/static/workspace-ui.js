@@ -7,6 +7,7 @@
   const S=()=>globalThis.EraseRemovalSession;
   const C=()=>globalThis.EraseContactSetup;
   const N=()=>globalThis.EraseNextSteps;
+  const D=()=>globalThis.EraseIdentityDialog;
   const mailRoutes=new Set(['usphonebook','searchpeoplefree','fastpeoplesearch']);
   const newMailRoutes=new Set(['usphonebook','fastpeoplesearch']);
   const fieldSpecs={
@@ -17,6 +18,8 @@
   };
   let mailStatus=null;
   let batchView=null;
+  let identityDialog=null;
+  let footprintPanel=null;
   const formEditors=new Map(),fillActions=new Set();
   const $=id=>document.getElementById(id);
   const n=(tag,text,cls)=>{const e=document.createElement(tag);if(text)e.textContent=text;if(cls)e.className=cls;return e;};
@@ -33,7 +36,7 @@
         stop();const reply=event.data.reply;
         if(reply?.ok)resolve(reply.result);else reject(new Error(reply?.error||'The companion could not complete this action.'));
       };
-      const timeout=setTimeout(()=>{stop();reject(new Error('The companion did not respond. Install it, enable broker access, then refresh this page. No repeat has been sent.'));},['run','continue','match'].includes(payload.action)?60000:payload.action==='focus-existing'?5000:1500);
+      const timeout=setTimeout(()=>{stop();reject(new Error('The companion did not respond. Install it, enable broker access, then refresh this page. No repeat has been sent.'));},['run','continue','match','submit-details'].includes(payload.action)?60000:['focus-existing','identity-requirements','identity-result'].includes(payload.action)?5000:1500);
       window.addEventListener('message',listener);
       window.postMessage({source:'erase-workspace',requestId,payload},location.origin);
     });
@@ -328,7 +331,7 @@
       });restore.id='restore-workspace';
       const file=n('input');file.type='file';file.accept='.json,application/json';file.hidden=true;
       file.addEventListener('change',async()=>{
-        try{const selected=file.files[0];if(!selected)return;if(selected.size>500000)throw new Error('Choose a backup smaller than 500 KB.');await W().importData(await selected.text());changed();feedback('Your backup was restored as user-reported history. No broker was contacted.');}
+        try{const selected=file.files[0];if(!selected)return;if(selected.size>1048576)throw new Error('Choose a backup smaller than 1 MiB.');await W().importData(await selected.text());changed();feedback('Your backup was restored as user-reported history. No broker was contacted.');}
         catch(error){$('signup-error').textContent=error.message;$('signup-error').hidden=false;}finally{file.value='';}
       });
       $('signup-panel').append(restore,file);
@@ -362,8 +365,14 @@
         const role=card.emailRole==='removal'?'Separate removal-only contact':card.emailRole==='business'?'Your approved business email':'Your email for this request';
         email.append(n('span',role,'next-step-email-role'));
       }else email.append(n('span','The original request email was not recorded. Review the existing request before choosing an address.'));
-      article.append(email,n('p',card.detail));
+      const instruction=n('p',card.detail);instruction.id='next-step-'+card.routeId+'-instruction';article.append(email,instruction);
       const actions=n('div',null,'public-route-actions');
+      if(card.action==='collect'&&D()){
+        const enter=button('Enter missing information',async()=>{
+          if(!identityDialog)identityDialog=D().create({workspace:W(),companion,document,onChange:changed,onFeedback:feedback});
+          await identityDialog.open(card.routeId,enter);
+        });enter.id='next-step-'+card.routeId+'-primary';enter.setAttribute('aria-label','Enter missing information for '+card.name);enter.setAttribute('aria-describedby',instruction.id);actions.append(enter);
+      }
       if(card.action==='focus'){
         const help=n('p','Switches to the official form already open in desktop Chrome.','public-route-note');help.id='next-step-'+card.routeId+'-help';article.append(help);
         const expected={profileId:dashboard.profile.id,operationId:dashboard.items.find(item=>item.site_id===card.routeId)?.operation_id};
@@ -423,6 +432,10 @@
       mailStatus=await M().status();changed();
       feedback(mailStatus.enabled?'The removal-mail relay is available as a private operator pilot. It checks receipts on demand. Reviewed USPhonebook and FastPeopleSearch confirmations can open their matching forms under the displayed approval. Required identity details and final broker steps remain outstanding.':mailStatus.configured?'The dedicated mailbox is configured, but the private pilot is disabled. Personal inboxes stay disconnected.':'The dedicated removal mailbox is not connected. Use the broker’s own email steps. Personal inboxes stay disconnected.');
     }),n('p',S()?'Optional removal-mail checks are a gated operator pilot using a separate account. A private key is held only for the session you approve. Checks make one pass; they never run on a schedule. Only displayed, reviewed confirmation fields can continue automatically.':'Optional removal-mail checks are a gated operator pilot. They use a separate account, require a private key for each action and never run on a schedule. Each reviewed confirmation needs an explicit continuation.','public-route-note'));
+    if(globalThis.EraseFootprintUI){
+      if(!footprintPanel)footprintPanel=globalThis.EraseFootprintUI.create({workspace:W(),document,onChange:changed,onFeedback:feedback});
+      box.append(footprintPanel.render(dashboard));
+    }
     if(returnId){const target=$(returnId);if(target&&!target.disabled)target.focus({preventScroll:true});}
   }
   function mailControls(route,item){
@@ -601,6 +614,10 @@
       const operationId=item.operationId||item.operation_id;
       if(operationId&&!item.status.startsWith('user_reported'))actions.append(button('Read companion result',async()=>{const result=await companion({action:'result',routeId:route.id,operationId});await W().recordCompanion(route.id,operationId,result);changed();feedback(result.detail||'Companion result checked.');}));
       if(operationId&&item.continuation)actions.append(button('Read confirmation-form result',async()=>{const result=await companion({action:'continuation-result',routeId:route.id,operationId});await W().recordMailContinuation(route.id,operationId,result);changed();feedback(result.detail||'Confirmation-form result checked. No action was repeated.');}));
+      if(operationId&&item.final_submission)actions.append(button('Read final submission result',async()=>{
+        const request=await W().identityResultRequest(route.id),result=await companion({action:'identity-result',...request});
+        await W().recordIdentitySubmission(route.id,request.submissionId,result);changed();feedback('The saved final submission result was checked. No form was repeated; acceptance and deletion remain unverified.');
+      }));
       if(!item.held&&operationId)actions.append(button('Check existing broker tab',async()=>{
         const ping=await companion({action:'ping'});if(!ping.capabilities?.includes('broker-observation-v1'))throw new Error('Update the companion to check an existing broker tab without repeating its action.');
         const request=await W().observationRequest(route.id),result=await companion({action:'observe',...request});await W().recordObservation(route.id,operationId,result);changed();feedback(result.detail||'The existing broker outcome was checked. No action was repeated.');

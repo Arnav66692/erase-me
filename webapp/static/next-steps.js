@@ -44,6 +44,12 @@
         add('outcome_review', 'Review the broker’s response', 'You reported submitting this request. Review its existing broker response and any required verification in Request steps. A submission report does not establish broker acceptance or deletion.');
         continue;
       }
+      if (item.final_submission) {
+        add('outcome_review', 'Review the final broker action', item.final_submission.result === 'submission_attempted' && item.final_submission.attempt_verified === true
+          ? 'The approved final submit control was activated. Review the existing broker result; delivery, acceptance and deletion remain unverified. No repeat is authorized.'
+          : 'A final broker action already started. Review its existing result before continuing. Missing-info entry will not repeat the action.');
+        continue;
+      }
       const receipt = item.mail_receipt;
       const authenticated = receipt?.status === 'held' && receipt.authenticated === true && receipt.continuation_available === true &&
         /^[a-f0-9]{64}$/.test(receipt.receipt_ref || '') && item.mail_contact?.operation_id === item.operation_id &&
@@ -51,9 +57,15 @@
       if (item.continuation) {
         if (matchingForms.has(route.id) && item.continuation.result === 'prepared' && authenticated &&
             item.continuation.receipt_ref === receipt.receipt_ref && item.mail_contact) {
-          add('detail_required', route.name + ' needs one more detail',
-            'Provide either your full date of birth or your current street address directly on ' + route.name + '’s official matching form. City, state and ZIP code are also required. Age and city alone cannot identify the correct record. Completing these details does not establish deletion.',
-            'focus', 'continuation');
+          if (route.id === 'fastpeoplesearch') {
+            add('collect_information', route.name + ' needs more information',
+              'Enter the information required by your existing broker form in Erase Me. The app checks whether it requires date of birth, street address or phone, plus city, state and ZIP. Review the exact fields and accuracy statement before one approved submission. These additional values are not saved in your workspace or backup.',
+              'collect', 'continuation');
+          } else {
+            add('detail_required', route.name + ' needs one more detail',
+              'Provide either your full date of birth or your current street address directly on ' + route.name + '’s official matching form. City, state and ZIP code are also required. Age and city alone cannot identify the correct record. Completing these details does not establish deletion.',
+              'focus', 'continuation');
+          }
         } else {
           add('outcome_review', 'Review the existing matching-form result', 'The matching-form outcome needs review. Check the existing request steps before continuing; do not repeat the confirmation or assume that a record was removed.');
         }

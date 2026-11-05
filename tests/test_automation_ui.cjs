@@ -55,7 +55,7 @@ async function fixture({ bound = [], started = [], held = [], delayed = false, d
     close() { this.open = false; this.listeners.close?.(); }
   }
   function find(element, predicate) { if (predicate(element)) return element; for (const child of element.children) { const found = find(child, predicate); if (found) return found; } }
-  const body = new Element('body'), changes = [], posted = [], saves = [], batches = [], sessions = [], mailCalls = [], contactCalls = [], creates = [], deadlines = [], events = [];
+  const body = new Element('body'), changes = [], posted = [], saves = [], batches = [], sessions = [], mailCalls = [], contactCalls = [], creates = [], deadlines = [], events = [],identityOpened=[];
   document = { body, activeElement: body, createElement: tag => new Element(tag), getElementById: id => find(body, element => element.id === id), dispatchEvent: event => changes.push(event.type) };
   const feedback = new Element('p'); feedback.id = 'campaign-feedback'; const toolbox = new Element('div'); toolbox.id = 'public-tools'; const list = new Element('div'); list.id = 'listing-items'; body.append(feedback, toolbox, list);
   const byId = id => document.getElementById(id), runGate = gate(), mailGate = gate(), contactGate = gate();
@@ -127,7 +127,7 @@ async function fixture({ bound = [], started = [], held = [], delayed = false, d
       queueMicrotask(() => listeners.get('message')?.({ source: window, origin: 'https://erase-me-preview.vercel.app', data: { source: 'erase-companion', requestId: message.requestId, reply: { ok: true, result } } }));
     }
   };
-  const context = { document, EraseWorkspace: workspace, EraseFormBatch: batch,EraseNextSteps:NextSteps, ...(globals ? { EraseAutomaticExecutor: Automatic, EraseRemovalSession: session, EraseRemovalMail: mail, EraseContactSetup: ContactSetup } : {}),
+  const context = { document, EraseWorkspace: workspace, EraseFormBatch: batch,EraseNextSteps:NextSteps,EraseIdentityDialog:{create:()=>({open:async(routeId)=>identityOpened.push(routeId)})}, ...(globals ? { EraseAutomaticExecutor: Automatic, EraseRemovalSession: session, EraseRemovalMail: mail, EraseContactSetup: ContactSetup } : {}),
     URL, Blob, CustomEvent: class { constructor(type) { this.type = type; } }, location: { origin: 'https://erase-me-preview.vercel.app' },
     crypto: { randomUUID: () => (++sequence).toString(16).padStart(32, '0') }, setTimeout: (_callback, delay) => { deadlines.push(delay); return ++timeoutId; }, clearTimeout() {}, window };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../webapp/static/workspace-ui.js'), 'utf8'), context);
@@ -142,7 +142,7 @@ async function fixture({ bound = [], started = [], held = [], delayed = false, d
   const click = async target => { if (typeof target === 'string') target = button(target); assert.ok(target); assert.equal(target.disabled, false); target.focus(); return target.listeners.click(); };
   const toggle = (id, checked = true) => { const element = typeof id === 'string' ? byId(id) : id; assert.ok(element); assert.equal(element.disabled, false); element.checked = checked; element.listeners.change?.(); };
   const fillNames = id => { input(core.routes().find(route => route.id === id).name + ' Your first name').value = 'Example'; input(core.routes().find(route => route.id === id).name + ' Your last name').value = 'Person'; };
-  return { core, workspace, body, document, values, byId, button, input, click, toggle, fillNames, render, changes, posted, saves, batches, sessions, mailCalls, contactCalls, events, creates, deadlines,
+  return { core, workspace, body, document, values, byId, button, input, click, toggle, fillNames, render, changes, posted, saves, batches, sessions, mailCalls, contactCalls, events, creates, deadlines,identityOpened,
     text: () => body.textContent, time: value => { stamp = value; }, complete: runGate.resolve, completeMail: mailGate.resolve,completeContact:contactGate.resolve };
 }
 
@@ -373,15 +373,15 @@ test('editing a derived record clears its checkbox without losing the reference 
   assert.equal(typeof ui.saves.find(args => args[0] === 'spokeo')[3].automaticReference, 'string');
 });
 
-async function detailPromptFixture(options={}){
-  const ui=await fixture({bound:['fastpeoplesearch'],started:['fastpeoplesearch'],held:['usphonebook'],...options});
-  const item=ui.core.dashboard().items.find(item=>item.site_id==='fastpeoplesearch');
+async function detailPromptFixture({routeId='fastpeoplesearch',...options}={}){
+  const ui=await fixture({bound:[routeId],started:[routeId],held:routeId==='fastpeoplesearch'?['usphonebook']:[],...options});
+  const item=ui.core.dashboard().items.find(item=>item.site_id===routeId),fields=routeId==='fastpeoplesearch'?{}:{city:'Example City',state:'CA',zip_code:'92101'};
   const receipt={status:'held',route_id:item.site_id,operation_id:item.operation_id,request_id:item.mail_contact.request_id,reason:'route_validation_required',
     received_at:Math.floor(Date.parse('2026-11-05T00:00:00.000Z')/1000),receipt_ref:'c'.repeat(64),authenticated:true,automatic_execution:false,continuation_available:true};
-  ui.core.recordMailReceipt('fastpeoplesearch',receipt);ui.core.mailContinuationRequest('fastpeoplesearch',{});
+  ui.core.recordMailReceipt(routeId,receipt);ui.core.mailContinuationRequest(routeId,fields);
   const response={status:'confirmation_ready',route_id:item.site_id,operation_id:item.operation_id,request_id:item.mail_contact.request_id,receipt_ref:receipt.receipt_ref,automatic_execution:false,
-    confirmation_url:'https://www.fastpeoplesearch.com/optout/removal?'+new URLSearchParams({firstname:'Example',middlename:'',lastname:'Person',email:item.mail_contact.contact_email,ticketid:'12345678'})};
-  const operation=ui.core.prepareMailContinuation(item.site_id,response,{});ui.core.recordMailContinuation(item.site_id,operation.operationId,{status:'prepared'});ui.render();
+    confirmation_url:routeId==='fastpeoplesearch'?'https://www.fastpeoplesearch.com/optout/removal?'+new URLSearchParams({firstname:'Example',middlename:'',lastname:'Person',email:item.mail_contact.contact_email,ticketid:'12345678'}):'https://www.usphonebook.com/removal/validate-record-info?key=fixture&ticketid=12345678'};
+  const operation=ui.core.prepareMailContinuation(item.site_id,response,fields);ui.core.recordMailContinuation(item.site_id,operation.operationId,{status:'prepared'});ui.render();
   return ui;
 }
 
@@ -392,7 +392,7 @@ test('a prominent next-step prompt shows the request-specific removal email and 
   assert.ok(card.textContent.includes(email));assert.equal(card.textContent.includes('person@example.test'),false);
   assert.match(card.textContent,/date of birth/i);assert.match(card.textContent,/street address/i);assert.match(card.textContent,/city/i);assert.match(card.textContent,/ZIP/i);
   assert.equal(ui.byId('next-step-usphonebook'),undefined);assert.deepEqual(ui.posted,[]);assert.deepEqual(ui.mailCalls,[]);
-  const action=ui.byId('next-step-fastpeoplesearch-primary');assert.match(action.attributes.get('aria-label'),/FastPeopleSearch/);assert.equal(action.attributes.get('aria-describedby'),'next-step-fastpeoplesearch-help');
+  const action=ui.byId('next-step-fastpeoplesearch-primary');assert.match(action.attributes.get('aria-label'),/FastPeopleSearch/);assert.equal(action.attributes.get('aria-describedby'),'next-step-fastpeoplesearch-instruction');
 });
 
 test('verification prompts name the broker and show its captured recipient without opening a mailbox',async()=>{
@@ -403,26 +403,31 @@ test('verification prompts name the broker and show its captured recipient witho
   assert.deepEqual(ui.posted,[]);assert.deepEqual(ui.mailCalls,[]);
 });
 
-test('providing missing information focuses only the existing continuation using opaque references',async()=>{
+test('FPS missing information opens the in-app collector without broker or mailbox actions',async()=>{
   const ui=await detailPromptFixture();await ui.click(ui.byId('next-step-fastpeoplesearch-primary'));
+  assert.deepEqual(ui.identityOpened,['fastpeoplesearch']);assert.deepEqual(ui.posted,[]);assert.deepEqual(ui.mailCalls,[]);
+});
+
+test('other reviewed missing-information handoffs focus only the existing continuation using opaque references',async()=>{
+  const ui=await detailPromptFixture({routeId:'usphonebook'});await ui.click(ui.byId('next-step-usphonebook-primary'));
   assert.deepEqual(ui.posted.map(value=>value.action),['ping','focus-existing']);
-  const request=ui.posted[1];assert.equal(request.stage,'continuation');assert.equal(request.routeId,'fastpeoplesearch');
+  const request=ui.posted[1];assert.equal(request.stage,'continuation');assert.equal(request.routeId,'usphonebook');
   assert.deepEqual(Object.keys(request).sort(),['action','authorized','operationId','receiptRef','requestId','routeId','stage'].sort());
   assert.equal(JSON.stringify(request).includes('@'),false);assert.equal(JSON.stringify(request).includes('https:'),false);assert.deepEqual(ui.mailCalls,[]);
   assert.match(ui.byId('campaign-feedback').textContent,/existing form is open in Chrome/);assert.equal(ui.core.dashboard().counts.removed,0);
 });
 
 test('a changed request or route hold while the companion preflights prevents stale focus',async()=>{
-  const ui=await detailPromptFixture({beforeFocusPing:core=>core.holdRoute('fastpeoplesearch')});
-  await ui.click(ui.byId('next-step-fastpeoplesearch-primary'));assert.deepEqual(ui.posted.map(value=>value.action),['ping']);
-  ui.render();assert.equal(ui.byId('next-step-fastpeoplesearch'),undefined);
+  const ui=await detailPromptFixture({routeId:'usphonebook',beforeFocusPing:core=>core.holdRoute('usphonebook')});
+  await ui.click(ui.byId('next-step-usphonebook-primary'));assert.deepEqual(ui.posted.map(value=>value.action),['ping']);
+  ui.render();assert.equal(ui.byId('next-step-usphonebook'),undefined);
 });
 
 test('unavailable or outdated companions give a manual existing-tab fallback without opening or repeating anything',async()=>{
   for(const options of [{focusAvailable:false},{focusCapability:false}]){
-    const ui=await detailPromptFixture(options);await ui.click(ui.byId('next-step-fastpeoplesearch-primary'));
+    const ui=await detailPromptFixture({routeId:'usphonebook',...options});await ui.click(ui.byId('next-step-usphonebook-primary'));
     assert.ok(ui.posted.every(value=>['ping','focus-existing'].includes(value.action)));assert.deepEqual(ui.mailCalls,[]);
-    assert.match(ui.byId('campaign-feedback').textContent,/existing|current tab|Chrome/);assert.equal(ui.core.snapshot().items.fastpeoplesearch.continuation.result,'prepared');
+    assert.match(ui.byId('campaign-feedback').textContent,/existing|current tab|Chrome/);assert.equal(ui.core.snapshot().items.usphonebook.continuation.result,'prepared');
   }
 });
 

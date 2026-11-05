@@ -388,3 +388,22 @@ performs no paid lookup and does not promise a provider channel has no charges.
 Validation uses synthetic fixtures and explicitly consenting own-record checks only.
 No removal request is submitted for a random person to test a route. No independently
 verified deletion has been established by these inspections or fixtures.
+
+## Version 0.8.0 final matching-form contract
+
+A November 5 read-only metadata check of the existing authenticated FastPeopleSearch
+form found native required attributes on all three date selectors, street address and
+phone, with form.noValidate and submitter.formNoValidate both false. No conditional
+validation handler was observed. This conflicts with the page's DOB-or-address wording.
+The application neither removes required attributes nor silently adds personal fields.
+
+The new requirements probe returns only five boolean flags under the existing tab,
+document, session and private URL proof. The in-app dialog explains the conflict before
+offering an explicitly reviewed full-details variant. It normalizes US phone text to
+(212) 555-0100 format and rejects changed requirement flags or unexpected field values.
+The executor checks the exact accuracy statement and genuine widget response, uses the
+native button, and records only a checked submit attempt. Sensitive values are transient;
+only action references and bounded outcome metadata persist. Unsupported forms remain held.
+
+Synthetic native-browser tests establish execution behavior, not live acceptance. The
+personal pilot remains awaiting identity details; no final deletion was verified.

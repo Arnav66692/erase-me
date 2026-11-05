@@ -9,7 +9,7 @@ Tools for finding and requesting removal of your own personal information from d
 
 Erase Me combines a browser workspace, a narrowly permissioned Chrome extension and an installable agent skill. It keeps a private record of the actions you authorize and separates form preparation, broker verification and removal evidence.
 
-**Current scope:** companion 0.7.0 supports 11 reviewed initial form actions, two optional guarded submissions and one local text-challenge route. Other challenges, identity checks and broker steps can still need attention. No independently verified broker deletion has been established by this release.
+**Current scope:** companion 0.8.0 supports 11 reviewed initial form actions, two optional initial submission contracts, a reviewed FastPeopleSearch final-submission path and one local text-challenge route. Other challenges, identity checks and broker steps can still need attention. No independently verified broker deletion has been established by this release.
 
 ## Get started
 
@@ -22,7 +22,11 @@ Erase Me combines a browser workspace, a narrowly permissioned Chrome extension 
 
 The workspace requires no account or email login. Your profile and ledger stay in this browser. Export a private backup before clearing site data or changing devices.
 
-**Next steps** shows the email used for each started request and asks for the information that broker still needs. A prepared FastPeopleSearch or USPhonebook matching form asks for a full date of birth **or** current street address, plus location details. Choose **Provide missing information** to return to the verified form already open in desktop Chrome. Enter the detail on the broker's form. The button opens no new request or confirmation link; missing or changed tabs need manual review. Held requests stay untouched.
+**Next steps** shows the email used for each started request. For a supported, authenticated FastPeopleSearch continuation, choose **Enter missing information** inside Erase Me. The companion checks the existing form's requirements without reading identity values. Review the exact fields and certification, then approve one fill-and-submit attempt. Extra identity values stay in memory and are cleared after dispatch or closing; they are not saved in the ledger or backup. Missing or changed tabs stop the action. USPhonebook retains its official-form handoff; held requests stay untouched.
+
+FastPeopleSearch currently marks DOB, street address **and phone** as required even though its text says DOB or address. Erase Me explains that conflict before offering the full set. It never silently adds fields or disables native validation. You can cancel or hold instead. A native submit event establishes an attempt, not broker acceptance or deletion.
+
+**Plan other cleanup** imports your own JSON/CSV account list locally. Choose keep, export first or request removal, and record steps you performed. It includes official Google, Reddit and California DROP guidance. Account closure, social-content deletion and company-request delivery remain staged integrations. See the [cleanup roadmap](docs/CLEANUP_ROADMAP.md).
 
 For supported form filling, install the free [Chrome companion](https://erase-me-preview.vercel.app/companion.html). Load the unpacked extension in desktop Chrome and grant access to its reviewed broker sites. Mobile browsers can use the workspace and official links, but companion actions require desktop Chrome. Updating an older copy requires replacing its extracted files and reloading the extension.
 
@@ -59,7 +63,7 @@ Open [localhost:8766](http://127.0.0.1:8766). This mode uses a separate local da
 | Component | Available behavior | Boundary |
 | --- | --- | --- |
 | Workspace | Country-specific route plans, explicit listing searches, private backups and individual route holds | Searches return candidates. They do not establish identity or deletion. |
-| Chrome companion | Fill reviewed forms, initiate supported verification and optionally submit two reviewed forms | Changed controls, agreements or challenges stop the action. No ID uploads, paid solvers or background retries. |
+| Chrome companion | Fill reviewed forms, initiate supported verification and optionally submit reviewed initial or matching forms | Changed controls, agreements or challenges stop the action. No ID uploads, paid solvers or background retries. |
 | Local challenge helper | Recognize NumaraAra's reviewed five-character image code using local Tesseract | Separate desktop installation. Managed challenges and other site codes are not universally supported. |
 | Structured record check | Check one approved Spokeo URL against its structured Person data | Requires exact name and typed identity-email matches. Missing or ambiguous evidence needs attention. |
 | Contact drafts | Prepare, copy or download a request for a fixed published contact | Drafts are local. Erase Me does not send them. |
@@ -78,7 +82,8 @@ Apollo requires a separately entered business email. Spokeo requires a confirmed
 | --- | ---: |
 | Reference routes | 43 |
 | Reviewed initial companion actions | 11 |
-| Optional guarded submission contracts | 2 |
+| Optional initial guarded submission contracts | 2 |
+| Reviewed matching-form submission paths | 1 |
 | Other guided channels | 32 |
 | Published contact-draft channels | 24 |
 | Source-backed channel assessments | 37 |
@@ -120,7 +125,7 @@ The batch review can prepare selected FastPeopleSearch and USPhonebook removal c
 
 For that open review, the key remains in memory so an optional mail pass can follow without another key entry. After every selected form outcome is saved, the pass checks qualifying bound operations once. A stopped queue, unknown outcome or failed result storage prevents the final pass. Closing or completing the review clears its key. Pending mail starts no future check; a separate authorized mail-only pass can check existing operations later.
 
-USPhonebook and FastPeopleSearch have reviewed confirmation-form destinations. After authenticating the exact operation's mail again, the companion can open FastPeopleSearch's matching form and check its prefilled name and contact fields. It leaves date of birth, street address and other identity inputs untouched. The broker requires a full date of birth or street address before final submission. USPhonebook retains its reviewed prefill behavior; the held pilot request stays held. SearchPeopleFree cannot issue new shared aliases, and People Data Labs and Apollo retain their record-associated email requirements. OAuth credentials and the operator key remain outside public assets and backups.
+USPhonebook and FastPeopleSearch have reviewed confirmation-form destinations. After authenticating the exact operation's mail again, the companion can open FastPeopleSearch's matching form and check its prefilled name and contact fields. It initially leaves extra identity fields untouched. The separate in-app missing-information review can then collect and submit the exact approved matching details once, using companion 0.8.0. The broker's native required controls are checked and disclosed before collection. USPhonebook retains its reviewed prefill behavior; the held pilot request stays held. SearchPeopleFree cannot issue new shared aliases, and People Data Labs and Apollo retain their record-associated email requirements. OAuth credentials and the operator key remain outside public assets and backups.
 
 A November 5 authorized pilot submitted FastPeopleSearch's initial form in ordinary visible Chrome, received an authenticated email in the removal-only mailbox and opened its matching form. The run is awaiting the required identity detail. This establishes a real verification path, with no final removal acceptance or independently verified deletion yet.
 
@@ -172,4 +177,4 @@ Related work includes [unbroker](https://github.com/NousResearch/hermes-agent), 
 
 Privacy-law references are informational and may become outdated. Check their official sources. This software does not provide legal advice.
 
-*Documentation reviewed November 5, 2026. Capability counts describe companion 0.7.0.*
+*Documentation reviewed November 5, 2026. Capability counts describe companion 0.8.0.*

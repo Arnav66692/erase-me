@@ -1,14 +1,16 @@
 /* Browser-local profile. Optional receipt checks send only scoped operation references. */
 (function (root, factory) {
   const routes = typeof module === 'object' && module.exports ? require('./broker-routes.js') : root.EraseBrokerRoutes;
-  const api = factory(root, routes);
+  const identityDetails = typeof module === 'object' && module.exports ? require('../../extension/identity-details.js') : root.EraseIdentityDetails;
+  const footprintPlanner = typeof module === 'object' && module.exports ? require('./footprint-planner.js') : root.EraseFootprintPlanner;
+  const api = factory(root, routes, identityDetails, footprintPlanner);
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.EraseWorkspace = api;
-})(typeof globalThis === 'object' ? globalThis : this, function (root, routes) {
+})(typeof globalThis === 'object' ? globalThis : this, function (root, routes, identityDetails, footprintPlanner) {
   'use strict';
   const KEY = 'erase-me-workspace-v1';
   const VERSION = 1;
-  const AUTHORIZATION = 'I request removal of my own information. I authorize only the broker actions I explicitly start using the fields shown. My email is self-reported. I will complete broker verification myself. Dedicated removal-mail receipt checks require separate explicit authorization. No personal inbox access, ID uploads, account deletions or recurring checks are authorized.';
+  const AUTHORIZATION = 'I request removal of my own information. I authorize only the broker actions I explicitly start using the fields shown. My email is self-reported. Additional identity details and broker submissions require my explicit review and approval. Dedicated removal-mail receipt checks require separate explicit authorization. No personal inbox access, ID uploads, account deletions or recurring checks are authorized.';
   const USER_STATES = new Set(['user_reported_requested', 'user_reported_completed']);
   const RESULT_STATES = new Set(['prepared', 'verification_sent', 'submission_attempted', 'submitted', 'captcha', 'id_required', 'unsupported', 'pending', 'unknown', 'error', 'blocked']);
   const MATCH_STATES = new Set(['matched', 'not_matched', 'ambiguous', 'needs_identity', 'unsupported']);
@@ -190,9 +192,38 @@
     let state;
     let cachedRaw;
     let deferredRecovery = false;
-    function empty() { return { version: VERSION, profile: null, campaign: { status: 'active' }, items: {}, activity: [] }; }
+    const emptyFootprint = () => ({ version: 1, items: [], updated_at: null });
+    const planner = () => {
+      const value = footprintPlanner || root.EraseFootprintPlanner;
+      if (!value) throw new WorkspaceError('Reload the workspace before changing a cleanup plan.', 503);
+      return value;
+    };
+    function validatedFootprint(value, imported = false) {
+      if (value === undefined) return emptyFootprint();
+      const library = footprintPlanner || root.EraseFootprintPlanner;
+      // Earlier embedded clients can still read workspaces without planner data.
+      if (!library && value?.version === 1 && Array.isArray(value.items) && value.items.length === 0 && value.updated_at === null && Object.keys(value).length === 3) return emptyFootprint();
+      try { return planner().normalize(value, { imported }); }
+      catch (error) { if (error instanceof WorkspaceError) throw error; throw new WorkspaceError('The saved cleanup plan is invalid. No external action was started.', 409); }
+    }
+    function empty() { return { version: VERSION, profile: null, campaign: { status: 'active' }, items: {}, activity: [], footprint: emptyFootprint() }; }
     const exactKeys = (value, keys) => value !== null && typeof value === 'object' && !Array.isArray(value) &&
       Object.keys(value).length === keys.length && keys.every(key => Object.hasOwn(value, key));
+    function finalSubmission(value, routeId, operationId) {
+      const required = ['id', 'started_at', 'result', 'attempt_verified', 'acceptance_verified', 'deletion_verified'];
+      const allowed = new Set([...required, 'observed_at', 'source']);
+      if (routeId !== 'fastpeoplesearch' || !OPERATION.test(operationId || '') || !value || typeof value !== 'object' || Array.isArray(value) ||
+          !required.every(key => Object.hasOwn(value, key)) || Object.keys(value).some(key => !allowed.has(key)) ||
+          !OPERATION.test(value.id || '') || !Number.isFinite(matchingTime(value.started_at)) ||
+          !['unknown', 'blocked', 'submission_attempted'].includes(value.result) || typeof value.attempt_verified !== 'boolean' ||
+          value.acceptance_verified !== false || value.deletion_verified !== false ||
+          value.attempt_verified !== (value.result === 'submission_attempted') ||
+          value.source !== undefined && value.source !== 'imported_user_history' ||
+          value.source === 'imported_user_history' && (value.result !== 'unknown' || value.attempt_verified !== false) ||
+          value.observed_at !== undefined && (!Number.isFinite(matchingTime(value.observed_at)) || matchingTime(value.observed_at) < matchingTime(value.started_at)))
+        throw new WorkspaceError('The saved final submission reference is invalid. No repeat is authorized.', 409);
+      return clone(value);
+    }
     const identity = profile => ({ name: profile.name, email: profile.email, age: profile.age, city: profile.city || null });
     function matchingTime(value) {
       if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/.test(value)) return NaN;
@@ -268,9 +299,11 @@
             if (!item.operation_id || email(item.operation_email) !== item.operation_email ||
                 !['profile', 'business', 'removal'].includes(item.operation_email_role)) throw new Error();
           }
+          if (Object.hasOwn(item, 'final_submission')) item.final_submission = finalSubmission(item.final_submission, id, item.operation_id);
           if (!validMatchingRequest(item, parsed.profile)) clearMatch(item);
           else if (item.match_result && !validMatchingResult(item, parsed.profile)) delete item.match_result;
         }
+        parsed.footprint = validatedFootprint(parsed.footprint);
         state = parsed;
         // A browser closed during a write cannot safely establish its outcome.
         // A read-only preview defers that write until the next normal read.
@@ -353,7 +386,7 @@
           hasCountryPack: Boolean(country && eligible.some(route => !route.countries.includes('*'))),
           independentDeletionVerification: false },
         items, questions: country ? [] : [{ id: 'country', field: 'country', prompt: 'Which country do you live in? This selects the regional privacy routes. Global portals are available meanwhile.' }],
-        activity: clone(state.activity) };
+        activity: clone(state.activity), footprint: (footprintPlanner || root.EraseFootprintPlanner) ? planner().view(state.footprint) : clone(state.footprint) };
     }
     function setEvidence(id, fields, affirmations = {}, review = {}) {
       const route = routeFor(id), item = itemFor(id);
@@ -667,6 +700,96 @@
       }
       return request;
     }
+    function identityAPI() {
+      const api = identityDetails || root.EraseIdentityDetails;
+      if (typeof api?.validate !== 'function' || typeof api.validateRequirements !== 'function' ||
+          typeof api.IdentityDetailError !== 'function' || !api.CONTRACTS?.fastpeoplesearch)
+        throw new WorkspaceError('Refresh the workspace before reviewing additional information.', 409);
+      return api;
+    }
+    function identityContext(id) {
+      const route = routeFor(id), item = itemFor(id, false);
+      requireNotHeld(item); requireCountryRoute(route, item);
+      if (id !== 'fastpeoplesearch' || state.campaign.status !== 'active' || !OPERATION.test(item.operation_id || '') ||
+          item.operation_source === 'imported_user_history' || USER_STATES.has(item.status) || item.status === 'requested' ||
+          item.continuation?.result !== 'prepared' || item.continuation.source === 'imported_user_history' ||
+          item.mail_receipt?.status !== 'held' || item.mail_receipt.authenticated !== true || item.mail_receipt.continuation_available !== true ||
+          item.mail_receipt.source === 'imported_user_history' || !/^[a-f0-9]{64}$/.test(item.mail_receipt.receipt_ref || '') ||
+          item.continuation.receipt_ref !== item.mail_receipt.receipt_ref || !item.mail_contact)
+        throw new WorkspaceError('Choose a current authenticated FastPeopleSearch matching form before providing additional information.', 409);
+      if (Object.hasOwn(item, 'final_submission'))
+        throw new WorkspaceError('This final submission action already started. Check its existing result; no repeat is authorized.', 409);
+      const contact = mailContact(item.mail_contact, id, item.operation_id, Math.floor(Date.parse(clock()) / 1000));
+      const fields = { first_name: brokerField(route, 'first_name', item.fields?.first_name),
+        last_name: brokerField(route, 'last_name', item.fields?.last_name), email: contact.contact_email };
+      if (item.operation_email !== undefined && item.operation_email !== contact.contact_email)
+        throw new WorkspaceError('The original request contact changed. Review the existing broker action.', 409);
+      return { item, contact, fields };
+    }
+    function identityPreview(id) {
+      const { item, contact, fields } = identityContext(id), contract = identityAPI().CONTRACTS.fastpeoplesearch;
+      return clone({ routeId: id, operationId: item.operation_id, profileId: state.profile.id, country: state.profile.country || null,
+        profileContext: { name: state.profile.name, email: state.profile.email, age: state.profile.age,
+          region: state.profile.region || null, city: state.profile.city || null },
+        requestId: contact.request_id, receiptRef: item.mail_receipt.receipt_ref, fields, consentId: contract.id });
+    }
+    function prepareIdentitySubmission(preview, details, approval) {
+      const previewKeys = ['routeId', 'operationId', 'profileId', 'country', 'profileContext', 'requestId', 'receiptRef', 'fields', 'consentId'];
+      if (!exactKeys(preview, previewKeys) || !exactKeys(preview.profileContext, ['name', 'email', 'age', 'region', 'city']) ||
+          !exactKeys(preview.fields, ['first_name', 'last_name', 'email']) || !exactKeys(approval, ['authorized', 'consentId', 'requirements']) ||
+          approval.authorized !== true || approval.consentId !== identityAPI().CONTRACTS.fastpeoplesearch.id)
+        throw new WorkspaceError('Review and authorize the exact final broker fields and agreement first.');
+      const current = identityPreview(preview.routeId);
+      const sameValues = (a, b) => Object.keys(b).every(key => a[key] === b[key]);
+      if (!['routeId', 'operationId', 'profileId', 'country', 'requestId', 'receiptRef', 'consentId'].every(key => preview[key] === current[key]) ||
+          !sameValues(preview.fields, current.fields) || !sameValues(preview.profileContext, current.profileContext))
+        throw new WorkspaceError('The reviewed workspace, request or contact changed. Review these details again before starting.', 409);
+      let canonical, requirements;
+      try {
+        requirements = identityAPI().validateRequirements(approval.requirements);
+        canonical = identityAPI().validate(details, { now: clock(), requirements });
+      }
+      catch (error) { throw new WorkspaceError(error instanceof identityAPI().IdentityDetailError ? error.message : 'Review the selected identity fields.'); }
+      const item = itemFor(current.routeId, false), submissionId = uuid();
+      if (typeof submissionId !== 'string' || !OPERATION.test(submissionId) || submissionId === item.operation_id)
+        throw new WorkspaceError('A new private action reference could not be created. No form action started.', 503);
+      // Save only the uncertain action boundary. Details stay in the returned
+      // one-action payload, outside history, storage and private backups.
+      item.final_submission = { id: submissionId, started_at: clock(), result: 'unknown',
+        attempt_verified: false, acceptance_verified: false, deletion_verified: false };
+      changed(item, 'uncertain', 'The approved final broker action started. Its outcome is not established; no repeat is authorized.');
+      event(routeFor(current.routeId).name + '. You authorized the reviewed final form action. Additional identity values were not saved.'); save();
+      return { routeId: current.routeId, operationId: current.operationId, requestId: current.requestId, receiptRef: current.receiptRef,
+        submissionId, authorized: true, consentId: current.consentId, fields: clone(current.fields), details: canonical, requirements };
+    }
+    function recordIdentitySubmission(id, submissionId, result) {
+      const item = itemFor(id), reference = item.final_submission;
+      if (id !== 'fastpeoplesearch' || !reference || reference.id !== submissionId || reference.source === 'imported_user_history' ||
+          item.operation_source === 'imported_user_history' || !result ||
+          !['unknown', 'blocked', 'submission_attempted'].includes(result.status) ||
+          result.status === 'submission_attempted' && !(result.attempt_verified === true && result.stage === 'final_request_submission'))
+        throw new WorkspaceError('The final form result does not match the reserved action.', 409);
+      if (reference.result !== 'unknown') {
+        if (reference.result === result.status) return dashboard();
+        throw new WorkspaceError('This final form outcome is already recorded. No repeat is authorized.', 409);
+      }
+      reference.result = result.status; reference.attempt_verified = result.status === 'submission_attempted'; reference.observed_at = clock();
+      const status = result.status === 'submission_attempted' ? 'needs_broker_step' : result.status === 'blocked' ? 'blocked' : 'uncertain';
+      if (item.held !== true) changed(item, status, result.status === 'submission_attempted'
+        ? 'The approved final submit control was activated. Delivery, broker acceptance and deletion remain unverified.'
+        : result.status === 'blocked' ? 'The approved final action stopped before a verified submission. Review the existing broker tab; no repeat is authorized.'
+          : 'The final form outcome is unknown. Check the existing broker tab; no repeat is authorized.');
+      event(routeFor(id).name + '. Final action outcome recorded. No additional identity values, acceptance or deletion were saved.'); save(); return dashboard();
+    }
+    function identityResultRequest(id) {
+      const route = routeFor(id), item = itemFor(id, false);
+      requireNotHeld(item); requireCountryRoute(route, item);
+      if (id !== 'fastpeoplesearch' || state.campaign.status !== 'active' || !OPERATION.test(item.operation_id || '') ||
+          item.operation_source === 'imported_user_history' || !item.final_submission || item.final_submission.source === 'imported_user_history')
+        throw new WorkspaceError('Choose an active reserved final action to read its existing result.', 409);
+      const reference = finalSubmission(item.final_submission, id, item.operation_id);
+      return { routeId: id, operationId: item.operation_id, submissionId: reference.id, authorized: true };
+    }
     function recordObservation(id, operationId, result) {
       const item = itemFor(id);
       if (!item.operation_id || item.operation_id !== operationId || !item.observation_authorized_at || !result || !['unknown', 'verification_sent'].includes(result.status))
@@ -750,7 +873,9 @@
       if (!item.operation_id && !USER_STATES.has(item.status)) changed(item, 'opened');
       event('You opened the ' + routeFor(id).name + ' official form. No submission was established.'); save(); return dashboard();
     }
-    function holdRoute(id) {
+    function holdRoute(id, expectedIdentityPreview) {
+      if (expectedIdentityPreview !== undefined && JSON.stringify(expectedIdentityPreview) !== JSON.stringify(identityPreview(id)))
+        throw new WorkspaceError('The request changed. Review its current next step before putting it on hold.', 409);
       const item = itemFor(id);
       item.held = true; item.held_at = clock();
       event('You put ' + routeFor(id).name + ' on hold. No new broker or mailbox action will start.'); save(); return dashboard();
@@ -761,16 +886,39 @@
       item.held = false; item.resumed_at = clock();
       event('You explicitly resumed ' + routeFor(id).name + '. Existing operation references still prevent repeats.'); save(); return dashboard();
     }
-    function exportData() { active(); return JSON.stringify({ version: VERSION, exported_at: clock(), profile: clone(state.profile), items: clone(state.items), activity: clone(state.activity) }, null, 2); }
+    function footprintChange(action, profileId) {
+      active();
+      if (profileId !== undefined && profileId !== state.profile.id) throw new WorkspaceError('The workspace changed. Review this cleanup list again before saving it.', 409);
+      if (state.campaign.status !== 'active') throw new WorkspaceError('Resume your privacy work before changing the cleanup plan.', 409);
+      try { state.footprint = action(planner()); }
+      catch (error) { throw new WorkspaceError(error?.message || 'The cleanup plan could not be changed.'); }
+      event('You updated your local cleanup plan. No account, social content, website or search result was changed.'); save(); return dashboard();
+    }
+    function importFootprint(content, format, approval) {
+      if (!approval || typeof approval !== 'object' || Array.isArray(approval) || Object.keys(approval).some(key => !['authorized', 'profileId'].includes(key)) || approval.authorized !== true)
+        throw new WorkspaceError('Confirm this imported list concerns your own information first.');
+      return footprintChange(library => library.add(state.footprint, library.parse(content, format), { uuid, now: clock() }), approval.profileId);
+    }
+    function chooseFootprintItem(id, choice) {
+      if (!choice || typeof choice !== 'object' || Array.isArray(choice)) throw new WorkspaceError('Review this cleanup choice first.');
+      const { profileId, ...options } = choice;
+      return footprintChange(library => library.choose(state.footprint, id, options, { now: clock() }), profileId);
+    }
+    function recordFootprintProgress(id, report) {
+      if (!report || typeof report !== 'object' || Array.isArray(report)) throw new WorkspaceError('Review this cleanup report first.');
+      const { profileId, ...options } = report;
+      return footprintChange(library => library.progress(state.footprint, id, options, { now: clock() }), profileId);
+    }
+    function exportData() { active(); return JSON.stringify({ version: VERSION, exported_at: clock(), profile: clone(state.profile), items: clone(state.items), activity: clone(state.activity), footprint: clone(state.footprint) }, null, 2); }
     function importData(raw) {
       read();
       if (state.profile) throw new WorkspaceError('Delete this browser workspace before importing another one.', 409);
-      if (typeof raw !== 'string' || raw.length > 500000) throw new WorkspaceError('Choose a valid workspace export smaller than 500 KB.');
+      if (typeof raw !== 'string' || raw.length > 1048576) throw new WorkspaceError('Choose a valid workspace export smaller than 1 MiB.');
       let data;
       try { data = JSON.parse(raw); } catch (_) { throw new WorkspaceError('Invalid workspace export.'); }
       if (!data || data.version !== VERSION || !data.profile || !data.items || typeof data.items !== 'object' || Array.isArray(data.items)) throw new WorkspaceError('Invalid workspace export.');
       const forbidden = new Set(['removed', 'verified_removed', 'not_found']);
-      const restoredFields = {}, restoredContacts = {}, restoredEmails = {};
+      const restoredFields = {}, restoredContacts = {}, restoredEmails = {}, restoredFinals = {};
       for (const [id, item] of Object.entries(data.items)) {
         const route = routeFor(id);
         if (!item || forbidden.has(item.status) || !Object.hasOwn(TEXT, item.status)) throw new WorkspaceError('Imports cannot establish verified removal or listing absence.');
@@ -782,13 +930,16 @@
             throw new WorkspaceError('Invalid imported request email.');
           restoredEmails[id] = { address: item.operation_email, role: item.operation_email_role };
         }
+        if (Object.hasOwn(item, 'final_submission')) restoredFinals[id] = finalSubmission(item.final_submission, id, item.operation_id);
       }
+      const restoredFootprint = validatedFootprint(data.footprint, true);
       const input = data.profile;
       const candidate = { name: text(input.name, 120), email: email(input.email), age: input.age, authorized: true };
       if (!Number.isInteger(candidate.age) || candidate.age < 18 || candidate.age > 120) throw new WorkspaceError('Invalid imported age.');
       const restoredLocation = locationFields({ country: input.country, region: input.region, city: input.city });
       // Imported evidence is a user report, never an authenticated companion result.
       state = empty();
+      state.footprint = restoredFootprint;
       state.profile = { id: uuid(), ...candidate, ...restoredLocation, verification_method: 'self_attested_browser', email_verified: false,
         authorized_at: clock(), authorization_statement: AUTHORIZATION };
       delete state.profile.authorized;
@@ -828,6 +979,13 @@
           }
           item.operation_started_at = typeof imported.operation_started_at === 'string' && imported.operation_started_at.length <= 40 && Number.isFinite(Date.parse(imported.operation_started_at))
             ? new Date(imported.operation_started_at).toISOString() : clock();
+        }
+        if (restoredFinals[id]) {
+          const reference = restoredFinals[id];
+          item.operation_id = imported.operation_id; item.operation_source = 'imported_user_history';
+          item.final_submission = { id: reference.id, started_at: reference.started_at, result: 'unknown', attempt_verified: false,
+            acceptance_verified: false, deletion_verified: false, source: 'imported_user_history' };
+          if (!USER_STATES.has(item.status)) changed(item, 'uncertain', 'Imported final-action history has an unknown outcome. Review the existing broker action; no repeat is authorized.');
         }
       }
       event('Workspace imported as self-reported history. No broker was contacted and no deletion was verified.'); save(); return dashboard();
@@ -877,7 +1035,7 @@
     return Object.freeze({ api, snapshot: () => clone(read()), profile: () => clone(active().profile), routes: () => clone(routes),
       setEvidence, prepare, fillPreview, prepareReviewed, matchRequest, recordMatch, holdRoute, resumeRoute, mailSessionRequest, bindMailContact, clearMailContact, mailCheckRequest, recordMailReceipt,
       mailContinuationRequest, prepareMailContinuation, recordMailContinuation,
-      recordCompanion, observationRequest, focusRequest, recordObservation, searchRequest, privacyDraftRequest, recordUser, opened, exportData, importData, remove, dashboard,
+      recordCompanion, observationRequest, focusRequest, identityPreview, prepareIdentitySubmission, recordIdentitySubmission, identityResultRequest, recordObservation, searchRequest, privacyDraftRequest, recordUser, opened, exportData, importData, importFootprint, chooseFootprintItem, recordFootprintProgress, remove, dashboard,
       updateRoute: setEvidence, applyCompanionResult: recordCompanion });
   }
   let instance;
@@ -889,9 +1047,9 @@
     if (!locks || typeof locks.request !== 'function') throw new WorkspaceError('This browser cannot safely coordinate workspace changes. Use a current browser with Web Locks support.', 503);
     return locks.request(KEY + '-write', { mode: 'exclusive' }, action);
   }
-  const mutators = new Set(['setEvidence', 'prepare', 'prepareReviewed', 'matchRequest', 'recordMatch', 'holdRoute', 'resumeRoute', 'mailSessionRequest', 'bindMailContact', 'clearMailContact', 'mailCheckRequest', 'recordMailReceipt', 'mailContinuationRequest', 'prepareMailContinuation', 'recordMailContinuation', 'recordCompanion', 'observationRequest', 'recordObservation', 'searchRequest', 'privacyDraftRequest', 'recordUser', 'opened', 'importData', 'remove', 'updateRoute', 'applyCompanionResult']);
+  const mutators = new Set(['setEvidence', 'prepare', 'prepareReviewed', 'matchRequest', 'recordMatch', 'holdRoute', 'resumeRoute', 'mailSessionRequest', 'bindMailContact', 'clearMailContact', 'mailCheckRequest', 'recordMailReceipt', 'mailContinuationRequest', 'prepareMailContinuation', 'recordMailContinuation', 'prepareIdentitySubmission', 'recordIdentitySubmission', 'recordCompanion', 'observationRequest', 'recordObservation', 'searchRequest', 'privacyDraftRequest', 'recordUser', 'opened', 'importData', 'importFootprint', 'chooseFootprintItem', 'recordFootprintProgress', 'remove', 'updateRoute', 'applyCompanionResult']);
   const exported = { create, KEY, AUTHORIZATION, WorkspaceError, routes: () => clone(routes), listingURL };
-  for (const name of ['snapshot', 'profile', 'setEvidence', 'prepare', 'fillPreview', 'prepareReviewed', 'matchRequest', 'recordMatch', 'holdRoute', 'resumeRoute', 'mailSessionRequest', 'bindMailContact', 'clearMailContact', 'mailCheckRequest', 'recordMailReceipt', 'mailContinuationRequest', 'prepareMailContinuation', 'recordMailContinuation', 'recordCompanion', 'observationRequest', 'focusRequest', 'recordObservation', 'searchRequest', 'privacyDraftRequest', 'recordUser', 'opened', 'exportData', 'importData', 'remove', 'dashboard', 'updateRoute', 'applyCompanionResult']) {
+  for (const name of ['snapshot', 'profile', 'setEvidence', 'prepare', 'fillPreview', 'prepareReviewed', 'matchRequest', 'recordMatch', 'holdRoute', 'resumeRoute', 'mailSessionRequest', 'bindMailContact', 'clearMailContact', 'mailCheckRequest', 'recordMailReceipt', 'mailContinuationRequest', 'prepareMailContinuation', 'recordMailContinuation', 'recordCompanion', 'observationRequest', 'focusRequest', 'identityPreview', 'prepareIdentitySubmission', 'recordIdentitySubmission', 'identityResultRequest', 'recordObservation', 'searchRequest', 'privacyDraftRequest', 'recordUser', 'opened', 'exportData', 'importData', 'importFootprint', 'chooseFootprintItem', 'recordFootprintProgress', 'remove', 'dashboard', 'updateRoute', 'applyCompanionResult']) {
     exported[name] = (...args) => mutators.has(name) ? exclusive(() => defaults()[name](...args)) : defaults()[name](...args);
   }
   exported.api = async (...args) => {

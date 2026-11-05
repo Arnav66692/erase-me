@@ -126,7 +126,7 @@ approval, optional submission mode and optional mail pass are unchecked; creatin
 address does not authorize its disclosure to a broker. The operator reviews the new
 values and selects the desired actions. The key can remain only in memory for this open
 review so this sequence does not require entering it again. Closing, stopping or completing
-the review disposes that access. The current companion is 0.7.0.
+the review disposes that access. The current companion is 0.8.0.
 
 The optional mail pass runs only after all selected form outcomes have been saved.
 `form-batch.js` supplies `afterForms` with minimal operation references only for verified
@@ -242,9 +242,9 @@ not enter additional personal details, certify accuracy or submit the final requ
 The approved initial names and contact are sufficient for this continuation; it
 does not reuse USPhonebook's city/state/ZIP prefill contract.
 
-The official form requires a full date of birth or street address, plus city, state
-and ZIP. Its labels describe phone as optional despite initial HTML validation
-attributes. Age alone cannot supply the missing date or establish the correct
+The official form says a full date of birth or street address is sufficient, but a
+November 5 metadata check found DOB, street address and phone all marked required,
+with native validation enabled. City, state and ZIP are required too. Age alone cannot supply the missing date or establish the correct
 record. Missing identity details remain a required action. A ready matching form
 is not an accepted erasure request or deletion.
 
@@ -299,3 +299,15 @@ turns each Python file under `api/` into a separate function and requires a hand
 Keeping the helper outside that directory avoids an unintended handlerless endpoint.
 The packaging regression checks that only `api/index.py` remains discoverable and
 that the API loads the helper from the expected project file.
+
+## Approved missing-information submission
+
+Companion 0.8.0 supports a separate in-app review after an authenticated FastPeopleSearch
+matching continuation. This does not add mailbox access or a future check. The proof-bound
+read-only probe returns native required flags only, then the dialog collects and reviews
+the exact chosen fields and certification. It explains the broker's contradictory full-data
+requirements and permits cancel/hold. Submission reserves a single final-action reference
+before disclosure. DOB/address/phone are neither saved in the workspace nor logged in the
+companion. The private destination proof is rechecked; no new confirmation link is followed.
+A checked native submit event establishes an attempt, not acceptance or deletion.
+See [workspace behavior](PUBLIC_WORKSPACE.md) for interruption and result-read boundaries.

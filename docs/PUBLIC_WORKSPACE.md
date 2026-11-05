@@ -20,21 +20,36 @@ The **Next steps** section shows the original email for each started request and
 asks for the broker's specific outstanding step. It distinguishes a separate removal
 contact from a personal or business address. New actions save that recipient when
 they start; older typed-email actions without a saved recipient say it is unknown.
-Prepared, authenticated FastPeopleSearch and USPhonebook matching forms ask for a
-full date of birth **or** current street address, with city, state and ZIP. The person
-enters those values directly on the official form.
+For an authenticated FastPeopleSearch matching continuation, **Enter missing information**
+opens an Erase Me dialog. Companion 0.8.0 checks the same existing tab, document,
+browser session and private destination proof. The read-only probe returns five native
+requirement flags; it reads no DOB, address or phone value. Missing or changed proof
+stops collection without opening a new URL or resending anything.
 
-**Provide missing information** returns to that already-open matching form through
-companion 0.7.0. It checks the original tab, document and browser session before
-activation. It does not open a new URL or resend a request. Closed, changed or older
-unproven tabs need manual review. **Review request steps** opens the existing local
-instructions without contacting a broker. Holds and pause suppress actionable prompts;
-unknown and imported outcomes ask for review instead of claiming a confirmed match.
+The person chooses the supported identity fields, reviews their exact normalized values
+and the broker's accuracy certification, then explicitly approves **Fill and submit once**.
+FastPeopleSearch currently marks DOB, street address and phone required despite wording
+that DOB or address is enough. The app explains this conflict and offers the full set only
+when those controls require it; cancel and hold remain available. Native required flags
+are never changed. Values stay in dialog memory, are cleared before dispatch or on close,
+and are excluded from the ledger, backup, operation journal and result metadata.
 
-Companion 0.7.0 can initiate People Data Labs email verification and prefill the initial
+The core reserves a final-action reference before disclosure. The companion pins the
+original form, identity, consent, requirement flags and document before every write and
+submit. Only a checked native submit event records an attempt. A timed-out action is
+not repeated; **Read final submission result** reads its stored result without filling again.
+This does not establish broker acceptance, matched identity or verified deletion.
+
+USPhonebook retains **Provide missing information**, which focuses its already-proven
+broker form for direct entry. Its held pilot request stays held. **Review request steps**
+opens local instructions. Holds and pause suppress new actionable prompts; unknown
+and imported outcomes ask for review instead of claiming a confirmed match.
+
+Companion 0.8.0 can initiate People Data Labs email verification and prefill the initial
 USPhonebook, SearchPeopleFree, FastPeopleSearch, Apollo, Spokeo, AdvancedBackgroundChecks
-and four reviewed Turkish request forms. Optional guarded submission applies only to
-FastPeopleSearch's initial verification form and NumaraAra's request form. The review
+and four reviewed Turkish request forms. Optional initial guarded submission applies to
+FastPeopleSearch's verification form and NumaraAra's request form; the separate reviewed
+FastPeopleSearch matching continuation above supports a final submission attempt. The review
 displays their exact agreements and fields before the person opts in. An observed safe
 native submit event produces `submission_attempted`, not proof of delivery, acceptance
 or deletion. Other forms retain their existing manual submission steps.
@@ -44,8 +59,8 @@ helper. Managed challenges still require the site's real accepted response. The 
 mail pilot can prepare USPhonebook's reviewed second form after an authorized receipt
 check and field review, or open and check FastPeopleSearch's reviewed matching form.
 FastPeopleSearch uses only the names and contact already approved in its initial form;
-additional identity details remain untouched. Missing identity details, final accuracy
-statements, challenges and final submissions remain user steps. Other destinations remain held.
+additional identity details are collected only by the separate approved dialog above.
+Unresolved challenges and unsupported final steps still need attention. Other destinations remain held.
 ID uploads are excluded, and the held USPhonebook pilot stays held.
 
 Only a correlated companion result with fresh, visible broker acceptance evidence may
@@ -405,3 +420,16 @@ node --test tests/*.cjs
 
 These are synthetic and local checks. Passing them does not demonstrate that a real broker
 accepted a request or completed a removal.
+
+## Other footprint cleanup
+
+**Plan other cleanup** supports local JSON/CSV account-list imports, keep/export/remove
+choices, account-closure warnings and an export-first gate. It does not scan an inbox,
+close accounts, delete content or send company requests. Progress reports are explicitly
+self-reported; Google search-result and source-page outcomes stay separate. Public HTTPS
+links are opened only by the person. No credentials or private verification links belong
+in imported lists. Drafts are isolated by profile. The full plan is included in private backups
+and removed with the workspace. Rechecks are explicit reports, never scheduled work.
+
+See [the staged cleanup roadmap](CLEANUP_ROADMAP.md) for the six product areas and
+the discover → choose → export → submit → verify → manually recheck workflow.
