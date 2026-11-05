@@ -22,6 +22,12 @@ Form preparation, verification initiation, user-reported submission and verified
 
 Managed CAPTCHA challenges, broker email links and identity checks remain user steps. The companion has no inbox or alarm permission. It holds interrupted operations rather than repeating them. The workspace has no background polling, automatic re-checks or resubmission.
 
+## Optional removal-only mailbox
+
+A separate, removal-only mailbox is now an authorized optional connection. Personal inboxes remain excluded. [Private setup](docs/REMOVAL_MAILBOX_SETUP.md) prepares an IMAP-only configuration and an explicitly requested read-only connection test. It does not enable a hosted email service, submit requests, start polling or process confirmation links automatically.
+
+The mailbox must be provisioned and connected before live email processing can be validated. Broker-specific sender and confirmation-purpose contracts must also be established. Record-associated addresses, including People Data Labs and Apollo lookup emails, must not be silently replaced by an unrelated contact mailbox.
+
 ## Local Python app
 
 The separate local app remains available with its existing data and permissions.
