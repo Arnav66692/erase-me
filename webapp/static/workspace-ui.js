@@ -124,7 +124,7 @@
     }
     if(skippedCount){summary.textContent=skippedCount+' forms needing attention or guided routes';view.list.append(skipped);}
     view.start.disabled=view.pending.length===0;
-    view.results.textContent=view.pending.length?view.pending.length+' forms are ready for your review. No broker has been contacted.':'No eligible forms are ready. Complete the required details and route confirmations, then review again.';
+    view.results.textContent=view.pending.length?view.pending.length+(view.pending.length===1?' form is':' forms are')+' ready for your review. No broker has been contacted.':'No eligible forms are ready. Complete the required details and route confirmations, then review again.';
     if(!view.dialog.open)view.dialog.showModal();
     }finally{view.reviewing=false;}
   }
