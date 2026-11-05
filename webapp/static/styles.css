@@ -786,6 +786,33 @@ dialog::backdrop {
   font-size:15px;
   overflow-wrap:anywhere;
 }
+.form-batch-options {
+  padding:20px 0;
+  border-top:1px solid var(--ink);
+}
+.form-batch-options>.checkbox-label {
+  margin:16px 0 8px;
+}
+.form-batch-options>label:not(.checkbox-label) {
+  display:block;
+  margin:16px 0;
+  font:14px/1.5 var(--mono);
+}
+.form-batch-options input[type=password] {
+  display:block;
+  width:100%;
+  min-height:46px;
+  margin-top:6px;
+  padding:10px;
+  border:1px solid var(--ink);
+  background:var(--paper);
+  font:16px/1.4 var(--mono);
+}
+.form-batch-agreements p {
+  font-size:16px;
+  line-height:1.5;
+  overflow-wrap:anywhere;
+}
 .broker-confirmation {
   font-size:21px;
   white-space:normal;

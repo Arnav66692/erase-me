@@ -16,24 +16,33 @@ submit forms. The person starts an individual broker action or authorizes a revi
 batch with its displayed fields.
 There are no recurring checks, background alarms, inbox polls or automatic resubmissions.
 
-The companion can initiate People Data Labs email verification and prefill the initial
+Companion 0.5.0 can initiate People Data Labs email verification and prefill the initial
 USPhonebook, SearchPeopleFree, FastPeopleSearch, Apollo, Spokeo, AdvancedBackgroundChecks
-and four reviewed Turkish request forms. Fields prepared is not sent;
-opening a portal is not sent. Verification initiation is not a deletion request. The
-private mail pilot can also prepare USPhonebook's reviewed second form after separate
-authorization. Record matching, its final accuracy statement, CAPTCHA and submission
-remain user steps. Other confirmation routes remain held. ID uploads are excluded.
+and four reviewed Turkish request forms. Optional guarded submission applies only to
+FastPeopleSearch's initial verification form and NumaraAra's request form. The review
+displays their exact agreements and fields before the person opts in. An observed safe
+native submit event produces `submission_attempted`, not proof of delivery, acceptance
+or deletion. Other forms retain their existing manual submission steps.
+
+NumaraAra's one reviewed image challenge can use a separately installed free local
+helper. Managed challenges still require the site's real accepted response. The private
+mail pilot can prepare USPhonebook's reviewed second form after an authorized receipt
+check and field review; missing identity details, its final accuracy statement, CAPTCHA
+and final submission remain user steps. Other confirmation destinations remain held.
+ID uploads are excluded, and the held USPhonebook pilot stays held.
 
 Only a correlated companion result with fresh, visible broker acceptance evidence may
 establish request acceptance. User reports remain self-reported. Imports downgrade
 accepted history and receipt evidence to unverified history. Neither a receipt nor an
-HTTP 404 establishes removal. The current public workspace has no independent listing
-scanner or verified deletion state: found and removed counts remain zero.
+HTTP 404 establishes removal. The current public workspace has no general listing scanner
+or verified deletion state: found and removed counts remain zero. The narrow structured-
+record check below can establish only a candidate match for the approved form.
 
 Apollo requires an explicitly entered business email and a separate authorization for
 that route; neither a profile email nor a service alias is substituted. Spokeo requires a
-direct person-record URL and explicit confirmation that the listing belongs to the person.
-Changing either editable field clears its prior affirmation until it is confirmed again.
+direct person-record URL and an own-listing confirmation, supplied manually or through
+the supported exact structured-record check. Changing the URL or relevant identity
+fields invalidates the derived approval; backup imports cannot restore trusted match proof.
 
 The operation ID is saved before companion dispatch. Interrupted operations are held,
 not repeated. An explicit result read can reconcile the same operation later. Browser
@@ -53,10 +62,19 @@ infer a record match, split a full name or substitute a contact address.
 The person can deselect forms, then check the initially unchecked batch authorization and
 choose **Fill selected forms**. Changing the selection clears that authorization. The
 companion checks access to every selected broker before starting and fills one form at a
-time while the workspace page remains open. Each form keeps its existing contract:
-People Data Labs can initiate its verification email; other initial forms are prepared
-for the person's remaining consent, submission, challenge and verification steps. This
-does not add automatic final submission or establish deletion.
+time while the workspace page remains open. Optional submission automation adds only
+two contracts: FastPeopleSearch verification initiation and NumaraAra request submission.
+Their agreements are shown in the review and checked again against the broker's actual
+form. Turning automation off retains prefill behavior. People Data Labs retains its
+existing verification-email initiation; other routes remain prefill-only.
+
+For an automated route, the companion pins the owned document and checks its exact
+destination, purpose, fields, agreement, expected controls and challenge before using
+the native submit control. A changed form, additional unexpected field or earlier alert
+stops it. NumaraAra can use one local OCR attempt on the reviewed five-character image;
+FastPeopleSearch needs its real Turnstile response. No token is fabricated. A checked
+native form event records `submission_attempted`. Broker acceptance needs separate
+fresh evidence; this release has no new accepted-request or deletion contract.
 
 The review binds each selected route to its current workspace identity, country, stable
 operation reference, exact effective email, other approved fields and route affirmations.
@@ -75,6 +93,19 @@ Batch selections, approved snapshots and queue progress live only in page memory
 are not saved in local storage or private backups, and refreshing or reopening the page
 never resumes an unfinished batch. Recorded per-route outcomes and operation references
 remain in the normal ledger. No mailbox poll, scheduled retry or ID upload is introduced.
+
+## Local text-challenge helper
+
+The optional [local helper](LOCAL_CHALLENGE_HELPER.md) uses native host
+`org.eraseme.challenge` and separately installed Tesseract for NumaraAra's reviewed
+five-character image. The extension requests `nativeMessaging` only when the person
+enables that helper. The host handles bounded image/audio recognition messages, not
+URLs, arbitrary commands or profile fields. No model is downloaded and no daemon runs.
+
+This release has no reviewed Chrome reCAPTCHA audio contract. Audio capability in the
+underlying local provider does not enable arbitrary challenge solving. Managed
+Turnstile responses must come from the normal site widget; failed or changed challenges
+remain blocked. A recognized answer is not evidence of broker acceptance.
 
 ## Country coverage
 
@@ -100,8 +131,10 @@ or an identity-document upload.
 AdvancedBackgroundChecks requires an own-request affirmation before filling the reviewed
 name/email form. No Sorgulama, NumaraAra and TelefonSorgulama accept an explicitly reviewed
 name, contact email and plain request text. NumaraSor also needs the person’s own target
-phone number. The companion selects only the reviewed self-request/removal option; final
-submission, security codes, consent, CAPTCHA and any later verification remain user steps.
+phone number. The companion selects only the reviewed self-request/removal option.
+NumaraAra alone has the optional guarded request-form submission and image-code helper;
+the other Turkish forms leave submission, consent, challenges and later verification to
+the person.
 Request text retains Unicode and line breaks and is set as a field value, never executed.
 Only NumaraSor receives the separately approved phone field; no call or SMS is sent.
 
@@ -133,6 +166,21 @@ optional quoted city. Google receives those terms when the person chooses the ac
 Erase Me does not fetch the results or infer a match. The action records a search-open
 event without changing discovery, request or removal counts. Country, active-campaign,
 route-hold and storage checks run before a URL is returned.
+
+Spokeo's optional structured-record check opens only the approved direct listing URL.
+It reads bounded JSON-LD `Person` data whose `url` or `@id` identifies that exact page.
+Automatic own-listing approval requires one unique compatible record with the exact
+normalized profile name and the person's typed identity email. The removal-only contact
+alias is not substituted for that email. Age and city can reject conflicting evidence;
+they cannot establish a match by themselves.
+
+Missing data, masked identifiers, malformed structured data, conflicting candidates,
+redirected pages and blocked access require attention. The check does not search for an
+unprovided listing or treat a URL's name slug as proof. The latest live Spokeo research
+returned HTTP 403; no current matched record or deletion has been verified. Match
+outcomes remain separate from submission and removal counts. The extension journal
+keeps only operation references and outcome/evidence tags, while the private workspace
+binds the approved identity and candidate. Imports do not restore trusted match approval.
 
 **Hold this route** saves a hold independently of its last outcome. A held route is displayed
 as “On hold” and included in “Needs you.” New form, search, mailbox and continuation
@@ -197,17 +245,27 @@ email; new shared contacts are disabled. Existing signed SearchPeopleFree capabi
 remain valid for held-only receipt checks. An unstarted old shared contact must be
 explicitly removed before choosing the typed email; no silent fallback occurs.
 
-The private pilot key is entered in a password field and cleared on each click. It is never
-stored in the workspace, backup or URL. OAuth credentials never enter the browser. The
+Per-route controls clear the private pilot key after each click. The optional batch or
+mail-only pass takes the key from its password field, holds it only in session memory,
+and clears it when the session is disposed. It is never stored in the workspace, backup
+or URL. OAuth credentials never enter the browser. The
 browser sends only route and operation references to obtain an alias, and a scoped bearer
 capability to check it. The capability stays in private local storage and backups; it does
 not grant relay access without the operator key.
 
 An explicit `/check` returns pending or authenticated held metadata without a message body
 or confirmation URL. USPhonebook's exact official `/removal/validate-record-info` route is
-the sole reviewed continuation. A separate explicit `/continue` re-reads and authenticates
+the sole reviewed continuation. An authorized `/continue` re-reads and authenticates
 the same correlated receipt, then returns that form URL transiently to the browser. Other
 links remain held. The URL never enters workspace history or private backups.
+
+The batch can opt into one removal-mail pass after a supported verification initiation
+or guarded submission attempt. A mail-only pass checks already-bound started operations
+without opening or resending their initial forms. Each operation is checked once per
+session. Aliases remain separately authorized per route; a session never creates one
+silently. Pending mail produces `awaiting_mail` and starts no polling or later check.
+Unknown results, stop, campaign pause and route holds prevent further work. The held
+USPhonebook pilot is excluded.
 
 Before continuing, the person reviews and authorizes first name, last name, city, state,
 five-digit ZIP and the bound removal contact. These fields go directly through the
@@ -226,9 +284,10 @@ unlimited public mail service. Free hosting, provider quotas and OAuth restricti
 
 ## Core interface and checks
 
-The public script order is `broker-audit.js`, `broker-routes.js`, `workspace-core.js`,
-`removal-mail-client.js`, `form-batch.js`, `workspace-ui.js`, then `app.js`. The recursively frozen audit
-is static official-channel metadata only; it contains no person or request data.
+The public build loads the broker catalog before the workspace core, automatic-contract
+metadata before the form-batch runner, and removal-mail/session modules before the
+workspace UI. The shared `app.js` controller runs last. The recursively frozen audit is
+static official-channel metadata only; it contains no person or request data.
 
 `workspace-core.js` exposes `EraseWorkspace` in a browser and CommonJS for tests. Its
 `api(path, options)` handles local config, signup, dashboard, location, plan controls,
@@ -237,16 +296,26 @@ asynchronous because they acquire Web Locks; callers must await them. The `creat
 test helper retains synchronous local mutations.
 
 `prepare(routeId)` persists the operation boundary before returning approved companion
-fields and required route-specific affirmations. `recordCompanion()` requires matching operation correlation; acceptance also
-requires `route_verified: true` and `evidence: "fresh_visible_success"`. The companion
-transport validates its own origin and correlation before calling it.
+fields and required route-specific affirmations. `recordCompanion()` requires matching
+operation correlation. An automatic attempt also needs `attempt_verified: true` and the
+fixed route stage. It remains a needs-broker-step outcome, outside accepted-request and
+deleted-record counts. Acceptance requires separate `route_verified: true` and
+`evidence: "fresh_visible_success"` evidence. The companion transport validates its own
+origin and correlation before calling it.
 
 `fillPreview(routeId)` performs the same field and eligibility validation without
 reserving or saving an operation. `prepareReviewed(snapshot)` rereads and compares the
 complete approved preview under the mutation Web Lock, then persists the operation before
 returning its companion payload. `form-batch.js` supplies the memory-only sequential
-queue; it uses those helpers and `recordCompanion()` rather than adding a broker endpoint
-or changing the companion executor's permissions.
+queue; it uses those helpers and `recordCompanion()` rather than adding a public broker
+submission endpoint. The optional local helper adds a separate `nativeMessaging` grant;
+the eleven approved broker origins are unchanged.
+
+`matchRequest()` records the approved Spokeo candidate and identity before the companion
+opens it. `recordMatch()` accepts only the correlated result for that current context.
+Only the supported structured name/email proof can supply a derived own-listing
+affirmation; manual approval remains a separate user statement. A record match does not
+start a removal action.
 
 `holdRoute()` and `resumeRoute()` preserve the last outcome and the no-replay guard.
 `searchRequest()` persists the explicit search event before returning its fixed Google URL.

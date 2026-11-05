@@ -10,7 +10,11 @@
   const VERSION = 1;
   const AUTHORIZATION = 'I request removal of my own information. I authorize only the broker actions I explicitly start using the fields shown. My email is self-reported. I will complete broker verification myself. Dedicated removal-mail receipt checks require separate explicit authorization. No personal inbox access, ID uploads, account deletions or recurring checks are authorized.';
   const USER_STATES = new Set(['user_reported_requested', 'user_reported_completed']);
-  const RESULT_STATES = new Set(['prepared', 'verification_sent', 'submitted', 'captcha', 'id_required', 'unsupported', 'pending', 'unknown', 'error', 'blocked']);
+  const RESULT_STATES = new Set(['prepared', 'verification_sent', 'submission_attempted', 'submitted', 'captcha', 'id_required', 'unsupported', 'pending', 'unknown', 'error', 'blocked']);
+  const MATCH_STATES = new Set(['matched', 'not_matched', 'ambiguous', 'needs_identity', 'unsupported']);
+  const MATCH_EVIDENCE = new Set(['structured_person', 'exact_candidate_url', 'name', 'email', 'phone', 'age', 'city', 'identity']);
+  const MATCH_LIFETIME = 30 * 60 * 1000;
+  const SUBMIT_STAGES = Object.freeze({ fastpeoplesearch: 'verification_initiation', 'tr-numaraara': 'request_submission' });
   const MAIL_ROUTES = new Set(['usphonebook', 'searchpeoplefree', 'fastpeoplesearch']);
   const NEW_MAIL_ROUTES = new Set(['usphonebook', 'fastpeoplesearch']);
   const OPERATION = /^[a-f0-9-]{32,40}$/;
@@ -179,6 +183,44 @@
     let cachedRaw;
     let deferredRecovery = false;
     function empty() { return { version: VERSION, profile: null, campaign: { status: 'active' }, items: {}, activity: [] }; }
+    const exactKeys = (value, keys) => value !== null && typeof value === 'object' && !Array.isArray(value) &&
+      Object.keys(value).length === keys.length && keys.every(key => Object.hasOwn(value, key));
+    const identity = profile => ({ name: profile.name, email: profile.email, age: profile.age, city: profile.city || null });
+    function matchingTime(value) {
+      if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/.test(value)) return NaN;
+      const stamp = Date.parse(value);
+      return Number.isFinite(stamp) && new Date(stamp).toISOString().slice(0, 19) === value.slice(0, 19) ? stamp : NaN;
+    }
+    function validMatchingRequest(item, profile) {
+      const request = item?.matching_request;
+      if (item?.site_id !== 'spokeo' || !profile || !exactKeys(request, ['id', 'profile_id', 'country', 'listing_url', 'identity', 'created_at']) ||
+          typeof request.id !== 'string' || !OPERATION.test(request.id) || typeof request.profile_id !== 'string' || request.profile_id !== profile.id || request.country !== (profile.country || null) ||
+          !exactKeys(request.identity, ['name', 'email', 'age', 'city']) ||
+          Object.entries(identity(profile)).some(([key, value]) => request.identity[key] !== value)) return false;
+      const started = matchingTime(request.created_at), stamp = Date.parse(clock());
+      if (!Number.isFinite(started) || !Number.isFinite(stamp) ||
+          started > stamp || stamp - started > MATCH_LIFETIME || item.fields?.listing_url !== request.listing_url ||
+          !appliesToCountry(routeFor('spokeo'), profile.country)) return false;
+      try { return listingURL(request.listing_url, routeFor('spokeo')) === request.listing_url; } catch (_) { return false; }
+    }
+    function validMatchingResult(item, profile) {
+      if (!validMatchingRequest(item, profile)) return false;
+      const result = item.match_result, request = item.matching_request;
+      if (!exactKeys(result, ['request_id', 'status', 'candidate_url', 'evidence', 'source', 'verified', 'observed_at']) ||
+          result.request_id !== request.id || !MATCH_STATES.has(result.status) || result.candidate_url !== request.listing_url ||
+          !Array.isArray(result.evidence) || result.evidence.length > MATCH_EVIDENCE.size || new Set(result.evidence).size !== result.evidence.length ||
+          result.evidence.some(key => !MATCH_EVIDENCE.has(key)) || ![null, 'structured_person_v1'].includes(result.source) || typeof result.verified !== 'boolean') return false;
+      const observed = matchingTime(result.observed_at), stamp = Date.parse(clock());
+      if (!Number.isFinite(observed) ||
+          observed < Date.parse(request.created_at) || observed > stamp) return false;
+      const strong = result.status === 'matched' && result.source === 'structured_person_v1' &&
+        ['structured_person', 'exact_candidate_url', 'name', 'email'].every(key => result.evidence.includes(key));
+      return result.verified === strong;
+    }
+    const automaticMatch = (item, profile = state.profile) => validMatchingResult(item, profile) && item.match_result.status === 'matched' && item.match_result.verified;
+    const effectiveAffirmations = (route, item) => ({ ...(item.affirmations || {}),
+      ...(route.id === 'spokeo' && automaticMatch(item) ? { own_listing: true } : {}) });
+    function clearMatch(item, forgetSource = false) { delete item.matching_request; delete item.match_result; if (forgetSource) delete item.automatic_match_seen; }
     function recoverRunning() {
       deferredRecovery = false;
       let changed = false;
@@ -213,6 +255,8 @@
           if (item.affirmations) item.affirmations = approvedAffirmations(knownRoute, item.affirmations);
           item.url = knownRoute.url; item.name = knownRoute.name; item.domain = knownRoute.domain;
           if (item.mail_contact) item.mail_contact = mailContact(item.mail_contact, id, item.operation_id || item.id, Math.floor(Date.parse(clock()) / 1000), true);
+          if (!validMatchingRequest(item, parsed.profile)) clearMatch(item);
+          else if (item.match_result && !validMatchingResult(item, parsed.profile)) delete item.match_result;
         }
         state = parsed;
         // A browser closed during a write cannot safely establish its outcome.
@@ -271,8 +315,13 @@
       const country = state.profile.country;
       const eligible = routes.filter(route => appliesToCountry(route, country));
       const historical = Object.values(state.items).filter(item => !appliesToCountry(routeFor(item.site_id), country) && operationStarted(item));
-      const items = Object.values(state.items).filter(item => appliesToCountry(routeFor(item.site_id), country) || operationStarted(item)).map(({ fields, operation_id, operation_started_at, evidence, mail_contact, ...item }) => ({
+      const items = Object.values(state.items).filter(item => appliesToCountry(routeFor(item.site_id), country) || operationStarted(item)).map(({ fields, operation_id, operation_started_at, evidence, mail_contact, matching_request, match_result, ...item }) => ({
         ...item, status: item.held ? 'held' : item.status, detail: item.held ? TEXT.held : item.detail,
+        affirmations: clone(effectiveAffirmations(routeFor(item.site_id), { ...item, fields, matching_request, match_result })),
+        automatic_match: automaticMatch({ ...item, fields, matching_request, match_result }),
+        match_reference: automaticMatch({ ...item, fields, matching_request, match_result }) ? matching_request.id : null,
+        match_status: validMatchingRequest({ ...item, fields, matching_request, match_result }, state.profile)
+          ? validMatchingResult({ ...item, fields, matching_request, match_result }, state.profile) ? match_result.status : 'pending' : null,
         input_fields: clone(fields || {}), automationLevel: routeFor(item.site_id).automationLevel, fields_needed: routeFor(item.site_id).fields,
         operation_id, evidence: evidence ? clone(evidence) : null,
         mail_contact: mail_contact ? { ...mail_contact, capability: undefined } : null
@@ -293,14 +342,77 @@
         items, questions: country ? [] : [{ id: 'country', field: 'country', prompt: 'Which country do you live in? This selects the regional privacy routes. Global portals are available meanwhile.' }],
         activity: clone(state.activity) };
     }
-    function setEvidence(id, fields, affirmations = {}) {
+    function setEvidence(id, fields, affirmations = {}, review = {}) {
       const route = routeFor(id), item = itemFor(id);
       requireNotHeld(item);
       if (item.operation_id) throw new WorkspaceError('This action has already started. Check its result before changing submitted fields.', 409);
       const approved = approvedFields(route, fields);
       const confirmations = approvedAffirmations(route, affirmations);
+      const derived = id === 'spokeo' && automaticMatch(item);
+      const reviewKeys=Object.keys(review || {});
+      if (!exactKeys(review, reviewKeys) || reviewKeys.length > 1 || reviewKeys.some(key=>!['automaticReference','manualListingReview'].includes(key)) ||
+          reviewKeys.length && id !== 'spokeo' || review.manualListingReview !== undefined && review.manualListingReview !== true ||
+          review.automaticReference !== undefined && (typeof review.automaticReference !== 'string' || !OPERATION.test(review.automaticReference)))
+        throw new WorkspaceError('Review the source of this listing confirmation again.');
+      const manualReview=Object.hasOwn(review,'manualListingReview')&&review.manualListingReview===true;
+      if (id === 'spokeo' && confirmations.own_listing === true &&
+          (review.automaticReference !== undefined && (!derived || item.matching_request.id !== review.automaticReference ||
+            approved.listing_url !== undefined && approved.listing_url !== item.fields?.listing_url) ||
+           item.automatic_match_seen === true && !derived && !manualReview))
+        throw new WorkspaceError('The automatic match expired or changed. Match it again, or explicitly review and confirm the listing yourself.', 409);
+      if (id === 'spokeo' && (Object.hasOwn(approved, 'listing_url') && approved.listing_url !== item.fields?.listing_url || confirmations.own_listing === false)) clearMatch(item, confirmations.own_listing === false);
+      // A displayed derived approval is not a new manual claim by the person.
+      if (derived && automaticMatch(item) && confirmations.own_listing === true && !manualReview) delete confirmations.own_listing;
       item.fields = { ...item.fields, ...approved }; item.affirmations = confirmations;
       item.updated_at = clock(); save(); return clone(item.fields);
+    }
+    function matchRequest(id, listingUrl) {
+      const route = routeFor(id), item = itemFor(id);
+      if (id !== 'spokeo') throw new WorkspaceError('This route has no reviewed structured-record matching contract.');
+      requireNotHeld(item); requireCountryRoute(route, item);
+      if (state.campaign.status !== 'active') throw new WorkspaceError('Allow checks before matching a broker record.', 409);
+      if (operationStarted(item)) throw new WorkspaceError('This removal action already started. Check its existing result instead of matching another record.', 409);
+      const url = listingURL(listingUrl, route);
+      if (validMatchingRequest(item, state.profile) && !item.match_result && item.matching_request.listing_url === url)
+        throw new WorkspaceError('This matching check already started. Check its existing result before starting another.', 409);
+      const requestId = uuid();
+      if (!OPERATION.test(requestId)) throw new WorkspaceError('A private matching reference could not be created.', 503);
+      item.fields = { ...(item.fields || {}), listing_url: url };
+      item.affirmations = { ...(item.affirmations || {}), own_listing: false };
+      item.matching_request = { id: requestId, profile_id: state.profile.id, country: state.profile.country || null,
+        listing_url: url, identity: identity(state.profile), created_at: clock() };
+      delete item.match_result; item.updated_at = clock();
+      event('You started a structured-record identity check for ' + route.name + '. No removal form was started.'); save();
+      return { routeId: id, operationId: requestId, listingUrl: url, identity: clone(item.matching_request.identity), authorized: true };
+    }
+    function recordMatch(id, matchOperationId, result) {
+      const route = routeFor(id), item = itemFor(id);
+      requireNotHeld(item); requireCountryRoute(route, item);
+      if (id !== 'spokeo' || state.campaign.status !== 'active' || operationStarted(item) ||
+          !validMatchingRequest(item, state.profile) || item.matching_request.id !== matchOperationId)
+        throw new WorkspaceError('The matching result does not match a current authorized identity check.', 409);
+      if (!result || typeof result !== 'object' || Array.isArray(result) ||
+          Object.keys(result).some(key => !['status', 'candidateUrl', 'evidence', 'source', 'match_verified', 'detail'].includes(key)) ||
+          ![...MATCH_STATES, 'unknown'].includes(result.status) ||
+          result.candidateUrl !== undefined && result.candidateUrl !== item.matching_request.listing_url ||
+          result.evidence !== undefined && (!Array.isArray(result.evidence) || result.evidence.length > MATCH_EVIDENCE.size ||
+            new Set(result.evidence).size !== result.evidence.length || result.evidence.some(key => !MATCH_EVIDENCE.has(key))) ||
+          result.match_verified !== undefined && typeof result.match_verified !== 'boolean')
+        throw new WorkspaceError('The matching result is invalid. No identity approval was recorded.');
+      const evidence = result.evidence || [];
+      const verified = result.status === 'matched' && result.match_verified === true && result.source === 'structured_person_v1' &&
+        result.candidateUrl === item.matching_request.listing_url && ['structured_person', 'exact_candidate_url', 'name', 'email'].every(key => evidence.includes(key));
+      const status = result.status === 'unknown' ? 'unsupported' : result.status === 'matched' && !verified ? 'needs_identity' : result.status;
+      const stored = { request_id: matchOperationId, status, candidate_url: item.matching_request.listing_url,
+        evidence: [...evidence], source: result.source === 'structured_person_v1' ? result.source : null, verified, observed_at: clock() };
+      if (item.match_result) {
+        if (Object.keys(stored).filter(key => key !== 'observed_at').every(key => JSON.stringify(stored[key]) === JSON.stringify(item.match_result[key]))) return dashboard();
+        throw new WorkspaceError('This matching outcome is already recorded. Start a new explicit check for another outcome.', 409);
+      }
+      item.match_result = stored; item.updated_at = clock();
+      if (verified) item.automatic_match_seen = true;
+      event(route.name + (verified ? '. A structured record matched the approved name and identity email. This is not a removal request or deletion.' : '. The identity check did not establish an automatic listing approval. No removal request was started.'));
+      save(); return dashboard();
     }
     function preparation(id, reviewed, recover = true) {
       const route = routeFor(id), item = itemFor(id, recover);
@@ -308,18 +420,19 @@
       requireCountryRoute(route, item);
       if (state.campaign.status !== 'active') throw new WorkspaceError('Allow checks before starting a broker action.', 409);
       if (item.operation_id || USER_STATES.has(item.status)) throw new WorkspaceError('This broker action has already started. Refresh its result or finish its broker steps instead of resending.', 409);
+      const confirmations = effectiveAffirmations(route, item);
       if (reviewed !== undefined) {
         if (!reviewed || typeof reviewed !== 'object' || Array.isArray(reviewed) || Object.keys(reviewed).length !== 2 || !Object.hasOwn(reviewed, 'fields') || !Object.hasOwn(reviewed, 'affirmations'))
           throw new WorkspaceError('Review the broker fields again before starting.');
         const reviewedFields = approvedFields(route, reviewed.fields), reviewedAffirmations = approvedAffirmations(route, reviewed.affirmations);
         if (Object.keys(reviewedFields).length !== Object.keys(item.fields).length || Object.entries(reviewedFields).some(([key, value]) => item.fields[key] !== value) ||
-            route.requiredAffirmations.some(key => reviewedAffirmations[key] !== true || item.affirmations?.[key] !== true))
+            route.requiredAffirmations.some(key => reviewedAffirmations[key] !== true || confirmations[key] !== true))
           throw new WorkspaceError('The broker fields changed in another tab. Review them again before starting.', 409);
       }
       const contact = item.mail_contact ? mailContact(item.mail_contact, id, item.id, Math.floor(Date.parse(clock()) / 1000)) : null;
       if (id === 'searchpeoplefree' && contact)
         throw new WorkspaceError('SearchPeopleFree requires an email you own. Explicitly remove this old shared contact before choosing your typed email. No fallback was sent.', 409);
-      if (route.requiredAffirmations.some(key => item.affirmations?.[key] !== true))
+      if (route.requiredAffirmations.some(key => confirmations[key] !== true))
         throw new WorkspaceError(route.requiredAffirmations.includes('own_request') ? 'Confirm this is your own request and review the fields before continuing.' : id === 'apollo' ? 'Confirm this is the business email associated with your own Apollo record.' : 'Confirm that this exact listing belongs to you.');
       const fields = {};
       for (const key of route.fields) {
@@ -345,7 +458,7 @@
       const { route, item, fields } = preparation(id, undefined, false);
       return clone({ routeId: id, operationId: item.id, profileId: state.profile.id, country: state.profile.country || null,
         fields, reviewed: { fields: approvedFields(route, item.fields || {}),
-          affirmations: Object.fromEntries(route.requiredAffirmations.map(key => [key, item.affirmations[key]])) } });
+          affirmations: Object.fromEntries(route.requiredAffirmations.map(key => [key, effectiveAffirmations(route, item)[key]])) } });
     }
     function prepareReviewed(snapshot) {
       const exactKeys = (value, keys) => value !== null && typeof value === 'object' && !Array.isArray(value) &&
@@ -491,12 +604,16 @@
         throw new WorkspaceError('A result is already recorded for this operation. No repeat was sent.', 409);
       }
       let status = 'uncertain';
+      const attempted = result.status === 'submission_attempted' && result.attempt_verified === true && Object.hasOwn(SUBMIT_STAGES, id) && SUBMIT_STAGES[id] === result.stage;
       if (result.status === 'prepared') status = 'needs_broker_step';
+      else if (attempted) status = 'needs_broker_step';
       else if (['captcha', 'id_required', 'unsupported', 'blocked'].includes(result.status)) status = 'blocked';
       else if (result.status === 'verification_sent' && result.route_verified === true && result.evidence === 'fresh_visible_success') status = 'verification_sent';
       else if (result.status === 'submitted' && result.route_verified === true && result.evidence === 'fresh_visible_success') status = 'requested';
-      item.evidence = { source: 'browser_companion', result: result.status, observed_at: clock(), acceptance_verified: status === 'requested' };
-      changed(item, status); event(routeFor(id).name + '. ' + TEXT[status]); save(); return dashboard();
+      item.evidence = { source: 'browser_companion', result: result.status, observed_at: clock(), acceptance_verified: status === 'requested',
+        ...(result.status === 'submission_attempted' ? { attempt_verified: attempted, ...(attempted ? { stage: result.stage } : {}) } : {}) };
+      changed(item, status, attempted ? 'The approved submit control was activated. Broker acceptance and deletion remain unverified.' : undefined);
+      event(routeFor(id).name + '. ' + item.detail); save(); return dashboard();
     }
     function observationRequest(id) {
       const item = itemFor(id);
@@ -704,7 +821,7 @@
       }
     }
     return Object.freeze({ api, snapshot: () => clone(read()), profile: () => clone(active().profile), routes: () => clone(routes),
-      setEvidence, prepare, fillPreview, prepareReviewed, holdRoute, resumeRoute, mailSessionRequest, bindMailContact, clearMailContact, mailCheckRequest, recordMailReceipt,
+      setEvidence, prepare, fillPreview, prepareReviewed, matchRequest, recordMatch, holdRoute, resumeRoute, mailSessionRequest, bindMailContact, clearMailContact, mailCheckRequest, recordMailReceipt,
       mailContinuationRequest, prepareMailContinuation, recordMailContinuation,
       recordCompanion, observationRequest, recordObservation, searchRequest, privacyDraftRequest, recordUser, opened, exportData, importData, remove, dashboard,
       updateRoute: setEvidence, applyCompanionResult: recordCompanion });
@@ -718,9 +835,9 @@
     if (!locks || typeof locks.request !== 'function') throw new WorkspaceError('This browser cannot safely coordinate workspace changes. Use a current browser with Web Locks support.', 503);
     return locks.request(KEY + '-write', { mode: 'exclusive' }, action);
   }
-  const mutators = new Set(['setEvidence', 'prepare', 'prepareReviewed', 'holdRoute', 'resumeRoute', 'mailSessionRequest', 'bindMailContact', 'clearMailContact', 'mailCheckRequest', 'recordMailReceipt', 'mailContinuationRequest', 'prepareMailContinuation', 'recordMailContinuation', 'recordCompanion', 'observationRequest', 'recordObservation', 'searchRequest', 'privacyDraftRequest', 'recordUser', 'opened', 'importData', 'remove', 'updateRoute', 'applyCompanionResult']);
+  const mutators = new Set(['setEvidence', 'prepare', 'prepareReviewed', 'matchRequest', 'recordMatch', 'holdRoute', 'resumeRoute', 'mailSessionRequest', 'bindMailContact', 'clearMailContact', 'mailCheckRequest', 'recordMailReceipt', 'mailContinuationRequest', 'prepareMailContinuation', 'recordMailContinuation', 'recordCompanion', 'observationRequest', 'recordObservation', 'searchRequest', 'privacyDraftRequest', 'recordUser', 'opened', 'importData', 'remove', 'updateRoute', 'applyCompanionResult']);
   const exported = { create, KEY, AUTHORIZATION, WorkspaceError, routes: () => clone(routes), listingURL };
-  for (const name of ['snapshot', 'profile', 'setEvidence', 'prepare', 'fillPreview', 'prepareReviewed', 'holdRoute', 'resumeRoute', 'mailSessionRequest', 'bindMailContact', 'clearMailContact', 'mailCheckRequest', 'recordMailReceipt', 'mailContinuationRequest', 'prepareMailContinuation', 'recordMailContinuation', 'recordCompanion', 'observationRequest', 'recordObservation', 'searchRequest', 'privacyDraftRequest', 'recordUser', 'opened', 'exportData', 'importData', 'remove', 'dashboard', 'updateRoute', 'applyCompanionResult']) {
+  for (const name of ['snapshot', 'profile', 'setEvidence', 'prepare', 'fillPreview', 'prepareReviewed', 'matchRequest', 'recordMatch', 'holdRoute', 'resumeRoute', 'mailSessionRequest', 'bindMailContact', 'clearMailContact', 'mailCheckRequest', 'recordMailReceipt', 'mailContinuationRequest', 'prepareMailContinuation', 'recordMailContinuation', 'recordCompanion', 'observationRequest', 'recordObservation', 'searchRequest', 'privacyDraftRequest', 'recordUser', 'opened', 'exportData', 'importData', 'remove', 'dashboard', 'updateRoute', 'applyCompanionResult']) {
     exported[name] = (...args) => mutators.has(name) ? exclusive(() => defaults()[name](...args)) : defaults()[name](...args);
   }
   exported.api = async (...args) => {

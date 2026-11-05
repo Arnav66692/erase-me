@@ -9,7 +9,7 @@ Tools for finding and requesting removal of your own personal information from d
 
 Erase Me combines a browser workspace, a narrowly permissioned Chrome extension and an installable agent skill. It keeps a private record of the actions you authorize and separates form preparation, broker verification and removal evidence.
 
-**Current scope:** companion 0.4.0 supports 11 reviewed initial form actions. Broker verification and final submission require your participation. No independently verified broker deletion has been established by this release.
+**Current scope:** companion 0.5.0 supports 11 reviewed initial form actions, two optional guarded submissions and one local text-challenge route. Other challenges, identity checks and broker steps can still need attention. No independently verified broker deletion has been established by this release.
 
 ## Get started
 
@@ -25,6 +25,8 @@ The workspace requires no account or email login. Your profile and ledger stay i
 For supported form filling, install the free [Chrome companion](https://erase-me-preview.vercel.app/companion.html). Load the unpacked extension in desktop Chrome and grant access to its reviewed broker sites. Mobile browsers can use the workspace and official links, but companion actions require desktop Chrome. Updating an older copy requires replacing its extracted files and reloading the extension.
 
 To fill several forms, complete their required details and own-record confirmations, then choose **Review form batch**. Review the selected brokers and exact outgoing fields, authorize the batch once and choose **Fill selected forms**. The companion works through eligible forms one at a time while the page stays open. Held, already-started, incomplete and manual routes are excluded with reasons. **Stop after current form** leaves the remaining forms untouched. Closing or reloading does not resume a batch.
+
+The review also offers optional automation for FastPeopleSearch's initial verification form and NumaraAra's request form. Review their displayed agreements before enabling it. NumaraAra's text security code can use the free [local challenge helper](docs/LOCAL_CHALLENGE_HELPER.md). An observed submit event is recorded as an attempt; delivery and broker acceptance still require separate evidence.
 
 ### Agent skill
 
@@ -53,14 +55,16 @@ Open [localhost:8766](http://127.0.0.1:8766). This mode uses a separate local da
 | Component | Available behavior | Boundary |
 | --- | --- | --- |
 | Workspace | Country-specific route plans, explicit listing searches, private backups and individual route holds | Searches return candidates. They do not establish identity or deletion. |
-| Chrome companion | Fill individual forms or a reviewed batch, and initiate supported verification steps | Eleven initial contracts; final submission and verification still need your participation. No ID uploads, paid solvers or background retries. |
+| Chrome companion | Fill reviewed forms, initiate supported verification and optionally submit two reviewed forms | Changed controls, agreements or challenges stop the action. No ID uploads, paid solvers or background retries. |
+| Local challenge helper | Recognize NumaraAra's reviewed five-character image code using local Tesseract | Separate desktop installation. Managed challenges and other site codes are not universally supported. |
+| Structured record check | Check one approved Spokeo URL against its structured Person data | Requires exact name and typed identity-email matches. Missing or ambiguous evidence needs attention. |
 | Contact drafts | Prepare, copy or download a request for a fixed published contact | Drafts are local. Erase Me does not send them. |
 | Existing-tab checks | Reconcile narrowly supported, fresh broker acknowledgments | Unknown or unsupported results remain unverified. Forms are not resent. |
 | Agent skill | Consent records, reference-based plans, request drafts and private reports | Requires an agent capable of running Python. Browser and submission permissions remain explicit. |
 
 The companion covers initial actions for People Data Labs, USPhonebook, SearchPeopleFree, FastPeopleSearch, Apollo, Spokeo, AdvancedBackgroundChecks, No Sorgulama, NumaraAra, NumaraSor and TelefonSorgulama.
 
-Apollo requires a separately entered business email. Spokeo requires a confirmed direct listing URL. The additional structured forms require an own-request affirmation. CAPTCHA, security codes, final consent and subsequent identity checks stay with the person completing the request.
+Apollo requires a separately entered business email. Spokeo requires a confirmed direct listing URL; its optional structured-record check can supply the own-listing approval only from a unique matching name and identity email on that exact page. Age and city alone are insufficient. The latest Spokeo research was blocked, so this is not evidence of a live matched record. The other structured forms retain their own-request affirmations.
 
 [Current route contracts](docs/BROKER_ROUTE_RESEARCH.md) document the observed controls and their limits.
 
@@ -70,6 +74,7 @@ Apollo requires a separately entered business email. Spokeo requires a confirmed
 | --- | ---: |
 | Reference routes | 43 |
 | Reviewed initial companion actions | 11 |
+| Optional guarded submission contracts | 2 |
 | Other guided channels | 32 |
 | Published contact-draft channels | 24 |
 | Source-backed channel assessments | 37 |
@@ -83,6 +88,7 @@ Erase Me uses distinct evidence levels:
 | Recorded event | What it establishes |
 | --- | --- |
 | Form or draft prepared | Approved fields or request text are ready. No final request acceptance is established. |
+| Guarded submission attempted | The approved form produced a checked native submit event. Delivery, acceptance and deletion remain unverified. |
 | Verification initiated | The broker reported a supported email-verification step. Later steps remain outstanding. |
 | User-reported submission or completion | The person's report is recorded without promoting it to independently verified evidence. |
 | Broker acceptance or completion | Requires correlated evidence of that specific outcome. An acknowledgment alone is insufficient. |
@@ -106,7 +112,9 @@ Use the tool only for your own information or within the skill's recorded family
 
 An operator can connect a separate removal-only Gmail account through the [OAuth setup](docs/GMAIL_OAUTH.md). This is a gated private pilot, not a public shared-mailbox service or personal-inbox connection.
 
-The relay requires a private operator key and scoped operation reference for each action. It checks receipts on demand. One reviewed USPhonebook continuation can return its official second-form URL transiently to the authorized browser. It does not establish final acceptance or deletion. OAuth credentials and the operator key remain outside public assets and backups.
+An authorized session can check already-bound removal contacts once, including after a supported submission attempt. Its operator key stays in memory for that session and is cleared afterward. Pending mail starts no future check. The optional mail-only pass uses the same scoped operations. New contact aliases still require separate per-route approval.
+
+Only USPhonebook has a reviewed confirmation-form destination. It still requires additional identity details and final broker steps; the held pilot request stays held. FastPeopleSearch links remain held, SearchPeopleFree cannot issue new shared aliases, and People Data Labs and Apollo retain their record-associated email requirements. OAuth credentials and the operator key remain outside public assets and backups.
 
 See [the relay contract and deployment limits](docs/AUTOMATIC_CONFIRMATIONS.md). The public workspace and unpacked companion need no paid service. Optional account and hosting quotas still apply.
 
@@ -140,6 +148,7 @@ The public build writes generated assets to `preview/public/` and creates the co
 
 - [Architecture](docs/ARCHITECTURE.md)
 - [Public workspace behavior](docs/PUBLIC_WORKSPACE.md)
+- [Local challenge helper](docs/LOCAL_CHALLENGE_HELPER.md)
 - [Local app](docs/WEB_APP.md) and [deployment](docs/DEPLOYMENT.md)
 - [Broker contracts](docs/BROKER_ROUTE_RESEARCH.md) and [evidence](docs/BROKER_VERIFICATION.md)
 - [Contributing](CONTRIBUTING.md) and [security reporting](SECURITY.md)
@@ -155,4 +164,4 @@ Related work includes [unbroker](https://github.com/NousResearch/hermes-agent), 
 
 Privacy-law references are informational and may become outdated. Check their official sources. This software does not provide legal advice.
 
-*Documentation reviewed November 5, 2026. Capability counts describe companion 0.4.0.*
+*Documentation reviewed November 5, 2026. Capability counts describe companion 0.5.0.*

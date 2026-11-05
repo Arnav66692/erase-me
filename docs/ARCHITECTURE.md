@@ -24,10 +24,27 @@ campaign pause and cross-tab no-replay checks. No whole-batch reservation is mad
 The queue and its approvals remain in page memory; they are excluded from local storage
 and backups. Stop or closing the review leaves unstarted forms untouched after the current
 action settles. A stale preview, unknown result or failed result persistence stops the
-remaining queue. Reloading never resumes it. The executor contracts and broker evidence
-levels are unchanged: form preparation and verification initiation do not establish a
-completed removal. `form-batch.js` loads after `removal-mail-client.js` and before
-`workspace-ui.js`.
+remaining queue. Reloading never resumes it. Optional submission mode checks the exact
+FastPeopleSearch or NumaraAra agreement before one native submit event.
+`submission_attempted` records that event separately from delivery, acceptance and
+deletion. No generic alert or navigation promotes it to an accepted request.
+`automatic-executor.js` supplies the same frozen contracts to the review and companion;
+`removal-session.js` supplies one authorized scoped-mail pass. Both load before
+`form-batch.js` and `workspace-ui.js`.
+
+The optional native host `org.eraseme.challenge` recognizes bounded text/audio media
+with existing local tools. The reviewed Chrome integration currently sends only
+NumaraAra's five-character image. Installation is per user and extension ID, requires
+an explicit optional native-messaging grant, and starts no daemon or timer. Its protocol
+accepts no URL, filesystem path or arbitrary command. FastPeopleSearch requires a
+genuine site-issued challenge response; no token is fabricated.
+
+Own-record matching reads only a specifically approved Spokeo candidate page. Bounded
+schema.org Person data must identify that exact document URL, full name and typed
+identity email. Matching demographics alone, conflicts or duplicate candidates remain
+unresolved. The derived proof binds workspace identity, country, URL and current details;
+freshness is checked on use. The editor retains its source so an expired automatic
+checkbox cannot become a manual approval. Imports cannot restore authenticated proof.
 
 The companion stores operation references and owned-tab metadata before navigation.
 For People Data Labs and USPhonebook only, a bounded explicit existing-tab observation

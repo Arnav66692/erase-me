@@ -1,0 +1,261 @@
+'use strict';
+const { test } = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
+const Core = require('../webapp/static/workspace-core.js');
+const Automatic = require('../extension/automatic-executor.js');
+const listing = 'https://www.spokeo.com/Example-Person/California/Example-City/p123456';
+const key = 'a'.repeat(64);
+function gate() { let resolve; const promise = new Promise(done => { resolve = done; }); return { promise, resolve }; }
+
+async function fixture({ bound = [], started = [], held = [], delayed = false, delayedMail = false, preMatched = false, globals = true, country = 'US', matchResult } = {}) {
+  const values = new Map(); let sequence = 0, stamp = '2026-11-05T00:00:00.000Z';
+  const core = Core.create({ storage: { getItem: id => values.get(id) || null, setItem: (id, value) => values.set(id, value), removeItem: id => values.delete(id) },
+    uuid: () => (++sequence).toString(16).padStart(32, '0'), now: () => stamp });
+  await core.api('/api/signup', { method: 'POST', body: JSON.stringify({ name: 'Example Person', age: 35, email: 'person@example.test', authorized: true }) });
+  await core.api('/api/profile', { method: 'POST', body: JSON.stringify({ country, city: 'Example City' }) });
+  for (const id of new Set([...bound, ...started])) {
+    core.setEvidence(id, { first_name: 'Example', last_name: 'Person' });
+    if (bound.includes(id)) {
+      core.mailSessionRequest(id);
+      const operation_id = core.snapshot().items[id].id, request_id = (id === 'usphonebook' ? 'b' : 'c').repeat(32);
+      const issued_at = Math.floor(Date.parse(stamp) / 1000), expires_at = issued_at + 7 * 86400;
+      const contact_email = 'removal+erase-' + request_id + '@gmail.com';
+      const claims = { v: 1, request_id, route_id: id, operation_id, recipient: contact_email, issued_at, expires_at };
+      core.bindMailContact(id, { status: 'ready', request_id, route_id: id, operation_id, contact_email, expires_at,
+        capability: Buffer.from(JSON.stringify(claims)).toString('base64url') + '.' + 'a'.repeat(43), automatic_execution: false });
+    }
+    if (started.includes(id)) core.prepare(id);
+  }
+  if (preMatched) {
+    const request = core.matchRequest('spokeo', listing);
+    core.recordMatch('spokeo', request.operationId, { status: 'matched', candidateUrl: listing, source: 'structured_person_v1', match_verified: true,
+      evidence: ['structured_person', 'exact_candidate_url', 'name', 'email'] });
+  }
+  for (const id of held) core.holdRoute(id);
+  let document;
+  class Element {
+    constructor(tag) { this.tagName = tag.toUpperCase(); this.children = []; this.listeners = {}; this.attributes = new Map(); this._text = ''; this._disabled = false; this.value = ''; this.checked = false; this.hidden = false; this.open = false; }
+    get textContent() { return this._text + this.children.map(child => child.textContent).join(''); }
+    set textContent(value) { this._text = String(value); this.children = []; }
+    get disabled() { return this._disabled; }
+    set disabled(value) { this._disabled = Boolean(value); if (value && document?.activeElement === this) document.activeElement = document.body; }
+    get isConnected() { let current = this; while (current) { if (current === document.body) return true; current = current.parentElement; } return false; }
+    append(...children) { for (const child of children) { child.parentElement = this; this.children.push(child); } }
+    replaceChildren(...children) { for (const child of this.children) child.parentElement = null; this.children = []; this._text = ''; this.append(...children); }
+    addEventListener(type, callback) { this.listeners[type] = callback; }
+    setAttribute(name, value) { this.attributes.set(name, String(value)); }
+    querySelector(selector) { return find(this, element => selector === '.listing-title' ? element.className === 'listing-title' : selector === '.listing-info' ? element.className === 'listing-info' : false); }
+    focus() { document.activeElement = this; }
+    showModal() { this.open = true; find(this, element => ['INPUT', 'BUTTON'].includes(element.tagName))?.focus(); }
+    close() { this.open = false; this.listeners.close?.(); }
+  }
+  function find(element, predicate) { if (predicate(element)) return element; for (const child of element.children) { const found = find(child, predicate); if (found) return found; } }
+  const body = new Element('body'), changes = [], posted = [], saves = [], batches = [], sessions = [], mailCalls = [], creates = [], deadlines = [];
+  document = { body, activeElement: body, createElement: tag => new Element(tag), getElementById: id => find(body, element => element.id === id), dispatchEvent: event => changes.push(event.type) };
+  const feedback = new Element('p'); feedback.id = 'campaign-feedback'; const toolbox = new Element('div'); toolbox.id = 'public-tools'; const list = new Element('div'); list.id = 'listing-items'; body.append(feedback, toolbox, list);
+  const byId = id => document.getElementById(id), runGate = gate(), mailGate = gate();
+  const workspace = { ...core, setEvidence: (...args) => { saves.push(args); return core.setEvidence(...args); } };
+  const batch = { create: config => {
+    creates.push(config); let stopped = false;
+    return { stop: () => { stopped = true; }, run: async (previews, options) => {
+      batches.push({ previews, options, keyAtStart: byId('form-batch-mail-key')?.value });
+      config.onUpdate({ status: 'running', entries: previews.map(preview => ({ routeId: preview.routeId, status: 'queued' })) });
+      if (delayed) await runGate.promise;
+      for (const preview of previews) {
+        if (stopped) break;
+        const operation = core.prepareReviewed(preview);
+        const result = options.automate && preview.routeId === 'fastpeoplesearch'
+          ? { status: 'submission_attempted', attempt_verified: true, stage: 'verification_initiation' } : { status: 'prepared' };
+        core.recordCompanion(preview.routeId, operation.operationId, result);
+        if (config.afterResult && result.status === 'submission_attempted') await config.afterResult({ routeId: preview.routeId, operationId: operation.operationId, result, isStopped: () => stopped });
+      }
+      config.onUpdate({ status: stopped ? 'stopped' : 'finished', entries: [] });
+    } };
+  } };
+  const session = { create: config => {
+    const record = { receivedKey: config.operatorKey, keyAtCreation: byId('form-batch-mail-key').value, disposed: false, disposeCount: 0 };
+    sessions.push(record);
+    return { dispose: () => { record.disposed = true; record.disposeCount++; }, process: async payload => {
+      mailCalls.push({ routeId: payload.routeId, stopped: payload.isStopped?.() || record.disposed });
+      if (delayedMail) await mailGate.promise;
+      return { status: 'awaiting_mail', detail: 'No correlated message in this one pass.' };
+    } };
+  } };
+  const listeners = new Map(); let timeoutId = 0;
+  const window = {
+    addEventListener: (type, callback) => listeners.set(type, callback), removeEventListener: type => listeners.delete(type),
+    postMessage: message => {
+      const payload = message.payload; posted.push(payload);
+      let result;
+      if (payload.action === 'helper-status') result = { available: true, image: true, audio: false };
+      else if (payload.action === 'match') {
+        assert.equal(core.snapshot().items.spokeo.matching_request.id, payload.operationId);
+        assert.equal(core.snapshot().items.spokeo.operation_id, null);
+        result = matchResult || { status: 'matched', candidateUrl: payload.listingUrl, evidence: ['structured_person', 'exact_candidate_url', 'name', 'email'], source: 'structured_person_v1', match_verified: true };
+      } else result = { routes: core.routes().filter(route => route.automationLevel === 'companion').map(route => route.id), capabilities: ['explicit-fields-v1', 'structured-fields-v1'] };
+      queueMicrotask(() => listeners.get('message')?.({ source: window, origin: 'https://erase-me-preview.vercel.app', data: { source: 'erase-companion', requestId: message.requestId, reply: { ok: true, result } } }));
+    }
+  };
+  const context = { document, EraseWorkspace: workspace, EraseFormBatch: batch, ...(globals ? { EraseAutomaticExecutor: Automatic, EraseRemovalSession: session, EraseRemovalMail: {} } : {}),
+    URL, Blob, CustomEvent: class { constructor(type) { this.type = type; } }, location: { origin: 'https://erase-me-preview.vercel.app' },
+    crypto: { randomUUID: () => (++sequence).toString(16).padStart(32, '0') }, setTimeout: (_callback, delay) => { deadlines.push(delay); return ++timeoutId; }, clearTimeout() {}, window };
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../webapp/static/workspace-ui.js'), 'utf8'), context);
+  function render() {
+    list.replaceChildren(); const items = core.dashboard().items;
+    for (const item of items) { const row = new Element('article'), title = new Element('a'), info = new Element('div'); title.className = 'listing-title'; title.textContent = item.name; info.className = 'listing-info'; info.append(title); row.append(info); list.append(row); }
+    context.EraseWorkspaceUI.decorate(items); context.EraseWorkspaceUI.tools();
+  }
+  render();
+  const button = text => find(body, element => element.tagName === 'BUTTON' && element.textContent === text);
+  const input = label => find(body, element => ['INPUT', 'TEXTAREA'].includes(element.tagName) && element.attributes.get('aria-label') === label);
+  const click = async target => { if (typeof target === 'string') target = button(target); assert.ok(target); assert.equal(target.disabled, false); target.focus(); return target.listeners.click(); };
+  const toggle = (id, checked = true) => { const element = typeof id === 'string' ? byId(id) : id; assert.ok(element); assert.equal(element.disabled, false); element.checked = checked; element.listeners.change?.(); };
+  const fillNames = id => { input(core.routes().find(route => route.id === id).name + ' Your first name').value = 'Example'; input(core.routes().find(route => route.id === id).name + ' Your last name').value = 'Person'; };
+  return { core, workspace, body, document, values, byId, button, input, click, toggle, fillNames, render, changes, posted, saves, batches, sessions, mailCalls, creates, deadlines,
+    text: () => body.textContent, time: value => { stamp = value; }, complete: runGate.resolve, completeMail: mailGate.resolve };
+}
+
+test('automatic options are fresh and exact consent appears only after explicit opt-in', async () => {
+  const ui = await fixture(); ui.fillNames('fastpeoplesearch'); await ui.click('Review form batch');
+  assert.equal(ui.byId('form-batch-automate').checked, false); assert.equal(ui.byId('form-batch-mail').checked, false);
+  assert.equal(ui.byId('form-batch-approval').checked, false); assert.deepEqual(ui.posted, []);
+  ui.toggle('form-batch-approval'); ui.toggle('form-batch-automate');
+  assert.equal(ui.byId('form-batch-approval').checked, false);
+  assert.ok(ui.text().includes(Automatic.CONTRACTS.fastpeoplesearch.consentText));
+  await ui.click('Close review'); await ui.click('Review form batch');
+  assert.equal(ui.byId('form-batch-automate').checked, false); assert.equal(ui.byId('form-batch-mail').checked, false);
+});
+
+test('automatic submission is never selected implicitly and absent modules keep the original run contract', async () => {
+  for (const globals of [true, false]) {
+    const ui = await fixture({ globals }); await ui.click('Review form batch'); ui.toggle('form-batch-approval'); await ui.click(ui.byId('form-batch-start'));
+    assert.deepEqual(JSON.parse(JSON.stringify(ui.batches[0].options)), { authorized: true });
+    assert.equal(Object.hasOwn(ui.creates[0], 'afterResult'), false);
+    if (!globals) assert.equal(ui.byId('form-batch-automate'), undefined);
+    assert.equal(ui.sessions.length, 0);
+  }
+});
+
+test('NumaraAra shows the original policy agreement and the reviewed policy destination', async () => {
+  const ui = await fixture({ country: 'TR' });
+  ui.input('NumaraAra Your removal request text').value = 'Please remove my own record.';
+  ui.input('NumaraAra I reviewed these fields and confirm this request concerns my own information.').checked = true;
+  await ui.click('Review form batch'); ui.toggle('form-batch-automate');
+  assert.ok(ui.text().includes(Automatic.CONTRACTS['tr-numaraara'].consentText));
+  function links(element) { return [...(element.href ? [element.href] : []), ...element.children.flatMap(links)]; }
+  assert.ok(links(ui.body).includes(Automatic.CONTRACTS['tr-numaraara'].policyUrl));
+});
+
+test('invalid private mail key is cleared and blocks all form starts', async () => {
+  const ui = await fixture({ bound: ['fastpeoplesearch'] }); await ui.click('Review form batch');
+  ui.toggle('form-batch-mail'); ui.byId('form-batch-mail-key').value = 'invalid-private-key'; ui.toggle('form-batch-approval');
+  await ui.click(ui.byId('form-batch-start'));
+  assert.equal(ui.byId('form-batch-mail-key').value, ''); assert.equal(ui.batches.length, 0); assert.equal(ui.sessions.length, 0);
+  assert.equal(ui.core.snapshot().items.fastpeoplesearch.operation_id, null);
+});
+
+test('one-pass mail key reaches only the session and afterResult uses already-bound selected contacts', async () => {
+  const ui = await fixture({ bound: ['fastpeoplesearch'] }); await ui.click('Review form batch');
+  ui.toggle('form-batch-automate'); ui.toggle('form-batch-mail'); ui.byId('form-batch-mail-key').value = key; ui.toggle('form-batch-approval');
+  await ui.click(ui.byId('form-batch-start'));
+  assert.equal(ui.sessions.length, 1); assert.equal(ui.sessions[0].receivedKey, key); assert.equal(ui.sessions[0].keyAtCreation, '');
+  assert.equal(ui.batches[0].keyAtStart, ''); assert.equal(ui.batches[0].options.automate, true);
+  assert.deepEqual(ui.mailCalls.map(call => call.routeId), ['fastpeoplesearch']); assert.equal(ui.sessions[0].disposed, true);
+  assert.equal((await ui.creates[0].afterResult({ routeId: 'usphonebook' })).status, 'not_applicable');
+  assert.equal(ui.mailCalls.length, 1);
+  assert.equal(ui.core.exportData().includes(key), false); assert.equal(JSON.stringify(ui.batches).includes(key), false); assert.equal(JSON.stringify(ui.posted).includes(key), false);
+  assert.equal(ui.byId('form-batch-mail').checked, false); assert.equal(ui.byId('form-batch-automate').checked, false);
+});
+
+test('closing or stopping a running session disposes the key and blocks later mail legs', async () => {
+  for (const close of [true, false]) {
+    const ui = await fixture({ bound: ['fastpeoplesearch'], delayed: true }); await ui.click('Review form batch');
+    ui.toggle('form-batch-mail'); ui.byId('form-batch-mail-key').value = key; ui.toggle('form-batch-approval');
+    const run = ui.click(ui.byId('form-batch-start'));
+    assert.equal(ui.sessions[0].disposed, false);
+    await ui.click(close ? 'Close review' : 'Stop after current form');
+    assert.equal(ui.sessions[0].disposed, true); ui.complete(); await run;
+    assert.deepEqual(ui.mailCalls, []); assert.equal(ui.byId('form-batch-mail-key').value, '');
+  }
+});
+
+test('existing-mail-only checks show bound recipients, exclude held routes and never run a form batch', async () => {
+  const ui = await fixture({ bound: ['fastpeoplesearch', 'usphonebook'], started: ['fastpeoplesearch', 'usphonebook'], held: ['usphonebook'] });
+  await ui.click('Review form batch');
+  assert.ok(ui.byId('form-batch-mail-route-fastpeoplesearch')); assert.equal(ui.byId('form-batch-mail-route-usphonebook'), undefined);
+  const target = ui.byId('form-batch-mail-route-fastpeoplesearch'); assert.equal(target.attributes.get('aria-label'), target.parentElement.textContent);
+  assert.ok(ui.text().includes(ui.core.dashboard().items.find(item => item.site_id === 'fastpeoplesearch').mail_contact.contact_email));
+  await ui.click('Check existing removal mail once'); assert.deepEqual(ui.mailCalls, []);
+  ui.toggle('form-batch-mail'); ui.byId('form-batch-mail-key').value = key; ui.toggle('form-batch-approval'); await ui.click('Check existing removal mail once');
+  assert.deepEqual(ui.mailCalls.map(call => call.routeId), ['fastpeoplesearch']); assert.deepEqual(ui.batches, []); assert.deepEqual(ui.posted, []);
+});
+
+test('automatic continuation review discloses all six fields and rejects a changed requester name',async()=>{
+  const ui=await fixture({bound:['usphonebook'],started:['usphonebook']});
+  let state=JSON.parse(ui.values.get(Core.KEY));state.items.usphonebook.continuation_fields={city:'Example City',state:'CA',zip_code:'92101'};ui.values.set(Core.KEY,JSON.stringify(state));ui.render();
+  await ui.click('Review form batch');
+  const review=ui.byId('form-batch-mail-list').textContent;
+  for(const label of ['first name','last name','email','city','state','zip code'])assert.ok(review.includes(label));
+  for(const value of ['Example','Person','Example City','CA','92101',ui.core.dashboard().items.find(item=>item.site_id==='usphonebook').mail_contact.contact_email])assert.ok(review.includes(value));
+  state=JSON.parse(ui.values.get(Core.KEY));state.items.usphonebook.fields.first_name='Changed';ui.values.set(Core.KEY,JSON.stringify(state));
+  ui.toggle('form-batch-mail');ui.byId('form-batch-mail-key').value=key;ui.toggle('form-batch-approval');await ui.click('Check existing removal mail once');
+  assert.deepEqual(ui.mailCalls,[]);
+});
+
+test('mail-only stop checks no later contacts and a changed reviewed workspace blocks mailbox access', async () => {
+  const ui = await fixture({ bound: ['fastpeoplesearch', 'usphonebook'], started: ['fastpeoplesearch', 'usphonebook'], delayedMail: true });
+  await ui.click('Review form batch'); ui.toggle('form-batch-mail'); ui.byId('form-batch-mail-key').value = key; ui.toggle('form-batch-approval');
+  const run = ui.click('Check existing removal mail once'); await new Promise(resolve => setImmediate(resolve));
+  await ui.click('Stop after current form'); ui.completeMail(); await run;
+  assert.equal(ui.mailCalls.length, 1); assert.equal(ui.sessions[0].disposed, true);
+  const changed = await fixture({ bound: ['fastpeoplesearch'], started: ['fastpeoplesearch'] });
+  await changed.click('Review form batch'); changed.core.remove(); changed.toggle('form-batch-mail'); changed.byId('form-batch-mail-key').value = key; changed.toggle('form-batch-approval');
+  await changed.click('Check existing removal mail once'); assert.deepEqual(changed.mailCalls, []); assert.deepEqual(changed.batches, []);
+});
+
+test('helper capability lookup is explicit and reports separate image/audio availability', async () => {
+  const ui = await fixture(); assert.deepEqual(ui.posted, []); assert.deepEqual(ui.deadlines, []);
+  await ui.click('Check local challenge helper'); assert.deepEqual(ui.posted.map(payload => payload.action), ['helper-status']);
+  assert.match(ui.text(), /Text-image recognition: available/); assert.match(ui.text(), /Audio recognition: unavailable/);
+});
+
+test('record matching needs an explicit candidate and persists its check before the companion call', async () => {
+  const ui = await fixture(); await ui.click('Match this record'); assert.deepEqual(ui.posted, []);
+  assert.match(ui.text(), /Enter your public Spokeo record URL/);
+  ui.input('Spokeo Your confirmed listing URL').value = listing; await ui.click('Match this record');
+  assert.deepEqual(ui.posted.map(payload => payload.action), ['match']); assert.ok(ui.deadlines.includes(60000));
+  assert.equal(ui.core.dashboard().items.find(item => item.site_id === 'spokeo').automatic_match, true);
+  assert.equal(ui.core.snapshot().items.spokeo.operation_id, null); assert.deepEqual(ui.changes, ['erase-workspace-change']);
+  const held = await fixture({ held: ['spokeo'] }); assert.equal(held.button('Match this record'), undefined);
+});
+
+test('unsupported structured matching never creates a manual ownership affirmation', async () => {
+  const ui = await fixture({ matchResult: { status: 'needs_identity', candidateUrl: listing, evidence: ['name', 'age', 'city'], source: 'structured_person_v1', match_verified: true } });
+  ui.input('Spokeo Your confirmed listing URL').value = listing; await ui.click('Match this record');
+  assert.equal(ui.core.dashboard().items.find(item => item.site_id === 'spokeo').automatic_match, false);
+  assert.notEqual(ui.core.snapshot().items.spokeo.affirmations.own_listing, true);
+});
+
+test('derived checkboxes keep a scoped automatic reference and stale proof never becomes manual through Review', async () => {
+  const ui = await fixture({ preMatched: true });
+  const automatic = ui.input('Spokeo This listing has a current automatic match using my name and identity email.');
+  assert.equal(automatic.checked, true); ui.time('2026-11-05T00:31:00.000Z');
+  await ui.click('Review form batch'); assert.equal(ui.input('Include Spokeo in this form batch'), undefined);
+  const save = ui.saves.find(args => args[0] === 'spokeo'); assert.equal(typeof save[3].automaticReference, 'string');
+  assert.equal(ui.core.snapshot().items.spokeo.affirmations.own_listing, false);
+  await ui.click('Close review'); ui.toggle(automatic, true); await ui.click('Review form batch');
+  assert.ok(ui.input('Include Spokeo in this form batch'));
+  assert.equal(ui.saves.filter(args => args[0] === 'spokeo').at(-1)[3].manualListingReview, true);
+});
+
+test('editing a derived record clears its checkbox without losing the reference that blocks stale promotion', async () => {
+  const ui = await fixture({ preMatched: true }); const input = ui.input('Spokeo Your confirmed listing URL');
+  const approval = ui.input('Spokeo This listing has a current automatic match using my name and identity email.');
+  input.value = listing.replace('p123456', 'p654321'); input.listeners.input(); assert.equal(approval.checked, false);
+  approval.checked = true; await ui.click('Review form batch');
+  assert.equal(ui.input('Include Spokeo in this form batch'), undefined);
+  assert.equal(typeof ui.saves.find(args => args[0] === 'spokeo')[3].automaticReference, 'string');
+});

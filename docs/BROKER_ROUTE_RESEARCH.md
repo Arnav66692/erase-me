@@ -6,6 +6,12 @@ attempt or inbox access was used for those inspections. Later authorized live-pi
 observations are identified separately below without personal data. Results are specific
 to this environment, not a claim that a broker is universally accessible or unavailable.
 
+A November 5 recheck of the official FastPeopleSearch and NumaraAra forms and their
+form scripts informs the two companion 0.5.0 submission contracts described below.
+The latest Spokeo inspection returned HTTP 403. These source checks establish no
+new accepted request, live structured-record match or verified deletion. References
+to “today” in the original first-form notes refer to the November 4 inspection.
+
 ## Coverage is a sequence
 
 A supported prefill means the initial official form and controls were observed.
@@ -14,11 +20,15 @@ or deletion. The application should keep at least these states distinct:
 
 1. Official form opened.
 2. Fields filled locally in the broker tab.
-3. User action required, including CAPTCHA or verification email.
-4. Verification initiation observed, using a fresh visible success state.
-5. Final broker request accepted, using evidence from the actual second form.
-6. Broker-reported completion.
-7. Previously matched listing independently verified absent.
+3. A guarded submission attempted, when the route has an approved contract.
+4. Outstanding user action, including unsupported CAPTCHA or verification email.
+5. Verification initiation observed, using a fresh visible success state.
+6. Final broker request accepted, using evidence from the actual final form.
+7. Broker-reported completion.
+8. Previously matched listing independently verified absent.
+
+`submission_attempted` proves only that the guarded native submit event was observed.
+It does not prove network delivery, server acceptance, challenge passage or deletion.
 
 Unknown writes must stop for reconciliation. Reopening a workspace must not
 repeat a request. An HTTP error, empty result set, missing selector, closed tab,
@@ -146,18 +156,24 @@ and change events. Do not call `form.submit()` to bypass site handlers.
   period after final submission.
 - No first-submit success selector, final second-form action, independent
   identity-match contract or deletion evidence has been observed.
+- The November 5 contract permits an optional guarded initial submission after
+  review of its exact communications/authorization agreement. It requires the
+  normal widget's real Turnstile response; no token is invented. The fixed stage
+  is `verification_initiation`, while the result remains `submission_attempted`
+  until a separate fresh broker acknowledgment proves more.
 - Conditional agent identity fields must not be populated for self requests.
 
 ### Spokeo
 
-- Official entry: <https://www.spokeo.com/optout>, accessible in the current inspection.
-  The earlier 403 observation is historical.
+- Official entry: <https://www.spokeo.com/optout>, accessible on November 4.
+  The November 5 inspection returned HTTP 403, so current access is unverified.
 - Exact origin `https://www.spokeo.com`, path `/optout`, without query or fragment.
 - The form has no stable ID, GET method and same-page action. Scope it through
   `input[name="url"][type="url"]`; require its `input[name="email"][type="email"]`
   and scoped submit button labeled `OPT OUT` to belong to that same form.
-- The person supplies a direct record URL and explicitly confirms that it is their
-  own listing. Reviewed paths use four segments: name, city, state abbreviation,
+- The person supplies a direct record URL. Own-listing approval can be a separate
+  manual affirmation or the narrow structured-record check described below.
+  Reviewed paths use four segments: name, city, state abbreviation,
   record ID; or name, full state, city, record ID. The final segment is `/p` plus digits.
   Search pages, purchase links, query parameters, fragments and credential-bearing
   URLs are rejected. A name match alone is not ownership evidence.
@@ -178,8 +194,10 @@ and change events. Do not call `form.submit()` to bypass site handlers.
 
 All four require a separate own-request affirmation and review of each displayed field.
 Request text is plain Unicode text, retaining line breaks, not executable content.
-The companion never checks consent, submits, forges hidden tokens, uploads ID or performs
-phone/SMS verification. A later challenge or unfamiliar page remains a user step.
+NumaraAra has the separate optional 0.5.0 consent, text-code and submission contract
+below. The other three forms remain guarded prefill only. The companion does not forge
+hidden tokens, upload ID or perform phone/SMS verification. An unreviewed challenge or
+unfamiliar page needs attention.
 
 | Route and exact purpose path | Approved fields | Reviewed destination/selection |
 | --- | --- | --- |
@@ -191,6 +209,16 @@ phone/SMS verification. A later challenge or unfamiliar page remains a user step
 NumaraSor’s target phone number must belong to the requester. The other contracts do
 not add a phone field. Final server validation, record matching, request acceptance and
 deletion remain unverified for all four.
+
+The November 5 NumaraAra contract checks the required `#form_Kvkk` agreement and its
+single link to the [official KVKK notice](https://www.numaraara.com/kvkk-aydinlatma-metni).
+Its `#form_ResimKodu` answer field has a five-character limit. The reviewed
+`#captcha_imgContactResimKodu` image is 130 by 40 pixels and comes from the same-origin
+`/captcha` path with exactly `pid` and `transparent=1` parameters. One optional local
+Tesseract attempt supplies only ASCII text. The original image pixels, destination,
+fields, controls and agreement are checked again before the native submit control is
+used. The fixed stage is `request_submission`; its result remains an attempt, with
+no newly observed server-acceptance or deletion contract.
 
 ### PeopleConnect
 
@@ -216,16 +244,54 @@ deletion remain unverified for all four.
 
 No fallback endpoint or selector was invented to work around these responses.
 
+## Version 0.5.0 execution boundaries
+
+`extension/automatic-executor.js` defines only two immutable submission contracts:
+FastPeopleSearch's [initial opt-out form](https://www.fastpeoplesearch.com/optout)
+and NumaraAra's [contact/removal form](https://www.numaraara.com/iletisim). Contract
+identifiers bind the November 5 review. The workspace displays the applicable
+agreements before automation is enabled; runtime checks require the same text,
+policy destination, purpose and controls. An earlier alert, additional unexpected
+field, changed challenge or changed document stops the action.
+
+Each operation is consumed before the submit control is activated. No direct API
+request, `form.submit()` bypass, automatic retry or fabricated vendor token is used.
+The new result is `submission_attempted`, with its route stage and checked-event
+evidence. No fresh accepted-request or deletion contract was observed for either
+route. Later native navigation can also leave the result unknown and held for
+reconciliation.
+
+NumaraAra's image code uses the optional [local challenge helper](LOCAL_CHALLENGE_HELPER.md).
+The provider also has an audio-recognition interface, but this release does not
+enable a Chrome reCAPTCHA audio flow or guarantee managed-challenge passage.
+
+The Spokeo structured-record reader is a conservative code contract tested with
+synthetic `Person` JSON-LD. It requires the approved page URL to match the record's
+`url` or `@id`, one compatible person, the exact normalized name and the typed
+identity email. Age and city alone cannot establish approval. Missing or malformed
+data, conflicts, ambiguity and blocked pages stay unresolved. No live matching
+result was established by the November 5 HTTP 403 response, and a match would still
+be distinct from submission or deletion.
+
+The dedicated-mail session checks existing scoped contacts once. It does not expand
+the relay's destination allowlist: only USPhonebook's previously reviewed second
+form can be released after reauthentication and field review. Its missing identity
+details and final broker steps remain outstanding, and the held pilot remains held.
+FastPeopleSearch confirmation links have no reviewed automatic destination contract.
+
 ## Implications for the public app
 
 A free browser workspace can store a real person's own details and their request
 ledger on their device, and a narrowly permissioned companion can open and fill
-these official forms in that same person's browser. This avoids giving the host
-an inbox connection or retaining people's profiles in serverless storage.
+these official forms in that same person's browser. Personal inboxes remain
+disconnected, and profiles are not retained in serverless storage. The optional
+removal-only mailbox is a separately gated operator relay.
 
 It cannot prove broker acceptance or deletion from these initial controls alone.
 The public companion enables eleven initial actions: the historically observed email
-initiation and ten guarded prefill routes. The source-backed audit covers all 37 routes
+initiation and ten guarded prefill routes. Version 0.5.0 adds optional guarded
+submissions for FastPeopleSearch and NumaraAra over those existing routes, plus the
+local text-code helper and narrow structured-record check. The source-backed audit covers all 37 routes
 outside the first six, including blocked pages, manual provider channels, registrations
 and the five additional initial forms. SmartBackgroundChecks remains manual after the
 access failure above. An audit is not proof of an accepted request or automatic removal. Broader

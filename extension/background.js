@@ -1,7 +1,9 @@
 /* Explicit operations and explicit, bounded reconciliation. No scheduled work. */
-if(typeof importScripts==='function')importScripts('broker-executor.js');
+if(typeof importScripts==='function')importScripts('broker-executor.js','automatic-executor.js');
 const APP='https://erase-me-preview.vercel.app';
 const EXEC=typeof EraseBrokerExecutor!=='undefined'?EraseBrokerExecutor:require('./broker-executor.js');
+const AUTO=typeof EraseAutomaticExecutor!=='undefined'?EraseAutomaticExecutor:require('./automatic-executor.js');
+const NATIVE_HOST='org.eraseme.challenge';
 const active=new Set(),sessions=new WeakMap(),observationKeys=new WeakMap();
 const OBSERVABLE=new Set(['peopledatalabs-form','usphonebook']);
 function trusted(sender){try{const u=new URL(sender.url);return u.origin===APP&&u.protocol==='https:'&&!!sender.tab;}catch(_){return false;}}
@@ -30,6 +32,67 @@ async function browserSession(chromeApi,create=false){
 }
 function unknown(detail='The broker outcome cannot be verified. Check its existing tab; no action was repeated.'){
   return {status:'unknown',detail};
+}
+async function localHelper(chromeApi,body){
+  if(!await chromeApi.permissions.contains({permissions:['nativeMessaging']}))throw new Error('Local helper access is not enabled.');
+  return chromeApi.runtime.sendNativeMessage(NATIVE_HOST,body);
+}
+async function helperStatus(chromeApi){
+  try{
+    const reply=await localHelper(chromeApi,{action:'capabilities'});
+    if(reply?.ok!==true||typeof reply.capabilities?.image!=='boolean'||typeof reply.capabilities?.audio!=='boolean')throw new Error();
+    return {available:true,image:reply.capabilities.image,audio:reply.capabilities.audio};
+  }catch(_){return {available:false,image:false,audio:false};}
+}
+async function automaticSubmit(payload,tabId,documentId,chromeApi){
+  if(typeof documentId!=='string')return unknown('The broker document cannot be pinned for automatic submission. No submit was attempted.');
+  const target={tabId,documentIds:[documentId]};
+  const [installed]=await chromeApi.scripting.executeScript({target,files:['automatic-executor.js']});
+  if(installed?.documentId!==documentId)return unknown('The broker tab changed before submission. No repeat was sent.');
+  const [capture]=await chromeApi.scripting.executeScript({target,func:value=>globalThis.EraseAutomaticExecutor.capture(value),args:[payload]});
+  if(capture?.documentId!==documentId)return unknown();
+  const challenge=capture.result;
+  if(challenge?.status==='blocked')return {status:'blocked',detail:String(challenge.detail||'The reviewed submission needs attention.').slice(0,600)};
+  let extra={};
+  if(challenge?.status==='image'){
+    if(typeof challenge.media!=='string'||challenge.media.length>699052||typeof challenge.challengeRef!=='string')return unknown('The challenge could not be validated. No submit was attempted.');
+    let recognized;
+    try{recognized=await localHelper(chromeApi,{action:'recognize_image',media:challenge.media,alphabet:challenge.alphabet||''});}
+    catch(_){return {status:'blocked',detail:'Install and enable the free local challenge helper with Tesseract to recognize this text challenge. No submit was attempted.'};}
+    if(recognized?.ok!==true||typeof recognized.answer!=='string'||!/^[A-Za-z0-9]{5}$/.test(recognized.answer))return {status:'blocked',detail:'The local recognizer did not return a valid challenge answer. No submit was attempted.'};
+    extra={answer:recognized.answer,challengeRef:challenge.challengeRef};
+  }else if(challenge?.status!=='ready')return unknown('The reviewed submit controls could not be validated. No submit was attempted.');
+  const [submitted]=await chromeApi.scripting.executeScript({target,func:value=>globalThis.EraseAutomaticExecutor.submit(value),args:[{...payload,...extra}]});
+  if(submitted?.documentId!==documentId)return unknown('The broker navigated after the submit attempt. Check its existing tab; no repeat will be sent.');
+  return submitted.result;
+}
+async function matchRecord(message,chromeApi){
+  if(message.routeId!=='spokeo'||message.authorized!==true||!EXEC.listingURL(message.listingUrl)||!message.identity||
+    Object.keys(message.identity).some(key=>!['name','email','age','city'].includes(key))||typeof message.identity.name!=='string'||message.identity.name.length>120||
+    typeof message.identity.email!=='string'||message.identity.email.length>254||!Number.isInteger(message.identity.age)||message.identity.age<18||message.identity.age>120||
+    !(message.identity.city===null||typeof message.identity.city==='string'&&message.identity.city.length<=120))throw new Error('Authorize a supported own-record match first.');
+  const key='match:'+message.operationId;
+  const previous=(await chromeApi.storage.local.get(key))[key];
+  if(active.has(key)||previous)return unknown('This record check already started. No additional listing page was opened.');
+  active.add(key);
+  try{
+    if(!await chromeApi.permissions.contains({origins:['https://www.spokeo.com/*']}))throw new Error();
+    const record={routeId:message.routeId,result:unknown('Record check started. Its result is not established.')};
+    await chromeApi.storage.local.set({[key]:record});
+    const tab=await chromeApi.tabs.create({url:message.listingUrl,active:true});record.tabId=tab.id;await chromeApi.storage.local.set({[key]:record});await settled(chromeApi,tab.id);
+    const current=await chromeApi.tabs.get(tab.id);if(current.url!==message.listingUrl)throw new Error();
+    const [installed]=await chromeApi.scripting.executeScript({target:{tabId:tab.id},files:['record-matcher.js']});
+    if(typeof installed?.documentId!=='string')throw new Error();
+    const [response]=await chromeApi.scripting.executeScript({target:{tabId:tab.id,documentIds:[installed.documentId]},
+      func:(identity,url)=>globalThis.EraseRecordMatcher.matchPage(identity,document,url),args:[message.identity,message.listingUrl]});
+    const result=response?.result;
+    if(response?.documentId!==installed.documentId||!['matched','not_matched','ambiguous','needs_identity','unsupported'].includes(result?.status)||
+      !Array.isArray(result.evidence)||result.evidence.some(key=>!['structured_person','exact_candidate_url','name','email','phone','age','city','identity'].includes(key))||
+      result.status==='matched'&&(result.candidateUrl!==message.listingUrl||!['structured_person','exact_candidate_url','name','email'].every(key=>result.evidence.includes(key))))throw new Error();
+    record.result={status:result.status,evidence:result.evidence};await chromeApi.storage.local.set({[key]:record});
+    return {...result,match_verified:true,source:'structured_person_v1'};
+  }catch(_){return unknown('The approved listing could not be matched reliably. No removal action was started.');}
+  finally{active.delete(key);}
 }
 function evidenceResult(result){
   return !!result&&result.status==='verification_sent'&&result.route_verified===true&&result.evidence==='fresh_visible_success';
@@ -113,9 +176,11 @@ async function dispatch(message,sender,chromeApi=chrome){
   if(message.action==='ping'){
     const routes=[];
     for(const [routeId,route] of Object.entries(EXEC.ROUTES))if(await chromeApi.permissions.contains({origins:['https://'+route.host+'/*']}))routes.push(routeId);
-    return {status:'connected',version:'0.4.0',routes,capabilities:['usphonebook-continuation-v1','explicit-fields-v1','structured-fields-v1','broker-observation-v1']};
+    return {status:'connected',version:'0.5.0',routes,capabilities:['usphonebook-continuation-v1','explicit-fields-v1','structured-fields-v1','broker-observation-v1','automatic-submit-v1','structured-record-match-v1']};
   }
+  if(message.action==='helper-status')return helperStatus(chromeApi);
   if(!id(message.operationId)||!EXEC.ROUTES[message.routeId])throw new Error('Unsupported operation.');
+  if(message.action==='match')return matchRecord(message,chromeApi);
   const continuation=['continue','continuation-result'].includes(message.action),key=(continuation?'continuation:':'operation:')+message.operationId;
   const previous=(await chromeApi.storage.local.get(key))[key];
   if(['result','continuation-result'].includes(message.action))return previous?.routeId===message.routeId?previous.result:unknown('No companion result is stored.');
@@ -123,6 +188,8 @@ async function dispatch(message,sender,chromeApi=chrome){
   if(!['run','continue'].includes(message.action)||message.authorized!==true)throw new Error('Authorize this action first.');
   if(previous||active.has(key))return previous?.routeId===message.routeId?previous.result:unknown('An operation with this reference already started. No repeat was sent.');
   const route=continuation?EXEC.validateContinuation(message):EXEC.validate(message.routeId,message.fields,message);
+  if(message.autoSubmit!==undefined&&typeof message.autoSubmit!=='boolean')throw new Error('Invalid submission authorization.');
+  if(message.autoSubmit===true&&(continuation||!AUTO.CONTRACTS[message.routeId]||message.consentId!==AUTO.CONTRACTS[message.routeId].id))throw new Error('Review this broker’s exact submission agreement first.');
   active.add(key);
   const record={routeId:message.routeId,...(continuation?{requestId:message.requestId,receiptRef:message.receiptRef}:{}),result:unknown('Operation started. Review the broker tab if this browser was interrupted.')};
   try{
@@ -157,10 +224,16 @@ async function dispatch(message,sender,chromeApi=chrome){
       {routeId:message.routeId,operationId:message.operationId,observationNonce,fields:message.fields,businessEmailConfirmed:message.businessEmailConfirmed,listingConfirmed:message.listingConfirmed,ownRequestConfirmed:message.ownRequestConfirmed};
     const [response]=await chromeApi.scripting.executeScript({target:{tabId:tab.id,...(typeof installed?.documentId==='string'?{documentIds:[installed.documentId]}:{})},
       func:(payload,continueForm)=>continueForm?globalThis.EraseBrokerExecutor.executeContinuation(payload):globalThis.EraseBrokerExecutor.execute(payload),args:[payload,continuation]});
-    const result=response?.result;
-    if(!result||!(continuation?['prepared','blocked','unknown']:['prepared','verification_sent','blocked','unknown']).includes(result.status))throw new Error('The form result could not be verified.');
+    let result=response?.result;
+    if(!continuation&&message.autoSubmit===true&&result?.status==='prepared'){
+      if(response?.documentId!==installed?.documentId)throw new Error('The broker document changed before submission.');
+      result=await automaticSubmit({...payload,authorized:true,autoSubmit:true,consentId:message.consentId},tab.id,installed.documentId,chromeApi);
+    }
+    if(!result||!(continuation?['prepared','blocked','unknown']:['prepared','verification_sent','submission_attempted','blocked','unknown']).includes(result.status))throw new Error('The form result could not be verified.');
+    if(result.status==='submission_attempted'&&!(message.autoSubmit===true&&result.attempt_verified===true&&result.stage===AUTO.CONTRACTS[message.routeId]?.stage))throw new Error('The submit attempt could not be verified.');
     record.result={status:result.status,detail:String(result.detail||'').slice(0,600)};
     if(evidenceResult(result))Object.assign(record.result,{route_verified:true,evidence:'fresh_visible_success'});
+    if(result.status==='submission_attempted')Object.assign(record.result,{attempt_verified:true,stage:result.stage});
     await chromeApi.storage.local.set({[key]:record});return record.result;
   }catch(_){return record.result;}finally{active.delete(key);}
 }

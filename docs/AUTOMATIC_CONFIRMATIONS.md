@@ -2,12 +2,13 @@
 
 The optional private-pilot receipt relay reads only a separately connected removal-only
 Gmail account. It does not connect to the user's personal inbox. The user authorizes
-each broker operation, and each mailbox read is an explicit action. No polling loop,
+each broker operation and can approve one session over already-bound contacts, or
+start a single route check. No polling loop,
 cron, background alarm or recurring timer is started. The public website does not
 provide unrestricted shared-mailbox access. Credential configuration alone never
 enables the relay.
 
-Mailbox checks remain read-only. A separate explicit continuation action can return
+Mailbox checks remain read-only. An authorized continuation action can return
 one reviewed USPhonebook privacy-form link to the authorized browser. The server
 never follows it. `CONFIRMATION_CONTRACTS` contains only that exact reviewed route;
 other broker links remain held. Neither a receipt nor a ready form counts as an
@@ -108,6 +109,37 @@ workspace and private backup, never in a public URL or log. An operation's alias
 must be displayed before it is used in the broker form. Issuing an alias sends
 nothing and starts no broker request.
 
+## One authorized browser session
+
+Companion 0.5.0 can use an optional removal-mail step after a supported verification
+initiation or guarded submission attempt. The batch review requires a separate mail
+authorization and private operator key. A mail-only pass can check existing bound
+operations without filling or resending their forms. Neither control issues contact
+aliases automatically: each alias must already have been approved for its route.
+
+`removal-session.js` keeps the operator key only in page memory for this authorized
+session and clears it on disposal. The input is cleared when the session takes the
+key; it never enters the workspace, backup, URL or public frontend configuration.
+Each route/operation is checked at most once per session. Holds, campaign pause,
+stop and missing operation references prevent further mail actions.
+
+If no correlated mail has arrived, the result is `awaiting_mail`. No later mailbox check,
+polling loop or future session is scheduled. Starting another check requires another
+authorized session. A submitted form, an authenticated receipt and a checked
+confirmation remain distinct stages.
+
+The API's `explicit: true` and private-key requirements remain unchanged. The session
+supplies those requests under the user's upfront approval rather than asking for a
+new click between every call. A continuation still reauthenticates the exact receipt
+and needs the previously reviewed fields and companion capability. Only the existing
+USPhonebook contract can release a URL; unfamiliar links and FastPeopleSearch links
+remain held. SearchPeopleFree's legacy receipt capabilities remain held-only.
+
+The held USPhonebook pilot is excluded from these sessions. No session resumes a held
+route, supplies missing identity details or certifies the broker's accuracy statement.
+Pending mail after the page closes cannot be handled automatically with background
+triggers disabled.
+
 A check searches only the bound alias and messages after the server-issued time,
 with at most ten raw messages, 256 KiB per message and a 25-second overall budget.
 The relay uses Gmail read methods only, without changing read state or labels.
@@ -144,7 +176,7 @@ other destinations are rejected. HTML attribute entities are decoded by the HTML
 parser once; plain-text URL entities are decoded once. Every extracted link must
 collapse to the same valid destination. Ambiguity stays held.
 
-The explicit continuation endpoint rechecks the capability, private pilot key,
+The authorized continuation endpoint rechecks the capability, private pilot key,
 connected account identity and the same authenticated receipt. Its opaque
 reference binds the request, Gmail message ID and raw-message digest. An altered
 message or a reference from another operation cannot release a link. It returns

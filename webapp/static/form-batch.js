@@ -1,20 +1,22 @@
 /* An explicit, memory-only fill queue. Reloading never resumes a batch. */
 (function (root, factory) {
-  const api = factory();
+  const automatic = typeof module === 'object' && module.exports ? require('../../extension/automatic-executor.js') : root.EraseAutomaticExecutor;
+  const api = factory(automatic);
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.EraseFormBatch = api;
-})(typeof globalThis === 'object' ? globalThis : this, function () {
+})(typeof globalThis === 'object' ? globalThis : this, function (automatic) {
   'use strict';
   const copy = value => JSON.parse(JSON.stringify(value));
-  function create({ workspace, companion, onUpdate = () => {} }) {
+  function create({ workspace, companion, onUpdate = () => {}, afterResult }) {
     let running = false, stopping = false;
     let state = { status: 'idle', entries: [], current: null, detail: '' };
     const snapshot = () => copy(state);
     const emit = () => onUpdate(snapshot());
     const stop = () => { if (running) stopping = true; };
-    async function run(previews, { authorized = false } = {}) {
+    async function run(previews, { authorized = false, automate = false } = {}) {
       if (running) throw new Error('A form batch is already running.');
       if (authorized !== true) throw new Error('Review and authorize the selected forms first.');
+      if (typeof automate !== 'boolean') throw new Error('Choose whether to automate the reviewed submission steps.');
       const routes = workspace.routes();
       if (!Array.isArray(previews) || !previews.length || previews.length > routes.length)
         throw new Error('Select at least one reviewed form.');
@@ -33,6 +35,7 @@
       try {
         emit();
         const ping = await companion({ action: 'ping' });
+        if(automate && !ping?.capabilities?.includes('automatic-submit-v1'))throw new Error('Update the companion before automating reviewed submissions. No form was started.');
         for (const preview of queue) {
           const route = routes.find(route => route.id === preview.routeId);
           if (!Array.isArray(ping?.routes) || !ping.routes.includes(route.id))
@@ -53,9 +56,11 @@
             stopping = true; break;
           }
           let result;
-          try { result = await companion({ action: 'run', ...operation }); }
+          const contract = automate ? automatic?.CONTRACTS?.[preview.routeId] : null;
+          try { result = await companion({ action: 'run', ...operation, ...(contract ? {autoSubmit:true,consentId:contract.id} : {}) }); }
           catch (_) { result = { status: 'unknown', detail: 'The companion connection was interrupted. Check the existing broker tab; no repeat was sent.' }; }
-          if (!result || !['prepared', 'verification_sent', 'blocked', 'unknown'].includes(result.status) ||
+          if (!result || !['prepared', 'verification_sent', 'submission_attempted', 'blocked', 'unknown'].includes(result.status) ||
+              result.status === 'submission_attempted' && !(contract && result.attempt_verified === true && result.stage === contract.stage) ||
               result.status === 'verification_sent' && !(result.route_verified === true && result.evidence === 'fresh_visible_success'))
             result = { status: 'unknown', detail: 'The broker result could not be verified. Check its existing tab before doing anything further.' };
           try { await workspace.recordCompanion(preview.routeId, operation.operationId, result); }
@@ -67,6 +72,13 @@
           entry.detail = String(result.detail || (result.status === 'prepared' ? 'Fields filled. Complete the remaining broker steps.' : 'Review this broker’s remaining steps.')).slice(0, 600);
           emit();
           if (result.status === 'unknown') { stopping = true; break; }
+          if(!stopping && afterResult && ['verification_sent','submission_attempted'].includes(result.status)){
+            try{
+              const followup=await afterResult({routeId:preview.routeId,operationId:operation.operationId,result,isStopped:()=>stopping});
+              if(followup?.detail){entry.detail+=' '+String(followup.detail).slice(0,600);emit();}
+              if(followup?.status==='unknown'){stopping=true;break;}
+            }catch(_){entry.detail+=' The removal-mail step could not be completed. Check the existing operation before continuing.';stopping=true;break;}
+          }
         }
       } catch (error) {
         stopping = true;

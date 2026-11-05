@@ -3,6 +3,8 @@
   'use strict';
   const W=()=>globalThis.EraseWorkspace;
   const M=()=>globalThis.EraseRemovalMail;
+  const A=()=>globalThis.EraseAutomaticExecutor;
+  const S=()=>globalThis.EraseRemovalSession;
   const mailRoutes=new Set(['usphonebook','searchpeoplefree','fastpeoplesearch']);
   const newMailRoutes=new Set(['usphonebook','fastpeoplesearch']);
   const fieldSpecs={
@@ -29,56 +31,153 @@
         stop();const reply=event.data.reply;
         if(reply?.ok)resolve(reply.result);else reject(new Error(reply?.error||'The companion could not complete this action.'));
       };
-      const timeout=setTimeout(()=>{stop();reject(new Error('The companion did not respond. Install it, enable broker access, then refresh this page. No repeat has been sent.'));},['run','continue'].includes(payload.action)?60000:1500);
+      const timeout=setTimeout(()=>{stop();reject(new Error('The companion did not respond. Install it, enable broker access, then refresh this page. No repeat has been sent.'));},['run','continue','match'].includes(payload.action)?60000:1500);
       window.addEventListener('message',listener);
       window.postMessage({source:'erase-workspace',requestId,payload},location.origin);
     });
   }
   const batchRunning=()=>batchView?.running===true;
   function setFillActions(){for(const action of fillActions)action.disabled=batchRunning();}
+  function disposeSession(view){view.session?.dispose();view.session=null;}
+  function resetBatchOptions(view){
+    for(const input of [view.automate,view.mail])if(input){input.checked=false;input.disabled=true;}
+    if(view.key){view.key.value='';view.key.disabled=true;}
+    view.pendingMail=[];view.mailList?.replaceChildren();view.mailScope?.replaceChildren();view.agreements?.replaceChildren();
+  }
+  function updateBatchOptions(view){
+    const selected=view.pending.filter(entry=>entry.select.checked);
+    if(view.automate){
+      const contracts=selected.map(entry=>({route:W().routes().find(route=>route.id===entry.preview.routeId),contract:A()?.CONTRACTS?.[entry.preview.routeId]})).filter(entry=>entry.contract);
+      view.automate.disabled=view.running||contracts.length===0;
+      if(!contracts.length)view.automate.checked=false;
+      view.agreements.replaceChildren();view.agreements.hidden=!view.automate.checked;
+      if(view.automate.checked)for(const {route,contract}of contracts){
+        const section=n('section',null,'form-batch-entry');section.append(n('h3',route.name),n('p',contract.consentText));
+        if(contract.policyUrl)section.append(sourceNote(contract.policyUrl,'Read the policy named in this agreement',false));
+        view.agreements.append(section);
+      }
+      view.start.textContent=view.automate.checked?'Run selected form actions':'Fill selected forms';
+    }
+    if(view.mail){
+      const formContacts=selected.filter(entry=>entry.mailContact);
+      view.mail.disabled=view.running||(!formContacts.length&&!view.pendingMail.length);
+      if(view.mail.disabled&&!view.running)view.mail.checked=false;
+      view.key.disabled=view.running||!view.mail.checked;view.keyLabel.hidden=!view.mail.checked;
+      if(!view.mail.checked)view.key.value='';
+      view.mailScope.replaceChildren();
+      for(const entry of formContacts)view.mailScope.append(n('p',(W().routes().find(route=>route.id===entry.preview.routeId)?.name||entry.preview.routeId)+': '+entry.mailContact+' — one receipt check after a qualifying submission result.','public-route-note'));
+      view.mailOnce.disabled=view.running||!view.pendingMail.some(entry=>entry.select.checked);
+    }
+  }
+  function batchMailSession(view,entries){
+    if(!view.mail?.checked){if(view.key)view.key.value='';return null;}
+    let key=view.key.value.trim();view.key.value='';
+    try{
+      if(!entries.length)throw new Error('The selected forms have no bound removal-only contact. Turn off the mail option, or use the existing-mail check separately.');
+      if(!/^[a-fA-F0-9]{64}$/.test(key))throw new Error('Enter the private removal-mail operator key. It is cleared after each click and never saved.');
+      const continuationFields={};for(const entry of entries)if(entry.continuationFields)continuationFields[entry.routeId||entry.preview.routeId]={...entry.continuationFields};
+      const session=S().create({workspace:W(),mail:M(),companion,operatorKey:key,continuationFields});view.session=session;return session;
+    }finally{key='';}
+  }
+  function reviewedMailContext(entry,operationId=entry.operationId){
+    const dashboard=W().dashboard(),item=dashboard.items.find(item=>item.site_id===(entry.routeId||entry.preview.routeId));
+    return dashboard.profile.id===entry.profileId&&dashboard.campaign.status==='active'&&item?.held!==true&&
+      item?.operation_id===operationId&&item.mail_contact?.contact_email===entry.mailContact&&
+      (!entry.continuationIdentity||['first_name','last_name'].every(key=>item.input_fields?.[key]===entry.continuationIdentity[key]));
+  }
+  function reviewedContinuation(item){
+    const fields=item.continuation_fields;
+    return item.site_id==='usphonebook'&&['first_name','last_name'].every(key=>typeof item.input_fields?.[key]==='string'&&item.input_fields[key].trim())&&fields&&Object.keys(fields).length===3&&['city','state','zip_code'].every(key=>typeof fields[key]==='string')&&
+      fields.city.trim()&&fields.city.length<=120&&!/[\r\n\x00<>]/.test(fields.city)&&/^[A-Z]{2}$/.test(fields.state)&&/^\d{5}$/.test(fields.zip_code)?{...fields}:null;
+  }
   function batchDialog(){
     if(batchView)return batchView;
     const dialog=n('dialog');dialog.id='form-batch-dialog';dialog.setAttribute('aria-labelledby','form-batch-heading');
     const body=n('div',null,'dialog-body'),heading=n('h2','Review your form batch');heading.id='form-batch-heading';
     const description=n('p','Review the exact fields and destinations below. Selected forms run one at a time while this page stays open. Filling a form does not establish a submitted request or deletion. Broker agreements, CAPTCHA checks, record matching and verification may still need you.');
     const list=n('div',null,'form-batch-list'),results=n('div',null,'form-batch-status');results.setAttribute('role','status');results.setAttribute('aria-live','polite');
+    const options=n('div',null,'form-batch-options');let automate=null,agreements=null,mail=null,key=null,keyLabel=null,mailList=null,mailScope=null;
+    if(A()?.CONTRACTS){
+      automate=n('input');automate.type='checkbox';automate.id='form-batch-automate';
+      const label=n('label');label.className='checkbox-label';label.append(automate,n('span','Automatically submit only forms with the exact agreements displayed below.'));
+      agreements=n('div',null,'form-batch-agreements');agreements.hidden=true;
+      options.append(label,n('p','Reviewed submission is available for FastPeopleSearch and NumaraAra only. Other selected forms keep their existing fill behavior. Local text recognition is available only with an installed helper; managed challenges can still require attention.','public-route-note'),agreements);
+    }
+    if(S()&&M()){
+      mail=n('input');mail.type='checkbox';mail.id='form-batch-mail';const label=n('label');label.className='checkbox-label';label.append(mail,n('span','Check the selected removal-only contacts once during this session.'));
+      keyLabel=n('label','Private removal-mail operator key');key=n('input');key.id='form-batch-mail-key';key.type='password';key.maxLength=64;key.autocomplete='off';key.setAttribute('autocomplete','off');keyLabel.append(key);keyLabel.hidden=true;
+      mailList=n('div',null,'form-batch-mail-list');mailList.id='form-batch-mail-list';mailScope=n('div',null,'form-batch-mail-scope');
+      options.append(label,n('p','This optional private pilot checks only already-bound removal-only contacts. It never substitutes a record’s identity email, creates an alias here or connects to a personal inbox. This is one pass: mail arriving later requires a new explicit check. Closing the session stops further checks.','public-route-note'),mailScope,mailList,keyLabel);
+    }
     const label=n('label');label.className='checkbox-label';
-    const approval=n('input');approval.type='checkbox';approval.id='form-batch-approval';label.setAttribute('for',approval.id);label.append(approval,n('span','I reviewed the selected brokers and exact fields. I authorize these form actions for my own information.'));
+    const approval=n('input');approval.type='checkbox';approval.id='form-batch-approval';label.setAttribute('for',approval.id);label.append(approval,n('span',automate||mail?'I reviewed the selected brokers and exact fields. I authorize these form actions, the displayed submission agreements only when automatic submission is selected, and the selected removal-mail checks for my own information.':'I reviewed the selected brokers and exact fields. I authorize these form actions for my own information.'));
+    const begin=()=>{
+      view.running=true;view.stopping=false;approval.checked=false;approval.disabled=true;start.disabled=true;stop.hidden=false;stop.disabled=false;
+      for(const entry of [...view.pending,...view.pendingMail])entry.select.disabled=true;
+      for(const input of [automate,mail,key])if(input)input.disabled=true;
+      if(mailOnce)mailOnce.disabled=true;setFillActions();stop.focus({preventScroll:true});
+    };
+    const finish=()=>{
+      disposeSession(view);view.running=false;view.stopping=false;stop.hidden=true;setFillActions();
+      view.pending=[];list.replaceChildren();resetBatchOptions(view);approval.checked=false;approval.disabled=true;start.disabled=true;
+      if(mailOnce)mailOnce.disabled=true;
+      results.append(n('p','Review a new batch to start any remaining forms. No action will repeat automatically.'));
+      const focused=document.activeElement;
+      let hidden=false;for(let parent=focused;parent&&parent!==dialog;parent=parent.parentElement)if(parent.hidden)hidden=true;
+      if(dialog.open&&(!focused||focused===document.body||[start,stop,approval,mailOnce].includes(focused)||!focused.isConnected||focused.disabled||hidden))close.focus({preventScroll:true});
+      changed();
+    };
     const start=button('Fill selected forms',async()=>{
       if(batchRunning())return;
       if(!approval.checked){results.textContent='Review the selected forms and authorize this batch first.';return;}
       const selected=view.pending.filter(entry=>entry.select.checked).map(entry=>entry.preview);
       if(!selected.length){results.textContent='Select at least one eligible form.';return;}
-      view.running=true;approval.checked=false;approval.disabled=true;start.disabled=true;stop.hidden=false;
-      for(const entry of view.pending)entry.select.disabled=true;
-      setFillActions();
-      stop.focus({preventScroll:true});
+      const automateSelected=automate?.checked===true,mailEntries=view.pending.filter(entry=>entry.select.checked&&entry.mailContact);
+      let session;try{session=batchMailSession(view,mailEntries);}catch(error){results.textContent=error.message;return;}
+      const mailEntriesById=new Map(mailEntries.map(entry=>[entry.preview.routeId,entry]));begin();
       let controller;
       try{
-        controller=globalThis.EraseFormBatch.create({workspace:W(),companion,onUpdate:snapshot=>{
+        controller=globalThis.EraseFormBatch.create({workspace:W(),companion,...(session?{afterResult:payload=>{
+          const entry=mailEntriesById.get(payload.routeId);if(!entry)return Promise.resolve({status:'not_applicable'});
+          if(!reviewedMailContext(entry,payload.operationId))return Promise.resolve({status:'unknown',detail:'The reviewed removal-mail context changed. No mailbox check started.'});
+          return session.process(payload);
+        }}:{}),onUpdate:snapshot=>{
           if(view.controller!==controller)return;
           results.replaceChildren(n('p',snapshot.status==='running'?'Form batch running.':'Form batch '+snapshot.status+'.'));
           if(snapshot.detail)results.append(n('p',snapshot.detail));
           for(const entry of snapshot.entries){const route=W().routes().find(route=>route.id===entry.routeId);results.append(n('p',(route?.name||entry.routeId)+': '+entry.status.replace(/_/g,' ')+(entry.detail?' — '+entry.detail:'')));}
         }});
         view.controller=controller;
-        await controller.run(selected,{authorized:true});
+        await controller.run(selected,{authorized:true,...(automateSelected?{automate:true}:{})});
       }catch(error){results.textContent=error?.message||'The form batch stopped. Check the existing broker tabs before starting another action.';}
       finally{
-        view.running=false;view.stopping=false;stop.hidden=true;setFillActions();
-        view.pending=[];list.replaceChildren();approval.checked=false;approval.disabled=true;
-        start.disabled=true;results.append(n('p','Review a new batch to start any remaining forms. No action will repeat automatically.'));
-        const focused=document.activeElement;
-        let hidden=false;for(let parent=focused;parent&&parent!==dialog;parent=parent.parentElement)if(parent.hidden)hidden=true;
-        if(dialog.open&&(!focused||focused===document.body||[start,stop,approval].includes(focused)||!focused.isConnected||focused.disabled||hidden))close.focus({preventScroll:true});
-        changed();
+        finish();
       }
     },()=>!view.running&&view.pending.some(entry=>entry.select.checked));start.id='form-batch-start';
-    const stop=button('Stop after current form',()=>{view.stopping=true;view.controller?.stop();results.append(n('p','Stopping after the current form. Unstarted forms will stay untouched.'));close.focus({preventScroll:true});},()=>!view.stopping);stop.id='form-batch-stop';stop.hidden=true;
+    const stop=button('Stop after current form',()=>{view.stopping=true;view.controller?.stop();disposeSession(view);results.append(n('p','Stopping after the current form. Unstarted forms and further mail checks will stay untouched.'));close.focus({preventScroll:true});},()=>!view.stopping);stop.id='form-batch-stop';stop.hidden=true;
     const close=button('Close review',()=>dialog.close());close.id='form-batch-close';
-    const actions=n('div',null,'dialog-actions');actions.append(start,stop,close);body.append(heading,description,list,label,results,actions);dialog.append(body);document.body.append(dialog);
-    const view={dialog,list,results,approval,start,stop,pending:[],running:false,reviewing:false,stopping:false,controller:null,opener:null};
-    const cancelRemaining=()=>{if(batchRunning())view.controller?.stop();view.pending=[];list.replaceChildren();approval.checked=false;start.disabled=true;};
+    const mailOnce=mail?button('Check existing removal mail once',async()=>{
+      if(batchRunning())return;
+      if(!mail.checked||!approval.checked){results.textContent='Select the one-pass mail option and authorize the selected removal-mail checks first.';return;}
+      const entries=view.pendingMail.filter(entry=>entry.select.checked).map(entry=>({...entry}));
+      let session;try{session=batchMailSession(view,entries);}catch(error){results.textContent=error.message;return;}
+      begin();view.controller=null;results.replaceChildren(n('p','Checking selected existing removal contacts once.'));
+      try{
+        for(const entry of entries){
+          if(view.stopping)break;
+          if(!reviewedMailContext(entry)){view.stopping=true;results.append(n('p','The reviewed removal-mail context changed. No further mailbox check started.'));break;}
+          const result=await session.process({routeId:entry.routeId,isStopped:()=>view.stopping});
+          results.append(n('p',entry.name+': '+(result?.detail||'The explicit mail check finished without establishing deletion.')));
+          if(result?.status==='unknown'){view.stopping=true;break;}
+        }
+      }catch(error){results.append(n('p',error?.message||'The removal-mail check could not continue. No form was repeated.'));}
+      finally{finish();}
+    },()=>!view.running&&view.pendingMail.some(entry=>entry.select.checked)):null;
+    if(mailOnce)mailOnce.id='form-batch-mail-once';
+    const actions=n('div',null,'dialog-actions');actions.append(start,...(mailOnce?[mailOnce]:[]),stop,close);body.append(heading,description,list,options,label,results,actions);dialog.append(body);document.body.append(dialog);
+    const view={dialog,list,results,approval,start,stop,automate,agreements,mail,key,keyLabel,mailList,mailScope,mailOnce,pending:[],pendingMail:[],session:null,running:false,reviewing:false,stopping:false,controller:null,opener:null};
+    for(const input of [automate,mail])if(input)input.addEventListener('change',()=>{approval.checked=false;updateBatchOptions(view);});
+    const cancelRemaining=()=>{if(batchRunning()){view.stopping=true;view.controller?.stop();}disposeSession(view);view.pending=[];list.replaceChildren();resetBatchOptions(view);approval.checked=false;start.disabled=true;if(mailOnce)mailOnce.disabled=true;};
     dialog.addEventListener('cancel',cancelRemaining);
     dialog.addEventListener('close',()=>{cancelRemaining();const opener=view.opener?.isConnected?view.opener:$('review-form-batch');opener?.focus({preventScroll:true});});
     batchView=view;return view;
@@ -88,7 +187,7 @@
     if(batchRunning()){if(!view.dialog.open)view.dialog.showModal();return;}
     view.reviewing=true;
     try{
-    view.pending=[];view.controller=null;view.list.replaceChildren();view.results.replaceChildren();view.approval.checked=false;view.approval.disabled=false;view.start.disabled=true;view.stop.hidden=true;view.stop.disabled=false;
+    disposeSession(view);view.pending=[];view.controller=null;view.list.replaceChildren();view.results.replaceChildren();resetBatchOptions(view);view.approval.checked=false;view.approval.disabled=false;view.start.disabled=true;view.stop.hidden=true;view.stop.disabled=false;
     const dashboard=W().dashboard(),routes=W().routes(),candidates=[];
     const skipped=n('details',null,'form-batch-skips'),summary=n('summary','Forms needing attention and guided routes');skipped.append(summary);let skippedCount=0;
     const exclude=section=>{skipped.append(section);skippedCount++;};
@@ -109,7 +208,7 @@
       try{
         if(editable){
           for(const key of route.fields.filter(key=>key!=='email'))if(!editable.fields[key]?.trim())throw new Error('Provide '+(fieldSpecs[key]?.label||key.replace(/_/g,' '))+' in this route’s Request steps first.');
-          await W().setEvidence(route.id,editable.fields,editable.affirmations);
+          await W().setEvidence(route.id,editable.fields,editable.affirmations,...(editable.review?[editable.review]:[]));
         }
         const preview=await W().fillPreview(route.id);
         const select=n('input');select.type='checkbox';select.checked=true;select.setAttribute('aria-label','Include '+route.name+' in this form batch');
@@ -117,13 +216,31 @@
         section.append(n('p','Official form: '+route.url,'public-route-note'));
         const fields=n('dl',null,'form-batch-fields');for(const [key,value]of Object.entries(preview.fields))fields.append(n('dt',fieldSpecs[key]?.label||(key==='email'?'Contact email':key.replace(/_/g,' '))),n('dd',value));section.append(fields);
         section.append(n('p',route.id==='peopledatalabs-form'?'Starts the broker’s verification-email step. Complete the later deletion steps with the broker.':'Fills the reviewed fields. Complete the broker’s submission, agreements and verification steps there.','public-route-note'));
-        view.pending.push({preview,select});
+        const item=dashboard.items.find(item=>item.site_id===route.id);
+        view.pending.push({preview,select,profileId:dashboard.profile.id,mailContact:mailRoutes.has(route.id)?item?.mail_contact?.contact_email:null,continuationFields:item?reviewedContinuation(item):null});
         view.list.append(section);
-        select.addEventListener('change',()=>{view.approval.checked=false;view.start.disabled=!view.pending.some(entry=>entry.select.checked);});
+        select.addEventListener('change',()=>{view.approval.checked=false;view.start.disabled=!view.pending.some(entry=>entry.select.checked);updateBatchOptions(view);});
       }catch(error){section.append(n('p','Needs detail: '+(error?.message||'Review this route’s required fields before filling.')));exclude(section);}
+    }
+    if(view.mail)for(const item of dashboard.items){
+      if(!mailRoutes.has(item.site_id)||!item.mail_contact||!item.operation_id||item.held||item.status==='held')continue;
+      const route=routes.find(route=>route.id===item.site_id);if(!route)continue;
+      if(!view.pendingMail.length)view.mailList.append(n('h3','Existing removal contacts'),n('p','Use Check existing removal mail once for these contacts. Starting forms checks only their already-bound contacts after a qualifying submission result.','public-route-note'));
+      const section=n('section',null,'form-batch-entry'),label=n('label'),select=n('input');select.type='checkbox';select.checked=true;select.id='form-batch-mail-route-'+route.id;
+      const description='Check '+route.name+' removal-only contact once — '+item.mail_contact.contact_email;
+      select.setAttribute('aria-label',description);label.className='checkbox-label';label.append(select,n('span',description));section.append(label);
+      const continuationFields=reviewedContinuation(item);
+      const continuationIdentity=continuationFields?{first_name:item.input_fields.first_name,last_name:item.input_fields.last_name,email:item.mail_contact.contact_email}:null;
+      if(continuationFields){
+        section.append(n('p','If its authenticated confirmation is ready, use only these reviewed confirmation fields. The broker can still require additional identity steps.','public-route-note'));
+        const fields=n('dl',null,'form-batch-fields');for(const [key,value]of Object.entries({...continuationIdentity,...continuationFields}))fields.append(n('dt',key.replace(/_/g,' ')),n('dd',value));section.append(fields);
+      }
+      view.pendingMail.push({routeId:route.id,name:route.name,operationId:item.operation_id,profileId:dashboard.profile.id,mailContact:item.mail_contact.contact_email,continuationFields,continuationIdentity,select});view.mailList.append(section);
+      select.addEventListener('change',()=>{view.approval.checked=false;updateBatchOptions(view);});
     }
     if(skippedCount){summary.textContent=skippedCount+' forms needing attention or guided routes';view.list.append(skipped);}
     view.start.disabled=view.pending.length===0;
+    updateBatchOptions(view);
     view.results.textContent=view.pending.length?view.pending.length+(view.pending.length===1?' form is':' forms are')+' ready for your review. No broker has been contacted.':'No eligible forms are ready. Complete the required details and route confirmations, then review again.';
     if(!view.dialog.open)view.dialog.showModal();
     }finally{view.reviewing=false;}
@@ -134,7 +251,7 @@
     $('signup-panel').querySelector('button[type="submit"]').textContent='Create private workspace';
     $('signup-panel').querySelector('.form-description').textContent='Saved in this browser on this device. Your profile is not uploaded to Erase Me.';
     $('signup-consent').nextElementSibling.textContent='I’m requesting removal of my own information. I authorize only the broker actions I explicitly start, using the fields shown.';
-    $('signup-panel').querySelector('.card-footnote').textContent='Use your own details. Broker verification happens on each broker’s site and in emails you open yourself.';
+    $('signup-panel').querySelector('.card-footnote').textContent=S()?'Use your own details. Complete the broker’s verification steps, or explicitly select a supported removal-only contact. Personal inboxes stay disconnected.':'Use your own details. Broker verification happens on each broker’s site and in emails you open yourself.';
     $('privacy-dialog').querySelector('.dialog-body > p').textContent='Your profile and request history stay in this browser’s storage on this device. Erase Me has no server copy. Other people using this browser profile can see them. Clearing browser data removes the workspace. Export a private backup if you need one.';
     $('demo-banner').hidden=false;
     $('demo-banner').querySelector('span:first-child').textContent='Private workspace';
@@ -177,12 +294,17 @@
     const exportButton=button('Export private backup',()=>{
       const data=W().exportData();const blob=new Blob([typeof data==='string'?data:JSON.stringify(data,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=n('a');a.href=url;a.download='erase-me-private-backup.json';a.click();URL.revokeObjectURL(url);
     });
-    box.append(n('p','For automatic form filling, install the desktop Chrome companion once. Official forms also work without it. Broker email and CAPTCHA steps remain yours.','public-route-note'),download,instructions,connect,exportButton);
+    box.append(n('p',A()||S()?'Install the desktop Chrome companion for reviewed form actions. Automatic submission and one-pass removal-mail checks are optional. Other broker verification can still need your attention.':'For automatic form filling, install the desktop Chrome companion once. Official forms also work without it. Broker email and CAPTCHA steps remain yours.','public-route-note'),download,instructions,connect,exportButton);
     if(globalThis.EraseFormBatch){const review=button('Review form batch',()=>reviewFormBatch(review));review.id='review-form-batch';box.append(review);}
+    if(A())box.append(button('Check local challenge helper',async()=>{
+      const status=await companion({action:'helper-status'});
+      if(status?.available!==true||typeof status.image!=='boolean'||typeof status.audio!=='boolean'){feedback('The local challenge helper is unavailable. Install and enable it separately to use supported local recognition. No challenge was attempted.');return;}
+      feedback('Local challenge helper connected. Text-image recognition: '+(status.image?'available':'unavailable')+'. Audio recognition: '+(status.audio?'available':'unavailable')+'. These capabilities do not guarantee passage through broker challenges. No challenge was attempted.');
+    }));
     if(M())box.append(button('Check removal-mail availability',async()=>{
       mailStatus=await M().status();changed();
       feedback(mailStatus.enabled?'The removal-mail relay is available as a private operator pilot. It checks receipts on demand. Reviewed USPhonebook confirmations can open its second form after you review the required fields.':mailStatus.configured?'The dedicated mailbox is configured, but the private pilot is disabled. Personal inboxes stay disconnected.':'The dedicated removal mailbox is not connected. Use the broker’s own email steps. Personal inboxes stay disconnected.');
-    }),n('p','Optional removal-mail checks are a gated operator pilot. They use a separate account, require a private key for each action and never run on a schedule. Each reviewed confirmation needs an explicit continuation.','public-route-note'));
+    }),n('p',S()?'Optional removal-mail checks are a gated operator pilot using a separate account. A private key is held only for the session you approve. Checks make one pass; they never run on a schedule. Only displayed, reviewed confirmation fields can continue automatically.':'Optional removal-mail checks are a gated operator pilot. They use a separate account, require a private key for each action and never run on a schedule. Each reviewed confirmation needs an explicit continuation.','public-route-note'));
   }
   function mailControls(route,item){
     if(!mailRoutes.has(route.id)||!M()||!mailStatus?.enabled)return null;
@@ -284,7 +406,7 @@
       const title=row.querySelector('.listing-title');const route=routes.find(r=>r.name===title?.textContent);if(!route)continue;
       const item=items.find(i=>i.site_id===route.id);if(!item)continue;
       const info=row.querySelector('.listing-info'),fields=n('div',null,'public-route-fields'),actions=n('div',null,'public-route-actions');
-      const values={},affirmations={};
+      const values={},affirmations={};let listingReview=item.automatic_match?{automaticReference:item.match_reference||''}:null;
       for(const key of route.fields.filter(k=>k!=='email')){
         const spec=fieldSpecs[key];if(!spec)continue;
         const label=n('label',spec.label);if(spec.textarea)label.className='wide';
@@ -292,14 +414,17 @@
         input.setAttribute('aria-label',route.name+' '+label.textContent);values[key]=input;label.append(input);fields.append(label);
       }
       for(const key of route.requiredAffirmations){
-        const label=n('label',key==='business_email'?'This is the business email associated with my own Apollo record, and I authorize using it for removal.':key==='own_request'?'I reviewed these fields and confirm this request concerns my own information.':'I reviewed this exact listing and confirm it is my own information.');
+        const manual='I reviewed this exact listing and confirm it is my own information.';
+        const statement=key==='business_email'?'This is the business email associated with my own Apollo record, and I authorize using it for removal.':key==='own_request'?'I reviewed these fields and confirm this request concerns my own information.':item.automatic_match?'This listing has a current automatic match using my name and identity email.':manual;
+        const label=n('label',key==='own_listing'&&item.automatic_match?'':statement),caption=key==='own_listing'&&item.automatic_match?n('span',statement):null;if(caption)label.append(caption);
         const input=n('input');input.type='checkbox';input.checked=item.affirmations?.[key]===true;input.disabled=Boolean(item.operation_id)||item.held===true;
-        input.setAttribute('aria-label',route.name+' '+label.textContent);affirmations[key]=input;label.append(input);fields.append(label);
-        for(const value of Object.values(values))value.addEventListener('input',()=>{input.checked=false;});
+        input.setAttribute('aria-label',route.name+' '+statement);affirmations[key]=input;label.append(input);fields.append(label);
+        if(key==='own_listing')input.addEventListener('change',()=>{if(input.checked){listingReview={manualListingReview:true};if(caption)caption.textContent=manual;input.setAttribute('aria-label',route.name+' '+manual);}});
+        for(const value of Object.values(values))value.addEventListener('input',()=>{input.checked=false;if(caption){caption.textContent=manual;input.setAttribute('aria-label',route.name+' '+manual);}});
       }
-      const read=()=>{const evidence={},confirmed={};for(const [key,input]of Object.entries(values))evidence[key]=['request_text','phone'].includes(key)?input.value:input.value.trim();for(const [key,input]of Object.entries(affirmations))confirmed[key]=input.checked===true;return{fields:evidence,affirmations:confirmed};};
+      const read=()=>{const evidence={},confirmed={};for(const [key,input]of Object.entries(values))evidence[key]=['request_text','phone'].includes(key)?input.value:input.value.trim();for(const [key,input]of Object.entries(affirmations))confirmed[key]=input.checked===true;return{fields:evidence,affirmations:confirmed,...(listingReview?{review:{...listingReview}}:{})};};
       formEditors.set(route.id,{read});
-      const save=async()=>{const candidate=read(),saved=await W().setEvidence(route.id,candidate.fields,candidate.affirmations);return{fields:saved,affirmations:candidate.affirmations};};
+      const save=async()=>{const candidate=read(),saved=await W().setEvidence(route.id,candidate.fields,candidate.affirmations,...(candidate.review?[candidate.review]:[]));return{fields:saved,affirmations:candidate.affirmations};};
       const open=button('Open official form',async()=>{
         await W().opened(route.id);
         window.open(route.url,'_blank','noopener,noreferrer');changed();feedback('Opening the official broker form was requested. If no tab appears, allow popups for this site. No request has been recorded as sent.');
@@ -308,6 +433,17 @@
         const request=await W().searchRequest(route.id);
         window.open(request.url,'_blank','noopener,noreferrer');changed();feedback('Opening a Google search was requested. Google receives your name and optional city. Review each candidate yourself; no listing match or removal was established.');
       }));
+      if(route.id==='spokeo'&&!item.held&&!item.operation_id&&typeof W().matchRequest==='function'){
+        const match=button('Match this record',async()=>{
+          if(batchRunning())throw new Error('Wait for the current session or stop its remaining actions first.');
+          const listingUrl=values.listing_url?.value.trim();if(!listingUrl)throw new Error('Enter your public Spokeo record URL before starting a matching check.');
+          const request=await W().matchRequest(route.id,listingUrl);let result;
+          try{result=await companion({action:'match',...request});}catch(_){result={status:'unknown',detail:'The matching connection was interrupted. No identity approval was established.'};}
+          await W().recordMatch(route.id,request.operationId,result);changed();
+          const current=W().dashboard().items.find(item=>item.site_id===route.id);
+          feedback(current?.automatic_match?'This record has a current automatic match using your name and identity email. No removal request or deletion was established.':'This check did not establish an automatic identity match. Review your own record or supply the missing identity detail; no removal action was started.');
+        },()=>!batchRunning());match.disabled=batchRunning();fillActions.add(match);actions.append(match);
+      }
       const supported=route.automationLevel==='companion';
       if(!item.held&&supported&&!item.operationId&&!item.operation_id){
         const fill=button(route.id==='peopledatalabs-form'?'Start broker verification':'Fill with companion',async()=>{

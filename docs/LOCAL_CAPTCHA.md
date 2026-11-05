@@ -1,5 +1,10 @@
 # Free local CAPTCHA connector
 
+This document covers the separate local Python browser adapter. The public desktop
+companion's narrower, reviewed NumaraAra text-image integration uses the
+[native challenge helper](LOCAL_CHALLENGE_HELPER.md). Its Chrome integration does not
+enable all the adapter's audio or checkbox flows.
+
 The web browser adapter has no paid solver dependency, API key or cloud-recognition
 fallback. It uses tools running on the worker's own machine:
 

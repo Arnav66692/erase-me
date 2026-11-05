@@ -1,9 +1,10 @@
 {
   "manifest_version": 3,
   "name": "Erase Me Companion",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Fill approved privacy forms in your browser. No inbox access or scheduled work.",
   "permissions": ["scripting", "storage"],
+  "optional_permissions": ["nativeMessaging"],
   "optional_host_permissions": [
     "https://privacy.peopledatalabs.com/*",
     "https://www.usphonebook.com/*",

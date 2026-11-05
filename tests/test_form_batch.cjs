@@ -206,3 +206,46 @@ test('separate concurrent batch controllers cannot repeat a real workspace opera
   await Promise.all([a.run(previews, { authorized: true }), b.run(previews, { authorized: true })]);
   assert.equal(runs, 1);
 });
+
+test('automatic submission is opt-in and binds the exact supported agreement',async()=>{
+  const Auto=require('../extension/automatic-executor.js');
+  for(const automate of [false,true]){
+    const core=await realWorkspace(),runs=[];
+    core.setEvidence('fastpeoplesearch',{first_name:'Example',last_name:'Person'});
+    const batch=Batch.create({workspace:core,companion:async payload=>{
+      if(payload.action==='ping')return{routes:['fastpeoplesearch'],capabilities:['automatic-submit-v1']};
+      runs.push(payload);return automate?{status:'submission_attempted',attempt_verified:true,stage:'verification_initiation'}:{status:'prepared'};
+    }});
+    const result=await batch.run([core.fillPreview('fastpeoplesearch')],{authorized:true,automate});
+    assert.equal(runs[0].autoSubmit,automate?true:undefined);
+    assert.equal(runs[0].consentId,automate?Auto.CONTRACTS.fastpeoplesearch.id:undefined);
+    assert.equal(result.status,'finished');assert.equal(core.dashboard().counts.requested,0);assert.equal(core.dashboard().counts.removed,0);
+  }
+});
+
+test('unproven or wrong-stage submission attempts stop without promotion',async()=>{
+  for(const proof of [{attempt_verified:false,stage:'verification_initiation'},{attempt_verified:true,stage:'request_submission'}]){
+    const core=await realWorkspace();core.setEvidence('fastpeoplesearch',{first_name:'Example',last_name:'Person'});
+    const batch=Batch.create({workspace:core,companion:async payload=>payload.action==='ping'?{routes:['fastpeoplesearch'],capabilities:['automatic-submit-v1']}:{status:'submission_attempted',...proof}});
+    const result=await batch.run([core.fillPreview('fastpeoplesearch')],{authorized:true,automate:true});
+    assert.equal(result.status,'stopped');assert.equal(result.entries[0].status,'unknown');assert.equal(core.dashboard().counts.requested,0);
+  }
+});
+
+test('one after-result step runs only after persisted proof and respects Stop',async()=>{
+  for(const stop of [false,true]){
+    const core=await realWorkspace();core.setEvidence('fastpeoplesearch',{first_name:'Example',last_name:'Person'});let checks=0,batch;
+    batch=Batch.create({workspace:core,companion:async payload=>{
+      if(payload.action==='ping')return{routes:['fastpeoplesearch'],capabilities:['automatic-submit-v1']};
+      if(stop)batch.stop();return{status:'submission_attempted',attempt_verified:true,stage:'verification_initiation'};
+    },afterResult:async({routeId,isStopped})=>{
+      assert.equal(core.snapshot().items[routeId].evidence.result,'submission_attempted');assert.equal(isStopped(),false);checks++;return{status:'awaiting_mail',detail:'No receipt is available yet.'};
+    }});
+    await batch.run([core.fillPreview('fastpeoplesearch')],{authorized:true,automate:true});assert.equal(checks,stop?0:1);
+  }
+});
+
+test('automatic mode requires the new companion before reserving any form',async()=>{
+  const f=fixture();const result=await f.batch.run(f.previews,{authorized:true,automate:true});
+  assert.equal(result.status,'stopped');assert.deepEqual(f.calls,[['ping',undefined]]);
+});
