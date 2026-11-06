@@ -11,7 +11,7 @@ function popup(id='a'.repeat(32),clipboard=true){
 }
 test('mail setup command uses only this validated public extension ID and requires an explicit copy click',async()=>{
   const p=popup();assert.deepEqual(p.writes,[]);assert.deepEqual(p.permissions,[]);
-  const command='python3 tools/setup_removal_mail.py --extension-id '+'a'.repeat(32);
+  const command='python3 tools/mail_setup_web.py --extension-id '+'a'.repeat(32);
   assert.equal(p.nodes.get('mail-setup-command').value,command);
   await p.click('copy-mail-setup');assert.deepEqual(p.writes,[command]);assert.deepEqual(p.permissions,[]);
   assert.match(p.nodes.get('result').textContent,/No account was connected/);
@@ -27,4 +27,9 @@ test('clipboard denial keeps selectable setup text and never connects an account
   const p=popup('b'.repeat(32),false);await p.click('copy-mail-setup');
   assert.match(p.nodes.get('result').textContent,/Select and copy/);assert.match(p.nodes.get('mail-setup-command').value,/--extension-id b{32}$/);
   assert.deepEqual(p.permissions,[]);
+});
+
+test('copying the public companion ID is explicit and sends no credential or permission request',async()=>{
+  const p=popup('c'.repeat(32));assert.equal(p.nodes.get('mail-companion-id').value,'c'.repeat(32));assert.deepEqual(p.writes,[]);
+  await p.click('copy-companion-id');assert.deepEqual(p.writes,['c'.repeat(32)]);assert.deepEqual(p.permissions,[]);
 });

@@ -380,7 +380,7 @@ A block, redirect or provider procedure is recorded as such, never counted as de
 There are 24 fixed contact alternatives. A contact verified for privacy requests can be
 used to prepare a local own-record request after explicit review. Registry or uncertain
 business/support addresses receive only a generic procedure question without identifiers.
-Draft preparation, copy and download are browser-local; there is no sending endpoint.
+Draft preparation, copy and download are browser-local; that feature has no sending endpoint. The optional local sender added in 0.12.0 is a separate reviewed action.
 Published contacts are not tested deletion endpoints or evidence of accepted requests.
 
 CMA Do Not Mail, Canada’s DNCL and the UK’s TPS are marketing-suppression registrations,
@@ -497,3 +497,80 @@ Spokeo, Nuwber and FamilyTreeNow returned HTTP 403 on fresh anonymous checks.
 ClustrMaps refused the inspected connection. Those results do not establish global
 unavailability and do not justify an invented form or completion adapter.
 TelefonSorgulama retains its prior asynchronous-submit limitation.
+
+## Version 0.12.0 official paths and marketing registration
+
+Fresh anonymous inspection found SmartBackgroundChecks' cold opt-out entry blocked,
+but its official privacy page publicly links the opt-out form. A fresh normal browser
+confirmed privacy-first navigation to the canonical `/remove` form without account,
+profile, cookie or header manipulation. The companion verifies the privacy purpose
+and exact published link twice in the same document before fixed navigation. Only
+the final subject/name/email form receives approved values. Hidden agent fields stay
+empty; the exact agreement and genuine reCAPTCHA response are required for an optional
+initial submit attempt. Later email, record matching and deletion remain unverified.
+
+CMA's official `https://cmadnm.cawebhosting.ca/submit.asp` and same-origin validator
+were inspected read-only. The native POST registers a mailing preference. Fixed list
+and language controls, selected DNM service, exact policy/notices and canonical Canadian
+mailing fields are pinned. Company, deceased-person and alternate-name controls remain
+untouched. The separate private flow supports prefill and an optional unchecked
+registration attempt. It sends no email, DOB or phone and stores no address values.
+Synthetic native tests establish guarded execution, not registration acceptance.
+
+Fresh DNCL and TPS pages expose early telephone steps; later purpose, consent and
+outcome controls were not inspected using a real number. They remain guided marketing
+registrations. 192.com remained blocked. Provider-owned subscriber, SMS, postal and
+manual-only routes retain the specific boundaries in the stage matrix.
+
+A normal visible desktop browser exposed Whitepages' first suppression step after a
+headless inspection had been blocked. Its published `standardizeWpUrl.js` describes
+a person URL with `/name/<name>/<location>/<id>`. The conservative reviewed adapter
+requires that exact official origin/path shape, no query/fragment or paid/login URL,
+and manual own-listing review. It pins the sole first-step text field, panel purpose
+and Next control, uses normal input/change events and never clicks Next. Synthetic
+native fixtures establish prefill behavior; they establish no live match, phone
+verification, accepted request or deletion.
+
+## Additional 0.12.0 observed contracts and privacy contacts
+
+Later November 5 normal-browser inspection exposed FamilyTreeNow’s official privacy
+entry and `/optout` form, superseding the earlier anonymous 403 observation for this
+contract. The subject-only first/last-name and email POST targets
+`/optout/beginoptoutidv`. Its exact privacy-request purpose, communications agreement,
+anti-forgery fields, absent optional agent details and genuine hCaptcha are pinned.
+The adapter can attempt initial verification once; email continuation, matching,
+acceptance and deletion remain unverified. No held live request was submitted.
+
+MyLife’s [official privacy request](https://www.mylife.com/privacyrequest) links
+[the observed JotForm](https://mylife.jotform.com/260284407610047), titled
+“DELETION AND OPT OUT OF SALE OF PERSONAL INFORMATION”. The transient contract pins
+that purpose and fills only first name, last name, state, city, ZIP and birth year
+after an exact own-information review. Email, phone, street and identity uploads
+are excluded. Genuine challenge and final submission remain manual. This supersedes
+the old inaccessible CCPA entry as a usable form observation, not as deletion evidence.
+
+[That’s Them](https://thatsthem.com/optout) has a separate reviewed transient prefill
+for the own name, contact email, street, city, state, ZIP and phone.
+[PeopleFinders](https://www.peoplefinders.com/opt-out) has a separate matching-field
+prefill for first/last name and US street, city and state. Its optional middle name,
+email, phone and birth date stay untouched. Both pin the observed purpose and controls,
+exclude extra identity values from persistence and leave genuine challenge, accuracy
+certification and submission on the official site. Synthetic tests validate contract
+boundaries, not live broker acceptance or independent removal.
+
+The official [BeenVerified privacy FAQ](https://www.beenverified.com/faq/privacy/)
+and [PeopleLooker privacy policy](https://www.peoplelooker.com/privacy-policy/)
+publish own-information deletion/opt-out request procedures and respectively
+`privacy@beenverified.com` and `privacy@peoplelooker.com`. Their privacy-rights sections
+18.3, 19.12 and public-data opt-out section 19.13 support classifying these as privacy
+contacts rather than registry-only support addresses. Written agent authorization
+requirements are not generalized into an agent-send service: the implemented sender
+accepts own-information requests only. Public-record suppression is distinct from
+account deletion; no acceptance or deletion result has been established.
+
+Seven fixed privacy contacts now have a separate optional native Gmail sender.
+Its exact reviewed message, fresh optional sending consent and one-shot durable
+outbox are documented in [local removal mail](LOCAL_REMOVAL_MAIL.md#reviewed-privacy-email-delivery).
+Support/registry contacts and Vodafone’s recorded-sender instructions are excluded.
+No credentials, real mail send, new pilot submission or recurring timer was used
+for this implementation and its synthetic tests.

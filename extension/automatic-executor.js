@@ -2,7 +2,7 @@
 (function (root) {
   'use strict';
   // Reinjecting the file into the same isolated document must not reset its journal.
-  if (root.EraseAutomaticExecutor?.version === 'automatic-executor-v6') {
+  if (root.EraseAutomaticExecutor?.version === 'automatic-executor-v8') {
     if (typeof module !== 'undefined') module.exports = root.EraseAutomaticExecutor;
     return;
   }
@@ -13,6 +13,7 @@
   const USPB_PRIVACY = 'The Information you provide here will only be used to process your request. We will not sell or use the information or use it for any other purpose. Please see our Privacy Policy for more details.';
   const USPB_PURPOSE = 'In order to complete your opt-out request, please enter your email address below. We will send an email to confirm the removal of the record you selected. We only will use your email address to send you an email to verify your request to opt out.';
   const USPB_AGENT_NOTICE = "Note: Authorized agent's email address will be used to send a link to the opt-out form. Once that form has been submitted, confirmation of processing will be sent to both the authorized agent's and the subject's email addresses.";
+  const SMART_CONSENT = 'I authorize SmartBackgroundChecks to send communications relating to my privacy request to the email address(es) provided. I certify that I am the subject of the request, or an agent authorized to act on behalf of the subject of the request. I understand that information provided relating to this request will not be used for any purpose other than the processing of this request.';
   const CONTRACTS = Object.freeze({
     fastpeoplesearch: Object.freeze({ id: 'fastpeoplesearch-submit-2026-11-05-v1', stage: 'verification_initiation', requiredCapability: 'reviewed-initial-submit-v2',
       consentText: 'I authorize FastPeopleSearch.com to send communications relating to my privacy request to the email address(es) provided. I certify that I am the subject of the request, or an agent authorized to act on behalf of the subject of the request. I understand that information provided relating to this request will not be used for any purpose other than the processing of this request.', policyUrl: null }),
@@ -36,7 +37,11 @@
       policyUrls: Object.freeze([]) }),
     usphonebook: Object.freeze({ id: 'usphonebook-submit-2026-11-05-v1', stage: 'verification_initiation', requiredCapability: 'reviewed-initial-submit-v4',
       consentText: USPB_CONSENT + ' ' + USPB_PRIVACY + ' ' + USPB_PURPOSE,
-      policyUrl: null, policyUrls: Object.freeze(['https://www.usphonebook.com/privacy']) })
+      policyUrl: null, policyUrls: Object.freeze(['https://www.usphonebook.com/privacy']) }),
+    smartbackgroundchecks: Object.freeze({ id: 'smartbackgroundchecks-submit-2026-11-05-v1', stage: 'verification_initiation', requiredCapability: 'reviewed-initial-submit-v5',
+      consentText: SMART_CONSENT, policyUrl: null, policyUrls: Object.freeze([]) }),
+    familytreenow: Object.freeze({ id: 'familytreenow-submit-2026-11-05-v1', stage: 'verification_initiation', requiredCapability: 'reviewed-initial-submit-v6',
+      consentText: 'I authorize you to send communications relating to my privacy request', policyUrl: null, policyUrls: Object.freeze([]) })
   });
   const documents = new WeakMap(), pendingReadiness = new WeakMap(), nativeSubmissionGuards = new WeakMap(), MAX_MEDIA = 512 * 1024, READINESS_TIMEOUT_MS = 12000;
   const normal = value => String(value || '').replace(/\s+/g, ' ').trim();
@@ -167,6 +172,63 @@
     if ([...form.elements].some(element => !approved.has(element))) reject('additional_fields');
     return { route, contract, form, controls, selection, checkbox, label, notice, terms, agentNotice, policyLinks, button, middle, optionalControls, csrf, token, widget, challengeScript: scripts[0] };
   }
+  function inspectSmart(payload, env, route, contract, allowPendingToken) {
+    const doc = env.document, form = one(doc, route.form);
+    nativeForm(form, 'post', false);
+    if (!BASE.formAllowed(form.action || env.location.href, route) || form.getAttribute('onsubmit') !== null ||
+        form.getAttribute('action') !== '/remove' || doc.forms?.length !== 1) reject('changed_destination');
+    const headings = [...doc.querySelectorAll('h2')].filter(element => normal(element.textContent) === 'Do Not Sell/Right to Opt-out');
+    if (headings.length !== 1 || !visible(headings[0], env)) reject('changed_purpose');
+    if ([...doc.querySelectorAll('[role="alert"],.swal2-popup,.alert-success,.alert-danger,.validation-summary-errors')].some(element => visible(element, env))) reject('existing_alert');
+    const names = { first_name: 'subject_fn', last_name: 'subject_ln', email: 'subject_email' };
+    const captions = { first_name: 'First Name', last_name: 'Last Name', email: 'Subject Email Address' };
+    const controls = Object.entries(payload.fields).map(([key, value]) => {
+      const element = one(doc, route[key]);
+      if (!visible(element, env) || element.form !== form || element.tagName !== 'INPUT' || element.name !== names[key] || !element.required ||
+          element.disabled || element.readOnly || element.type !== (key === 'email' ? 'email' : 'text') || element.value !== value ||
+          element.labels?.length !== 1 || normal(element.labels[0].textContent) !== captions[key] || !visible(element.labels[0], env)) reject('changed_fields');
+      return element;
+    });
+    const selection = one(doc, '#requester_type');
+    if (!visible(selection, env) || selection.form !== form || selection.tagName !== 'SELECT' || selection.name !== 'requester_type' || selection.type !== 'select-one' ||
+        selection.required || selection.disabled || selection.readOnly || selection.multiple !== false || selection.value !== 'subject' || selection.options.length !== 2 ||
+        selection.getAttribute('onchange') !== 'idvToggleAgent()' || selection.options[0].value !== 'subject' || selection.options[0].disabled || normal(selection.options[0].textContent) !== 'The subject of the request' ||
+        selection.options[1].value !== 'agent' || selection.options[1].disabled || normal(selection.options[1].textContent) !== 'An authorized agent of the subject of the request') reject('changed_purpose');
+    const middle = one(doc, '#subject_mn');
+    if (!visible(middle, env) || middle.form !== form || middle.tagName !== 'INPUT' || middle.type !== 'text' || middle.name !== 'subject_mn' ||
+        middle.required || middle.disabled || middle.readOnly || middle.value !== '') reject('additional_fields');
+    const optionalControls = ['agent_fn', 'agent_ln', 'agent_email'].map(name => {
+      const element = one(doc, '#' + name);
+      if (visible(element, env) || element.form !== form || element.tagName !== 'INPUT' || element.type !== (name === 'agent_email' ? 'email' : 'text') ||
+          element.name !== name || element.required || element.disabled || element.readOnly || element.value !== '') reject('additional_fields');
+      return element;
+    });
+    for (const [name, value] of [['form1_submit', '1'], ['id', ''], ['name', '']]) {
+      const element = one(doc, route.form + ' input[name="' + name + '"]');
+      if (element.form !== form || element.tagName !== 'INPUT' || element.type !== 'hidden' || element.name !== name || visible(element, env) ||
+          element.disabled || element.readOnly || element.required || element.value !== value) reject('additional_fields');
+      optionalControls.push(element);
+    }
+    const checkbox = one(doc, '#confirm_authorize');
+    if (!visible(checkbox, env) || checkbox.form !== form || checkbox.tagName !== 'INPUT' || checkbox.type !== 'checkbox' || checkbox.name !== 'confirm_authorize' ||
+        !checkbox.required || checkbox.disabled || checkbox.readOnly || checkbox.labels?.length !== 1 || checkbox.value !== 'on') reject('changed_consent');
+    const label = checkbox.labels[0];
+    if (!visible(label, env) || normal(label.textContent) !== SMART_CONSENT || form.querySelectorAll('a').length) reject('changed_consent');
+    const token = one(doc, route.form + ' textarea#g-recaptcha-response[name="g-recaptcha-response"]');
+    const widget = one(doc, route.form + ' .g-recaptcha');
+    const challengeScripts = [...doc.querySelectorAll('script[src]')].filter(element => element.src === 'https://www.google.com/recaptcha/api.js');
+    if (token.form !== form || token.type !== 'textarea' || token.name !== 'g-recaptcha-response' || token.disabled || token.readOnly || token.required || visible(token, env) ||
+        typeof token.value !== 'string' || token.value.length > 16384 || !visible(widget, env) || widget.tagName !== 'DIV' ||
+        widget.getAttribute('data-sitekey') !== '6LfrTZYeAAAAAIHiEeAsmSQCjVNoI81kuyTLrbgi' || challengeScripts.length !== 1) reject('changed_challenge');
+    if (!token.value.trim() && !allowPendingToken) reject('challenge_required');
+    const submits = [...form.querySelectorAll('button[type="submit"],input[type="submit"]')], button = submits[0];
+    nativeSubmitter(button);
+    if (submits.length !== 1 || !visible(button, env) || button.form !== form || button.tagName !== 'BUTTON' || button.type !== 'submit' || button.disabled ||
+        normal(button.textContent) !== 'Submit') reject('changed_submit');
+    const approved = new Set([...controls, selection, middle, ...optionalControls, checkbox, token, button]);
+    if ([...form.elements].some(element => !approved.has(element))) reject('additional_fields');
+    return { route, contract, form, controls, selection, middle, optionalControls, checkbox, label, token, widget, challengeScript: challengeScripts[0], button };
+  }
   function inspectABC(payload, env, route, contract) {
     const doc = env.document, first = one(doc, '#sfn'), form = first.form;
     nativeForm(form, 'get', true);
@@ -294,6 +356,8 @@
     if (payload.routeId === 'searchpeoplefree') return inspectSPF(payload, env, route, contract, allowPendingToken);
     if (payload.routeId === 'apollo') return inspectApollo(payload, env, route, contract);
     if (payload.routeId === 'usphonebook') return inspectUSPhonebook(payload, env, route, contract, allowPendingToken);
+    if (payload.routeId === 'smartbackgroundchecks') return inspectSmart(payload, env, route, contract, allowPendingToken);
+    if (payload.routeId === 'familytreenow') return { ...BASE.familyTreeNowFacts(payload.fields, env, allowPendingToken), contract };
     const form = one(doc, route.form);
     nativeForm(form, 'post', false);
     if (!BASE.formAllowed(form.action || env.location.href, route)) reject('changed_destination');
@@ -349,7 +413,7 @@
   function waitReady(payload, env = root) {
     let record, doc, operationId;
     try {
-      if (!['fastpeoplesearch', 'searchpeoplefree', 'usphonebook'].includes(payload?.routeId)) reject('approval_required');
+      if (!['fastpeoplesearch', 'searchpeoplefree', 'usphonebook', 'smartbackgroundchecks', 'familytreenow'].includes(payload?.routeId)) reject('approval_required');
       const fresh = inspect(payload, env, true);
       doc = env.document; operationId = payload.operationId;
       if (documents.get(doc)?.has(operationId)) reject('already_captured');
@@ -385,7 +449,7 @@
         try {
           if (env.document !== doc || env.location.href !== record.url || signature(payload) !== record.signature) reject('changed_form');
           const fresh = inspect(payload, env, true);
-          if (['form', 'selection', 'checkbox', 'label', 'button', 'token', 'widget', 'terms', 'middle', 'notice', 'agentNotice', 'csrf', 'challengeScript'].some(key => record[key] !== fresh[key]) ||
+          if (['form', 'selection', 'checkbox', 'label', 'button', 'token', 'widget', 'terms', 'middle', 'notice', 'agentNotice', 'csrf', 'challengeResponse', 'challengeScript'].some(key => record[key] !== fresh[key]) ||
               record.controls.length !== fresh.controls.length || record.controls.some((element, index) => element !== fresh.controls[index]) ||
               fresh.policyLinks && (record.policyLinks.length !== fresh.policyLinks.length || record.policyLinks.some((element, index) => element !== fresh.policyLinks[index])) ||
               fresh.optionalControls && (record.optionalControls.length !== fresh.optionalControls.length || record.optionalControls.some((element, index) => element !== fresh.optionalControls[index])) ||
@@ -438,6 +502,7 @@
         fresh.optionalControls && (record.optionalControls.length !== fresh.optionalControls.length || record.optionalControls.some((element, index) => element !== fresh.optionalControls[index])) ||
         fresh.csrf && fresh.csrf.value !== record.csrfValue) reject('changed_form');
     if (fresh.token && fresh.token.value !== record.tokenValue) reject('changed_challenge');
+    if (payload.routeId === 'familytreenow' && fresh.challengeResponse.value !== record.challengeResponseValue) reject('changed_challenge');
     if (fresh.answer) {
       if (fresh.answer.value !== answer) reject('changed_challenge');
       const current = imageData(fresh.image, env);
@@ -450,7 +515,7 @@
       const fresh = inspect(payload, env), journal = stateFor(env.document);
       if (journal.has(payload.operationId)) return blocked('already_captured', 'This document already has an automatic action reference. No repeat was started.');
       const record = { ...fresh, signature: signature(payload), checkboxValue: fresh.checkbox?.value, initialConsent: fresh.checkbox?.checked,
-        tokenValue: fresh.token?.value, csrfValue: fresh.csrf?.value, phase: 'captured' };
+        tokenValue: fresh.token?.value, ...(payload.routeId === 'familytreenow' ? { challengeResponseValue: fresh.challengeResponse.value } : {}), csrfValue: fresh.csrf?.value, phase: 'captured' };
       if (fresh.image) {
         if (fresh.answer.value) reject('existing_challenge_answer');
         Object.assign(record, imageData(fresh.image, env));
@@ -514,7 +579,7 @@
     }
     return result;
   }
-  const api = Object.freeze({ version: 'automatic-executor-v6', CONTRACTS, waitReady, capture, submit });
+  const api = Object.freeze({ version: 'automatic-executor-v8', CONTRACTS, waitReady, capture, submit });
   root.EraseAutomaticExecutor = api;
   if (typeof module !== 'undefined') module.exports = api;
 })(typeof globalThis === 'object' ? globalThis : this);

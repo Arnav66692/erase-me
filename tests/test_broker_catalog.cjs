@@ -18,9 +18,9 @@ test('catalog routes have unique IDs and exact HTTPS official entry hosts', () =
     assert.ok(Object.isFrozen(route.fields)); assert.ok(Object.isFrozen(route.allowedHosts));
   }
 });
-test('only the eleven reviewed initial actions have companion support', () => {
+test('only reviewed standard initial actions have companion support', () => {
   assert.deepEqual(routes.filter(route => route.automationLevel === 'companion').map(route => route.id).sort(),
-    ['peopledatalabs-form', 'usphonebook', 'searchpeoplefree', 'fastpeoplesearch', 'apollo', 'spokeo', 'advancedbackgroundchecks',
+    ['peopledatalabs-form', 'usphonebook', 'searchpeoplefree', 'fastpeoplesearch', 'apollo', 'spokeo', 'advancedbackgroundchecks', 'smartbackgroundchecks', 'familytreenow', 'whitepages',
       'tr-nosorgulama', 'tr-numaraara', 'tr-numarasor', 'tr-telefonsorgulama'].sort());
   assert.deepEqual(routes.filter(route => route.countries.includes('*')).map(route => route.id).sort(), ['apollo', 'peopledatalabs-form']);
   assert.deepEqual([...new Set(routes.flatMap(route => route.countries).filter(country => country !== '*'))].sort(), ['CA', 'DE', 'GB', 'TR', 'US']);
@@ -36,9 +36,12 @@ test('the US reference catalog is fully represented as automation or explicit ma
   assert.deepEqual(routes.filter(route => route.countries.includes('US')).map(route => route.id).sort(), sourceIds);
 });
 test('regional references retain source provenance and only reviewed forms collect approved fields', () => {
-  const promoted = new Set(['advancedbackgroundchecks', 'tr-nosorgulama', 'tr-numaraara', 'tr-numarasor', 'tr-telefonsorgulama']);
+  const promoted = new Set(['familytreenow', 'advancedbackgroundchecks', 'tr-nosorgulama', 'tr-numaraara', 'tr-numarasor', 'tr-telefonsorgulama']);
   for (const route of routes.filter(route => route.sourceCatalog)) {
-    if (promoted.has(route.id)) {
+    if (route.id === 'whitepages') {
+      assert.equal(route.automationLevel,'companion');assert.equal(route.availability,'reviewed_listing_prefill');
+      assert.deepEqual(route.requiredAffirmations,['own_listing']);assert.deepEqual(route.fields,['listing_url']);
+    } else if (promoted.has(route.id)) {
       assert.equal(route.automationLevel, 'companion');
       assert.equal(route.availability, 'reviewed_initial_form');
       assert.deepEqual(route.requiredAffirmations, ['own_request']);

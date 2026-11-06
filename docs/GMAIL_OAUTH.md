@@ -31,18 +31,18 @@ endpoints, symlinks, hardlinks and non-private files are refused.
 
 ## Connect explicitly
 
-The recommended per-user setup is now one guided command from a checkout or the
-extracted local-mail source download:
+The recommended per-user setup is the local browser screen, opened by the source
+download’s Mac/Linux launcher or this command:
 
 ```sh
-python3 tools/setup_removal_mail.py
+python3 -I -B tools/mail_setup_web.py
 ```
 
-It asks for account addresses and the private client **path** locally, completes this
+It collects account addresses and a selected client file locally, completes this
 same OAuth flow and installs/checks the companion connector. A matching existing
 connection is reused with an identity-only check. The companion popup can copy a
 command with `--extension-id` already filled. See
-[the guided instructions](LOCAL_REMOVAL_MAIL.md#guided-setup). The Desktop client
+[the guided instructions](LOCAL_REMOVAL_MAIL.md#browser-setup). The Desktop client
 preparation above is still required; no broadly approved shared client is supplied.
 
 For an advanced connection without installing the native connector, use the original
@@ -59,21 +59,28 @@ python3 tools/connect_removal_gmail.py \
 ```
 
 The connector opens Google's consent page in the browser. Choose the **dedicated
-removal account only**. It requests just these scopes:
+removal account only**. By default it requests only these scopes:
 
 - `openid`
 - `email`
 - `https://www.googleapis.com/auth/gmail.readonly`
 
-No sending, modification or deletion scope is accepted. Extra granted scopes are
-refused. The flow uses PKCE S256, a cryptographically random state and a listener
+Sending is a separate, optional choice. **Allow reviewed privacy-email sending** in
+the setup screen (advanced CLI: `--allow-sending`) adds exactly
+`https://www.googleapis.com/auth/gmail.send`. An existing read-only connection remains
+valid and cannot send. Upgrading it requires explicit reconnect and fresh Google
+consent; the screen may reuse the saved Desktop client only for that same account
+and primary-email fingerprint. It never silently broadens an existing grant.
+
+Only the exact default scope set or that set plus `gmail.send` is accepted.
+Modification, deletion and unrelated extra scopes are refused. The flow uses PKCE S256, a cryptographically random state and a listener
 bound to `127.0.0.1` on an ephemeral port, with callback path `/oauth/callback`.
 Authorization waits at most 120 seconds. Invalid callback hosts, paths, states and
 duplicate codes are refused. Codes and tokens are not printed or logged.
 
 Successful connection stores `~/.erase-me-removal-mail/gmail-oauth.json` with mode
 600 in an owner-private mode-700 directory. It contains the client credentials,
-read-only tokens, approved scopes, verified dedicated identity and a hash used to
+tokens, the exact approved scope set, verified dedicated identity and a hash used to
 exclude the personal inbox. The setup refuses repository paths, unrelated data
 directories, unsafe permissions and links. Reconnecting requires `--replace`.
 
@@ -87,8 +94,9 @@ Only an explicit call checks the dedicated identity and refreshes a token when i
 is near expiry. Nothing installs a service, starts a timer, polls messages, reads
 Gmail contents or sends mail. A temporary provider error is reported without
 printing its response. A selected-account mismatch revokes the grant rather than
-proceeding. Future message readers must use the identity-checked credentials and
-remain limited to correlated removal operations.
+proceeding. Message readers use identity-checked credentials and remain limited to
+correlated removal operations. The separate reviewed sender needs an exact message
+preview and one explicit approval per operation; connection/check-token never sends mail.
 
 Google may expire or revoke a refresh token. External consent screens in Testing
 can impose short token lifetimes and test-user limits. Gmail read-only is a
@@ -96,3 +104,17 @@ restricted scope and public authorization distribution may require Google's
 verification process. This local connection does not establish an unlimited or
 verified public Gmail application. The remaining broker-specific confirmation
 and independent-removal evidence checks are separate work.
+
+## Reviewed outbound messages
+
+The optional sender uses Google's fixed
+[`users.messages.send` endpoint](https://developers.google.com/workspace/gmail/api/reference/rest/v1/users.messages/send)
+for seven purpose-verified privacy contacts. It accepts no arbitrary recipient,
+attachment or provider endpoint. The user reviews the dedicated From address, fixed
+To address, subject and body before a single attempt. An opaque digest-bound grant
+expires after fifteen minutes; a durable local outbox reserves the attempt before
+the API call. An uncertain result is held without retry.
+
+A returned Google message/thread ID establishes API acceptance only, not successful
+delivery, broker acceptance or deletion. No public Gmail verification or unrestricted
+shared-client distribution has been established by this connector.

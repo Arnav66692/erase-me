@@ -4,10 +4,13 @@
   const ROUTES = Object.freeze({
     'peopledatalabs-form': {host:'privacy.peopledatalabs.com',path:'/policies',url:'https://privacy.peopledatalabs.com/policies?action=ERASURE&modal=log-in',email:'#pc-email-login-input',submit:'#email-login-submit',purpose:'erasure'},
     usphonebook: {host:'www.usphonebook.com',path:'/removal',url:'https://www.usphonebook.com/removal',first_name:'#subject-firstname',last_name:'#subject-lastname',email:'#subject-email',form:'#verifyEmailForm',method:'post'},
+    smartbackgroundchecks: {host:'www.smartbackgroundchecks.com',path:'/remove',url:'https://www.smartbackgroundchecks.com/optout',entryUrl:'https://www.smartbackgroundchecks.com/privacy',first_name:'#subject_fn',last_name:'#subject_ln',email:'#subject_email',form:'form[action="/remove"][method="post"]',formPath:'/remove',method:'post',submitText:'Submit',ownRequest:true,selection:{selector:'#requester_type',value:'subject'}},
+    familytreenow: {host:'www.familytreenow.com',path:'/optout',url:'https://www.familytreenow.com/optout',entryUrl:'https://www.familytreenow.com/privacy',first_name:'#FirstName',last_name:'#LastName',email:'#Email',form:'form[action="/optout/beginoptoutidv"][method="post"]',formPath:'/optout/beginoptoutidv',method:'post',submitText:'Begin Privacy Request',ownRequest:true,selection:{selector:'#RequestType',value:'subject'}},
     searchpeoplefree: {host:'www.searchpeoplefree.com',path:'/opt-out',url:'https://www.searchpeoplefree.com/opt-out',first_name:'#o_first',last_name:'#o_last',email:'#o_email',form:'#o_form',method:'get'},
     fastpeoplesearch: {host:'www.fastpeoplesearch.com',path:'/optout',formPath:'/optout-start-submitted',url:'https://www.fastpeoplesearch.com/optout',first_name:'#firstname',last_name:'#lastname',email:'#email',form:'#optout-start',method:'post'},
     apollo: {host:'www.apollo.io',path:'/privacy-policy/remove',url:'https://www.apollo.io/privacy-policy/remove',business_email:'input#email[name="email"][type="email"]',method:'get',submitText:'Get verification information'},
     spokeo: {host:'www.spokeo.com',path:'/optout',url:'https://www.spokeo.com/optout',listing_url:'input[name="url"][type="url"]',email:'input[name="email"][type="email"]',method:'get',submitText:'OPT OUT'},
+    whitepages: {host:'www.whitepages.com',path:'/suppression-requests',url:'https://www.whitepages.com/suppression-requests',listing_url:'input#suppression-requests-person-url[type="text"]'},
     advancedbackgroundchecks: {host:'www.advancedbackgroundchecks.com',path:'/opt-out',url:'https://www.advancedbackgroundchecks.com/opt-out',first_name:'#sfn',last_name:'#sln',email:'#semail',method:'get',submitText:'Submit',ownRequest:true,selection:{selector:'#mode',value:'subject'}},
     'tr-nosorgulama': {host:'www.nosorgulama.com.tr',path:'/iletisim/',url:'https://www.nosorgulama.com.tr/iletisim/',full_name:'#ic-ad[name="ad_soyad"]',email:'#ic-email[name="email"]',request_text:'#ic-mesaj[name="mesaj"]',method:'post',submitText:'Mesajı Gönder',ownRequest:true,selection:{selector:'#ic-konu[name="konu"]',value:'profil-kaldir'}},
     'tr-numaraara': {host:'www.numaraara.com',path:'/iletisim',formPath:'/Contact/ContactFormSend',url:'https://www.numaraara.com/iletisim',form:'form#contactForm',full_name:'#form_AdSoyad[name="form.AdSoyad"]',email:'#form_Eposta[name="form.Eposta"]',request_text:'#form_Mesaj[name="form.Mesaj"]',method:'post',submitText:'Talebi Gönder',ownRequest:true,selection:{selector:'#form_Konu[name="form.Konu"]',value:'Numara Silme Talebi (KVKK)'}},
@@ -24,6 +27,48 @@
     } catch (_) {return false;}
   }
   function formAllowed(url, route) { return allowed(url, route.formPath ? {...route,path:route.formPath,purpose:null} : route); }
+  function familyTreeNowFacts(fields, env=globalThis, allowPendingToken=false) {
+    const route=ROUTES.familytreenow,doc=env.document,normal=value=>String(value||'').replace(/\s+/g,' ').trim();
+    const fail=reason=>{const error=new Error('The reviewed FamilyTreeNow initial form changed.');error.reason=reason;throw error;};
+    const one=selector=>{const values=[...doc.querySelectorAll(selector)];if(values.length!==1)fail('changed_controls');return values[0];};
+    const shown=element=>{if(!element||element.hidden||!element.getClientRects().length)return false;for(let node=element;node;node=node.parentElement){const s=env.getComputedStyle(node);if(s.display==='none'||s.visibility==='hidden'||Number(s.opacity)===0)return false;}return true;};
+    if(!allowed(env.location.href,route)||doc.querySelector('input[type="file"]'))fail('changed_destination');
+    const form=one(route.form);
+    if(doc.title!=='Privacy Request - FamilyTreeNow.com'||doc.forms?.length!==1||form.tagName!=='FORM'||!formAllowed(form.action,route)||
+      form.getAttribute('action')!=='/optout/beginoptoutidv'||form.method!=='post'||form.enctype!=='application/x-www-form-urlencoded'||form.target!==''||form.noValidate!==false||form.getAttribute('onsubmit')!==null)fail('changed_destination');
+    const headings=[...doc.querySelectorAll('h2')].filter(e=>normal(e.textContent)==='Privacy Request');
+    const notices=[...doc.querySelectorAll('p')].filter(e=>normal(e.textContent)==='To opt your information out of our records, please complete the form below. We will send you a verification email to confirm your identity before processing your request.');
+    if(headings.length!==1||!shown(headings[0])||notices.length!==1||!shown(notices[0]))fail('changed_purpose');
+    if([...doc.querySelectorAll('[role="alert"],.swal2-popup,.alert-success,.alert-danger,.validation-summary-errors')].some(shown))fail('existing_alert');
+    const expected=fields||{first_name:'',last_name:'',email:''},names={first_name:'FirstName',last_name:'LastName',email:'Email'},captions={first_name:'First Name *',last_name:'Last Name *',email:'Email *'};
+    const controls=Object.entries(expected).map(([key,value])=>{const e=one(route[key]);if(!shown(e)||e.form!==form||e.tagName!=='INPUT'||e.name!==names[key]||e.type!==(key==='email'?'email':'text')||!e.required||e.disabled||e.readOnly||e.value!==value||e.labels?.length!==1||!shown(e.labels[0])||normal(e.labels[0].textContent)!==captions[key])fail('changed_fields');return e;});
+    if(controls.length!==3)fail('changed_fields');
+    const selection=one('#RequestType');
+    if(!shown(selection)||selection.form!==form||selection.tagName!=='SELECT'||selection.type!=='select-one'||selection.name!=='RequestType'||selection.required||selection.disabled||selection.readOnly||selection.multiple!==false||selection.value!=='subject'||selection.getAttribute('onchange')!=='toggleAgentFields()'||selection.options.length!==2||
+      selection.options[0].value!=='subject'||selection.options[0].disabled||normal(selection.options[0].textContent)!=='The person whose information is being opted out'||selection.options[1].value!=='agent'||selection.options[1].disabled||normal(selection.options[1].textContent)!=='An authorized agent on behalf of someone else')fail('changed_purpose');
+    const middle=one('#MiddleName');
+    if(!shown(middle)||middle.form!==form||middle.tagName!=='INPUT'||middle.type!=='text'||middle.name!=='MiddleName'||middle.required||middle.disabled||middle.readOnly||middle.value!=='')fail('additional_fields');
+    const optionalControls=['AgentFirstName','AgentLastName','AgentEmail'].map(name=>{const e=one('#'+name);if(shown(e)||e.form!==form||e.tagName!=='INPUT'||e.type!==(name==='AgentEmail'?'email':'text')||e.name!==name||e.required||e.disabled||e.readOnly||e.value!=='')fail('additional_fields');return e;});
+    const checkbox=one('#AuthorizeContact'),consent='I authorize you to send communications relating to my privacy request';
+    if(!shown(checkbox)||checkbox.form!==form||checkbox.tagName!=='INPUT'||checkbox.type!=='checkbox'||checkbox.name!=='AuthorizeContact'||checkbox.value!=='true'||checkbox.required||checkbox.disabled||checkbox.readOnly||checkbox.labels?.length!==1||checkbox.getAttribute('data-val-required')!=='The I authorize you to send communications relating to my privacy request field is required.')fail('changed_consent');
+    const label=checkbox.labels[0];
+    if(label.tagName!=='LABEL'||!shown(label)||normal(label.textContent)!==consent+' *'||form.querySelectorAll('a').length)fail('changed_consent');
+    const fallback=one(route.form+' input[type="hidden"][name="AuthorizeContact"]');
+    if(fallback.form!==form||fallback.tagName!=='INPUT'||fallback.type!=='hidden'||fallback.name!=='AuthorizeContact'||fallback.value!=='false'||fallback.required||fallback.disabled||fallback.readOnly||shown(fallback))fail('additional_fields');
+    optionalControls.push(fallback);
+    const csrf=one(route.form+' input[name="__RequestVerificationToken"]');
+    if(csrf.form!==form||csrf.tagName!=='INPUT'||csrf.type!=='hidden'||csrf.name!=='__RequestVerificationToken'||csrf.required||csrf.disabled||csrf.readOnly||shown(csrf)||typeof csrf.value!=='string'||!csrf.value.trim()||csrf.value.length>4096)fail('changed_form');
+    const token=one(route.form+' textarea[name="h-captcha-response"]'),challengeResponse=one(route.form+' textarea[name="g-recaptcha-response"]'),widget=one(route.form+' .h-captcha');
+    for(const [e,name]of [[token,'h-captcha-response'],[challengeResponse,'g-recaptcha-response']])if(e.form!==form||e.tagName!=='TEXTAREA'||e.type!=='textarea'||e.name!==name||e.required||e.disabled||e.readOnly||shown(e)||typeof e.value!=='string'||e.value.length>16384)fail('changed_challenge');
+    const scripts=[...doc.querySelectorAll('script[src]')].filter(e=>e.src==='https://hcaptcha.com/1/api.js');
+    if(widget.tagName!=='DIV'||!shown(widget)||widget.getAttribute('data-sitekey')!=='58366d97-3e8c-4b57-a679-4a41c8423be3'||scripts.length!==1)fail('changed_challenge');
+    if(!token.value.trim()&&!allowPendingToken)fail('challenge_required');
+    const buttons=[...form.elements].filter(e=>['BUTTON','INPUT'].includes(e.tagName)&&['submit','image'].includes(e.type)),button=buttons[0];
+    if(buttons.length!==1||!shown(button)||button.form!==form||button.tagName!=='BUTTON'||button.type!=='submit'||button.disabled||normal(button.textContent)!=='Begin Privacy Request'||button.name!==''||button.value!==''||button.formNoValidate!==false||['formaction','formmethod','formtarget','formenctype','formnovalidate'].some(name=>button.hasAttribute(name)))fail('changed_submit');
+    const approved=new Set([...controls,selection,middle,...optionalControls,checkbox,csrf,token,challengeResponse,button]);
+    if(form.elements.length!==14||[...form.elements].some(e=>!approved.has(e)))fail('additional_fields');
+    return {route,form,controls,selection,middle,optionalControls,checkbox,label,csrf,token,challengeResponse,widget,challengeScript:scripts[0],button,notice:notices[0]};
+  }
   function visible(e) {
     if(!e || e.hidden || !e.getClientRects().length)return false;
     for(let n=e;n;n=n.parentElement){const s=getComputedStyle(n);if(s.display==='none'||s.visibility==='hidden'||Number(s.opacity)===0)return false;}
@@ -39,6 +84,14 @@
       return u.protocol==='https:'&&u.hostname==='www.spokeo.com'&&!u.port&&!u.username&&!u.password&&!u.search&&!u.hash&&parts.length===4&&
         /^[A-Za-z0-9]+(?:-[A-Za-z0-9]+)+$/.test(parts[0])&&/^p[0-9]{1,64}$/.test(parts[3])&&
         ((city.test(parts[1])&&STATE_CODES.test(parts[2]))||(new RegExp('^(?:'+STATE_NAMES+')$','i').test(parts[1])&&city.test(parts[2])));
+    }catch(_){return false;}
+  }
+  function whitepagesURL(value){
+    try{
+      if(typeof value!=='string'||value.length>2048||/[\s%\\]/.test(value))return false;
+      const url=new URL(value);
+      return url.protocol==='https:'&&url.hostname==='www.whitepages.com'&&!url.port&&!url.username&&!url.password&&!url.search&&!url.hash&&
+        /^\/name\/[A-Za-z0-9-]{1,256}\/[A-Za-z0-9-]{1,256}\/[A-Za-z0-9_-]{1,512}$/.test(url.pathname);
     }catch(_){return false;}
   }
   function fieldKeys(route){return ['email','first_name','last_name','business_email','listing_url','full_name','phone','request_text'].filter(key=>route[key]);}
@@ -57,6 +110,7 @@
     for(const key of ['email','business_email'])if(keys.includes(key)&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(fields[key]))throw new Error('Invalid email.');
     if(routeId==='apollo'&&approval.businessEmailConfirmed!==true)throw new Error('Confirm the business email associated with your own Apollo record.');
     if(routeId==='spokeo'&&(!listingURL(fields.listing_url)||approval.listingConfirmed!==true))throw new Error('Confirm the exact Spokeo listing is your own.');
+    if(routeId==='whitepages'&&(!whitepagesURL(fields.listing_url)||approval.listingConfirmed!==true))throw new Error('Review and confirm your exact direct Whitepages person-record URL.');
     if(route.ownRequest&&approval.ownRequestConfirmed!==true)throw new Error('Confirm that this is your own request and review the exact fields first.');
     return route;
   }
@@ -204,8 +258,46 @@
     if(!ready()||controls().some(({key,e})=>e.value!==fields[key]))return {status:'blocked',detail:'The broker did not retain the approved confirmation fields.'};
     return {status:'prepared',detail:'The authorized name, city, state, ZIP and contact fields are filled. USPhonebook also requires either date of birth or street address: enter one directly on its official form. Erase Me does not collect or autofill it. Review the accuracy statement, complete the broker challenge and choose Confirm Removal Process there. Request acceptance and deletion remain unverified.'};
   }
+  const whitepagesDocuments=new WeakSet();
+  async function executeWhitepages(payload,env){
+    const route=ROUTES.whitepages,doc=env.document,normal=value=>String(value||'').replace(/\s+/g,' ').trim();
+    if(payload.authorized!==true||!/^[a-f0-9-]{32,40}$/.test(payload.operationId||''))return {status:'blocked',detail:'Review and authorize your own Whitepages listing first.'};
+    const safe=()=>env.document===doc&&allowed(env.location.href,route)&&!doc.querySelector('input[type="file"]');
+    for(let index=0;index<40&&safe()&&!visible(doc.querySelector(route.listing_url));index++)await new Promise(resolve=>env.setTimeout(resolve,250));
+    const signature=JSON.stringify(payload);
+    function inspect(expected){
+      if(!safe()||JSON.stringify(payload)!==signature)throw new Error();
+      const candidates=[...doc.querySelectorAll(route.listing_url)],input=candidates[0];
+      if(candidates.length!==1||!visible(input)||input.form!==null||input.tagName!=='INPUT'||input.type!=='text'||input.name!==''||input.required||input.disabled||input.readOnly||
+        input.getAttribute('placeholder')!=='Copy and paste the URL of your profile'||input.getAttribute('autocomplete')!=='off'||input.getAttribute('inputmode')!=='text'||
+        input.getAttribute('data-qa-selector')!=='suppression-requests-person-url'||input.value!==expected)throw new Error();
+      const card=input.closest('.card'),section=card?.parentElement;
+      if(!card||!section||!visible(card)||card.tagName!=='DIV'||section.tagName!=='DIV')throw new Error();
+      const headings=[...section.querySelectorAll('.display-2')],steps=[...section.querySelectorAll('.overline')],notices=[...card.querySelectorAll('.body-1')],buttons=[...card.querySelectorAll('button')];
+      if(headings.length!==1||steps.length!==1||notices.length!==1||buttons.length!==1||![headings[0],steps[0],notices[0]].every(visible)||
+        normal(headings[0].textContent)!=='Opt-out of Whitepages'||normal(steps[0].textContent)!=='Step 1 of 5'||
+        normal(notices[0].textContent)!=='You can opt out and have your listing removed from the Whitepages website. Copy and paste the URL of your profile.')throw new Error();
+      const button=buttons[0];
+      if(!visible(button)||button.form!==null||button.type!=='submit'||button.name!==''||button.value!==''||button.disabled||button.formNoValidate!==false||normal(button.textContent)!=='Next'||
+        ['formaction','formmethod','formtarget','formenctype','formnovalidate'].some(key=>button.hasAttribute(key)))throw new Error();
+      const controls=[...card.querySelectorAll('input,textarea,select')];if(controls.length!==1||controls[0]!==input||card.querySelectorAll('a').length)throw new Error();
+      return {input,card,section,heading:headings[0],step:steps[0],notice:notices[0],button};
+    }
+    try{
+      if(whitepagesDocuments.has(doc))return {status:'unknown',detail:'This Whitepages prefill already started. No field was filled again.'};
+      const first=inspect(''),same=expected=>{const fresh=inspect(expected);if(Object.keys(first).some(key=>fresh[key]!==first[key]))throw new Error();};
+      const value=payload.fields.listing_url,setter=Object.getOwnPropertyDescriptor(env.HTMLInputElement.prototype,'value')?.set;if(!setter)throw new Error();
+      whitepagesDocuments.add(doc);same('');setter.call(first.input,value);same(value);
+      for(const event of ['input','change']){first.input.dispatchEvent(new env.Event(event,{bubbles:true}));same(value);}
+      return {status:'prepared',detail:'Only your confirmed Whitepages record URL was filled. Review Next and the remaining broker steps yourself; no request was submitted, phone call made or deletion verified.'};
+    }catch(_){return {status:'blocked',detail:'The reviewed Whitepages first step changed or is unavailable. No Next action or automatic repeat was performed.'};}
+  }
   async function execute(payload, env=globalThis) {
     const {routeId,fields}=payload,route=validate(routeId,fields,payload),doc=env.document;
+    if(routeId==='whitepages')return executeWhitepages(payload,env);
+    const familyFields=routeId==='familytreenow'?{first_name:'',last_name:'',email:''}:null;
+    const familyReady=()=>{try{if(familyFields)familyTreeNowFacts(familyFields,env,true);return true;}catch(_){return false;}};
+    if(!familyReady())return {status:'blocked',detail:'The reviewed FamilyTreeNow initial form is unavailable. No details were filled.'};
     const safe=()=>allowed(env.location.href,route)&&!doc.querySelector('input[type="file"]');
     const wait=ms=>new Promise(resolve=>env.setTimeout(resolve,ms));
     const controls=()=>Object.keys(fields).map(key=>({key,e:doc.querySelector(route[key])}));
@@ -222,7 +314,7 @@
     let selectionApplied=false;
     const selectionReady=()=>!selection||(()=>{const e=doc.querySelector(selection.selector);return visible(e)&&e.tagName==='SELECT'&&e.form===form&&!e.disabled&&!e.readOnly&&
       [...e.options].some(option=>option.value===selection.value)&&(!selectionApplied||e.value===selection.value);})();
-    const exactDestination=()=>formAllowed(form.action||env.location.href,route)&&(!route.method||form.method?.toLowerCase()===route.method)&&selectionReady()&&
+    const exactDestination=()=>familyReady()&&formAllowed(form.action||env.location.href,route)&&(!route.method||form.method?.toLowerCase()===route.method)&&selectionReady()&&
       (!route.submitText||(()=>{const buttons=[...form.querySelectorAll('button[type="submit"]')];return buttons.length===1&&visible(buttons[0])&&buttons[0].form===form&&buttons[0].textContent.trim()===route.submitText;})());
     if(!exactDestination())return {status:'blocked',detail:'The reviewed form purpose or submit control changed.'};
     if(selection){
@@ -236,6 +328,7 @@
       const e=doc.querySelector(route[key]);
       if(!ready()||e!==doc.querySelector(route[key])||e.form!==form||controls().some(({e})=>e.form!==form)||!exactDestination())return {status:'blocked',detail:'The broker page changed.'};
       const setter=Object.getOwnPropertyDescriptor(key==='request_text'?env.HTMLTextAreaElement.prototype:env.HTMLInputElement.prototype,'value').set;
+      if(familyFields)familyFields[key]=fields[key];
       setter.call(e,fields[key]);e.dispatchEvent(new env.Event('input',{bubbles:true}));e.dispatchEvent(new env.Event('change',{bubbles:true}));
       if(!ready()||e!==doc.querySelector(route[key])||e.form!==form||controls().some(({e})=>e.form!==form)||!exactDestination())return {status:'blocked',detail:'The broker page changed after a field was filled.'};
     }
@@ -252,7 +345,7 @@
     }
     return {status:'unknown',detail:'The broker outcome is unconfirmed. No automatic repeat will be sent.'};
   }
-  const api={ROUTES,allowed,formAllowed,listingURL,validate,execute,inspect,continuationURL,validateContinuation,executeContinuation};
+  const api={ROUTES,allowed,formAllowed,listingURL,whitepagesURL,validate,execute,inspect,continuationURL,validateContinuation,executeContinuation,familyTreeNowFacts};
   globalThis.EraseBrokerExecutor=api;
   if(typeof module!=='undefined')module.exports=api;
 })();

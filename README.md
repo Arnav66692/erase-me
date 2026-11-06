@@ -9,7 +9,7 @@ Tools for finding and requesting removal of your own personal information from d
 
 Erase Me combines a browser workspace, a narrowly permissioned Chrome extension and an installable agent skill. It keeps a private record of the actions you authorize and separates form preparation, broker verification and removal evidence.
 
-**Current scope:** companion 0.11.0 supports 11 standard initial form actions, a separate transient People Trace UK prefill and eight optional initial submission contracts, a reviewed FastPeopleSearch final-submission path and one local text-challenge route. Other challenges, identity checks and broker steps can still need attention. No independently verified broker deletion has been established by this release.
+**Current scope:** companion 0.12.0 supports 14 standard initial form actions, five separate transient form actions, ten optional broker initial submission contracts and seven reviewed privacy-email send channels, a reviewed FastPeopleSearch final-submission path and one local text-challenge route. Other challenges, identity checks and broker steps can still need attention. No independently verified broker deletion has been established by this release.
 
 ## Get started
 
@@ -32,7 +32,7 @@ For supported form filling, install the free [Chrome companion](https://erase-me
 
 To fill several forms, complete their required details and own-record confirmations, then choose **Review form batch**. Review the selected brokers and exact outgoing fields, authorize the batch once and choose **Fill selected forms**. The companion works through eligible forms one at a time while the page stays open. Held, already-started, incomplete and manual routes are excluded with reasons. **Stop after current form** leaves the remaining forms untouched. Closing or reloading does not resume a batch.
 
-The review offers optional guarded submissions for USPhonebook, FastPeopleSearch, SearchPeopleFree, AdvancedBackgroundChecks, Apollo, No Sorgulama, NumaraAra and NumaraSor. Review their displayed fields, agreements and policy sources before enabling it. AdvancedBackgroundChecks starts email verification; the Turkish contracts submit their reviewed request forms. Later verification and processing remain separate stages. NumaraAra's text security code can use the free [local challenge helper](docs/LOCAL_CHALLENGE_HELPER.md). An observed submit event is recorded as an attempt; delivery and broker acceptance still require separate evidence.
+The review offers optional guarded submissions for SmartBackgroundChecks, FamilyTreeNow, USPhonebook, FastPeopleSearch, SearchPeopleFree, AdvancedBackgroundChecks, Apollo, No Sorgulama, NumaraAra and NumaraSor. Review their displayed fields, agreements and policy sources before enabling it. AdvancedBackgroundChecks starts email verification; the Turkish contracts submit their reviewed request forms. Later verification and processing remain separate stages. NumaraAra's text security code can use the free [local challenge helper](docs/LOCAL_CHALLENGE_HELPER.md). An observed submit event is recorded as an attempt; delivery and broker acceptance still require separate evidence.
 
 Companion 0.6.0 gives FastPeopleSearch's normal widget up to 12 seconds to supply its genuine challenge response while the approved action is open. It watches the original form rather than checking repeatedly or clicking a challenge. A changed form, navigation, expired wait or unresolved challenge stops the action. This does not bypass managed challenges or complete the broker's later email and record-selection steps.
 
@@ -66,13 +66,18 @@ Open [localhost:8766](http://127.0.0.1:8766). This mode uses a separate local da
 | Chrome companion | Fill reviewed forms, initiate supported verification and optionally submit reviewed initial or matching forms | Changed controls, agreements or challenges stop the action. No ID uploads, paid solvers or background retries. |
 | Local challenge helper | Recognize NumaraAra's reviewed five-character image code using local Tesseract | Separate desktop installation. Managed challenges and other site codes are not universally supported. |
 | Structured record check | Check one approved Spokeo URL against its structured Person data | Requires exact name and typed identity-email matches. Missing or ambiguous evidence needs attention. |
-| Contact drafts | Prepare, copy or download a request for a fixed published contact | Drafts are local. Erase Me does not send them. |
+| Contact drafts | Prepare, copy or download a request for a fixed published contact | Draft preparation does not send mail. |
+| Privacy-email delivery | Review an exact message and send once to one of seven verified privacy contacts | Requires optional sending consent for a separate Gmail account. Gmail acceptance is not delivery or deletion. |
 | Existing-tab checks | Reconcile narrowly supported, fresh broker acknowledgments | Unknown or unsupported results remain unverified. Forms are not resent. |
 | Agent skill | Consent records, reference-based plans, request drafts and private reports | Requires an agent capable of running Python. Browser and submission permissions remain explicit. |
 
 People Trace UK has a separate **Enter private form details** dialog for UK workspaces. It collects the exact birth date, telephone and postcode required by the observed form, plus optional address components. Those details stay in memory and the one-action payload; they are excluded from the saved ledger, backups and companion journal. The challenge and submission remain on the official site. This route is excluded from standard batches.
 
-The companion covers standard initial actions for People Data Labs, USPhonebook, SearchPeopleFree, FastPeopleSearch, Apollo, Spokeo, AdvancedBackgroundChecks, No Sorgulama, NumaraAra, NumaraSor and TelefonSorgulama.
+CMA has a separate private Canadian mailing-address review and optional guarded registration. It suppresses eligible marketing; it is not broker-record deletion. The address is excluded from saved workspace data and backups.
+
+The companion covers standard initial actions for People Data Labs, SmartBackgroundChecks, FamilyTreeNow, Whitepages, USPhonebook, SearchPeopleFree, FastPeopleSearch, Apollo, Spokeo, AdvancedBackgroundChecks, No Sorgulama, NumaraAra, NumaraSor and TelefonSorgulama.
+
+Whitepages has a first-step URL-only prefill. Users must explicitly review their own exact person-record URL; the companion does not click Next or perform the later phone verification. This is not an automatic record match.
 
 Apollo requires a separately entered business email. Spokeo requires a confirmed direct listing URL; its optional structured-record check can supply the own-listing approval only from a unique matching name and identity email on that exact page. Age and city alone are insufficient. The latest Spokeo research was blocked, so this is not evidence of a live matched record. The other structured forms retain their own-request affirmations.
 
@@ -83,14 +88,18 @@ Apollo requires a separately entered business email. Spokeo requires a confirmed
 | Catalog measure | Current scope |
 | --- | ---: |
 | Reference routes | 43 |
-| Reviewed initial companion actions (including transient prefill) | 12 |
-| Optional initial guarded submission contracts | 8 |
+| Reviewed form actions (including transient forms and registration) | 19 |
+| Optional broker initial guarded submission contracts | 10 |
+| Separate guarded marketing-registration contracts | 1 |
 | Reviewed matching-form submission paths | 1 |
-| Other guided channels | 31 |
+| Routes without reviewed form fill | 24 |
+| Reviewed privacy-email send channels | 7 |
 | Published contact-draft channels | 24 |
 | Source-backed channel assessments | 37 |
 
 Regional packs cover the United States, Canada, the United Kingdom, Germany and Turkey, alongside two global portals. A country without a pack receives the global portals and an explicit coverage notice. Reference coverage does not guarantee that a broker holds your information or accepts a request.
+
+Six of the seven privacy-email routes are among the 24 routes without reviewed form fill; NumaraAra also has a form contract. These counts overlap: 25 catalog routes have an executable form or email action and 18 remain guidance only. MyLife, PeopleFinders and That’s Them use separate transient own-record reviews, alongside People Trace UK and CMA. Their extra identity fields are excluded from saved state and backups; their form submissions remain manual.
 
 Some entries are provider preferences or marketing registrations. CMA Do Not Mail, Canada's DNCL and the UK's TPS are not broker-record deletion services. Other channels require a subscriber, postal request or manual self-service session.
 
@@ -100,6 +109,7 @@ Erase Me uses distinct evidence levels:
 | --- | --- |
 | Form or draft prepared | Approved fields or request text are ready. No final request acceptance is established. |
 | Guarded submission attempted | The approved form produced a checked native submit event. Delivery, acceptance and deletion remain unverified. |
+| Gmail API accepted message | The dedicated account’s send API returned message/thread references. Delivery, broker acceptance and deletion remain unverified. |
 | Verification initiated | The broker reported a supported email-verification step. Later steps remain outstanding. |
 | User-reported submission or completion | The person's report is recorded without promoting it to independently verified evidence. |
 | Broker acceptance or completion | Requires correlated evidence of that specific outcome. An acknowledgment alone is insufficient. |
@@ -121,7 +131,9 @@ Use the tool only for your own information or within the skill's recorded family
 
 ### Your own removal-only mailbox
 
-Public users can install the [free local mail connector](docs/LOCAL_REMOVAL_MAIL.md) and authorize a genuinely separate Gmail account on their computer. Extract the download, copy the setup command from the companion popup and run it from that folder; one guide checks the separate account and installs the connector. Choose **Connect my removal-only mailbox** in Erase Me, then use the supported route’s contact and one-time mail actions. No private operator key is needed for this transport, and Google tokens never enter the hosted app or workspace backup. Setup requires desktop Chrome, a native helper and the user’s own installed OAuth client; it does not create a mailbox automatically.
+Public users can install the [free local mail connector](docs/LOCAL_REMOVAL_MAIL.md) and authorize a genuinely separate Gmail account on their computer. Extract the download and open its local setup launcher. A browser form handles account details, Google file selection, existing-connection reuse and local installation; it does not ask Terminal questions. Choose **Connect my removal-only mailbox** in Erase Me, then use the supported route’s contact and one-time mail actions. No private operator key is needed for this transport, and Google tokens never enter the hosted app or workspace backup. Setup requires Python 3.10+, a supported desktop browser, a native helper and the user’s own installed OAuth client; it does not create a mailbox automatically.
+
+Optional **Allow reviewed privacy-email sending** requires fresh Google consent for `gmail.send`; existing read-only setups remain valid. The same-account setup can reuse its saved Desktop client during an explicit reconnect. Seven fixed privacy recipients support a separate own-record message review and one-shot send. No hidden retry follows an uncertain result, and local message bodies are not retained. See [supported recipients and safeguards](docs/LOCAL_REMOVAL_MAIL.md#reviewed-privacy-email-delivery).
 
 The local connector supports FastPeopleSearch, USPhonebook and SearchPeopleFree contacts. The latter receives an alias of the user’s own dedicated account. Its authenticated confirmation links remain held pending a reviewed route contract. People Data Labs and Apollo retain their record-associated email requirements. All checks are explicit; holds revoke local mail grants and no background schedule is installed.
 
@@ -133,7 +145,7 @@ The batch review can prepare selected FastPeopleSearch and USPhonebook removal c
 
 For that open review, the key remains in memory so an optional mail pass can follow without another key entry. After every selected form outcome is saved, the pass checks qualifying bound operations once. A stopped queue, unknown outcome or failed result storage prevents the final pass. Closing or completing the review clears its key. Pending mail starts no future check; a separate authorized mail-only pass can check existing operations later.
 
-USPhonebook and FastPeopleSearch have reviewed confirmation-form destinations. After authenticating the exact operation's mail again, the companion can open FastPeopleSearch's matching form and check its prefilled name and contact fields. It initially leaves extra identity fields untouched. The separate in-app missing-information review can then collect and submit the exact approved matching details once, using companion 0.11.0. The broker's native required controls are checked and disclosed before collection. USPhonebook retains its reviewed prefill behavior; the held pilot request stays held. SearchPeopleFree cannot issue new shared aliases, and People Data Labs and Apollo retain their record-associated email requirements. OAuth credentials and the operator key remain outside public assets and backups.
+USPhonebook and FastPeopleSearch have reviewed confirmation-form destinations. After authenticating the exact operation's mail again, the companion can open FastPeopleSearch's matching form and check its prefilled name and contact fields. It initially leaves extra identity fields untouched. The separate in-app missing-information review can then collect and submit the exact approved matching details once, using companion 0.12.0. The broker's native required controls are checked and disclosed before collection. USPhonebook retains its reviewed prefill behavior; the held pilot request stays held. SearchPeopleFree cannot issue new shared aliases, and People Data Labs and Apollo retain their record-associated email requirements. OAuth credentials and the operator key remain outside public assets and backups.
 
 A November 5 authorized pilot submitted FastPeopleSearch's initial form in ordinary visible Chrome, received an authenticated email in the removal-only mailbox and opened its matching form. The run was subsequently held at the user’s request before supplying the required identity detail. This establishes a real verification path, with no final removal acceptance or independently verified deletion yet.
 
@@ -188,4 +200,4 @@ Related work includes [unbroker](https://github.com/NousResearch/hermes-agent), 
 
 Privacy-law references are informational and may become outdated. Check their official sources. This software does not provide legal advice.
 
-*Documentation reviewed November 5, 2026. Capability counts describe companion 0.11.0.*
+*Documentation reviewed November 5, 2026. Capability counts describe companion 0.12.0.*

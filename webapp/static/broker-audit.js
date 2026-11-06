@@ -3,15 +3,16 @@
   'use strict';
   const data = {
   "smartbackgroundchecks": {
-    "status": "blocked_or_unavailable",
-    "checkedAt": "2026-11-04",
+    "status": "reviewed_initial_form",
+    "checkedAt": "2026-11-05",
     "operationKind": "record_removal",
     "sources": [
-      "https://www.smartbackgroundchecks.com/remove",
-      "https://cppa.ca.gov/data_broker_registry/registry.csv"
+      "https://www.smartbackgroundchecks.com/privacy",
+      "https://www.smartbackgroundchecks.com/optout",
+      "https://www.smartbackgroundchecks.com/remove"
     ],
-    "summary": "The official page was blocked or unavailable; no current removal form was validated.",
-    "limits": "A reachable page or business contact does not establish request acceptance or deletion.",
+    "summary": "The companion checks the official privacy page and its published opt-out link before opening the reviewed subject/name/email form. Optional guarded submission requires the exact agreement and genuine challenge response. No profile data is sent to the privacy entry page.",
+    "limits": "Initial form only. Blocked or changed entry navigation stops without disclosure. Verification, matching, final acceptance and deletion remain unverified.",
     "requestAccepted": false,
     "deletionVerified": false,
     "privacyContact": {
@@ -69,23 +70,23 @@
     }
   },
   "beenverified": {
-    "status": "blocked_or_unavailable",
-    "checkedAt": "2026-11-04",
+    "status": "published_privacy_contact",
+    "checkedAt": "2026-11-05",
     "operationKind": "record_removal",
     "sources": [
       "https://www.beenverified.com/app/optout/search",
-      "https://cppa.ca.gov/data_broker_registry/registry.csv"
+      "https://www.beenverified.com/faq/privacy/"
     ],
-    "summary": "The official page was blocked or unavailable; no current removal form was validated.",
-    "limits": "A reachable page or business contact does not establish request acceptance or deletion.",
+    "summary": "The official privacy policy publishes an own-information deletion/opt-out contact. A reviewed one-shot email can request suppression of an explicitly identified public record; no accessible form contract or completed removal is established.",
+    "limits": "Public-record suppression differs from account deletion. Identity verification, processing, broker acceptance and independently verified deletion remain unverified.",
     "requestAccepted": false,
     "deletionVerified": false,
     "privacyContact": {
       "email": "privacy@beenverified.com",
-      "kind": "support",
-      "source": "https://cppa.ca.gov/data_broker_registry/registry.csv",
-      "checkedAt": "2026-11-04",
-      "restriction": "Registered business contact, not a validated automated consumer-removal endpoint. Ask for the official procedure without sending personal identifiers."
+      "kind": "privacy",
+      "source": "https://www.beenverified.com/faq/privacy/",
+      "checkedAt": "2026-11-05",
+      "restriction": "Own-information deletion/opt-out request only. Supply an accurate own-record reference and review the exact outgoing message. Agent requests require separate written authorization; this sender supports own requests only."
     }
   },
   "clustrmaps": {
@@ -121,15 +122,15 @@
     }
   },
   "familytreenow": {
-    "status": "blocked_or_unavailable",
-    "checkedAt": "2026-11-04",
+    "status": "reviewed_initial_form",
+    "checkedAt": "2026-11-05",
     "operationKind": "record_removal",
     "sources": [
       "https://www.familytreenow.com/optout",
-      "https://cppa.ca.gov/data_broker_registry/registry.csv"
+      "https://www.familytreenow.com/privacy"
     ],
-    "summary": "The official page was blocked or unavailable; no current removal form was validated.",
-    "limits": "A reachable page or business contact does not establish request acceptance or deletion.",
+    "summary": "The official privacy entry exposes a first name, last name and email form with subject-only selection, exact communications authorization and genuine hCaptcha. Erase Me can fill and optionally attempt the reviewed native initial submission.",
+    "limits": "Initial verification attempt only. Later email continuation, record selection, broker acceptance and deletion are unverified.",
     "requestAccepted": false,
     "deletionVerified": false,
     "privacyContact": {
@@ -179,15 +180,15 @@
     }
   },
   "mylife": {
-    "status": "blocked_or_unavailable",
-    "checkedAt": "2026-11-04",
+    "status": "reviewed_transient_prefill",
+    "checkedAt": "2026-11-05",
     "operationKind": "record_removal",
     "sources": [
-      "https://www.mylife.com/ccpa/index.pubview",
-      "https://cppa.ca.gov/data_broker_registry/registry.csv"
+      "https://www.mylife.com/privacyrequest",
+      "https://mylife.jotform.com/260284407610047"
     ],
-    "summary": "The official page was blocked or unavailable; no current removal form was validated.",
-    "limits": "A reachable page or business contact does not establish request acceptance or deletion.",
+    "summary": "The official privacy-request page links the pinned deletion/opt-out JotForm. A separate transient review fills first/last name, state, city, ZIP and birth year after own-information authorization.",
+    "limits": "Prefill only; no submission or identity upload. No email, phone or street address is filled. Genuine challenge, matching and subsequent verification remain manual or unverified.",
     "requestAccepted": false,
     "deletionVerified": false,
     "privacyContact": {
@@ -219,15 +220,14 @@
     }
   },
   "peoplefinders": {
-    "status": "blocked_or_unavailable",
-    "checkedAt": "2026-11-04",
+    "status": "reviewed_transient_prefill",
+    "checkedAt": "2026-11-05",
     "operationKind": "record_removal",
     "sources": [
-      "https://www.peoplefinders.com/opt-out",
-      "https://cppa.ca.gov/data_broker_registry/registry.csv"
+      "https://www.peoplefinders.com/opt-out"
     ],
-    "summary": "The official page was blocked or unavailable; no current removal form was validated.",
-    "limits": "A reachable page or business contact does not establish request acceptance or deletion.",
+    "summary": "A separate transient own-record review fills only first name, last name and the required US street, city and state matching fields on the reviewed official form.",
+    "limits": "Prefill only. Middle name, email, phone and date of birth stay empty. Accuracy certification, genuine challenge, submission, matching and deletion remain manual or unverified.",
     "requestAccepted": false,
     "deletionVerified": false,
     "privacyContact": {
@@ -239,34 +239,34 @@
     }
   },
   "peoplelooker": {
-    "status": "blocked_or_unavailable",
-    "checkedAt": "2026-11-04",
+    "status": "published_privacy_contact",
+    "checkedAt": "2026-11-05",
     "operationKind": "record_removal",
     "sources": [
       "https://www.peoplelooker.com/opt-out",
-      "https://cppa.ca.gov/data_broker_registry/registry.csv"
+      "https://www.peoplelooker.com/privacy-policy/"
     ],
-    "summary": "The official page was blocked or unavailable; no current removal form was validated.",
-    "limits": "A reachable page or business contact does not establish request acceptance or deletion.",
+    "summary": "The official privacy policy publishes an own-information deletion/opt-out contact. A reviewed one-shot email can request suppression of an explicitly identified public record; no accessible form contract or completed removal is established.",
+    "limits": "Public-record suppression differs from account deletion. Identity verification, processing, broker acceptance and independently verified deletion remain unverified.",
     "requestAccepted": false,
     "deletionVerified": false,
     "privacyContact": {
-      "email": "privacy@beenverified.com",
-      "kind": "support",
-      "source": "https://cppa.ca.gov/data_broker_registry/registry.csv",
-      "checkedAt": "2026-11-04",
-      "restriction": "Registered business contact, not a validated automated consumer-removal endpoint. Ask for the official procedure without sending personal identifiers."
+      "email": "privacy@peoplelooker.com",
+      "kind": "privacy",
+      "source": "https://www.peoplelooker.com/privacy-policy/",
+      "checkedAt": "2026-11-05",
+      "restriction": "Own-information deletion/opt-out request only. Supply an accurate own-record reference and review the exact outgoing message. Agent requests require separate written authorization; this sender supports own requests only."
     }
   },
   "thatsthem": {
-    "status": "blocked_or_unavailable",
-    "checkedAt": "2026-11-04",
+    "status": "reviewed_transient_prefill",
+    "checkedAt": "2026-11-05",
     "operationKind": "record_removal",
     "sources": [
       "https://thatsthem.com/optout"
     ],
-    "summary": "The official page was blocked or unavailable; no current removal form was validated.",
-    "limits": "A reachable page or business contact does not establish request acceptance or deletion.",
+    "summary": "A separate transient review fills the approved own name, contact email, street, city, state, ZIP and phone fields on the reviewed official opt-out form.",
+    "limits": "Prefill only. Extra identity values are excluded from saved state and backups. Genuine challenge, submission, matched-record acceptance and deletion remain manual or unverified.",
     "requestAccepted": false,
     "deletionVerified": false
   },
@@ -328,15 +328,15 @@
     }
   },
   "whitepages": {
-    "status": "blocked_or_unavailable",
-    "checkedAt": "2026-11-04",
+    "status": "reviewed_initial_form",
+    "checkedAt": "2026-11-05",
     "operationKind": "record_removal",
     "sources": [
       "https://www.whitepages.com/suppression-requests",
-      "https://cppa.ca.gov/data_broker_registry/registry.csv"
+      "https://www.whitepages.com/static/dist/standardizeWpUrl.js"
     ],
-    "summary": "The official page was blocked or unavailable; no current removal form was validated.",
-    "limits": "A reachable page or business contact does not establish request acceptance or deletion.",
+    "summary": "The normal desktop browser exposed the first suppression step. Enter and explicitly confirm your own direct Whitepages person URL inside Erase Me; the companion can prefill only that first-step field. It never clicks Next or initiates a phone verification.",
+    "limits": "Listing URL syntax and your manual confirmation do not establish an automatic identity match. Later record selection, phone verification, submission and deletion remain manual or unverified.",
     "requestAccepted": false,
     "deletionVerified": false,
     "privacyContact": {
@@ -388,12 +388,12 @@
   },
   "ca-cma-do-not-mail": {
     "status": "form_inspected",
-    "checkedAt": "2026-11-04",
+    "checkedAt": "2026-11-05",
     "operationKind": "marketing_suppression_registration",
     "sources": [
       "https://cmadnm.cawebhosting.ca/submit.asp"
     ],
-    "summary": "Review the suppression effects and supply accurate full name and mailing address; submit only with explicit registration authorization.",
+    "summary": "Review your own exact Canadian mailing fields inside the separate private dialog. Prefill and an optional guarded marketing-registration attempt are supported; address values are not saved. This does not delete broker records.",
     "limits": "Suppresses new-contact addressed marketing among participating CMA members, not underlying broker records or unaddressed flyers. Public page states six years and around six weeks to take effect. No acceptance observed.",
     "requestAccepted": false,
     "deletionVerified": false

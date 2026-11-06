@@ -71,10 +71,32 @@ def client_file(value: str, *, prompt, emit) -> dict:
 
 
 def run_setup(*, extension_id=None, browser='chrome', reconnect=False, check_only=False,
-              prompt=None, emit=None, home=None, config_path=None, platform=None) -> dict:
+              prompt=None, emit=None, home=None, config_path=None, platform=None,
+              ensure_active=None, allow_sending=False, reuse_saved_client=False) -> dict:
     """Dependencies and private paths are injectable so tests touch only fixtures."""
     prompt = input if prompt is None else prompt
     emit = print if emit is None else emit
+    guard = (lambda _stage: None) if ensure_active is None else ensure_active
+    if type(allow_sending) is not bool or type(reuse_saved_client) is not bool or reuse_saved_client and not (allow_sending and reconnect):
+        raise SetupError('Choose the optional sending permission explicitly.')
+    fresh_grant = None
+    installation_reserved = False
+
+    def revoke_fresh():
+        nonlocal fresh_grant
+        if fresh_grant is not None and not installation_reserved:
+            issued = fresh_grant
+            fresh_grant = None
+            # Submit only this invocation's new grant for revocation. Never
+            # reload, delete or rewrite a possibly replaced configuration here.
+            oauth.revoke(issued)
+
+    def active(stage):
+        try:
+            guard(stage)
+        except Exception:
+            revoke_fresh()
+            raise
     emit('Erase Me removal-only email setup. Keep passwords and verification codes out of Terminal and chat.')
     emit('Use a separate account containing only removal mail. This command reads no Gmail messages and starts no timers.')
     personal = answer(prompt, 'Primary email used in your Erase Me profile: ', maximum=254)
@@ -111,15 +133,23 @@ def run_setup(*, extension_id=None, browser='chrome', reconnect=False, check_onl
     if path.name != oauth.TOKEN_FILE:
         raise SetupError('Use the dedicated gmail-oauth.json token file outside the checkout.')
     existing = path.exists() or path.is_symlink()
+    saved_client = None
+    if existing and reuse_saved_client:
+        previous = oauth.load_config(path)
+        if matching_connection(previous, primary_hash, mailbox):
+            saved_client = dict(previous['client'])
     if check_only and not existing:
         raise SetupError('No saved removal-only connection exists. Run setup without --check first.')
     if existing and not reconnect:
         saved = oauth.load_config(path)
         if not matching_connection(saved, primary_hash, mailbox):
             raise SetupError('The saved connection belongs to a different profile or mailbox. Nothing was changed. Use --reconnect only for an intentional new authorization.')
+        if allow_sending and frozenset(saved.get('scopes', ())) != oauth.SEND_SCOPES:
+            raise SetupError('Sending needs fresh Google consent. Select the explicit reconnect option and your Desktop client to add only that optional permission.')
         # The existing helper refreshes only if needed and verifies provider identity.
         # It calls no Gmail messages endpoint and never returns credentials to CLI.
         emit('Checking the saved dedicated Google identity; no messages will be read.')
+        active('before_identity')
         checked = oauth.check_token(path)
         if not matching_connection(checked, primary_hash, mailbox):
             raise SetupError('The saved connection changed during its identity check. No companion installation was started. Run setup again for the intended profile and dedicated account.')
@@ -130,26 +160,34 @@ def run_setup(*, extension_id=None, browser='chrome', reconnect=False, check_onl
         oauth.private.safe_directory(path.parent, create=True)
         if existing:
             oauth.private._regular(path)
-        client = client_file(answer(prompt, 'Private Google Desktop client JSON path: '), prompt=prompt, emit=emit)
+        client = (saved_client if saved_client is not None else
+                  client_file(answer(prompt, 'Private Google Desktop client JSON path: '), prompt=prompt, emit=emit))
         emit('Opening Google consent. Select only the separate removal account; Google may require its own login checks.')
-        connected = oauth.connect(mailbox, personal, client)
+        active('before_oauth')
+        connected = oauth.connect(mailbox, personal, client, **({'allow_sending': True} if allow_sending else {}))
+        fresh_grant = connected['tokens']
         try:
+            active('before_save')
             oauth.save_config(path, connected, replace=reconnect)
-        except (oauth.OAuthError, ValueError, OSError):
-            oauth.revoke(connected['tokens'])
+        except (SetupError, oauth.OAuthError, ValueError, OSError):
+            revoke_fresh()
             raise SetupError('The new Google grant could not be saved privately and was submitted for revocation. Retry setup after checking the private directory.') from None
         reused = False
     else:
         raise SetupError('Use --reconnect without --check to authorize a different dedicated account.')
+    active('after_identity')
     try:
         if not installed and not check_only:
             emit('Dedicated identity is ready. Installing the on-demand companion connector.')
+            active('before_install')
+            installation_reserved = True
             installer.install(spec, replace=replacement)
         ready = installer.check(spec)['installed']
     except (ValueError, OSError, installer.host.MailHostError):
         raise SetupError('The dedicated mailbox is connected, but local connector installation did not finish. Check the private installation paths and run setup again.') from None
     if not ready:
         raise SetupError('The dedicated mailbox is connected, but the companion registration needs setup. Run this command again without --check.')
+    active('complete')
     emit('Ready. In Erase Me choose “Connect my removal-only mailbox” and enable local connectors in the companion.')
     emit('No Gmail messages were read, broker requests submitted or timers installed by setup.')
     return {'ok': True, 'installed': True, 'reused_connection': reused,
@@ -160,13 +198,14 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--extension-id', help='Optional 32-letter companion ID; otherwise asked locally.')
     parser.add_argument('--browser', choices=('chrome', 'chromium'), default='chrome')
+    parser.add_argument('--allow-sending', action='store_true', help='Request optional Gmail sending permission through fresh consent.')
     actions = parser.add_mutually_exclusive_group()
     actions.add_argument('--check', action='store_true', help='Check an existing connection and registration; do not install either.')
     actions.add_argument('--reconnect', action='store_true', help='Explicitly replace saved OAuth credentials through fresh Google consent.')
     args = parser.parse_args(argv)
     try:
         run_setup(extension_id=args.extension_id, browser=args.browser,
-                  reconnect=args.reconnect, check_only=args.check)
+                  reconnect=args.reconnect, check_only=args.check, allow_sending=args.allow_sending)
         return 0
     except SetupError as error:
         print(str(error))

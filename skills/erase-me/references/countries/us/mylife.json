@@ -21,28 +21,28 @@
   },
   "optout": {
     "method": "web_form",
-    "url": "https://www.mylife.com/ccpa/index.pubview",
-    "email": null,
+    "url": "https://www.mylife.com/privacyrequest",
+    "email": "privacy@MyLife.com",
     "requires": [
-      "listing_url",
-      "captcha",
-      "email_verification"
+      "captcha"
     ],
     "fields_needed": [
-      "full_name",
+      "first_name",
+      "last_name",
       "region",
-      "listing_url",
-      "email"
+      "city",
+      "postal_code",
+      "birth_year"
     ],
     "steps": [
-      "Find the profile and copy its URL.",
-      "Open the privacy request form and fill the name, state, email and profile URL.",
-      "Complete the captcha yourself and submit.",
-      "Click the link in the confirmation email.",
-      "Recheck after about 15 days."
+      "Open the official privacy request page and review its branded MyLife JotForm.",
+      "Provide your accurate first and last name, full state, city, ZIP and explicitly entered birth year; do not infer a year from age.",
+      "The browser companion can prefill only the six separately reviewed fields. Email, street address, optional aliases and profile URL remain blank.",
+      "Complete any broker verification, genuine challenge and final submission on the official form. Do not upload identity documents.",
+      "Preserve the actual response; a filled form or confirmation is not independently verified deletion."
     ],
-    "expected_days": 14,
-    "notes": "nulltrace marks this form as CCPA only, so results outside California are uncertain. identity-eraser lists membersupport@mylife.com as a fallback for profile removal."
+    "expected_days": null,
+    "notes": "The former /ccpa/index.pubview route returned HTTP 404. The current official page embeds https://mylife.jotform.com/260284407610047. Required controls and public source were observed read-only on November 5, 2026. Native validation is disabled by the site in favor of JotForm validation; final submission and any later conditional email verification remain unreviewed. The privacy notice describes California opt-out rights; scope outside California is not established by observing state options. The public notice says 15 business days for the described opt-out, not independently verified deletion within 15 calendar days."
   },
   "relist_risk": "high",
   "registries": {
@@ -68,9 +68,14 @@
       "url": "https://cppa.ca.gov/data_broker_registry/",
       "license": "official",
       "attribution": "California Privacy Protection Agency data broker registry, 2026 list fetched 2026-10-27"
+    },
+    {
+      "url": "https://www.mylife.com/privacyrequest",
+      "license": "official",
+      "attribution": "MyLife official privacy request page; current branded JotForm observed read-only 2026-11-05"
     }
   ],
-  "verified": false,
-  "last_verified": null,
-  "verification_note": "Bot-blocked on 2026-10-27 (Cloudflare challenge page), URL from nulltrace and identity-eraser."
+  "verified": true,
+  "last_verified": "2026-11-05",
+  "verification_note": "Current official form and embedded branded tenant/form ID observed read-only. Required name/state/city/ZIP/birth-year controls confirmed. This verifies the reference channel only; no submitted request, correct-record match, broker acceptance or deletion was observed."
 }

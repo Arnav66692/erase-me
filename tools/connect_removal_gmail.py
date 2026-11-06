@@ -31,6 +31,8 @@ IDENTITY_URL = 'https://openidconnect.googleapis.com/v1/userinfo'
 REVOKE_URL = 'https://oauth2.googleapis.com/revoke'
 GMAIL_READONLY = 'https://www.googleapis.com/auth/gmail.readonly'
 SCOPES = frozenset({'openid', 'email', GMAIL_READONLY})
+GMAIL_SEND = 'https://www.googleapis.com/auth/gmail.send'
+SEND_SCOPES = SCOPES | {GMAIL_SEND}
 SCOPE_ALIASES = {'https://www.googleapis.com/auth/userinfo.email': 'email'}
 MAX_RESPONSE = 65536
 TOKEN_FILE = 'gmail-oauth.json'
@@ -102,10 +104,14 @@ def pkce() -> tuple[str, str]:
     return verifier, challenge
 
 
-def authorization_url(client: dict, mailbox: str, redirect_uri: str, state: str, challenge: str) -> str:
+def authorization_url(client: dict, mailbox: str, redirect_uri: str, state: str, challenge: str,
+                      *, allow_sending=False) -> str:
+    if type(allow_sending) is not bool:
+        raise OAuthError('Choose the optional sending permission explicitly.')
+    requested = SEND_SCOPES if allow_sending else SCOPES
     return AUTH_URL + '?' + urlencode({
         'client_id': client['client_id'], 'redirect_uri': redirect_uri, 'response_type': 'code',
-        'scope': ' '.join(sorted(SCOPES)), 'state': state, 'code_challenge': challenge,
+        'scope': ' '.join(sorted(requested)), 'state': state, 'code_challenge': challenge,
         'code_challenge_method': 'S256', 'login_hint': mailbox, 'access_type': 'offline',
         'prompt': 'consent select_account', 'include_granted_scopes': 'false',
     })
@@ -217,22 +223,23 @@ def request_json(url: str, *, form: dict | None = None, bearer: str | None = Non
         raise OAuthError('Google could not complete the requested authorization step. No provider details were logged.') from None
 
 
-def scopes(value: object) -> frozenset[str]:
+def scopes(value: object, *, expected=SCOPES) -> frozenset[str]:
     if not isinstance(value, str):
         raise OAuthError('The granted permissions could not be verified.')
     result = frozenset(SCOPE_ALIASES.get(part, part) for part in value.split())
-    if result != SCOPES:
-        raise OAuthError('Only email identity and read-only Gmail permissions are allowed.')
+    if expected not in (SCOPES, SEND_SCOPES) or result != expected:
+        raise OAuthError('Only the explicitly requested identity and Gmail permissions are allowed.')
     return result
 
 
-def tokens(response: dict, *, previous: dict | None = None, now: float | None = None) -> dict:
+def tokens(response: dict, *, previous: dict | None = None, now: float | None = None,
+           expected=SCOPES) -> dict:
     if not isinstance(response, dict):
         raise OAuthError('Google did not return valid read-only credentials.')
     granted = response.get('scope')
     if granted is None and previous is not None:
-        granted = ' '.join(sorted(SCOPES))
-    scopes(granted)
+        granted = ' '.join(sorted(expected))
+    scopes(granted, expected=expected)
     access, refresh = response.get('access_token'), response.get('refresh_token')
     if refresh is None and previous is not None:
         refresh = previous['refresh_token']
@@ -289,7 +296,8 @@ def validate_config(data: object) -> dict:
                 or isinstance(token['expires_at'], bool) or not isinstance(token['expires_at'], (int, float))
                 or not math.isfinite(token['expires_at'])):
             raise ValueError()
-        if (not isinstance(data['scopes'], list) or len(data['scopes']) != len(SCOPES) or frozenset(data['scopes']) != SCOPES
+        if (not isinstance(data['scopes'], list) or frozenset(data['scopes']) not in (SCOPES, SEND_SCOPES)
+                or len(data['scopes']) != len(frozenset(data['scopes']))
                 or not isinstance(owner, dict) or set(owner) != {'email', 'sub', 'email_verified'}
                 or owner['email_verified'] is not True or not _secret(owner['sub'], 255)
                 or private.canonical_email(owner['email']) != canonical):
@@ -344,26 +352,30 @@ def load_config(path: Path) -> dict:
 
 
 def connect(mailbox: str, personal_email: str, client: dict, *, opener=webbrowser.open,
-            receiver_factory=OAuthReceiver, request=request_json, timeout: float = 120) -> dict:
+            receiver_factory=OAuthReceiver, request=request_json, timeout: float = 120,
+            allow_sending=False) -> dict:
+    if type(allow_sending) is not bool:
+        raise OAuthError('Choose the optional sending permission explicitly.')
+    requested = SEND_SCOPES if allow_sending else SCOPES
     mailbox = validate_mailbox(mailbox, personal_email)
     verifier, challenge = pkce()
     state = secrets.token_urlsafe(32)
     response = {}
     with receiver_factory(state, timeout=timeout) as receiver:
-        if not opener(authorization_url(client, mailbox, receiver.redirect_uri, state, challenge)):
+        if not opener(authorization_url(client, mailbox, receiver.redirect_uri, state, challenge, allow_sending=allow_sending)):
             raise OAuthError('The authorization browser could not be opened. No credentials were saved.')
         code = receiver.wait()
         response = request(TOKEN_URL, form={'code': code, 'client_id': client['client_id'], 'client_secret': client['client_secret'],
                                           'redirect_uri': receiver.redirect_uri, 'grant_type': 'authorization_code', 'code_verifier': verifier})
         try:
-            issued = tokens(response)
+            issued = tokens(response, expected=requested)
             owner = identity(issued['access_token'], mailbox, request=request)
         except OAuthError:
             revoke(response, request=request)
             raise
     return validate_config({'version': 1, 'provider': 'gmail_oauth', 'mailbox': mailbox,
                             'personal_email_sha256': private.personal_digest(personal_email), 'client': client,
-                            'tokens': issued, 'scopes': sorted(SCOPES), 'identity': owner,
+                            'tokens': issued, 'scopes': sorted(requested), 'identity': owner,
                             'connected_at': datetime.now(timezone.utc).isoformat()})
 
 
@@ -374,7 +386,7 @@ def check_token(path: Path, *, request=request_json, now: float | None = None) -
     if data['tokens']['expires_at'] <= now + 60:
         response = request(TOKEN_URL, form={'grant_type': 'refresh_token', 'refresh_token': data['tokens']['refresh_token'], **data['client']})
         try:
-            data['tokens'] = tokens(response, previous=data['tokens'], now=now)
+            data['tokens'] = tokens(response, previous=data['tokens'], now=now, expected=frozenset(data['scopes']))
         except OAuthError:
             revoke(response, request=request)
             raise
@@ -399,6 +411,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument('--config', type=Path, default=default_config())
     parser.add_argument('--replace', action='store_true')
     parser.add_argument('--check-token', action='store_true')
+    parser.add_argument('--allow-sending', action='store_true', help='Explicitly request optional Gmail sending permission through fresh consent.')
     args = parser.parse_args(argv)
     try:
         if args.check_token:
@@ -419,7 +432,7 @@ def main(argv: list[str] | None = None) -> int:
         if path.exists() or path.is_symlink():
             private._regular(path)
         print('Opening Google consent for the dedicated removal mailbox. Select that account only.')
-        data = connect(args.mailbox, args.personal_email, client)
+        data = connect(args.mailbox, args.personal_email, client, **({'allow_sending': True} if args.allow_sending else {}))
         try:
             save_config(path, data, replace=args.replace)
         except OAuthError:

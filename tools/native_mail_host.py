@@ -184,6 +184,13 @@ def _transaction(db):
 
 
 def _validate(request):
+    if isinstance(request, dict) and isinstance(request.get('action'), str) and request['action'].startswith('send-'):
+        import removal_sender
+        try:
+            removal_sender.validate_request(request)
+            return
+        except removal_sender.SenderError as error:
+            raise MailHostError(error.code) from None
     common = {'action', 'workspace_id', 'personal_email_sha256'}
     fields = {'status': {'authorized'}, 'session': {'authorized', 'route_id', 'operation_id'},
               'check': {'explicit', 'capability'}, 'continue': {'explicit', 'capability', 'receipt_ref'},
@@ -316,6 +323,12 @@ class NativeMailHost:
     def handle(self, request):
         _validate(request)
         action = request['action']
+        if action.startswith('send-'):
+            import removal_sender
+            try:
+                return removal_sender.handle(self, request, database=_database, transaction=_transaction, key_loader=_keys)
+            except removal_sender.SenderError as error:
+                raise MailHostError(error.code) from None
         if action == 'revoke':
             with _database(self.directory) as db, _transaction(db):
                 self._workspace(db, request)

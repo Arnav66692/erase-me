@@ -10,61 +10,69 @@ mailbox provider. You still create a separate account and complete its provider 
 Each user supplies their own installed OAuth client until a broadly approved client
 can be distributed. Your personal inbox must remain disconnected.
 
-## Guided setup
+## Browser setup
 
-You need desktop Python 3.10 or newer, the Erase Me Chrome companion, a separate Gmail
-account and your own Google Desktop OAuth client. No paid service, app password or
-personal-inbox connection is required.
+You need Python 3.10 or newer, the Chrome companion, a separate Gmail account and a
+Google **Desktop app** client JSON. Google account creation, client preparation and
+consent remain provider-controlled. A broadly approved shared client is not supplied,
+so a new user still needs [these Google preparation steps](GMAIL_OAUTH.md#prepare-the-google-client).
+The local screen removes Terminal questions and manual file-permission commands.
 
-1. Create a Gmail account used only for removal requests. Keep its password and
-   login checks out of chat and Terminal. If you already have this separate account,
-   reuse it.
-2. Follow [the installed-app OAuth guide](GMAIL_OAUTH.md#prepare-the-google-client)
-   to enable the Gmail API and download a **Desktop app** client JSON outside the
-   checkout. Google account/client creation and consent remain provider-controlled
-   steps; this software cannot create them silently.
-3. Install or reload the Erase Me companion. Extract the
-   [connector source ZIP](https://erase-me-preview.vercel.app/downloads/erase-me-local-mail.zip)
-   into a permanent folder, open Terminal in that folder and run:
+1. Create a Gmail account used only for removal requests, or reuse your existing
+   dedicated account. Your personal inbox must remain disconnected.
+2. Install/reload the companion and extract the [connector download](https://erase-me-preview.vercel.app/downloads/erase-me-local-mail.zip)
+   into a folder you will keep. On Mac open `tools/setup-removal-mail.command`.
+   On Linux run `tools/setup-removal-mail.sh`. These launch a private local browser page.
+3. Choose **Copy companion ID** in the companion popup and paste it into that page.
+   Enter the email used in your Erase Me profile to exclude it, then the separate Gmail.
+   Select your Google Desktop client JSON file. A matching existing connection can be
+   reused without selecting another file. Confirm that the separate account contains
+   only removal mail. Leave **Allow reviewed privacy-email sending** off for read-only
+   use; enable it only if you want the separate reviewed sender, then choose
+   **Connect separate account**.
+4. Complete Google consent using only the dedicated account. Return to Erase Me,
+   enable **local connectors** in the companion and choose **Connect my removal-only mailbox**.
+   This checks identity only; route-specific mail reads need a separate explicit action.
 
-   ```sh
-   python3 tools/setup_removal_mail.py
-   ```
-
-   The guide asks for the primary email used in your Erase Me profile, the separate
-   removal address, the companion ID from `chrome://extensions` and the Desktop
-   client JSON path. The companion popup can copy a command with its exact ID
-   already included. Paste the file path, **never its contents, a password or code**.
-   If that selected client file is not private, the guide offers to make it owner-only.
-
-   Choose **only the separate removal account** in Google's consent window. Setup
-   verifies its identity, saves credentials privately and installs/checks the native
-   connector. A matching saved connection is reused after an identity-only check,
-   so rerunning setup does not repeat consent. Changes to an existing connector
-   registration require an explicit local approval. No Gmail messages are read.
-4. In Erase Me choose **Connect my removal-only mailbox**. Enable **local connectors**
-   in the companion when requested. Check that the displayed account is your separate
-   removal-only account before preparing a broker contact.
-
-macOS Chrome and Linux Chrome/Chromium are supported. Linux Chromium users append
-`--browser chromium` to the guided command. Mobile browsers can use the workspace
-and official broker links, but this native connector requires a supported desktop.
-The setup installs no service, daemon or timer. OAuth's temporary loopback callback
-listener closes when consent finishes or times out.
-
-To check an existing setup explicitly, without installing a missing connection:
+If your file manager does not run a launcher, the same browser screen starts with:
 
 ```sh
+python3 -I -B tools/mail_setup_web.py
+```
+
+The popup can copy that command with `--extension-id` already filled. Supported:
+macOS Chrome and Linux Chrome/Chromium. Choose Chromium in the setup screen if needed.
+Windows and mobile native installation are not included.
+
+The setup listener binds only to `127.0.0.1` on a random port. A private session link,
+exact local Host/Origin and strict request schema protect setup actions. Google files
+go only to the local process, are staged owner-readable in a private directory and
+removed after use. Passwords, verification codes, tokens and file contents do not go
+into the hosted app or chat. The setup reads no Gmail messages.
+
+Choose **Close local setup** to stop further actions. If installation was already
+reserved, it may finish; an earlier close prevents it. Merely closing the browser tab
+does not reliably cancel a Google operation. The foreground listener expires after
+its ten-minute session; no background service, recurring timer or mail polling is installed.
+
+### Advanced Terminal guide
+
+The original guided command remains available:
+
+```sh
+python3 tools/setup_removal_mail.py
 python3 tools/setup_removal_mail.py --check
 ```
 
-An intentional account/profile change requires `--reconnect` and fresh consent. It
-does not alter held requests or replace their existing operation references. If you
-prefer separate advanced commands, the original
-[OAuth connection](GMAIL_OAUTH.md#connect-explicitly) and
-`install_mail_host.py --extension-id YOUR_32_LETTER_ID --install` interfaces remain
-available. Credentials are stored at `~/.erase-me-removal-mail/gmail-oauth.json`,
-outside the extracted source folder and browser workspace.
+Account changes require explicit `--reconnect` and fresh consent. Enabling optional
+sending also requires fresh consent. For the same saved account, the local screen
+can reuse its private Desktop client during this explicit upgrade; changing the
+account still requires selecting its client file. The advanced command accepts
+`--allow-sending --reconnect`. These setup actions
+do not alter held requests or replace existing broker operation references.
+Credentials stay at `~/.erase-me-removal-mail/gmail-oauth.json`, outside the source
+folder and browser workspace. The [standalone OAuth guide](GMAIL_OAUTH.md#connect-explicitly)
+and native installer remain available for advanced use.
 
 The personal email in setup must match the primary email in this Erase Me workspace.
 Gmail dots, plus aliases, case and `googlemail.com` variants are normalized before
@@ -95,6 +103,50 @@ continues to refuse new shared SearchPeopleFree contacts. People Data Labs and A
 still require their record-associated addresses; this connector does not substitute one.
 Existing held USPhonebook and FastPeopleSearch requests stay held.
 
+## Reviewed privacy-email delivery
+
+Optional sending covers only these fixed contacts and their published purposes:
+
+| Route | Fixed privacy recipient | Official source |
+| --- | --- | --- |
+| 411.ca | `privacy@411.ca` | [Privacy policy](https://www.411.ca/privacy-policy) |
+| ukphonebook.com | `dpo@simunix.com` | [Privacy policy](https://www.ukphonebook.com/privacy) |
+| Das Örtliche/DTM | `datenschutz@dasoertliche-marketing.de` | [Privacy information](https://www.dasoertliche.de/datenschutz) |
+| Cepten Numara Sorgula | `mh@mobilisim.com.tr` | [Privacy policy](https://www.ceptennumarasorgula.com/PrivacyPolicy) |
+| NumaraAra | `bilgi@numaraara.com` | [Contact](https://www.numaraara.com/iletisim) |
+| BeenVerified | `privacy@beenverified.com` | [Privacy FAQ](https://www.beenverified.com/faq/privacy/) |
+| PeopleLooker | `privacy@peoplelooker.com` | [Privacy policy](https://www.peoplelooker.com/privacy-policy/) |
+
+Enable **Allow reviewed privacy-email sending** in local setup and reconnect with
+fresh Google consent. Existing read-only connections remain supported. The optional
+grant adds exactly `gmail.send`; it grants no modify/delete access. This is a separate
+action from copying a local draft or checking a broker confirmation.
+
+Choose the route's email review, affirm that it is your own information and enter an
+accurate public record or identity reference. The native helper verifies the dedicated
+Google identity and returns the exact From, To, subject and body. Review that message
+and approve **Send once**. The primary email is never appended automatically; a
+reference you intentionally type is included in the reviewed message. No attachments,
+ID documents, hidden recipients or unrelated support requests are sent.
+
+Before Google's API is called, a private local outbox durably reserves the original
+operation. Its capability binds the reviewed body digest, account, workspace and route
+for fifteen minutes. It stores hashes and outcome references, not the name, reference
+or message body. The approved message exists in memory and, if accepted, in the
+dedicated mailbox's sent mail. The hosted app receives no Google credential.
+
+A provider-accepted result means Gmail returned message/thread references. It does
+not prove delivery, broker acceptance or deletion. Lost, blocked and ambiguous results
+are never retried automatically. Read the saved original result without sending
+again. Closing an unsent review first records a local tombstone before revoking its
+grant; a send already reserved may finish. Imports cannot reactivate a send capability.
+Holds and campaign pauses prevent new sends. Both held live requests remain held.
+
+Support/registry contacts remain identifier-free procedure drafts. Vodafone's
+record-associated sender requirement is excluded from this separate-account sender.
+Record matching, broker verification and independent deletion evidence still require
+their own supported stages. No recurring work is installed.
+
 ## State, limits and interrupted actions
 
 The native host is `org.eraseme.mail`. The installer pins one exact companion origin.
@@ -113,6 +165,7 @@ Limits are enforced transactionally before network work:
 
 | Action | Local limit |
 | --- | --- |
+| Privacy-email previews / send attempts | 10 per workspace and 20 per connected account per UTC day, independently for each action |
 | New contacts | 10 per workspace and 20 per connected account per UTC day |
 | Receipt/continuation checks | 30 per workspace and 100 per account per UTC day |
 | Status/cached-contact identity checks | 120 per workspace and account per UTC day |

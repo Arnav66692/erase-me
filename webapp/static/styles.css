@@ -2111,7 +2111,7 @@ input:disabled { opacity:1; color:var(--muted); background:var(--panel, var(--pa
 .next-step-email-role { color:var(--muted); font:14px/1.4 var(--sans); }
 .next-step-card .public-route-actions { margin-top:16px; }
 .public-broker-steps { scroll-margin-top:84px; }
-#identity-details-dialog,#peopletrace-details-dialog { width:min(840px,calc(100% - 32px)); max-width:none; }
+#identity-details-dialog,#peopletrace-details-dialog,#cma-details-dialog,#mylife-details-dialog,#thatsthem-details-dialog,#peoplefinders-details-dialog,#removal-send-dialog { width:min(840px,calc(100% - 32px)); max-width:none; }
 .identity-details-fields { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; margin:20px 0; }
 .identity-details-fields label { display:grid; gap:6px; min-width:0; }
 .identity-details-fields .wide { grid-column:1/-1; }
@@ -2139,3 +2139,11 @@ input:disabled { opacity:1; color:var(--muted); background:var(--panel, var(--pa
   .dashboard-description { font-size:17px; line-height:1.35; }
   .dash-band .metrics { margin-top:18px; }
 }
+
+#removal-send-dialog label { display:grid; gap:8px; margin:18px 0; min-width:0; }
+#removal-send-dialog .checkbox-label { display:flex; align-items:flex-start; gap:10px; }
+#removal-send-dialog input[type=text],#removal-send-message { width:100%; min-width:0; max-width:100%; box-sizing:border-box; padding:10px; border:1px solid var(--ink); background:var(--paper); color:var(--ink); font:16px/1.4 var(--mono); }
+#removal-send-dialog dl { display:grid; grid-template-columns:auto minmax(0,1fr); gap:8px 16px; }
+#removal-send-dialog dd { margin:0; overflow-wrap:anywhere; }
+#removal-send-dialog .button { margin:12px 8px 0 0; white-space:normal; }
+#removal-send-dialog a,#removal-send-status { overflow-wrap:anywhere; }

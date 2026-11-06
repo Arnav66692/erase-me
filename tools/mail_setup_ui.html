@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Connect removal-only email · Erase Me</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/mail_setup_ui.css">
+  <script src="/mail_setup_ui.js" defer></script>
+</head>
+<body>
+<main>
+  <p class="eyebrow">Erase Me / Local setup</p>
+  <h1>A separate inbox.<br>A private connection.</h1>
+  <p class="intro">Connect a Gmail account used only for removal requests. This page runs on your computer. Your personal inbox stays disconnected.</p>
+  <p id="session-status" role="status" aria-live="polite">Checking this local setup session…</p>
+  <form id="setup-form" method="post" autocomplete="off">
+    <fieldset id="setup-fields" disabled>
+      <legend><span>01</span> Your accounts</legend>
+      <label for="personal-email">Email used in your Erase Me profile</label>
+      <input id="personal-email" name="personal_email" type="email" maxlength="254" required autocomplete="off">
+      <p class="hint">Used only to prevent connecting your personal account. This account will not be authorized.</p>
+      <label for="mailbox">Separate removal-only Gmail address</label>
+      <input id="mailbox" name="mailbox" type="email" maxlength="254" required autocomplete="off">
+      <p class="hint">Create a new Gmail account first if you do not have a separate one. Keep passwords and verification codes in Google’s own sign-in page.</p>
+      <label for="extension-id">Companion ID</label>
+      <input id="extension-id" name="extension_id" type="text" pattern="[a-p]{32}" minlength="32" maxlength="32" required spellcheck="false" autocomplete="off">
+      <p class="hint">Choose “Copy companion ID” in the Erase Me extension. A command copied from its popup fills this automatically.</p>
+      <label for="browser">Desktop browser</label>
+      <select id="browser" name="browser"><option value="chrome">Chrome</option><option value="chromium">Chromium (Linux)</option></select>
+      <h2><span>02</span> Google connection file</h2>
+      <label for="client-file">Desktop OAuth client JSON</label>
+      <input id="client-file" type="file" accept=".json,application/json">
+      <p class="hint">Already connected on this computer? Leave this empty to reuse the matching account. For a new connection, select the Desktop client file from your Google Cloud project. It goes only to this local setup process and is removed after use.</p>
+      <p class="hint"><a href="https://github.com/Arnav66692/erase-me/blob/main/docs/GMAIL_OAUTH.md#prepare-the-google-client" target="_blank" rel="noopener noreferrer">How to get the Google connection file</a>. A shared, publicly approved Google client is not included yet.</p>
+      <details>
+        <summary>Change an existing connection</summary>
+        <label class="check"><input id="replace-registration" type="checkbox"> Update an existing local connector registration if it belongs to an older companion installation.</label>
+        <label class="check"><input id="reconnect" type="checkbox"> Intentionally replace the saved account authorization through fresh Google consent.</label>
+      </details>
+      <h2><span>03</span> Connect once</h2>
+      <label class="check"><input id="allow-sending" type="checkbox"> Request permission to send individually reviewed privacy requests from this separate account.</label>
+      <p class="hint">Optional. Every email still needs an exact message review and its own approval in Erase Me. To add this permission to an existing read-only connection, also choose “Intentionally replace the saved account authorization” above. Unchecking this option does not revoke a previously granted Google permission.</p>
+      <label class="check"><input id="removal-only" type="checkbox" required> I confirm this separate account contains only removal-related mail. I authorize this local setup to verify that account and install the on-demand connector.</label>
+      <button id="connect" type="submit">Connect separate account ↗</button>
+    </fieldset>
+  </form>
+  <p id="setup-result" role="status" aria-live="polite"></p>
+  <button id="close-setup" type="button">Close local setup</button>
+  <p class="footer">Setup reads no messages, sends no broker requests and installs no recurring work. Supported: Python 3.10+, macOS Chrome and Linux Chrome/Chromium.</p>
+</main>
+</body>
+</html>

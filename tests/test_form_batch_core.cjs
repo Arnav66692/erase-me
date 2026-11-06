@@ -56,7 +56,7 @@ test('a current reviewed preview reserves exactly its route and cannot be replay
 
 test('preview rejects manual routes, missing fields, missing ownership approval and foreign country', async () => {
   const f = await fixture();
-  assert.throws(() => f.core.fillPreview('smartbackgroundchecks'), /companion|supported form/i);
+  assert.throws(() => f.core.fillPreview('thatsthem'), /companion|supported form/i);
   assert.throws(() => f.core.fillPreview('usphonebook'), /first name/);
   assert.throws(() => f.core.fillPreview('apollo'), /Confirm/);
   f.core.setEvidence('usphonebook', { first_name: 'Example', last_name: 'Person' });

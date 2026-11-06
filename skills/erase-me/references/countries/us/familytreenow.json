@@ -23,19 +23,22 @@
     "url": "https://www.familytreenow.com/optout",
     "email": null,
     "requires": [
-      "captcha"
+      "captcha",
+      "email_verification"
     ],
     "fields_needed": [
-      "full_name",
-      "region"
+      "first_name",
+      "last_name",
+      "email"
     ],
     "steps": [
-      "Open the opt-out page and complete the captcha yourself.",
-      "Search for the record and open it.",
-      "Choose the opt-out button on the record and confirm."
+      "Open the official privacy page and follow its Opt-Out Form link.",
+      "Review your own first name, last name, email and the communications authorization. Leave agent and optional middle-name fields empty.",
+      "Complete the genuine hCaptcha and submit the initial Privacy Request form.",
+      "Follow the broker email and later matching instructions. An initial submission or email receipt is not a verified removal."
     ],
     "expected_days": null,
-    "notes": "Steps are thin because the page could not be checked. auto-identity-remove marks a captcha as likely."
+    "notes": "The November 5 initial form posts to /optout/beginoptoutidv. The request-subject option, contact authorization, opaque anti-forgery token, hidden false checkbox fallback and genuine hCaptcha controls were observed. No personal data or live request was submitted; subsequent email, matching, processing and deletion stages are unverified."
   },
   "relist_risk": "unknown",
   "registries": {
@@ -56,9 +59,19 @@
       "url": "https://cppa.ca.gov/data_broker_registry/",
       "license": "official",
       "attribution": "California Privacy Protection Agency data broker registry, 2026 list fetched 2026-10-27"
+    },
+    {
+      "url": "https://www.familytreenow.com/privacy",
+      "license": "official",
+      "attribution": "FamilyTreeNow published privacy notice and Opt-Out Form link, inspected read-only 2026-11-05"
+    },
+    {
+      "url": "https://www.familytreenow.com/optout",
+      "license": "official",
+      "attribution": "FamilyTreeNow initial Privacy Request form, inspected read-only 2026-11-05"
     }
   ],
-  "verified": false,
-  "last_verified": null,
-  "verification_note": "Bot-blocked on 2026-10-27 (Cloudflare challenge page), URL from auto-identity-remove and nulltrace."
+  "verified": true,
+  "last_verified": "2026-11-05",
+  "verification_note": "Only the current official privacy entry and initial 14-control Privacy Request form were verified read-only. An ordinary visible browser initially received 403, then the site\u2019s normal page reached the form without intervention. This reference status does not verify live acceptance, email continuation, correct-record matching or deletion; search remains a research route."
 }

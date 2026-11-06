@@ -871,11 +871,11 @@ test('privacy drafts fix the official recipient and keep local draft preparation
 });
 test('support contacts receive only a generic procedure draft and never the subject or record identifiers',async()=>{
   const f=fixture();await signup(f.core);await post(f.core,'/api/profile',{country:'US'});
-  assert.throws(()=>f.core.privacyDraftRequest('beenverified',{reference:'private record 123',own_request:true}),/support contact/);
-  const draft=f.core.privacyDraftRequest('beenverified',{reference:'',own_request:true});
-  assert.equal(draft.to,Routes.find(r=>r.id==='beenverified').privacyContact.email);
+  assert.throws(()=>f.core.privacyDraftRequest('cyberbackgroundchecks',{reference:'private record 123',own_request:true}),/support contact/);
+  const draft=f.core.privacyDraftRequest('cyberbackgroundchecks',{reference:'',own_request:true});
+  assert.equal(draft.to,Routes.find(r=>r.id==='cyberbackgroundchecks').privacyContact.email);
   assert.equal(draft.body.includes('Example Person'),false);assert.equal(draft.body.includes('person@example.test'),false);assert.match(draft.body,/procedure/);
-  assert.equal(f.core.dashboard().counts.requested,0);assert.equal(f.core.snapshot().items.beenverified.operation_id,null);
+  assert.equal(f.core.dashboard().counts.requested,0);assert.equal(f.core.snapshot().items.cyberbackgroundchecks.operation_id,null);
 });
 test('local privacy drafts honor route holds, country, pause and failed-storage gates without changing prior evidence',async()=>{
   const f=fixture();await signup(f.core);await post(f.core,'/api/profile',{country:'CA'});const input={reference:'My own record',own_request:true};
@@ -930,13 +930,13 @@ test('held audit and official contact panels expose no outbound links or draft a
 });
 test('support draft UI exposes no reference field and prepares no identifiers or external action automatically',async()=>{
   let calls=0;
-  const ui=workspaceUIFixture({routeId:'beenverified',workspace:{privacyDraftRequest:async(_id,input)=>{
+  const ui=workspaceUIFixture({routeId:'cyberbackgroundchecks',workspace:{privacyDraftRequest:async(_id,input)=>{
     calls++;assert.deepEqual(JSON.parse(JSON.stringify(input)),{reference:'',own_request:true});return{to:'privacy@example.test',subject:'Privacy request procedure',body:'Please explain the procedure.',source:'https://example.test/privacy'};
   }}});
-  assert.equal(ui.input('BeenVerified own record reference'),undefined);assert.equal(ui.findText('Prepare private request'),undefined);
-  assert.equal(calls,0);ui.input('BeenVerified This concerns my own information, and I authorize preparing this local draft.').checked=true;await ui.click('Prepare procedure question');
+  assert.equal(ui.input('CyberBackgroundChecks own record reference'),undefined);assert.equal(ui.findText('Prepare private request'),undefined);
+  assert.equal(calls,0);ui.input('CyberBackgroundChecks This concerns my own information, and I authorize preparing this local draft.').checked=true;await ui.click('Prepare procedure question');
   assert.equal(calls,1);assert.deepEqual(ui.posted,[]);assert.deepEqual(ui.opened,[]);assert.deepEqual(ui.copied,[]);
-  assert.equal(ui.input('BeenVerified private request draft').value.includes('Example Person'),false);
+  assert.equal(ui.input('CyberBackgroundChecks private request draft').value.includes('Example Person'),false);
 });
 
 

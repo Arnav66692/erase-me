@@ -4,9 +4,9 @@ document.getElementById('enable').addEventListener('click',async()=>{
       'https://privacy.peopledatalabs.com/*','https://www.usphonebook.com/*',
       'https://www.searchpeoplefree.com/*','https://www.fastpeoplesearch.com/*',
       'https://www.apollo.io/*','https://www.spokeo.com/*',
-      'https://www.advancedbackgroundchecks.com/*','https://www.nosorgulama.com.tr/*',
+      'https://www.advancedbackgroundchecks.com/*','https://www.smartbackgroundchecks.com/*','https://www.familytreenow.com/*','https://www.nosorgulama.com.tr/*',
       'https://www.numaraara.com/*','https://www.numarasor.com/*','https://www.telefonsorgulama.com/*',
-      'https://www.peopletraceuk.com/*'
+      'https://www.peopletraceuk.com/*','https://www.mylife.com/*','https://mylife.jotform.com/*','https://www.whitepages.com/*','https://cmadnm.cawebhosting.ca/*','https://thatsthem.com/*','https://www.peoplefinders.com/*'
     ]});
     document.getElementById('result').textContent=granted?'Broker access enabled. Refresh your workspace.':'Access was not granted. Official forms can still be opened by hand.';
   }catch(_){document.getElementById('result').textContent='Access could not be enabled. Open the extension settings and try again.';}
@@ -21,8 +21,14 @@ document.getElementById('enable-helper').addEventListener('click',async()=>{
 const mailSetupField=document.getElementById('mail-setup-command');
 const mailSetupCopy=document.getElementById('copy-mail-setup');
 const mailSetupId=chrome.runtime?.id;
+const mailIdField=document.getElementById('mail-companion-id'),mailIdCopy=document.getElementById('copy-companion-id');
 if(typeof mailSetupId==='string'&&/^[a-p]{32}$/.test(mailSetupId)){
-  const command='python3 tools/setup_removal_mail.py --extension-id '+mailSetupId;
+  const command='python3 tools/mail_setup_web.py --extension-id '+mailSetupId;
+  mailIdField.value=mailSetupId;
+  mailIdCopy.addEventListener('click',async()=>{
+    try{if(!globalThis.navigator?.clipboard?.writeText)throw new Error();await navigator.clipboard.writeText(mailSetupId);document.getElementById('result').textContent='Companion ID copied. Paste it into the local setup page.';}
+    catch(_){document.getElementById('result').textContent='Select and copy the companion ID above.';}
+  });
   mailSetupField.value=command;
   mailSetupCopy.addEventListener('click',async()=>{
     try{
@@ -32,6 +38,6 @@ if(typeof mailSetupId==='string'&&/^[a-p]{32}$/.test(mailSetupId)){
     }catch(_){document.getElementById('result').textContent='Select and copy the setup command above. No account was connected.';}
   });
 }else{
-  mailSetupCopy.disabled=true;
+  mailSetupCopy.disabled=true;mailIdCopy.disabled=true;mailIdField.value='Unavailable';
   mailSetupField.value='Reload the companion to obtain its installation ID.';
 }

@@ -42,7 +42,7 @@
           const route = routes.find(route => route.id === preview.routeId);
           if (!Array.isArray(ping?.routes) || !ping.routes.includes(route.id))
             throw new Error('Enable companion access to every selected broker, then review the batch again. No form was started.');
-          const capability = route.requiredAffirmations.includes('own_request') ? 'structured-fields-v1' :
+          const capability = route.id === 'whitepages' ? 'whitepages-prefill-v1' : route.requiredAffirmations.includes('own_request') ? 'structured-fields-v1' :
             ['apollo', 'spokeo'].includes(route.id) ? 'explicit-fields-v1' : null;
           if (capability && !ping.capabilities?.includes(capability))
             throw new Error('Update the companion before using these forms. No form was started.');

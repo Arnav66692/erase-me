@@ -21,7 +21,7 @@ asks for the broker's specific outstanding step. It distinguishes a separate rem
 contact from a personal or business address. New actions save that recipient when
 they start; older typed-email actions without a saved recipient say it is unknown.
 For an authenticated FastPeopleSearch matching continuation, **Enter missing information**
-opens an Erase Me dialog. Companion 0.11.0 checks the same existing tab, document,
+opens an Erase Me dialog. Companion 0.12.0 checks the same existing tab, document,
 browser session and private destination proof. The read-only probe returns five native
 requirement flags; it reads no DOB, address or phone value. Missing or changed proof
 stops collection without opening a new URL or resending anything.
@@ -45,7 +45,7 @@ broker form for direct entry. Its held pilot request stays held. **Review reques
 opens local instructions. Holds and pause suppress new actionable prompts; unknown
 and imported outcomes ask for review instead of claiming a confirmed match.
 
-Companion 0.11.0 can initiate People Data Labs email verification and prefill the initial
+Companion 0.12.0 can initiate People Data Labs email verification and prefill the initial
 USPhonebook, SearchPeopleFree, FastPeopleSearch, Apollo, Spokeo, AdvancedBackgroundChecks
 and four reviewed Turkish request forms. Optional initial guarded submission applies to
 FastPeopleSearch's and AdvancedBackgroundChecks' verification forms plus No Sorgulama,
@@ -104,7 +104,7 @@ The person can deselect forms, then check the initially unchecked batch authoriz
 choose **Fill selected forms**. Changing the selection clears that authorization. The
 companion checks access to every selected broker before starting and fills one form at a
 time while the workspace page remains open. Optional submission automation adds only
-eight contracts: USPhonebook, FastPeopleSearch, SearchPeopleFree, AdvancedBackgroundChecks and Apollo verification initiation, plus the reviewed No Sorgulama, NumaraAra and NumaraSor request forms.
+ten broker contracts: FamilyTreeNow, SmartBackgroundChecks, USPhonebook, FastPeopleSearch, SearchPeopleFree, AdvancedBackgroundChecks and Apollo verification initiation, plus the reviewed No Sorgulama, NumaraAra and NumaraSor request forms.
 Their agreements are shown in the review and checked again against the broker's actual
 form. Turning automation off retains prefill behavior. People Data Labs retains its
 existing verification-email initiation; other routes remain prefill-only.
@@ -162,21 +162,23 @@ remain blocked. A recognized answer is not evidence of broker acceptance.
 
 ## Country coverage
 
-The catalog has 43 reference routes, with eleven standard initial companion actions, one separate transient UK prefill and
-31 other guided channels. Reference coverage is separate from live integration or removal evidence.
+The catalog has 43 reference routes, with fourteen standard initial companion actions
+and five separate transient forms. Twenty-four routes lack reviewed form fill; six
+of these have a separate reviewed email action. Seven email routes are supported in
+total because NumaraAra overlaps the form set. Eighteen routes remain guidance-only. Reference coverage is separate from live integration or removal evidence.
 
 | Catalog group | Reference routes | Initial companion actions |
 | --- | --- | --- |
 | Global portals: People Data Labs and Apollo | 2 | 2 |
-| United States | 23 | 5 |
-| Canada | 4 | 0 |
+| United States | 23 | 11 (including three transient prefills) |
+| Canada | 4 | 1 (marketing registration) |
 | United Kingdom | 5 | 1 (transient prefill) |
 | Germany | 2 | 0 |
 | Turkey | 7 | 4 |
 
 All 37 routes outside the first six now have a source-backed channel review in
 `broker-audit.js`. It records a check date, observed availability, channel kind, sources
-and limits. Five of those reviews support new initial prefills; blocked, unavailable,
+and limits. The executable and transient contracts are listed in the integration matrix; blocked, unavailable,
 registration and provider channels remain explicit guides. No audit entry establishes
 request acceptance or deletion. Follow current official instructions and stop for payment
 or an identity-document upload.
@@ -185,16 +187,16 @@ AdvancedBackgroundChecks requires an own-request affirmation before filling the 
 name/email form. No Sorgulama, NumaraAra and TelefonSorgulama accept an explicitly reviewed
 name, contact email and plain request text. NumaraSor also needs the person’s own target
 phone number. The companion selects only the reviewed self-request/removal option.
-NumaraAra alone has the optional guarded request-form submission and image-code helper;
-the other Turkish forms leave submission, consent, challenges and later verification to
-the person.
+No Sorgulama, NumaraAra and NumaraSor have separately reviewed optional guarded
+initial submissions. NumaraAra alone has the reviewed local image-code helper.
+TelefonSorgulama leaves submission manual; all later broker stages remain separate.
 Request text retains Unicode and line breaks and is set as a field value, never executed.
 Only NumaraSor receives the separately approved phone field; no call or SMS is sent.
 
 CMA Do Not Mail, Canada’s DNCL and the UK’s TPS are marketing-suppression registrations,
 not deletion of broker records. Provider directory preferences, phone, postal and
 subscriber-SMS instructions are also manual and have their own scope and possible
-provider conditions. The application does not perform paid lookups or dial/send messages.
+provider conditions. The application does not perform paid lookups, make phone calls or send SMS.
 
 Without a country, only the two global portals appear and the app asks for a country.
 Selecting a pack shows its regional references plus global portals. A country without a
@@ -272,8 +274,9 @@ profile name or identifiers. The recipient and source are fixed audited metadata
 The draft is returned to the browser for review, **Copy private draft** or **Download
 private draft**. It is not sent, uploaded to the host, added to the activity log or included
 in the saved ledger as a message body. Only the draft-preparation event is recorded. The
-person chooses a suitable account and sends it themselves if they wish. No inbox,
-SMTP/Gmail send permission, email endpoint or scheduled job is involved.
+person can choose a suitable account and send it themselves. This draft feature
+uses no inbox, sending permission or scheduled job. Seven reviewed privacy contacts
+also have a separate optional native send flow described below.
 
 Route holds, country selection, campaign pause, malformed contacts and uncertain previous
 outcomes stop draft preparation. Editing the reference or authorization clears the prior
@@ -377,7 +380,7 @@ queue; it uses those helpers and `recordCompanion()` rather than adding a public
 submission endpoint. Its optional `afterForms` callback receives detached, minimal references
 to qualifying operations after all form results are persisted, and never reruns a form.
 The optional local helper adds a separate `nativeMessaging` grant;
-the reviewed broker origins are explicitly allowlisted. The separate People Trace UK prefill adds a twelfth optional origin.
+the reviewed broker origins are explicitly allowlisted. The private forms and privacy-entry pages have separate reviewed origins where needed, for twenty explicitly reviewed optional origins in version 0.12.0.
 
 `matchRequest()` records the approved Spokeo candidate and identity before the companion
 opens it. `recordMatch()` accepts only the correlated result for that current context.
@@ -528,3 +531,75 @@ fields or input-event changes stop filling. It never submits this form or alters
 challenge response. Closing or changing the review prevents a pending dispatch; an
 interrupted operation is retained for reconciliation and cannot silently repeat.
 A prepared form remains separate from matching, acceptance and deletion.
+
+## Local setup screen, SmartBackgroundChecks and CMA (0.12.0)
+
+The local mail download includes a Mac/Linux launcher for `mail_setup_web.py`. A
+random-port loopback page collects account details and a selected Google Desktop
+client file without Terminal answers. API actions require the private fragment token,
+exact local Host/Origin and a strict bounded schema. The hosted workspace never sees
+the file, provider credentials or setup token. Setup performs identity/OAuth work only;
+no mail is read and no broker is contacted. An existing matching grant can be reused.
+A separate account and Google client preparation still remain external requirements.
+
+The foreground setup listener lasts at most ten minutes; it is not a daemon or recurring
+job. Explicit Close cancels unreserved installation. An installation already reserved
+may finish. Closing a browser tab is not a reliable cancellation signal. Uploaded files
+are private temporary files and cleanup runs after the action.
+
+SmartBackgroundChecks uses a reviewed privacy-first entry: the original document and
+published Opt-Out Form link are checked before navigation, then the canonical `/remove`
+form is pinned before any profile disclosure. The ninth broker submission contract uses
+`reviewed-initial-submit-v5`, subject-only fields and the genuine widget response.
+An inaccessible entry or changed form stops safely without inventing a completion.
+
+CMA has its own `cma-registration-v1` private mailing-address review. It is excluded
+from normal form batches. Optional submission starts unchecked; only its exact native
+marketing-registration attempt proof is saved. Marketing effects, participating-member
+limits, six-year duration and processing delay are shown separately from broker deletion.
+Addresses travel in one transient payload and are excluded from both journals and backups.
+Requested/removed counters remain unchanged by a CMA attempt.
+
+Whitepages uses `whitepages-prefill-v1` before any batch reservation. Only an explicitly
+reviewed own-person listing URL is filled into the observed first-step non-form input.
+The panel purpose, step text, input and Next control are pinned; the companion never
+clicks Next. Changed input behavior stops the action. Automatic structured matching
+remains Spokeo-only; later Whitepages phone verification stays with the person.
+
+## Transient US forms and reviewed privacy-email delivery (0.12.0)
+
+FamilyTreeNow’s official privacy entry leads to its name/email opt-out form. Its
+tenth guarded broker contract pins subject selection, unchanged anti-forgery fields,
+the exact communications agreement and genuine hCaptcha response. The initial
+verification attempt establishes no later email, record selection or deletion result.
+
+MyLife’s official privacy-request link leads to a pinned provider JotForm. Erase Me
+reviews first/last name, state, city, ZIP and birth year in memory and fills only that
+observed deletion/opt-out form. PeopleFinders separately reviews first/last name and
+the required US street, city and state; its middle name, email, phone and birth date
+remain empty. That’s Them reviews the own name, contact email, street, city, state,
+ZIP and phone. None of these transient flows stores the extra fields in the saved
+ledger, backup or companion result journal. Each requires its own exact authorization,
+stays outside generic batches and leaves challenge, certification and submit to the
+user on the official site. A prefill is not a correct match or accepted deletion.
+
+The separate local sender supports seven fixed privacy contacts. Setup defaults to
+read-only and offers an unchecked sending option requiring fresh Google consent for
+exactly `gmail.send`. Existing read-only accounts remain valid. For the same account,
+the local setup screen can reuse its saved Desktop client during explicit reconnect.
+A separate Gmail account and own Google client are still needed; this is not a
+zero-setup publicly verified shared-mail service.
+
+After an own-information affirmation and typed record reference, the native connector
+prepares an exact From/To/subject/body preview. A second approval authorizes one send.
+The workspace stores only opaque references and digests; the private native outbox
+reserves the attempt durably before Google’s API call. It never retries an uncertain
+result. Held routes, paused campaigns, stale profile reviews and imported capabilities
+cannot start a send. Local reconciliation reads only the saved original outcome.
+Closing an unsent draft records a tombstone before native revocation; a send already
+reserved can finish. The primary email is never automatically added to the message.
+
+A returned Google message/thread reference means provider API acceptance only.
+Delivery, broker acceptance and deletion remain unverified. The app does not read
+personal inboxes or install polling, recurring checks or future retries. Both live
+pilot requests remain held. See [supported recipients and setup](LOCAL_REMOVAL_MAIL.md#reviewed-privacy-email-delivery).

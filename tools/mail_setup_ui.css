@@ -1,0 +1,11 @@
+:root{color-scheme:light;--paper:#f5f4eb;--ink:#17231d;--green:#b8cbb5}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:17px/1.5 system-ui,sans-serif}
+main{width:min(760px,calc(100% - 40px));margin:36px auto 70px}.eyebrow{font:13px/1.5 monospace;text-transform:uppercase;letter-spacing:.08em;border-bottom:2px solid;padding:0 0 16px}
+h1{font:clamp(46px,8vw,78px)/1 Georgia,serif;margin:40px 0 24px;letter-spacing:-.04em}.intro{font-size:20px;max-width:620px}
+fieldset{min-width:0;border:0;padding:0;margin-top:32px}legend,h2{width:100%;font:28px/1.2 Georgia,serif;border-top:2px solid;padding-top:20px;margin:28px 0 22px}legend span,h2 span{font:16px monospace;margin-right:14px}
+label{display:block;margin:20px 0 8px}input:not([type=checkbox]),select{display:block;width:100%;max-width:100%;border:1px solid var(--ink);background:#fff;color:inherit;border-radius:0;padding:13px;font:inherit;min-height:48px}input[type=file]{font-size:15px;overflow-wrap:anywhere}
+.hint,.footer{font-size:14px;line-height:1.5;color:#46554b}.hint{margin:8px 0 20px}.footer{border-top:1px solid;margin-top:32px;padding-top:16px}a{color:inherit;text-underline-offset:3px}
+.check{display:flex;align-items:flex-start;gap:12px}.check input{flex-shrink:0;margin-top:6px;width:18px;height:18px;accent-color:var(--ink)}details{border:1px solid;padding:16px;margin:26px 0}summary{cursor:pointer;min-height:28px}
+button{min-height:48px;border:1px solid var(--ink);background:var(--ink);color:var(--paper);padding:14px 20px;font:inherit;cursor:pointer;white-space:normal}#connect{margin:15px 0}#close-setup{background:transparent;color:var(--ink)}button:disabled{opacity:.5;cursor:default}
+:focus-visible{outline:3px solid #205533;outline-offset:4px}#session-status,#setup-result{overflow-wrap:anywhere}#setup-result:not(:empty){border-left:4px solid;padding:16px;background:var(--green)}
+@media(max-width:480px){main{width:calc(100% - 32px);margin-top:20px}h1{margin-top:30px}button{width:100%}legend,h2{font-size:25px}.intro{font-size:18px}}

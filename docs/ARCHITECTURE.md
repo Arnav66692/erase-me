@@ -1,5 +1,44 @@
 # Erase Me architecture and data contracts
 
+## One-session local setup and additional form contracts (0.12.0)
+
+`mail_setup_web.py` serves an explicit allowlist on random-port loopback. It uses a
+fragment bearer, strict Host/Origin and bounded request schema, with no CORS or cookies.
+The browser sends a selected Desktop client only to that local process; a private
+temporary file feeds the existing setup guide. Account identity and existing scope
+checks are reused. Close/expiry and installation reservation share a lock; no recurring
+service or mail check is installed. A shared Google client still needs provider approval.
+
+SmartBackgroundChecks has a privacy-entry gate before normal BASE/AUTO execution.
+The journal precedes public navigation, the published link is checked in the original
+document, and profile data is withheld until the canonical form passes inspection.
+CMA uses a separate transient address schema/dialog and marketing-registration
+contract; it cannot enter ordinary batches or increment deletion/request counters.
+
+FamilyTreeNow adds the tenth guarded broker initial contract. MyLife, PeopleFinders
+and That’s Them use separate transient private reviews and exact observed form
+contracts. They cannot enter generic form payloads or batches. Extra identity fields
+never enter saved workspace state, backups or companion outcome journals; challenge
+and submission remain manual. The catalog now has fourteen standard and five
+transient form actions, including CMA’s separate marketing registration.
+
+Optional outbound privacy email is isolated in `tools/removal_sender.py` and the
+`send-contract.js` protocol. Old read-only OAuth configurations stay valid. Explicit
+setup consent may add exactly `gmail.send`; a same-account upgrade still requires
+fresh consent. Seven immutable, purpose-verified recipient/source pairs constrain
+the sender. Support contacts and record-associated sender channels are excluded.
+
+The workspace reserves a profile-bound preview under its cross-tab Web Lock before
+native preparation. A digest binds the in-memory record reference and exact message;
+only opaque operation/capability references persist. Final approval reserves sending
+before native dispatch. The native SQLite outbox durably records `started` before
+Google’s fixed send API is called. Ambiguous results have no retry path. Native
+revocation creates a tombstone before late preparation can bind; imports cannot
+reactivate a grant. Holds and campaign pause are checked under the same writer lock.
+Message bodies and typed record references are not stored in the local outbox or
+workspace. Google message/thread IDs establish provider API acceptance only, with
+delivery, broker acceptance and deletion explicitly false.
+
 ## Guided setup and transient initial identity fields (0.11.0)
 
 `tools/setup_removal_mail.py` composes the existing installed OAuth and native-host

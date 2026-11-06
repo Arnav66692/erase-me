@@ -12,7 +12,7 @@ const listing = 'https://www.spokeo.com/Example-Person/California/Example-City/p
 const key = 'a'.repeat(64);
 function gate() { let resolve; const promise = new Promise(done => { resolve = done; }); return { promise, resolve }; }
 
-async function fixture({ bound = [], started = [], held = [], delayed = false, delayedMail = false, delayedContact = false, preMatched = false, globals = true, country = 'US', matchResult,focusAvailable=true,focusCapability=true,beforeFocusPing,localConnector=false,localRevokeFailure=false } = {}) {
+async function fixture({ bound = [], started = [], held = [], delayed = false, delayedMail = false, delayedContact = false, preMatched = false, globals = true, country = 'US', matchResult,focusAvailable=true,focusCapability=true,beforeFocusPing,localConnector=false,localRevokeFailure=false,whitepagesCapability=false } = {}) {
   const values = new Map(); let sequence = 0, stamp = '2026-11-05T00:00:00.000Z';
   const core = Core.create({ storage: { getItem: id => values.get(id) || null, setItem: (id, value) => values.set(id, value), removeItem: id => values.delete(id) },
     uuid: () => (++sequence).toString(16).padStart(32, '0'), now: () => stamp });
@@ -126,15 +126,16 @@ async function fixture({ bound = [], started = [], held = [], delayed = false, d
         result = matchResult || { status: 'matched', candidateUrl: payload.listingUrl, evidence: ['structured_person', 'exact_candidate_url', 'name', 'email'], source: 'structured_person_v1', match_verified: true };
       } else if(payload.action==='continue'){
         assert.equal(core.snapshot().items[payload.routeId].continuation.result,'unknown');result={status:'prepared'};
-      }else if(payload.action==='focus-existing')result={status:focusAvailable?'focused':'unavailable',routeId:payload.routeId,stage:payload.stage};
+      }else if(payload.action==='run'&&payload.routeId==='whitepages')result={status:'prepared'};
+      else if(payload.action==='focus-existing')result={status:focusAvailable?'focused':'unavailable',routeId:payload.routeId,stage:payload.stage};
       else {
         if(payload.action==='ping')beforeFocusPing?.(core);
-        result = { routes: core.routes().filter(route => route.automationLevel === 'companion').map(route => route.id), capabilities: ['explicit-fields-v1', 'structured-fields-v1','fastpeoplesearch-continuation-v1',...(focusCapability?['owned-tab-focus-v1']:[]),...(localConnector?['local-removal-mail-v1']:[])] };
+        result = { routes: core.routes().filter(route => route.automationLevel === 'companion').map(route => route.id), capabilities: ['explicit-fields-v1', 'structured-fields-v1','fastpeoplesearch-continuation-v1',...(focusCapability?['owned-tab-focus-v1']:[]),...(localConnector?['local-removal-mail-v1']:[]),...(whitepagesCapability?['whitepages-prefill-v1']:[])] };
       }
       queueMicrotask(() => listeners.get('message')?.({ source: window, origin: 'https://erase-me-preview.vercel.app', data: { source: 'erase-companion', requestId: message.requestId, reply: { ok: true, result } } }));
     }
   };
-  const context = { document, EraseWorkspace: workspace, EraseFormBatch: batch,EraseNextSteps:NextSteps,EraseIdentityDialog:{create:()=>({open:async(routeId)=>identityOpened.push(routeId)})},ErasePeopleTraceDialog:{create:({companion})=>({open:async()=>companion({action:'fill-peopletrace',routeId:'gb-peopletraceuk'})})}, ...(localConnector?{EraseLocalRemovalMail:local}:{}), ...(globals ? { EraseAutomaticExecutor: Automatic, EraseRemovalSession: session, EraseRemovalMail: mail, EraseContactSetup: ContactSetup } : {}),
+  const context = { document, EraseWorkspace: workspace, EraseFormBatch: batch,EraseNextSteps:NextSteps,EraseIdentityDialog:{create:()=>({open:async(routeId)=>identityOpened.push(routeId)})},ErasePeopleTraceDialog:{create:({companion})=>({open:async()=>companion({action:'fill-peopletrace',routeId:'gb-peopletraceuk'})})},EraseCMADialog:{create:({companion})=>({open:async()=>companion({action:'run-cma',routeId:'ca-cma-do-not-mail'})})},EraseMyLifeDialog:{create:({companion})=>({open:async()=>companion({action:'fill-mylife',routeId:'mylife'})})}, ...(localConnector?{EraseLocalRemovalMail:local}:{}), ...(globals ? { EraseAutomaticExecutor: Automatic, EraseRemovalSession: session, EraseRemovalMail: mail, EraseContactSetup: ContactSetup } : {}),
     URL, Blob, CustomEvent: class { constructor(type) { this.type = type; } }, location: { origin: 'https://erase-me-preview.vercel.app' },
     crypto: { randomUUID: () => (++sequence).toString(16).padStart(32, '0') }, setTimeout: (_callback, delay) => { deadlines.push(delay); return ++timeoutId; }, clearTimeout() {}, window };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../webapp/static/workspace-ui.js'), 'utf8'), context);
@@ -153,11 +154,35 @@ async function fixture({ bound = [], started = [], held = [], delayed = false, d
     text: () => body.textContent, time: value => { stamp = value; }, complete: runGate.resolve, completeMail: mailGate.resolve,completeContact:contactGate.resolve };
 }
 
+test('Whitepages direct fill checks its current companion capability before reserving an operation',async()=>{
+  for(const capable of [false,true]){
+    const ui=await fixture({whitepagesCapability:capable}),url='https://www.whitepages.com/name/Example-Person/Example-City-CA/EraseMeSyntheticID';
+    ui.input('Whitepages Your confirmed listing URL').value=url;
+    ui.toggle(ui.input('Whitepages I reviewed this exact listing and confirm it is my own information.'));
+    const row=ui.byId('listing-items').children.find(row=>row.querySelector('.listing-title')?.textContent==='Whitepages');
+    function find(node){if(node.tagName==='BUTTON'&&node.textContent==='Fill with companion')return node;for(const child of node.children){const match=find(child);if(match)return match;}}
+    await ui.click(find(row));
+    if(!capable){assert.deepEqual(ui.posted.map(value=>value.action),['ping']);assert.equal(ui.core.snapshot().items.whitepages.operation_id,null);assert.match(ui.text(),/Update the companion before filling this reviewed Whitepages first step/);}
+    else{const request=ui.posted.find(value=>value.action==='run');assert.equal(request.listingConfirmed,true);assert.equal(request.authorized,true);assert.deepEqual(JSON.parse(JSON.stringify(request.fields)),{listing_url:url});assert.equal(ui.core.snapshot().items.whitepages.status,'needs_broker_step');assert.equal(ui.core.dashboard().counts.removed,0);}
+  }
+});
+
 test('private form transport keeps the foreground deadline while the broker page opens',async()=>{
   const ui=await fixture({country:'GB'});
   await ui.click('Enter private form details');
   assert.deepEqual(ui.posted.map(payload=>payload.action),['fill-peopletrace']);
   assert.deepEqual(ui.deadlines,[60000]);
+});
+test('Canadian mailing registration opens only its own private dialog with the foreground deadline',async()=>{
+  const ui=await fixture({country:'CA'});
+  assert.equal(ui.button('Enter private form details'),undefined);
+  await ui.click('Review mailing preference');
+  assert.deepEqual(ui.posted.map(payload=>payload.action),['run-cma']);assert.deepEqual(ui.deadlines,[60000]);
+});
+
+test('MyLife exposes only its own private identity review with the foreground dispatch deadline',async()=>{
+  const ui=await fixture({country:'US'});assert.equal(ui.button('Enter private form details'),undefined);assert.equal(ui.button('Review mailing preference'),undefined);
+  await ui.click('Review MyLife identity fields');assert.deepEqual(ui.posted.map(payload=>payload.action),['fill-mylife']);assert.deepEqual(ui.deadlines,[60000]);
 });
 
 test('automatic options are fresh and exact consent appears only after explicit opt-in', async () => {
@@ -503,4 +528,13 @@ test('every failed local contact binding invokes the issued-grant cleanup path',
   assert.deepEqual(ui.localCalls.map(call=>call.action),['status','session','discard']);
   const discarded=ui.localCalls.find(call=>call.action==='discard');assert.equal(discarded.request.route_id,'searchpeoplefree');assert.equal(discarded.response.workspace_id,ui.core.profile().id);
   assert.equal(ui.core.snapshot().items.searchpeoplefree.mail_contact,undefined);assert.equal(ui.core.snapshot().items.searchpeoplefree.held,true);assert.match(ui.byId('campaign-feedback').textContent,/unused local grant was revoked/);
+});
+
+test('FamilyTreeNow uses normal in-app fields and requires own-request review before its exact communications agreement appears',async()=>{
+  const ui=await fixture({held:['usphonebook','fastpeoplesearch']});ui.fillNames('familytreenow');
+  ui.input('FamilyTreeNow I reviewed these fields and confirm this request concerns my own information.').checked=true;
+  await ui.click('Review form batch');assert.equal(ui.byId('form-batch-automate').checked,false);assert.equal(ui.text().includes(Automatic.CONTRACTS.familytreenow.consentText),false);
+  ui.toggle('form-batch-automate');assert.equal(ui.text().includes(Automatic.CONTRACTS.familytreenow.consentText),true);assert.equal(ui.byId('form-batch-approval').checked,false);
+  ui.toggle('form-batch-approval');await ui.click(ui.byId('form-batch-start'));const entry=ui.batches[0].previews.find(p=>p.routeId==='familytreenow');assert.ok(entry);assert.deepEqual(JSON.parse(JSON.stringify(entry.fields)),{first_name:'Example',last_name:'Person',email:'person@example.test'});assert.equal(entry.reviewed.affirmations.own_request,true);assert.equal(ui.batches[0].options.automate,true);
+  assert.equal(ui.core.snapshot().items.usphonebook.held,true);assert.equal(ui.core.snapshot().items.fastpeoplesearch.held,true);assert.equal(ui.core.dashboard().counts.removed,0);
 });

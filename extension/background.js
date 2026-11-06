@@ -1,11 +1,16 @@
 /* Explicit operations and explicit, bounded reconciliation. No scheduled work. */
-if(typeof importScripts==='function')importScripts('broker-executor.js','automatic-executor.js','identity-details.js','final-executor.js','peopletrace-details.js');
+if(typeof importScripts==='function')importScripts('broker-executor.js','automatic-executor.js','identity-details.js','final-executor.js','peopletrace-details.js','cma-details.js','mylife-details.js','thatsthem-details.js','peoplefinders-details.js','send-contract.js');
 const APP='https://erase-me-preview.vercel.app';
 const EXEC=typeof EraseBrokerExecutor!=='undefined'?EraseBrokerExecutor:require('./broker-executor.js');
 const AUTO=typeof EraseAutomaticExecutor!=='undefined'?EraseAutomaticExecutor:require('./automatic-executor.js');
 const FINAL=typeof EraseFinalExecutor!=='undefined'?EraseFinalExecutor:require('./final-executor.js');
 const IDENTITY=typeof EraseIdentityDetails!=='undefined'?EraseIdentityDetails:require('./identity-details.js');
 const PEOPLETRACE=typeof ErasePeopleTraceDetails!=='undefined'?ErasePeopleTraceDetails:require('./peopletrace-details.js');
+const CMA=typeof EraseCMADetails!=='undefined'?EraseCMADetails:require('./cma-details.js');
+const MYLIFE=typeof EraseMyLifeDetails!=='undefined'?EraseMyLifeDetails:require('./mylife-details.js');
+const THATSTHEM=typeof EraseThatsThemDetails!=='undefined'?EraseThatsThemDetails:require('./thatsthem-details.js');
+const PEOPLEFINDERS=typeof ErasePeopleFindersDetails!=='undefined'?ErasePeopleFindersDetails:require('./peoplefinders-details.js');
+const SEND=typeof EraseSendContract!=='undefined'?EraseSendContract:require('./send-contract.js');
 const NATIVE_HOST='org.eraseme.challenge';
 const MAIL_NATIVE_HOST='org.eraseme.mail';
 const active=new Set(),sessions=new WeakMap(),observationKeys=new WeakMap();
@@ -49,6 +54,20 @@ async function helperStatus(chromeApi){
   }catch(_){return {available:false,image:false,audio:false};}
 }
 function exactMailObject(value,keys){return !!value&&typeof value==='object'&&!Array.isArray(value)&&Object.keys(value).length===keys.length&&keys.every(key=>Object.hasOwn(value,key));}
+async function localSend(message,chromeApi){
+  if(!exactMailObject(message,['type','action','request']))throw new Error('Review this removal-only email action first.');
+  const request=SEND.request(message.request);
+  if(!await chromeApi.permissions.contains({permissions:['nativeMessaging']}))throw new Error('Enable local connectors in the companion and complete removal-only email setup first.');
+  let reply;
+  try{reply=await chromeApi.runtime.sendNativeMessage(MAIL_NATIVE_HOST,request);}catch(_){throw new Error('The local removal-only email connector is unavailable. Complete local setup first.');}
+  if(reply?.ok!==true){
+    if(reply?.code==='send_permission_required')throw new Error('Sending is not enabled. In local email setup, request sending permission and explicitly reconnect the same separate account.');
+    if(reply?.code==='primary_disclosure')throw new Error('Use a public listing or listed-record reference without your personal email address.');
+    throw new Error('The removal-only email action could not be completed. Check setup and the existing operation; no repeat was authorized.');
+  }
+  if(!exactMailObject(reply,['ok','result']))throw new Error('The local email reply could not be validated.');
+  return SEND.response(request,reply.result);
+}
 async function localMail(message,chromeApi){
   if(!exactMailObject(message,['type','action','request']))throw new Error('Choose a supported local removal-mail action.');
   const request=message.request,base=['action','workspace_id','personal_email_sha256'];
@@ -85,7 +104,7 @@ async function automaticSubmit(payload,tabId,documentId,chromeApi){
   const target={tabId,documentIds:[documentId]};
   const [installed]=await chromeApi.scripting.executeScript({target,files:['automatic-executor.js']});
   if(installed?.documentId!==documentId)return unknown('The broker tab changed before submission. No repeat was sent.');
-  if(['fastpeoplesearch','searchpeoplefree','usphonebook'].includes(payload.routeId)){
+  if(['fastpeoplesearch','searchpeoplefree','usphonebook','smartbackgroundchecks','familytreenow'].includes(payload.routeId)){
     const [readiness]=await chromeApi.scripting.executeScript({target,func:value=>globalThis.EraseAutomaticExecutor.waitReady(value),args:[payload]});
     if(readiness?.documentId!==documentId)return unknown('The broker document changed while its security widget was loading. No submit was attempted.');
     if(readiness.result?.status==='blocked')return {status:'blocked',detail:String(readiness.result.detail||'The broker security check still needs attention.').slice(0,600)};
@@ -394,6 +413,71 @@ async function observe(message,record,key,chromeApi){
     record.result=result;await chromeApi.storage.local.set({[key]:record});return result;
   }catch(_){return unknown();}finally{active.delete(key);}
 }
+async function fillMyLife(message,chromeApi){
+  if(!exactMailObject(message,['type','action','routeId','operationId','authorized','ownRequestConfirmed','consentId','identity','details']))throw new Error('Review the private MyLife fields first.');
+  const {type,action,...payload}=message;MYLIFE.validatePayload(payload);
+  const key='operation:'+message.operationId,previous=(await chromeApi.storage.local.get(key))[key];
+  if(previous||active.has(key))return previous?.routeId===MYLIFE.ROUTE?previous.result:unknown();
+  active.add(key);const record={routeId:MYLIFE.ROUTE,result:unknown('Private MyLife action started. No repeat is authorized.')};
+  try{
+    if(!await chromeApi.permissions.contains({origins:['https://'+MYLIFE.ENTRY_HOST+'/*','https://'+MYLIFE.HOST+'/*']}))throw new Error();
+    await chromeApi.storage.local.set({[key]:record});
+    const tab=await chromeApi.tabs.create({url:MYLIFE.ENTRY_URL,active:true});record.tabId=tab.id;await chromeApi.storage.local.set({[key]:record});await settled(chromeApi,tab.id);
+    const prove=()=>{
+      if(location.href!=='https://www.mylife.com/privacyrequest'||document.title!=='MyLife Opt-Out Form'||document.querySelector('input[type="file"]'))return false;
+      const frames=[...document.querySelectorAll('iframe')].filter(frame=>frame.id==='JotFormIFrame-260284407610047');if(frames.length!==1)return false;
+      const frame=frames[0];if(frame.title!=='DELETION AND OPT OUT OF SALE OF PERSONAL INFORMATION'||!frame.getClientRects().length)return false;
+      try{const url=new URL(frame.src);return url.origin==='https://mylife.jotform.com'&&url.pathname==='/260284407610047'&&!url.username&&!url.password&&!url.hash&&[...url.searchParams].length===2&&url.searchParams.getAll('isIframeEmbed').length===1&&url.searchParams.get('isIframeEmbed')==='1'&&url.searchParams.getAll('parentURL').length===1&&url.searchParams.get('parentURL')==='https://www.mylife.com/privacyrequest';}catch(_){return false;}
+    };
+    if((await chromeApi.tabs.get(tab.id)).url!==MYLIFE.ENTRY_URL)throw new Error();
+    const [proof]=await chromeApi.scripting.executeScript({target:{tabId:tab.id},func:prove});if(typeof proof?.documentId!=='string'||proof.result!==true)throw new Error();
+    const [again]=await chromeApi.scripting.executeScript({target:{tabId:tab.id,documentIds:[proof.documentId]},func:prove});if(again?.documentId!==proof.documentId||again.result!==true||(await chromeApi.tabs.get(tab.id)).url!==MYLIFE.ENTRY_URL)throw new Error();
+    await chromeApi.tabs.update(tab.id,{url:MYLIFE.URL});await settled(chromeApi,tab.id);
+    if((await chromeApi.tabs.get(tab.id)).url!==MYLIFE.URL)throw new Error();
+    const [installed]=await chromeApi.scripting.executeScript({target:{tabId:tab.id},files:['mylife-details.js']});if(typeof installed?.documentId!=='string')throw new Error();
+    const [response]=await chromeApi.scripting.executeScript({target:{tabId:tab.id,documentIds:[installed.documentId]},func:value=>globalThis.EraseMyLifeDetails.execute(value),args:[payload]});
+    if(response?.documentId!==installed.documentId||!['prepared','blocked','unknown'].includes(response.result?.status))throw new Error();
+    record.result={status:response.result.status,detail:response.result.status==='prepared'?'Reviewed MyLife fields were filled once in its official JotForm. Complete verification and submission yourself; acceptance and deletion remain unverified.':'The private MyLife form is blocked or unknown. Check its existing tab; no automatic repeat is authorized.'};
+    await chromeApi.storage.local.set({[key]:record});return record.result;
+  }catch(_){return record.result;}finally{active.delete(key);}
+}
+async function fillThatsThem(message,chromeApi){
+  if(!exactMailObject(message,['type','action','routeId','operationId','authorized','ownRequestConfirmed','consentId','identity','details']))throw new Error('Review the private form first.');
+  const {type,action,...payload}=message;THATSTHEM.validatePayload(payload);
+  const key='operation:'+message.operationId,previous=(await chromeApi.storage.local.get(key))[key];
+  if(previous||active.has(key))return previous?.routeId===THATSTHEM.ROUTE?previous.result:unknown();
+  active.add(key);const record={routeId:THATSTHEM.ROUTE,result:unknown('Private form action started. No automatic repeat is authorized.')};
+  try{
+    if(!await chromeApi.permissions.contains({origins:['https://'+THATSTHEM.HOST+'/*']}))throw new Error();
+    await chromeApi.storage.local.set({[key]:record});
+    const tab=await chromeApi.tabs.create({url:THATSTHEM.URL,active:true});record.tabId=tab.id;await chromeApi.storage.local.set({[key]:record});await settled(chromeApi,tab.id);
+    if((await chromeApi.tabs.get(tab.id)).url!==THATSTHEM.URL)throw new Error();
+    const [installed]=await chromeApi.scripting.executeScript({target:{tabId:tab.id},files:['thatsthem-details.js']});if(typeof installed?.documentId!=='string')throw new Error();
+    const [response]=await chromeApi.scripting.executeScript({target:{tabId:tab.id,documentIds:[installed.documentId]},func:value=>globalThis.EraseThatsThemDetails.execute(value),args:[payload]});
+    if(response?.documentId!==installed.documentId||!['prepared','blocked','unknown'].includes(response.result?.status))throw new Error();
+    record.result={status:response.result.status,detail:response.result.status==='prepared'?'Reviewed That’sThem fields were filled once. Complete its challenge and submission yourself. Acceptance and deletion remain unverified.':'The private form could not be safely filled. Check its existing tab; no automatic repeat is authorized.'};
+    await chromeApi.storage.local.set({[key]:record});return record.result;
+  }catch(_){return record.result;}finally{active.delete(key);}
+}
+async function fillPeopleFinders(message,chromeApi){
+  if(!exactMailObject(message,['type','action','routeId','operationId','authorized','ownRequestConfirmed','consentId','identity','details']))throw new Error('Review the private form first.');
+  const {type,action,...payload}=message;PEOPLEFINDERS.validatePayload(payload);
+  const key='operation:'+message.operationId,previous=(await chromeApi.storage.local.get(key))[key];
+  if(previous||active.has(key))return previous?.routeId===PEOPLEFINDERS.ROUTE?previous.result:unknown();
+  active.add(key);const record={routeId:PEOPLEFINDERS.ROUTE,result:unknown('Private form action started. No automatic repeat is authorized.')};
+  try{
+    if(!await chromeApi.permissions.contains({origins:['https://'+PEOPLEFINDERS.HOST+'/*']}))throw new Error();
+    await chromeApi.storage.local.set({[key]:record});
+    const tab=await chromeApi.tabs.create({url:PEOPLEFINDERS.URL,active:true});record.tabId=tab.id;await chromeApi.storage.local.set({[key]:record});await settled(chromeApi,tab.id);
+    if((await chromeApi.tabs.get(tab.id)).url!==PEOPLEFINDERS.URL)throw new Error();
+    const [installed]=await chromeApi.scripting.executeScript({target:{tabId:tab.id},files:['peoplefinders-details.js']});if(typeof installed?.documentId!=='string')throw new Error();
+    const [ready]=await chromeApi.scripting.executeScript({target:{tabId:tab.id,documentIds:[installed.documentId]},func:()=>globalThis.ErasePeopleFindersDetails.preparePage()});if(ready?.documentId!==installed.documentId||ready.result?.status!=='ready'||(await chromeApi.tabs.get(tab.id)).url!==PEOPLEFINDERS.URL)throw new Error();
+    const [response]=await chromeApi.scripting.executeScript({target:{tabId:tab.id,documentIds:[installed.documentId]},func:value=>globalThis.ErasePeopleFindersDetails.execute(value),args:[payload]});
+    if(response?.documentId!==installed.documentId||!['prepared','blocked','unknown'].includes(response.result?.status))throw new Error();
+    record.result={status:response.result.status,detail:response.result.status==='prepared'?'Reviewed PeopleFinders fields were filled once. Complete its challenge and submission yourself. Acceptance and deletion remain unverified.':'The private form could not be safely filled. Check its existing tab; no automatic repeat is authorized.'};
+    await chromeApi.storage.local.set({[key]:record});return record.result;
+  }catch(_){return record.result;}finally{active.delete(key);}
+}
 async function fillPeopleTrace(message,chromeApi){
   if(!exactMailObject(message,['type','action','routeId','operationId','authorized','ownRequestConfirmed','consentId','identity','details']))throw new Error('Review the private form first.');
   const {type,action,...payload}=message;PEOPLETRACE.validatePayload(payload);
@@ -412,18 +496,123 @@ async function fillPeopleTrace(message,chromeApi){
     await chromeApi.storage.local.set({[key]:record});return record.result;
   }catch(_){return record.result;}finally{active.delete(key);}
 }
+async function runCMA(message,chromeApi){
+  if(!exactMailObject(message,['type','action','routeId','operationId','authorized','ownRequestConfirmed','consentId','fullName','details','autoSubmit']))throw new Error('Review the private form first.');
+  const {type,action,...payload}=message;CMA.validatePayload(payload);
+  const key='operation:'+message.operationId,previous=(await chromeApi.storage.local.get(key))[key];
+  if(previous||active.has(key))return previous?.routeId===CMA.ROUTE?previous.result:unknown();
+  active.add(key);const record={routeId:CMA.ROUTE,result:unknown('Private form action started. No automatic repeat is authorized.')};
+  try{
+    if(!await chromeApi.permissions.contains({origins:['https://'+CMA.HOST+'/*']}))throw new Error();
+    await chromeApi.storage.local.set({[key]:record});
+    const tab=await chromeApi.tabs.create({url:CMA.URL,active:true});record.tabId=tab.id;await chromeApi.storage.local.set({[key]:record});await settled(chromeApi,tab.id);
+    if((await chromeApi.tabs.get(tab.id)).url!==CMA.URL)throw new Error();
+    const [installed]=await chromeApi.scripting.executeScript({target:{tabId:tab.id},files:['cma-details.js']});if(typeof installed?.documentId!=='string')throw new Error();
+    const [response]=await chromeApi.scripting.executeScript({target:{tabId:tab.id,documentIds:[installed.documentId]},func:value=>globalThis.EraseCMADetails.execute(value),args:[payload]});
+    if(response?.documentId!==installed.documentId||!['prepared','submission_attempted','blocked','unknown'].includes(response.result?.status))throw new Error();
+    const attempted=response.result.status==='submission_attempted'&&payload.autoSubmit===true&&response.result.attempt_verified===true&&response.result.stage==='marketing_registration';
+    if(response.result.status==='submission_attempted'&&!attempted)throw new Error();
+    record.result={status:response.result.status,...(attempted?{attempt_verified:true,stage:'marketing_registration'}:{}),detail:attempted?'A CMA marketing registration submission was attempted. Acceptance and broker deletion remain unverified.':response.result.status==='prepared'?'CMA fields were filled once. Review the registration on its existing site. This does not delete broker records.':'The CMA action is blocked or unknown. No repeat is authorized.'};
+    await chromeApi.storage.local.set({[key]:record});return record.result;
+  }catch(_){return record.result;}finally{active.delete(key);}
+}
+async function prepareSmartEntry(tabId,chromeApi){
+  const privacy='https://www.smartbackgroundchecks.com/privacy',entry='https://www.smartbackgroundchecks.com/optout';
+  const tab=await chromeApi.tabs.get(tabId);
+  if(tab.id!==tabId||tab.status!=='complete'||tab.url!==privacy)throw new Error('The official privacy entry changed.');
+  const check=()=>{
+    if(location.href!=='https://www.smartbackgroundchecks.com/privacy'||document.title!=='Privacy Notice'||document.querySelector('input[type="file"]'))return false;
+    const headings=[...document.querySelectorAll('h1')].filter(element=>element.textContent.replace(/\s+/g,' ').trim()==='Privacy Notice');
+    const links=[...document.querySelectorAll('a[href]')].filter(element=>element.textContent.replace(/\s+/g,' ').trim()==='Opt-Out Form');
+    if(headings.length!==1||links.length!==1||links[0].href!=='https://www.smartbackgroundchecks.com/optout'||!headings[0].getClientRects().length||!links[0].getClientRects().length)return false;
+    for(const element of [headings[0],links[0]])for(let node=element;node;node=node.parentElement){const style=getComputedStyle(node);if(style.display==='none'||style.visibility==='hidden'||Number(style.opacity)===0)return false;}
+    return true;
+  };
+  const [initial]=await chromeApi.scripting.executeScript({target:{tabId},func:check});
+  if(initial?.result!==true||typeof initial.documentId!=='string')throw new Error('The official privacy entry could not be verified.');
+  const [confirmed]=await chromeApi.scripting.executeScript({target:{tabId,documentIds:[initial.documentId]},func:check});
+  const current=await chromeApi.tabs.get(tabId);
+  if(confirmed?.result!==true||confirmed.documentId!==initial.documentId||current.id!==tabId||current.status!=='complete'||current.url!==privacy)throw new Error('The official privacy entry changed.');
+  // Navigate only to the fixed, just-verified public link in this owned tab.
+  // No form fields, challenge values, headers or cookies are supplied here.
+  await chromeApi.tabs.update(tabId,{url:entry});await settled(chromeApi,tabId);
+  const destination=await chromeApi.tabs.get(tabId);
+  if(destination.id!==tabId||destination.status!=='complete'||destination.url!=='https://www.smartbackgroundchecks.com/remove')throw new Error('The official removal form is unavailable.');
+}
+async function prepareFamilyEntry(tabId,chromeApi){
+  const privacy='https://www.familytreenow.com/privacy',entry='https://www.familytreenow.com/optout';
+  const tab=await chromeApi.tabs.get(tabId);
+  if(tab.id!==tabId||tab.status!=='complete'||tab.url!==privacy)throw new Error('The official privacy entry changed.');
+  const check=()=>{
+    if(location.href!=='https://www.familytreenow.com/privacy'||document.title!=='Privacy Policy - FamilyTreeNow.com'||document.querySelector('input[type="file"]'))return false;
+    const headings=[...document.querySelectorAll('h2')].filter(e=>e.textContent.replace(/\s+/g,' ').trim()==='Family Tree Now Privacy Notice');
+    const links=[...document.querySelectorAll('a[href]')].filter(e=>e.textContent.replace(/\s+/g,' ').trim()==='Opt-Out Form');
+    if(headings.length!==1||links.length!==1||links[0].href!=='https://www.familytreenow.com/optout')return false;
+    for(const e of [headings[0],links[0]]){if(!e.getClientRects().length)return false;for(let n=e;n;n=n.parentElement){const s=getComputedStyle(n);if(s.display==='none'||s.visibility==='hidden'||Number(s.opacity)===0)return false;}}
+    return true;
+  };
+  const [initial]=await chromeApi.scripting.executeScript({target:{tabId},func:check});
+  if(initial?.result!==true||typeof initial.documentId!=='string')throw new Error('The official privacy entry could not be verified.');
+  const [confirmed]=await chromeApi.scripting.executeScript({target:{tabId,documentIds:[initial.documentId]},func:check});
+  const current=await chromeApi.tabs.get(tabId);
+  if(confirmed?.result!==true||confirmed.documentId!==initial.documentId||current.id!==tabId||current.status!=='complete'||current.url!==privacy)throw new Error('The official privacy entry changed.');
+  // Only the public, fixed link is opened. No challenge action, reload, cookie,
+  // header or personal field is supplied while its normal page becomes ready.
+  await chromeApi.tabs.update(tabId,{url:entry});
+  return new Promise((resolve,reject)=>{
+    let done=false,reading=false,pendingCompletion=false;
+    const finish=(error,documentId)=>{if(done)return;done=true;clearTimeout(deadline);try{chromeApi.tabs.onUpdated?.removeListener(updated);}catch(_){}try{chromeApi.tabs.onRemoved?.removeListener(removed);}catch(_){}error?reject(error):resolve(documentId);};
+    const probe=async()=>{
+      if(done)return;if(reading){pendingCompletion=true;return;}reading=true;
+      try{
+        const current=await chromeApi.tabs.get(tabId);
+        if(done)return;
+        if(current.id!==tabId||current.url!==entry)throw new Error('The official removal destination changed.');
+        if(current.status==='complete'){
+          const [installed]=await chromeApi.scripting.executeScript({target:{tabId},files:['broker-executor.js']});
+          if(done)return;
+          if(typeof installed?.documentId==='string'){
+            const [proof]=await chromeApi.scripting.executeScript({target:{tabId,documentIds:[installed.documentId]},func:()=>{try{globalThis.EraseBrokerExecutor.familyTreeNowFacts(null,globalThis,true);return true;}catch(_){return false;}}});
+            if(done)return;
+            const latest=await chromeApi.tabs.get(tabId);
+            if(done)return;
+            if(proof?.result===true&&proof.documentId===installed.documentId&&latest.id===tabId&&latest.status==='complete'&&latest.url===entry){finish(null,installed.documentId);return;}
+          }
+        }
+      }catch(error){if(error.message==='The official removal destination changed.')finish(error);}
+      finally{reading=false;if(pendingCompletion&&!done){pendingCompletion=false;void probe();}}
+    };
+    const updated=(changed,info)=>{if(changed===tabId&&(info.status==='complete'||info.url))void probe();};
+    const removed=changed=>{if(changed===tabId)finish(new Error('The broker tab was closed.'));};
+    // One foreground deadline and normal document-completion events; no polling
+    // or scheduled work survives this authorized action.
+    const deadline=setTimeout(()=>finish(new Error('The reviewed removal form is unavailable.')),12000);
+    try{chromeApi.tabs.onUpdated?.addListener(updated);chromeApi.tabs.onRemoved?.addListener(removed);void probe();}catch(error){finish(error);}
+  });
+}
 async function dispatch(message,sender,chromeApi=chrome){
   if(!trusted(sender)||!message||message.type!=='erase-me')throw new Error('Untrusted request.');
   if(message.action==='ping'){
     const routes=[];
     for(const [routeId,route] of Object.entries(EXEC.ROUTES))if(await chromeApi.permissions.contains({origins:['https://'+route.host+'/*']}))routes.push(routeId);
     if(await chromeApi.permissions.contains({origins:['https://'+PEOPLETRACE.HOST+'/*']}))routes.push(PEOPLETRACE.ROUTE);
-    return {status:'connected',version:'0.11.0',routes,capabilities:['peopletrace-prefill-v1','usphonebook-continuation-v1','fastpeoplesearch-continuation-v1','explicit-fields-v1','structured-fields-v1','broker-observation-v1','automatic-submit-v1','reviewed-initial-submit-v2','reviewed-initial-submit-v3','reviewed-initial-submit-v4','structured-record-match-v1','owned-tab-focus-v1','identity-submit-v1','identity-submit-v2','identity-requirements-v1','local-removal-mail-v1']};
+    if(await chromeApi.permissions.contains({origins:['https://'+MYLIFE.ENTRY_HOST+'/*','https://'+MYLIFE.HOST+'/*']}))routes.push(MYLIFE.ROUTE);
+    if(await chromeApi.permissions.contains({origins:['https://'+CMA.HOST+'/*']}))routes.push(CMA.ROUTE);
+    for(const privateRoute of [THATSTHEM,PEOPLEFINDERS])if(await chromeApi.permissions.contains({origins:['https://'+privateRoute.HOST+'/*']}))routes.push(privateRoute.ROUTE);
+    return {status:'connected',version:'0.12.0',routes,capabilities:['thatsthem-prefill-v1','peoplefinders-prefill-v1','mylife-prefill-v1','whitepages-prefill-v1','cma-registration-v1','peopletrace-prefill-v1','usphonebook-continuation-v1','fastpeoplesearch-continuation-v1','explicit-fields-v1','structured-fields-v1','broker-observation-v1','automatic-submit-v1','reviewed-initial-submit-v2','reviewed-initial-submit-v3','reviewed-initial-submit-v4','reviewed-initial-submit-v5','reviewed-initial-submit-v6','structured-record-match-v1','owned-tab-focus-v1','identity-submit-v1','identity-submit-v2','identity-requirements-v1','local-removal-mail-v1','local-removal-send-v1']};
   }
+  if(message.action==='fill-mylife')return fillMyLife(message,chromeApi);
+  if(message.action==='result'&&message.routeId===MYLIFE.ROUTE&&id(message.operationId)){const previous=(await chromeApi.storage.local.get('operation:'+message.operationId))['operation:'+message.operationId];return previous?.routeId===MYLIFE.ROUTE?previous.result:unknown();}
+  if(message.action==='fill-thatsthem')return fillThatsThem(message,chromeApi);
+  if(message.action==='fill-peoplefinders')return fillPeopleFinders(message,chromeApi);
+  if(message.action==='result'&&[THATSTHEM.ROUTE,PEOPLEFINDERS.ROUTE].includes(message.routeId)&&id(message.operationId)){const previous=(await chromeApi.storage.local.get('operation:'+message.operationId))['operation:'+message.operationId];return previous?.routeId===message.routeId?previous.result:unknown();}
   if(message.action==='fill-peopletrace')return fillPeopleTrace(message,chromeApi);
+  if(message.action==='run-cma')return runCMA(message,chromeApi);
+  if(message.action==='result'&&message.routeId===CMA.ROUTE&&id(message.operationId)){const previous=(await chromeApi.storage.local.get('operation:'+message.operationId))['operation:'+message.operationId];return previous?.routeId===CMA.ROUTE?previous.result:unknown();}
   if(message.action==='result'&&message.routeId===PEOPLETRACE.ROUTE&&id(message.operationId)){const previous=(await chromeApi.storage.local.get('operation:'+message.operationId))['operation:'+message.operationId];return previous?.routeId===PEOPLETRACE.ROUTE?previous.result:unknown();}
   if(message.action==='helper-status')return helperStatus(chromeApi);
   if(message.action==='local-mail')return localMail(message,chromeApi);
+  if(message.action==='local-send')return localSend(message,chromeApi);
   if(!id(message.operationId)||!EXEC.ROUTES[message.routeId])throw new Error('Unsupported operation.');
   if(message.action==='identity-requirements')return identityRequirements(message,chromeApi);
   if(message.action==='identity-result')return identityResult(message,chromeApi);
@@ -445,10 +634,14 @@ async function dispatch(message,sender,chromeApi=chrome){
     if(!await chromeApi.permissions.contains({origins:['https://'+route.host+'/*']}))throw new Error('Open the companion icon and enable access to the reviewed broker sites.');
     // Save before navigation. No profile fields or verification URLs enter this journal.
     await chromeApi.storage.local.set({[key]:record});
-    const tab=await chromeApi.tabs.create({url:route.url,active:true});
+    const smartEntry=!continuation&&message.routeId==='smartbackgroundchecks',familyEntry=!continuation&&message.routeId==='familytreenow';
+    const tab=await chromeApi.tabs.create({url:smartEntry||familyEntry?route.entryUrl:route.url,active:true});
     record.tabId=tab.id;await chromeApi.storage.local.set({[key]:record});
     await settled(chromeApi,tab.id);
-    const [installed]=await chromeApi.scripting.executeScript({target:{tabId:tab.id},files:['broker-executor.js']});
+    if(smartEntry)await prepareSmartEntry(tab.id,chromeApi);
+    const familyDocument=familyEntry?await prepareFamilyEntry(tab.id,chromeApi):null;
+    const [installed]=await chromeApi.scripting.executeScript({target:{tabId:tab.id,...(familyDocument?{documentIds:[familyDocument]}:{})},files:['broker-executor.js']});
+    if(familyEntry&&installed?.documentId!==familyDocument)throw new Error('The reviewed initial form changed before filling.');
     if(continuation&&typeof installed?.documentId!=='string')throw new Error('The confirmation document cannot be pinned.');
     let observationNonce;
     if(!continuation&&OBSERVABLE.has(message.routeId)&&typeof installed?.documentId==='string'){
@@ -471,7 +664,7 @@ async function dispatch(message,sender,chromeApi=chrome){
     }
     const payload=continuation?{routeId:message.routeId,operationId:message.operationId,requestId:message.requestId,receiptRef:message.receiptRef,
       confirmationUrl:message.confirmationUrl,contactEmail:message.contactEmail,fields:message.fields,authorized:message.authorized}:
-      {routeId:message.routeId,operationId:message.operationId,observationNonce,fields:message.fields,businessEmailConfirmed:message.businessEmailConfirmed,listingConfirmed:message.listingConfirmed,ownRequestConfirmed:message.ownRequestConfirmed};
+      {routeId:message.routeId,operationId:message.operationId,observationNonce,authorized:message.authorized,fields:message.fields,businessEmailConfirmed:message.businessEmailConfirmed,listingConfirmed:message.listingConfirmed,ownRequestConfirmed:message.ownRequestConfirmed};
     const [response]=await chromeApi.scripting.executeScript({target:{tabId:tab.id,...(typeof installed?.documentId==='string'?{documentIds:[installed.documentId]}:{})},
       func:(payload,continueForm)=>continueForm?globalThis.EraseBrokerExecutor.executeContinuation(payload):globalThis.EraseBrokerExecutor.execute(payload),args:[payload,continuation]});
     if(continuation&&response?.documentId!==installed.documentId)throw new Error('The confirmation document changed.');

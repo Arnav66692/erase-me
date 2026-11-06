@@ -66,7 +66,7 @@ test('permission denial opens no tab and sends no data',async()=>{
  const c=chromeMock();c.deny();await background.dispatch(message,sender,c);assert.equal(c.count(),0);assert.deepEqual(c.records,{});
 });
 test('Chrome manifest has no inbox, alarms, or broad host access',()=>{
- const m=require('../extension/manifest.json');assert.equal(m.permissions.includes('alarms'),false);assert.equal(m.permissions.includes('tabs'),false);assert.equal(JSON.stringify(m).includes('<all_urls>'),false);assert.equal(m.optional_host_permissions.length,12);assert.ok(m.optional_host_permissions.includes('https://www.peopletraceuk.com/*'));
+ const m=require('../extension/manifest.json');assert.equal(m.permissions.includes('alarms'),false);assert.equal(m.permissions.includes('tabs'),false);assert.equal(JSON.stringify(m).includes('<all_urls>'),false);assert.deepEqual([...m.optional_host_permissions].sort(),[...new Set([...Object.values(executor.ROUTES).map(route=>'https://'+route.host+'/*'),'https://'+require('../extension/peopletrace-details.js').HOST+'/*','https://'+require('../extension/cma-details.js').HOST+'/*','https://'+require('../extension/thatsthem-details.js').HOST+'/*','https://'+require('../extension/peoplefinders-details.js').HOST+'/*','https://'+require('../extension/mylife-details.js').HOST+'/*','https://'+require('../extension/mylife-details.js').ENTRY_HOST+'/*'])].sort());
 });
 
 const continuationMessage={type:'erase-me',action:'continue',routeId:'usphonebook',operationId:'a'.repeat(32),requestId:'b'.repeat(32),receiptRef:'c'.repeat(64),
