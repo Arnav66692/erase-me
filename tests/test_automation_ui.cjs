@@ -134,7 +134,7 @@ async function fixture({ bound = [], started = [], held = [], delayed = false, d
       queueMicrotask(() => listeners.get('message')?.({ source: window, origin: 'https://erase-me-preview.vercel.app', data: { source: 'erase-companion', requestId: message.requestId, reply: { ok: true, result } } }));
     }
   };
-  const context = { document, EraseWorkspace: workspace, EraseFormBatch: batch,EraseNextSteps:NextSteps,EraseIdentityDialog:{create:()=>({open:async(routeId)=>identityOpened.push(routeId)})}, ...(localConnector?{EraseLocalRemovalMail:local}:{}), ...(globals ? { EraseAutomaticExecutor: Automatic, EraseRemovalSession: session, EraseRemovalMail: mail, EraseContactSetup: ContactSetup } : {}),
+  const context = { document, EraseWorkspace: workspace, EraseFormBatch: batch,EraseNextSteps:NextSteps,EraseIdentityDialog:{create:()=>({open:async(routeId)=>identityOpened.push(routeId)})},ErasePeopleTraceDialog:{create:({companion})=>({open:async()=>companion({action:'fill-peopletrace',routeId:'gb-peopletraceuk'})})}, ...(localConnector?{EraseLocalRemovalMail:local}:{}), ...(globals ? { EraseAutomaticExecutor: Automatic, EraseRemovalSession: session, EraseRemovalMail: mail, EraseContactSetup: ContactSetup } : {}),
     URL, Blob, CustomEvent: class { constructor(type) { this.type = type; } }, location: { origin: 'https://erase-me-preview.vercel.app' },
     crypto: { randomUUID: () => (++sequence).toString(16).padStart(32, '0') }, setTimeout: (_callback, delay) => { deadlines.push(delay); return ++timeoutId; }, clearTimeout() {}, window };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../webapp/static/workspace-ui.js'), 'utf8'), context);
@@ -152,6 +152,13 @@ async function fixture({ bound = [], started = [], held = [], delayed = false, d
   return { core, workspace, body, document, values, byId, button, input, click, toggle, fillNames, render, changes, posted, saves, batches, sessions, mailCalls, contactCalls, events, creates, deadlines,identityOpened,localCalls,
     text: () => body.textContent, time: value => { stamp = value; }, complete: runGate.resolve, completeMail: mailGate.resolve,completeContact:contactGate.resolve };
 }
+
+test('private form transport keeps the foreground deadline while the broker page opens',async()=>{
+  const ui=await fixture({country:'GB'});
+  await ui.click('Enter private form details');
+  assert.deepEqual(ui.posted.map(payload=>payload.action),['fill-peopletrace']);
+  assert.deepEqual(ui.deadlines,[60000]);
+});
 
 test('automatic options are fresh and exact consent appears only after explicit opt-in', async () => {
   const ui = await fixture(); ui.fillNames('fastpeoplesearch'); await ui.click('Review form batch');

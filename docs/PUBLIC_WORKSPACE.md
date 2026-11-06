@@ -21,7 +21,7 @@ asks for the broker's specific outstanding step. It distinguishes a separate rem
 contact from a personal or business address. New actions save that recipient when
 they start; older typed-email actions without a saved recipient say it is unknown.
 For an authenticated FastPeopleSearch matching continuation, **Enter missing information**
-opens an Erase Me dialog. Companion 0.10.0 checks the same existing tab, document,
+opens an Erase Me dialog. Companion 0.11.0 checks the same existing tab, document,
 browser session and private destination proof. The read-only probe returns five native
 requirement flags; it reads no DOB, address or phone value. Missing or changed proof
 stops collection without opening a new URL or resending anything.
@@ -45,7 +45,7 @@ broker form for direct entry. Its held pilot request stays held. **Review reques
 opens local instructions. Holds and pause suppress new actionable prompts; unknown
 and imported outcomes ask for review instead of claiming a confirmed match.
 
-Companion 0.10.0 can initiate People Data Labs email verification and prefill the initial
+Companion 0.11.0 can initiate People Data Labs email verification and prefill the initial
 USPhonebook, SearchPeopleFree, FastPeopleSearch, Apollo, Spokeo, AdvancedBackgroundChecks
 and four reviewed Turkish request forms. Optional initial guarded submission applies to
 FastPeopleSearch's and AdvancedBackgroundChecks' verification forms plus No Sorgulama,
@@ -104,7 +104,7 @@ The person can deselect forms, then check the initially unchecked batch authoriz
 choose **Fill selected forms**. Changing the selection clears that authorization. The
 companion checks access to every selected broker before starting and fills one form at a
 time while the workspace page remains open. Optional submission automation adds only
-seven contracts: FastPeopleSearch, SearchPeopleFree, AdvancedBackgroundChecks and Apollo verification initiation, plus the reviewed No Sorgulama, NumaraAra and NumaraSor request forms.
+eight contracts: USPhonebook, FastPeopleSearch, SearchPeopleFree, AdvancedBackgroundChecks and Apollo verification initiation, plus the reviewed No Sorgulama, NumaraAra and NumaraSor request forms.
 Their agreements are shown in the review and checked again against the broker's actual
 form. Turning automation off retains prefill behavior. People Data Labs retains its
 existing verification-email initiation; other routes remain prefill-only.
@@ -162,15 +162,15 @@ remain blocked. A recognized answer is not evidence of broker acceptance.
 
 ## Country coverage
 
-The catalog has 43 reference routes, with eleven supported initial companion actions and
-32 other guided channels. Reference coverage is separate from live integration or removal evidence.
+The catalog has 43 reference routes, with eleven standard initial companion actions, one separate transient UK prefill and
+31 other guided channels. Reference coverage is separate from live integration or removal evidence.
 
 | Catalog group | Reference routes | Initial companion actions |
 | --- | --- | --- |
 | Global portals: People Data Labs and Apollo | 2 | 2 |
 | United States | 23 | 5 |
 | Canada | 4 | 0 |
-| United Kingdom | 5 | 0 |
+| United Kingdom | 5 | 1 (transient prefill) |
 | Germany | 2 | 0 |
 | Turkey | 7 | 4 |
 
@@ -377,7 +377,7 @@ queue; it uses those helpers and `recordCompanion()` rather than adding a public
 submission endpoint. Its optional `afterForms` callback receives detached, minimal references
 to qualifying operations after all form results are persisted, and never reruns a form.
 The optional local helper adds a separate `nativeMessaging` grant;
-the eleven approved broker origins are unchanged.
+the reviewed broker origins are explicitly allowlisted. The separate People Trace UK prefill adds a twelfth optional origin.
 
 `matchRequest()` records the approved Spokeo candidate and identity before the companion
 opens it. `recordMatch()` accepts only the correlated result for that current context.
@@ -500,3 +500,31 @@ and independent deletion verification remain separate unfinished integrations.
 
 Both current private live pilot requests, USPhonebook and FastPeopleSearch, are held at
 the user's request. Their acknowledgements have not been promoted to deletion evidence.
+
+## Guided email setup and private People Trace UK form (0.11.0)
+
+The companion popup displays a setup command containing only its validated public
+extension ID. The extracted local mail source runs one guide for a separate Gmail,
+Desktop OAuth client and native-host registration. A matching saved grant is reused
+only after provider identity verification. No password or token is pasted into the
+workspace, no Gmail messages are read during setup, and no scheduled service is installed.
+Google account/client creation and consent remain explicit external steps.
+
+USPhonebook adds the eighth guarded initial submission contract, gated by
+`reviewed-initial-submit-v4`. Subject-only fields, exact agreement and privacy text,
+empty agent fields, the unchanged CSRF value and a genuine Enterprise response are
+checked before one native submit event. Existing held requests remain held.
+
+People Trace UK uses a separate private dialog for one UK address. It validates and
+shows the exact full name, typed contact email, DOB, telephone, postcode and any
+optional address components before an unchecked own-information approval. The route
+is excluded from normal form batches. Its additional identity details remain only in
+memory and the one-action payload. The core commits an operation reference before
+the companion opens the exact official form; it saves no DOB, phone or address.
+
+The companion pins the original document, form purpose, labels, control types,
+required flags, policy sources and the unchanged challenge controls. Unexpected
+fields or input-event changes stop filling. It never submits this form or alters its
+challenge response. Closing or changing the review prevents a pending dispatch; an
+interrupted operation is retained for reconciliation and cannot silently repeat.
+A prepared form remains separate from matching, acceptance and deletion.

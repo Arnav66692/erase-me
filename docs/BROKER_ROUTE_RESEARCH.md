@@ -473,3 +473,27 @@ This blocks default form navigation while permitting Apollo's normal React handl
 prevent default and make its own request. Local Chromium checks verified both paths
 with synthetic data. The companion calls no internal broker API. Only the checked
 initial event is recorded; later email verification and deletion remain unintegrated.
+
+## Version 0.11.0 observations and contracts
+
+Fresh anonymous November 5 inspection loaded USPhonebook's initial `/removal` form
+with HTTP 200. The POST form's normal handler validates the email and permits its
+native submission. The new contract pins the exact subject selection, agreement,
+privacy and purpose text, empty optional agent fields, unchanged CSRF value and a
+genuine Enterprise response. A bounded foreground wait does not manufacture a
+response. Synthetic Chromium checks exercised native submission and rejected drift;
+no live request or held pilot was submitted for this change.
+
+People Trace UK's official `RequestRecordRemoval.asp` loaded with HTTP 200. The
+single same-page POST form requires Full_Name, DOB day/month/year, Email_Address,
+Telephone_Number and Postcode. Its separate address components are optional.
+The new private review discloses exactly those values and obtains Erase Me's own
+authorization; the site has no observed consent checkbox. Exact headings, purpose
+paragraphs, policy links, labels and controls are pinned before and during filling.
+The genuine reCAPTCHA response is left untouched. This is prefill only, with no
+matched-record, acceptance or deletion evidence.
+
+Spokeo, Nuwber and FamilyTreeNow returned HTTP 403 on fresh anonymous checks.
+ClustrMaps refused the inspected connection. Those results do not establish global
+unavailability and do not justify an invented form or completion adapter.
+TelefonSorgulama retains its prior asynchronous-submit limitation.

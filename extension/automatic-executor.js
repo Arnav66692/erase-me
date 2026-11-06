@@ -2,13 +2,17 @@
 (function (root) {
   'use strict';
   // Reinjecting the file into the same isolated document must not reset its journal.
-  if (root.EraseAutomaticExecutor?.version === 'automatic-executor-v5') {
+  if (root.EraseAutomaticExecutor?.version === 'automatic-executor-v6') {
     if (typeof module !== 'undefined') module.exports = root.EraseAutomaticExecutor;
     return;
   }
   const BASE = root.EraseBrokerExecutor || (typeof require === 'function' ? require('./broker-executor.js') : null);
   const SPF_CONSENT = 'I confirm that I am the person associated with this email address and consent to receive an email from Search People FREE. The Information you provide here will only be used to process your request. We will not sell or use the information or use it for any other purpose. Please see our Privacy Policy for more details.';
   const SPF_TERMS = 'By using our site and services, you agree to our Terms of Use. Visit our Notice at Collection and Privacy Notice for information about our privacy practices.';
+  const USPB_CONSENT = 'I authorize US Phone Book to send communications relating to my privacy request to the email address(es) provided. I certify that I am the subject of the request, or an agent authorized to act on behalf of the subject of the request. I understand that information provided relating to this request will not be used for any purpose other than the processing of this request.';
+  const USPB_PRIVACY = 'The Information you provide here will only be used to process your request. We will not sell or use the information or use it for any other purpose. Please see our Privacy Policy for more details.';
+  const USPB_PURPOSE = 'In order to complete your opt-out request, please enter your email address below. We will send an email to confirm the removal of the record you selected. We only will use your email address to send you an email to verify your request to opt out.';
+  const USPB_AGENT_NOTICE = "Note: Authorized agent's email address will be used to send a link to the opt-out form. Once that form has been submitted, confirmation of processing will be sent to both the authorized agent's and the subject's email addresses.";
   const CONTRACTS = Object.freeze({
     fastpeoplesearch: Object.freeze({ id: 'fastpeoplesearch-submit-2026-11-05-v1', stage: 'verification_initiation', requiredCapability: 'reviewed-initial-submit-v2',
       consentText: 'I authorize FastPeopleSearch.com to send communications relating to my privacy request to the email address(es) provided. I certify that I am the subject of the request, or an agent authorized to act on behalf of the subject of the request. I understand that information provided relating to this request will not be used for any purpose other than the processing of this request.', policyUrl: null }),
@@ -29,7 +33,10 @@
       policyUrls: Object.freeze(['https://www.searchpeoplefree.com/privacy', 'https://www.searchpeoplefree.com/terms', 'https://www.searchpeoplefree.com/notice-at-collection', 'https://www.searchpeoplefree.com/privacy']) }),
     apollo: Object.freeze({ id: 'apollo-submit-2026-11-05-v1', stage: 'verification_initiation', requiredCapability: 'reviewed-initial-submit-v3',
       consentText: 'Erase Me authorization: I authorize my approved business email associated with my own Apollo record to be submitted to Apollo’s verification-information form. This starts verification only and does not establish deletion.', policyUrl: null,
-      policyUrls: Object.freeze([]) })
+      policyUrls: Object.freeze([]) }),
+    usphonebook: Object.freeze({ id: 'usphonebook-submit-2026-11-05-v1', stage: 'verification_initiation', requiredCapability: 'reviewed-initial-submit-v4',
+      consentText: USPB_CONSENT + ' ' + USPB_PRIVACY + ' ' + USPB_PURPOSE,
+      policyUrl: null, policyUrls: Object.freeze(['https://www.usphonebook.com/privacy']) })
   });
   const documents = new WeakMap(), pendingReadiness = new WeakMap(), nativeSubmissionGuards = new WeakMap(), MAX_MEDIA = 512 * 1024, READINESS_TIMEOUT_MS = 12000;
   const normal = value => String(value || '').replace(/\s+/g, ' ').trim();
@@ -101,6 +108,64 @@
     if ([...form.elements].some(element => !approved.has(element))) reject('additional_fields');
     const submissionGuard = blockNativeSubmission(doc);
     return { route, contract, form, controls: [field], selection: null, checkbox: null, label, button, decorator, submissionGuard };
+  }
+  function inspectUSPhonebook(payload, env, route, contract, allowPendingToken) {
+    const doc = env.document, form = one(doc, '#verifyEmailForm');
+    nativeForm(form, 'post', false);
+    if (!BASE.formAllowed(form.action || env.location.href, route) || form.getAttribute?.('onsubmit') !== null) reject('changed_destination');
+    if ([...doc.querySelectorAll('[role="alert"],.swal2-popup,.alert-success,.alert-danger,.validation-summary-errors,#error-display')].some(element => visible(element, env))) reject('existing_alert');
+    const names = { first_name: 'subject-firstname', last_name: 'subject-lastname', email: 'subject-email' };
+    const controls = Object.entries(payload.fields).map(([key, value]) => {
+      const element = one(doc, route[key]);
+      if (!visible(element, env) || element.form !== form || element.tagName !== 'INPUT' || element.name !== names[key] || !element.required ||
+          element.disabled || element.readOnly || element.type !== (key === 'email' ? 'email' : 'text') || element.value !== value) reject('changed_fields');
+      return element;
+    });
+    const selection = one(doc, '#user-type');
+    if (!visible(selection, env) || selection.form !== form || selection.tagName !== 'SELECT' || selection.name !== 'user-type' || selection.type !== 'select-one' ||
+        !selection.required || selection.disabled || selection.readOnly || selection.multiple !== false || selection.value !== 'subject' || selection.options.length !== 2 ||
+        selection.options[0].value !== 'subject' || selection.options[0].disabled || normal(selection.options[0].textContent) !== 'The subject of the request' ||
+        selection.options[1].value !== 'agent' || selection.options[1].disabled || normal(selection.options[1].textContent) !== 'An authorized agent of the subject of the request') reject('changed_purpose');
+    const middle = one(doc, '#subject-middlename');
+    if (!visible(middle, env) || middle.form !== form || middle.tagName !== 'INPUT' || middle.type !== 'text' || middle.name !== 'subject-middlename' ||
+        middle.required || middle.disabled || middle.readOnly || middle.value !== '') reject('additional_fields');
+    const optionalControls = ['firstname', 'lastname', 'email'].map(name => {
+      const element = one(doc, '#agent-' + name);
+      if (visible(element, env) || element.form !== form || element.tagName !== 'INPUT' || element.type !== (name === 'email' ? 'email' : 'text') ||
+          element.name !== 'agent-' + name || element.required || element.disabled || element.readOnly || element.value !== '') reject('additional_fields');
+      return element;
+    });
+    const checkbox = one(doc, '#agreement');
+    if (!visible(checkbox, env) || checkbox.form !== form || checkbox.tagName !== 'INPUT' || checkbox.type !== 'checkbox' || checkbox.name !== 'agreement' ||
+        !checkbox.required || checkbox.disabled || checkbox.readOnly || checkbox.labels?.length !== 1) reject('changed_consent');
+    const label = checkbox.labels[0];
+    if (label.tagName !== 'LABEL' || label.htmlFor !== 'agreement' || label.control !== checkbox || !visible(label, env) ||
+        normal(label.textContent) !== USPB_CONSENT || label.querySelectorAll('a').length) reject('changed_consent');
+    const paragraphs = [...form.querySelectorAll('p')], notice = paragraphs[0], agentNotice = paragraphs[1], terms = paragraphs[2];
+    if (paragraphs.length !== 3 || !visible(notice, env) || normal(notice.textContent) !== USPB_PURPOSE || notice.querySelectorAll('a').length ||
+        visible(agentNotice, env) || normal(agentNotice.textContent) !== USPB_AGENT_NOTICE || agentNotice.querySelectorAll('a').length ||
+        !visible(terms, env) || normal(terms.textContent) !== USPB_PRIVACY) reject('changed_consent');
+    const policyLinks = [...form.querySelectorAll('a')], termsLinks = [...terms.querySelectorAll('a')];
+    if (policyLinks.length !== 1 || termsLinks.length !== 1 || policyLinks[0] !== termsLinks[0] || !visible(policyLinks[0], env) ||
+        policyLinks[0].href !== contract.policyUrls[0]) reject('changed_consent');
+    const button = one(doc, '#BRP'), submits = [...form.elements].filter(element => ['BUTTON', 'INPUT'].includes(element.tagName) && ['submit', 'image'].includes(element.type));
+    nativeSubmitter(button);
+    if (submits.length !== 1 || submits[0] !== button || button.form !== form || button.tagName !== 'BUTTON' || button.type !== 'submit' || !visible(button, env) ||
+        button.disabled || normal(button.textContent) !== 'Begin Removal Process') reject('changed_submit');
+    const csrf = one(doc, '#verifyEmailForm input[name="_token"]');
+    if (csrf.form !== form || csrf.tagName !== 'INPUT' || csrf.type !== 'hidden' || csrf.name !== '_token' || csrf.required || csrf.disabled || csrf.readOnly ||
+        visible(csrf, env) || typeof csrf.value !== 'string' || !/^[A-Za-z0-9]{40}$/.test(csrf.value)) reject('changed_form');
+    const token = one(doc, '#verifyEmailForm textarea[name="g-recaptcha-response"]'), widget = one(doc, '#verifyEmailForm .g-recaptcha');
+    if (token.form !== form || token.tagName !== 'TEXTAREA' || token.type !== 'textarea' || token.name !== 'g-recaptcha-response' || token.required || token.disabled || token.readOnly ||
+        visible(token, env) || typeof token.value !== 'string' || token.value.length > 16384 || widget.tagName !== 'DIV' || !visible(widget, env) ||
+        widget.getAttribute('data-sitekey') !== '6LcmiZYeAAAAACEbY_tBlLChTU8LZQbQ10M0o_pk' || widget.getAttribute('data-callback') !== 'imNotARobotContact' ||
+        widget.getAttribute('data-error-callback') !== 'recaptchaErrorCallbackContact' || widget.getAttribute('data-expired-callback') !== 'recaptchaErrorCallbackContact') reject('changed_challenge');
+    if (!token.value.trim() && !allowPendingToken) reject('challenge_required');
+    const scripts = [...doc.querySelectorAll('script[src]')].filter(element => element.src === 'https://www.google.com/recaptcha/enterprise.js?hl=en');
+    if (scripts.length !== 1) reject('changed_challenge');
+    const approved = new Set([...controls, selection, middle, ...optionalControls, checkbox, button, csrf, token]);
+    if ([...form.elements].some(element => !approved.has(element))) reject('additional_fields');
+    return { route, contract, form, controls, selection, checkbox, label, notice, terms, agentNotice, policyLinks, button, middle, optionalControls, csrf, token, widget, challengeScript: scripts[0] };
   }
   function inspectABC(payload, env, route, contract) {
     const doc = env.document, first = one(doc, '#sfn'), form = first.form;
@@ -228,6 +293,7 @@
     if (['tr-nosorgulama', 'tr-numarasor'].includes(payload.routeId)) return inspectOwnPost(payload, env, route, contract);
     if (payload.routeId === 'searchpeoplefree') return inspectSPF(payload, env, route, contract, allowPendingToken);
     if (payload.routeId === 'apollo') return inspectApollo(payload, env, route, contract);
+    if (payload.routeId === 'usphonebook') return inspectUSPhonebook(payload, env, route, contract, allowPendingToken);
     const form = one(doc, route.form);
     nativeForm(form, 'post', false);
     if (!BASE.formAllowed(form.action || env.location.href, route)) reject('changed_destination');
@@ -283,12 +349,12 @@
   function waitReady(payload, env = root) {
     let record, doc, operationId;
     try {
-      if (!['fastpeoplesearch', 'searchpeoplefree'].includes(payload?.routeId)) reject('approval_required');
+      if (!['fastpeoplesearch', 'searchpeoplefree', 'usphonebook'].includes(payload?.routeId)) reject('approval_required');
       const fresh = inspect(payload, env, true);
       doc = env.document; operationId = payload.operationId;
       if (documents.get(doc)?.has(operationId)) reject('already_captured');
       record = { ...fresh, signature: signature(payload), url: env.location.href,
-        initialConsent: fresh.checkbox.checked, checkboxValue: fresh.checkbox.value };
+        initialConsent: fresh.checkbox.checked, checkboxValue: fresh.checkbox.value, csrfValue: fresh.csrf?.value };
       const previous = pendingReadiness.get(doc)?.get(operationId);
       if (previous) return previous.signature === record.signature && previous.promise ? previous.promise : Promise.resolve(blocked('already_waiting'));
       // This observes a response already produced by the normal broker widget;
@@ -319,10 +385,11 @@
         try {
           if (env.document !== doc || env.location.href !== record.url || signature(payload) !== record.signature) reject('changed_form');
           const fresh = inspect(payload, env, true);
-          if (['form', 'selection', 'checkbox', 'label', 'button', 'token', 'widget', 'terms', 'middle'].some(key => record[key] !== fresh[key]) ||
+          if (['form', 'selection', 'checkbox', 'label', 'button', 'token', 'widget', 'terms', 'middle', 'notice', 'agentNotice', 'csrf', 'challengeScript'].some(key => record[key] !== fresh[key]) ||
               record.controls.length !== fresh.controls.length || record.controls.some((element, index) => element !== fresh.controls[index]) ||
               fresh.policyLinks && (record.policyLinks.length !== fresh.policyLinks.length || record.policyLinks.some((element, index) => element !== fresh.policyLinks[index])) ||
-              fresh.checkbox.checked !== record.initialConsent || fresh.checkbox.value !== record.checkboxValue) reject('changed_form');
+              fresh.optionalControls && (record.optionalControls.length !== fresh.optionalControls.length || record.optionalControls.some((element, index) => element !== fresh.optionalControls[index])) ||
+              fresh.csrf && fresh.csrf.value !== record.csrfValue || fresh.checkbox.checked !== record.initialConsent || fresh.checkbox.value !== record.checkboxValue) reject('changed_form');
           if (fresh.token.value.trim()) finish({ status: 'ready' });
           else if (finalRead) finish(blocked('challenge_required', 'The broker still requires its actual challenge response. No token was created or submission attempted.'));
         } catch (error) { finish(blocked(error.reason || 'changed_form')); }
@@ -364,7 +431,7 @@
     return { source, media };
   }
   function same(record, fresh, payload, env, consent, answer) {
-    if (record.signature !== signature(payload) || ['form', 'selection', 'checkbox', 'label', 'button', 'image', 'answer', 'token', 'widget', 'terms', 'notice', 'middle', 'honeypot', 'challengeResponse', 'challengeScript', 'csrf', 'decorator', 'submissionGuard'].some(key => record[key] !== fresh[key]) ||
+    if (record.signature !== signature(payload) || ['form', 'selection', 'checkbox', 'label', 'button', 'image', 'answer', 'token', 'widget', 'terms', 'notice', 'agentNotice', 'middle', 'honeypot', 'challengeResponse', 'challengeScript', 'csrf', 'decorator', 'submissionGuard'].some(key => record[key] !== fresh[key]) ||
         record.controls.length !== fresh.controls.length || record.controls.some((element, index) => element !== fresh.controls[index]) ||
         fresh.checkbox && (fresh.checkbox.checked !== consent || fresh.checkbox.value !== record.checkboxValue) ||
         fresh.policyLinks && (record.policyLinks.length !== fresh.policyLinks.length || record.policyLinks.some((element, index) => element !== fresh.policyLinks[index])) ||
@@ -447,7 +514,7 @@
     }
     return result;
   }
-  const api = Object.freeze({ version: 'automatic-executor-v5', CONTRACTS, waitReady, capture, submit });
+  const api = Object.freeze({ version: 'automatic-executor-v6', CONTRACTS, waitReady, capture, submit });
   root.EraseAutomaticExecutor = api;
   if (typeof module !== 'undefined') module.exports = api;
 })(typeof globalThis === 'object' ? globalThis : this);

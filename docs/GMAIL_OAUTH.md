@@ -31,6 +31,23 @@ endpoints, symlinks, hardlinks and non-private files are refused.
 
 ## Connect explicitly
 
+The recommended per-user setup is now one guided command from a checkout or the
+extracted local-mail source download:
+
+```sh
+python3 tools/setup_removal_mail.py
+```
+
+It asks for account addresses and the private client **path** locally, completes this
+same OAuth flow and installs/checks the companion connector. A matching existing
+connection is reused with an identity-only check. The companion popup can copy a
+command with `--extension-id` already filled. See
+[the guided instructions](LOCAL_REMOVAL_MAIL.md#guided-setup). The Desktop client
+preparation above is still required; no broadly approved shared client is supplied.
+
+For an advanced connection without installing the native connector, use the original
+command below.
+
 Replace these example values with the addresses and private file path selected
 for your own account:
 

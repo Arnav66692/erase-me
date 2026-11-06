@@ -6,13 +6,14 @@ routes** in the public catalog; some are registrations or provider preferences r
 than broker-record deletion services.
 
 **Current supported path:** users type initial missing fields inside Erase Me for
-11 companion routes. Reviewed initial submission is available only where a specific
+11 standard companion routes, plus a separate transient People Trace UK prefill. Reviewed initial submission is available only where a specific
 contract exists. FastPeopleSearch additionally has a reviewed in-app missing-information
 collector and one final matching-form submission attempt after its authenticated
 continuation. A submit attempt, email confirmation or matching form is not removal.
 
 **Mail availability:** public users can install the local connector and authorize their
-own separate Gmail account for on-demand receipt checks. No operator key or hosted
+own separate Gmail account for on-demand receipt checks. A guided command handles
+connection reuse, local prompts and companion registration without copying secrets into the app. No operator key or hosted
 credential upload is required for that transport. It requires one-time native-host and
 installed-client OAuth setup. The existing hosted shared-mailbox relay remains a private
 operator pilot. Personal inboxes stay disconnected. No polling, recurring schedule or automatic
@@ -26,7 +27,7 @@ deletion has been established or should be inferred from the other columns.
 | Route | Region | Channel type | In-app fields + fill | Initial action | Email continuation | Final request action | Correct-record matching | Verified deletion |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | `peopledatalabs-form` · People Data Labs | * | Reviewed form | Yes | Initiates email verification | Manual; record-associated address | Not integrated | Manual/unobserved | None |
-| `usphonebook` · USPhonebook | US | Reviewed form | Yes | Manual submit after fill | Local connector or private operator pilot; second-form prefill | Not integrated | Manual/unobserved | None |
+| `usphonebook` · USPhonebook | US | Reviewed form | Yes | Guarded native submit | Local connector or private operator pilot; second-form prefill | Not integrated | Manual/unobserved | None |
 | `searchpeoplefree` · SearchPeopleFree | US | Reviewed form | Yes | Guarded native submit | Local-owned Gmail receipt checks; confirmation held | Not integrated | Manual/unobserved | None |
 | `smartbackgroundchecks` · SmartBackgroundChecks | US | No current accessible form contract | No | Not integrated | Not integrated | Not integrated | Manual/unobserved | None |
 | `fastpeoplesearch` · FastPeopleSearch | US | Reviewed form | Yes | Guarded native submit | Local connector or private operator pilot; authenticated matching form | Guarded matching-form attempt | Manual/unobserved | None |
@@ -56,7 +57,7 @@ deletion has been established or should be inferred from the other columns.
 | `canada411` · Canada411 | CA | No current accessible form contract | No | Not integrated | Not integrated | Not integrated | Manual/unobserved | None |
 | `192com` · 192.com | GB | No current accessible form contract | No | Not integrated | Not integrated | Not integrated | Manual/unobserved | None |
 | `gb-bt-phonebook` · BT Phone Book and 118 500 (ex-directory) | GB | Subscriber/provider action | No | Not integrated | Not integrated | Not integrated | Manual/unobserved | None |
-| `gb-peopletraceuk` · People Trace UK | GB | Observed manual form | No | Not integrated | Not integrated | Not integrated | Manual/unobserved | None |
+| `gb-peopletraceuk` · People Trace UK | GB | Reviewed transient form | Yes | Prefill only; manual submit | Not integrated | Not integrated | Manual/unobserved | None |
 | `gb-tps` · Telephone Preference Service (TPS) | GB | Marketing registration | No | Not integrated | Not integrated | Not integrated | Manual/unobserved | None |
 | `ukphonebook` · ukphonebook.com | GB | Official manual instructions | No | Not integrated | Not integrated | Not integrated | Manual/unobserved | None |
 | `de-11880` · 11880.com | DE | Subscriber/provider action | No | Not integrated | Not integrated | Not integrated | Manual/unobserved | None |
@@ -80,9 +81,10 @@ deletion has been established or should be inferred from the other columns.
 - CMA Do Not Mail, DNCL and TPS are preference/marketing registrations. Subscriber
   directory changes, provider calls/SMS and postal instructions are distinct operations.
   Do not count them as a broker-record deletion or invoke paid lookup services.
-- People Trace UK has an observed full form but no executable matching, submission
-  or outcome contract. Its required DOB/address/phone/postcode and challenge must not
-  be guessed. The German DTM deletion page has a conflicting submit label and stays manual.
+- People Trace UK has an executable transient prefill, excluded from standard batches.
+  DOB, telephone and postcode must be supplied accurately inside its private review;
+  address components are optional on the observed form. Matching, challenge, submission
+  and outcome remain manual or unverified. The German DTM deletion page has a conflicting submit label and stays manual.
 - Shared mailbox substitution is not offered where a provider requires a personally
   owned or previously recorded address. A free public tool still needs authenticated
   access, quotas and abuse controls before a shared-mail service can be public.
@@ -98,6 +100,8 @@ deletion has been established or should be inferred from the other columns.
 | Local cleanup planner | Implemented | Own-list JSON/CSV import, keep/export/remove choice, export acknowledgement and self-reports |
 | Google/Reddit/DROP distinctions | Guidance implemented | Search-result removal differs from source deletion; content deletion precedes account closure; DROP is California-specific |
 | Account/social/company/preference execution | Staged | Local planning is not account closure, content deletion or delivered company requests |
+| Guided local email setup | Implemented | One command, copied companion ID and verified existing-account reuse; account/client creation still required |
+| People Trace UK transient form | Implemented for prefill | Exact private review; no identity details in saved state; challenge and submit stay manual |
 | Per-user removal-only mail | Implemented with setup | Own dedicated Gmail, local native host and OAuth client; supported confirmations only |
 | Managed zero-setup mailbox service | Not implemented | Hosted shared-mail relay remains private; no anonymous shared credential access |
 | Remaining route-specific final actions | Staged | Need observed official contracts and consented live validation |

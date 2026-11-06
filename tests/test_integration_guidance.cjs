@@ -15,7 +15,7 @@ test('integration matrix covers every current catalog route once and separates v
   for(const row of rows){
     const id=row[0].match(/^`([^`]+)`/)[1],route=routes.find(route=>route.id===id);
     assert.equal(row.length,9,id);
-    assert.equal(row[3],route.automationLevel==='companion'?'Yes':'No',id+' collector');
+    assert.equal(row[3],route.automationLevel==='companion'||route.transientPrefill===true?'Yes':'No',id+' collector');
     assert.equal(row[8],'None',id+' deletion evidence');
     if(automatic.CONTRACTS[id])assert.equal(row[4],'Guarded native submit',id+' submission contract');
     if(row[4]==='Guarded native submit')assert.ok(automatic.CONTRACTS[id],id+' documented contract');
@@ -26,7 +26,7 @@ test('integration matrix covers every current catalog route once and separates v
 test('executable route instructions offer in-app collection without promising removal or universal challenges',()=>{
   const fps=routes.find(route=>route.id==='fastpeoplesearch'),numara=routes.find(route=>route.id==='tr-numaraara');
   assert.match(fps.steps.join(' '),/Enter missing information inside Erase Me/);
-  assert.match(fps.steps.join(' '),/private removal-mail operator pilot/);
+  assert.match(fps.steps.join(' '),/local removal-only Gmail connector/);
   assert.match(fps.steps.join(' '),/date of birth, street address and phone required/);
   assert.match(fps.steps.join(' '),/Cancel or hold/);
   assert.match(numara.steps.join(' '),/optional guarded submission/);
@@ -44,7 +44,7 @@ test('every executable submission contract preserves only its proven attempt sta
     await core.api('/api/signup',{method:'POST',body:JSON.stringify({name:'Example Person',age:35,email:'person@example.test',authorized:true})});
     await core.api('/api/profile',{method:'POST',body:JSON.stringify({country:id.startsWith('tr-')?'TR':'US'})});
     const fields=id==='apollo'?{business_email:'work@example.test'}:id.startsWith('tr-')?{full_name:'Example Person',request_text:'Please remove my own information.',...(id==='tr-numarasor'?{phone:'+90 555 123 45 67'}:{})}:{first_name:'Example',last_name:'Person'};
-    core.setEvidence(id,fields,id==='apollo'?{business_email:true}:['fastpeoplesearch','searchpeoplefree'].includes(id)?{}:{own_request:true});const operation=core.prepare(id);
+    core.setEvidence(id,fields,id==='apollo'?{business_email:true}:['fastpeoplesearch','searchpeoplefree','usphonebook'].includes(id)?{}:{own_request:true});const operation=core.prepare(id);
     core.recordCompanion(id,operation.operationId,{status:'submission_attempted',attempt_verified:true,stage:proven?contract.stage:'unreviewed_stage'});
     const evidence=core.snapshot().items[id].evidence;
     assert.equal(evidence.attempt_verified,proven,id);assert.equal(evidence.stage,proven?contract.stage:undefined,id);

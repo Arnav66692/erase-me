@@ -8,7 +8,7 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 MEMBERS = {
-    'tools/native_mail_host.py', 'tools/install_mail_host.py',
+    'tools/setup_removal_mail.py', 'tools/native_mail_host.py', 'tools/install_mail_host.py',
     'tools/install_challenge_host.py', 'tools/connect_removal_gmail.py',
     'tools/configure_removal_mailbox.py', 'preview/lib/removal_mail.py',
     'docs/LOCAL_REMOVAL_MAIL.md', 'docs/GMAIL_OAUTH.md', 'LICENSE',
@@ -45,6 +45,12 @@ print(json.dumps({'host': spec['host'], 'scheduled_work': spec['scheduled_work']
         check=True, capture_output=True, text=True,
     )
     assert '--client-json' in result.stdout
+    result = subprocess.run(
+        [sys.executable, '-B', str(tmp_path / 'download/tools/setup_removal_mail.py'), '--help'],
+        check=True, capture_output=True, text=True,
+    )
+    assert '--extension-id' in result.stdout
+    assert list(private_home.iterdir()) == []
 
 
 def test_local_transport_loads_after_validator_and_before_workspace_controls():

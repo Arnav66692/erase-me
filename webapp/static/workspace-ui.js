@@ -56,7 +56,7 @@
         stop();const reply=event.data.reply;
         if(reply?.ok)resolve(reply.result);else reject(new Error(reply?.error||'The companion could not complete this action.'));
       };
-      const timeout=setTimeout(()=>{stop();reject(new Error('The companion did not respond. Install it, enable broker access, then refresh this page. No repeat has been sent.'));},['run','continue','match','submit-details'].includes(payload.action)?60000:payload.action==='local-mail'?35000:['focus-existing','identity-requirements','identity-result'].includes(payload.action)?5000:1500);
+      const timeout=setTimeout(()=>{stop();reject(new Error('The companion did not respond. Install it, enable broker access, then refresh this page. No repeat has been sent.'));},['run','continue','match','submit-details','fill-peopletrace'].includes(payload.action)?60000:payload.action==='local-mail'?35000:['focus-existing','identity-requirements','identity-result'].includes(payload.action)?5000:1500);
       window.addEventListener('message',listener);
       window.postMessage({source:'erase-workspace',requestId,payload},location.origin);
     });
@@ -135,7 +135,7 @@
       automate=n('input');automate.type='checkbox';automate.id='form-batch-automate';
       const label=n('label');label.className='checkbox-label';label.append(automate,n('span','Automatically submit only forms with the exact agreements displayed below.'));
       agreements=n('div',null,'form-batch-agreements');agreements.hidden=true;
-      options.append(label,n('p','Reviewed submission is available for FastPeopleSearch, SearchPeopleFree, AdvancedBackgroundChecks, Apollo, No Sorgulama, NumaraAra and NumaraSor. Other selected forms keep their existing fill behavior. Local text recognition is available only with an installed helper; managed challenges can still require attention.','public-route-note'),agreements);
+      options.append(label,n('p','Reviewed submission is available for USPhonebook, FastPeopleSearch, SearchPeopleFree, AdvancedBackgroundChecks, Apollo, No Sorgulama, NumaraAra and NumaraSor. Other selected forms keep their existing fill behavior. Local text recognition is available only with an installed helper; managed challenges can still require attention.','public-route-note'),agreements);
     }
     if(S()&&M()){
       mail=n('input');mail.type='checkbox';mail.id='form-batch-mail';const label=n('label');label.className='checkbox-label';label.append(mail,n('span','Check the selected removal-only contacts once during this session.'));
@@ -456,10 +456,12 @@
         const client=L().create({workspace:W(),companion}),status=await client.status();
         localMailClient=client;localMailProfile=JSON.stringify(W().profile());localMailStatus=status;changed();
         feedback(status.enabled?'Your separate removal-only mailbox is connected locally: '+status.contact_email+'. No messages were read. Open a supported route’s Request steps to create its contact or check existing removal mail.':'The local removal-mail connector needs private setup. Install its free per-user host and authorize a separate Gmail account. Personal inboxes stay disconnected.');
-      });connectLocal.id='connect-local-removal-mail';box.append(connectLocal);
-      const setup=n('a','Local removal-mail setup','button button-secondary');setup.href='https://github.com/Arnav66692/erase-me/blob/main/docs/LOCAL_REMOVAL_MAIL.md';setup.target='_blank';setup.rel='noopener noreferrer';box.append(setup);
-      const mailDownload=n('a','Download the local mail connector','button button-secondary');mailDownload.id='download-local-removal-mail';mailDownload.href='/downloads/erase-me-local-mail.zip';mailDownload.download='erase-me-local-mail.zip';box.append(mailDownload);
-      box.append(n('p','Each person can connect a separate removal-only Gmail account through the free desktop connector. Credentials remain on that person’s computer. One-time private OAuth setup is required; no personal inbox is connected and no check runs on a schedule.','public-route-note'));
+      });connectLocal.id='connect-local-removal-mail';
+      const setup=n('a','Set up removal-only email','button button-secondary');setup.href='/companion.html#mail-setup';setup.target='_blank';setup.rel='noopener noreferrer';
+      const mailDownload=n('a','Download the local mail connector','button button-secondary');mailDownload.id='download-local-removal-mail';mailDownload.href='/downloads/erase-me-local-mail.zip';mailDownload.download='erase-me-local-mail.zip';
+      const mailSteps=n('ol');mailSteps.id='local-mail-setup-steps';
+      for(const text of ['Download and extract the connector into a folder you will keep.','Open the companion’s toolbar icon and copy its setup command. Run it from the connector folder; the guide handles the separate account authorization and local installation.','Choose Enable local connectors in the companion, then Connect my removal-only mailbox here. This checks account identity without reading messages.'])mailSteps.append(n('li',text));
+      box.append(n('h2','Removal-only email','local-mail-setup-title'),mailSteps,mailDownload,setup,connectLocal,n('p','Each person needs a separate removal-only Gmail account and their own Google Desktop OAuth client. The guided command keeps credentials on that person’s computer. No personal inbox is connected and no check runs on a schedule.','public-route-note'));
     }
     if(M())box.append(button('Check removal-mail availability',async()=>{
       mailStatus=await M().status();changed();
@@ -597,6 +599,7 @@
     });
     panel.append(prepare,output,copy,download);return panel;
   }
+  let peopleTraceDialog=null;
   function decorate(items){
     formEditors.clear();fillActions.clear();
     const routes=W().routes();
@@ -643,6 +646,14 @@
           feedback(current?.automatic_match?'This record has a current automatic match using your name and identity email. No removal request or deletion was established.':'This check did not establish an automatic identity match. Review your own record or supply the missing identity detail; no removal action was started.');
         },()=>!batchRunning());match.disabled=batchRunning();fillActions.add(match);actions.append(match);
       }
+      if(route.transientPrefill===true&&!item.held&&!item.operation_id&&globalThis.ErasePeopleTraceDialog){
+        const profileId=W().profile().id;
+        const privateFill=button('Enter private form details',async()=>{
+          if(batchRunning())throw new Error('Wait for the current form batch before reviewing a private form.');
+          if(!peopleTraceDialog)peopleTraceDialog=globalThis.ErasePeopleTraceDialog.create({workspace:W(),companion,document,onChange:changed,onFeedback:feedback});
+          await peopleTraceDialog.open(privateFill,profileId);
+        });privateFill.id='private-form-'+route.id;privateFill.disabled=batchRunning();fillActions.add(privateFill);actions.append(privateFill);
+      }
       const supported=route.automationLevel==='companion';
       if(!item.held&&supported&&!item.operationId&&!item.operation_id){
         const fill=button(route.id==='peopledatalabs-form'?'Start broker verification':'Fill with companion',async()=>{
@@ -664,7 +675,7 @@
         const request=await W().identityResultRequest(route.id),result=await companion({action:'identity-result',...request});
         await W().recordIdentitySubmission(route.id,request.submissionId,result);changed();feedback('The saved final submission result was checked. No form was repeated; acceptance and deletion remain unverified.');
       }));
-      if(!item.held&&operationId)actions.append(button('Check existing broker tab',async()=>{
+      if(!item.held&&operationId&&!route.transientPrefill)actions.append(button('Check existing broker tab',async()=>{
         const ping=await companion({action:'ping'});if(!ping.capabilities?.includes('broker-observation-v1'))throw new Error('Update the companion to check an existing broker tab without repeating its action.');
         const request=await W().observationRequest(route.id),result=await companion({action:'observe',...request});await W().recordObservation(route.id,operationId,result);changed();feedback(result.detail||'The existing broker outcome was checked. No action was repeated.');
       }));

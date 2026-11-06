@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Erase Me Companion",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "description": "Fill approved privacy forms in your browser. No personal inbox access or scheduled work.",
   "permissions": ["scripting", "storage"],
   "optional_permissions": ["nativeMessaging"],
@@ -16,7 +16,8 @@
     "https://www.nosorgulama.com.tr/*",
     "https://www.numaraara.com/*",
     "https://www.numarasor.com/*",
-    "https://www.telefonsorgulama.com/*"
+    "https://www.telefonsorgulama.com/*",
+    "https://www.peopletraceuk.com/*"
   ],
   "background": {"service_worker": "background.js"},
   "action": {"default_popup": "popup.html", "default_title": "Erase Me Companion"},

@@ -10,42 +10,61 @@ mailbox provider. You still create a separate account and complete its provider 
 Each user supplies their own installed OAuth client until a broadly approved client
 can be distributed. Your personal inbox must remain disconnected.
 
-## Set up the dedicated account
+## Guided setup
 
-1. Create a new Gmail account used only for removal requests. Do not reuse an account
-   containing personal mail. Keep its password and login checks out of chat.
-2. Follow [the installed-app OAuth guide](GMAIL_OAUTH.md) to enable the Gmail API and
-   download an **installed/desktop** client JSON into a private directory outside this
-   checkout. The connector does not accept a web client or a browser-supplied file path.
-3. From a local checkout or the extracted [connector source ZIP](https://erase-me-preview.vercel.app/downloads/erase-me-local-mail.zip), run the existing private setup, replacing the placeholders:
+You need desktop Python 3.10 or newer, the Erase Me Chrome companion, a separate Gmail
+account and your own Google Desktop OAuth client. No paid service, app password or
+personal-inbox connection is required.
 
-   ```sh
-   chmod 600 /private/path/desktop-client.json
-   python3 tools/connect_removal_gmail.py \
-     --mailbox removal-only-account@gmail.com \
-     --personal-email the-email-in-your-erase-me-profile@example.com \
-     --client-json /private/path/desktop-client.json
-   ```
-
-   Select **only the new removal account** in Google's consent window. This uses OAuth,
-   not an app password. Google can require its own login or account-verification checks.
-   Setup verifies the selected account and saves credentials privately at
-   `~/.erase-me-removal-mail/gmail-oauth.json`; it reads no Gmail messages.
-
-4. Install/reload the unpacked Erase Me Chrome companion and copy its 32-letter ID
-   from `chrome://extensions`. Register this separate native connector:
+1. Create a Gmail account used only for removal requests. Keep its password and
+   login checks out of chat and Terminal. If you already have this separate account,
+   reuse it.
+2. Follow [the installed-app OAuth guide](GMAIL_OAUTH.md#prepare-the-google-client)
+   to enable the Gmail API and download a **Desktop app** client JSON outside the
+   checkout. Google account/client creation and consent remain provider-controlled
+   steps; this software cannot create them silently.
+3. Install or reload the Erase Me companion. Extract the
+   [connector source ZIP](https://erase-me-preview.vercel.app/downloads/erase-me-local-mail.zip)
+   into a permanent folder, open Terminal in that folder and run:
 
    ```sh
-   python3 tools/install_mail_host.py --extension-id YOUR_32_LETTER_ID --install
-   python3 tools/install_mail_host.py --extension-id YOUR_32_LETTER_ID --check
+   python3 tools/setup_removal_mail.py
    ```
 
-   macOS Chrome and Linux Chrome/Chromium are supported. Linux Chromium users add
-   `--browser chromium`. The installer writes only this user's native messaging
-   registration and a small launcher. It starts no browser, server or timer.
-5. In Erase Me, explicitly choose the local removal-only mailbox option and check its
-   status. The displayed account must be the new removal-only address. Enable the
-   companion's optional native messaging access when requested.
+   The guide asks for the primary email used in your Erase Me profile, the separate
+   removal address, the companion ID from `chrome://extensions` and the Desktop
+   client JSON path. The companion popup can copy a command with its exact ID
+   already included. Paste the file path, **never its contents, a password or code**.
+   If that selected client file is not private, the guide offers to make it owner-only.
+
+   Choose **only the separate removal account** in Google's consent window. Setup
+   verifies its identity, saves credentials privately and installs/checks the native
+   connector. A matching saved connection is reused after an identity-only check,
+   so rerunning setup does not repeat consent. Changes to an existing connector
+   registration require an explicit local approval. No Gmail messages are read.
+4. In Erase Me choose **Connect my removal-only mailbox**. Enable **local connectors**
+   in the companion when requested. Check that the displayed account is your separate
+   removal-only account before preparing a broker contact.
+
+macOS Chrome and Linux Chrome/Chromium are supported. Linux Chromium users append
+`--browser chromium` to the guided command. Mobile browsers can use the workspace
+and official broker links, but this native connector requires a supported desktop.
+The setup installs no service, daemon or timer. OAuth's temporary loopback callback
+listener closes when consent finishes or times out.
+
+To check an existing setup explicitly, without installing a missing connection:
+
+```sh
+python3 tools/setup_removal_mail.py --check
+```
+
+An intentional account/profile change requires `--reconnect` and fresh consent. It
+does not alter held requests or replace their existing operation references. If you
+prefer separate advanced commands, the original
+[OAuth connection](GMAIL_OAUTH.md#connect-explicitly) and
+`install_mail_host.py --extension-id YOUR_32_LETTER_ID --install` interfaces remain
+available. Credentials are stored at `~/.erase-me-removal-mail/gmail-oauth.json`,
+outside the extracted source folder and browser workspace.
 
 The personal email in setup must match the primary email in this Erase Me workspace.
 Gmail dots, plus aliases, case and `googlemail.com` variants are normalized before
@@ -74,7 +93,7 @@ receive an operator-shared address. Its authenticated messages still remain held
 no automatic continuation destination has been established. The hosted operator relay
 continues to refuse new shared SearchPeopleFree contacts. People Data Labs and Apollo
 still require their record-associated addresses; this connector does not substitute one.
-An existing held USPhonebook request stays held.
+Existing held USPhonebook and FastPeopleSearch requests stay held.
 
 ## State, limits and interrupted actions
 

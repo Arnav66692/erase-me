@@ -2098,6 +2098,10 @@ input:disabled { opacity:1; color:var(--muted); background:var(--panel, var(--pa
   padding:24px;
 }
 .public-tools .next-steps-panel h2 { margin:0 0 10px; font:48px/1 var(--display); }
+.public-tools .local-mail-setup-title,#local-mail-setup-steps { grid-column:1/-1; min-width:0; }
+.public-tools .local-mail-setup-title { margin:22px 0 4px; font:32px/1.1 var(--term); }
+#local-mail-setup-steps { margin:0; padding-left:24px; font:16px/1.5 var(--sans); }
+#local-mail-setup-steps li { margin:0 0 10px; padding-left:4px; }
 .next-steps-intro { margin:0 0 20px; }
 .next-step-card { min-width:0; padding:20px 0; border-top:1px solid var(--ink); }
 .next-step-card h3 { margin:0 0 16px; font:24px/1.15 var(--sans); }
@@ -2107,7 +2111,7 @@ input:disabled { opacity:1; color:var(--muted); background:var(--panel, var(--pa
 .next-step-email-role { color:var(--muted); font:14px/1.4 var(--sans); }
 .next-step-card .public-route-actions { margin-top:16px; }
 .public-broker-steps { scroll-margin-top:84px; }
-#identity-details-dialog { width:min(840px,calc(100% - 32px)); max-width:none; }
+#identity-details-dialog,#peopletrace-details-dialog { width:min(840px,calc(100% - 32px)); max-width:none; }
 .identity-details-fields { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; margin:20px 0; }
 .identity-details-fields label { display:grid; gap:6px; min-width:0; }
 .identity-details-fields .wide { grid-column:1/-1; }

@@ -1,5 +1,22 @@
 # Erase Me architecture and data contracts
 
+## Guided setup and transient initial identity fields (0.11.0)
+
+`tools/setup_removal_mail.py` composes the existing installed OAuth and native-host
+interfaces into one explicit local guide. It preflights local registration, verifies
+a saved account before reuse and keeps credentials outside browser storage and source
+downloads. The popup constructs its command from a validated public extension ID.
+
+People Trace UK uses an independent `peopletrace-prefill-v1` contract and dialog.
+`preparePeopleTrace` reserves under the workspace write lock; private details travel
+only in the returned payload, not the ledger. `fill-peopletrace` validates an exact
+schema, journals before navigation and injects into the pinned official document.
+The normal batch and generic executor cannot dispatch this special manual route.
+Only fixed prefill outcomes are persisted. Challenge and submission stay manual.
+
+USPhonebook is the eighth guarded initial submit contract; AUTO v6 and its new
+capability gate preserve compatibility with earlier form-only companions.
+
 ## Per-user mail transport (0.10.0)
 
 The public browser workspace supports a per-user native Gmail connector after explicit

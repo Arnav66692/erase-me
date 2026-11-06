@@ -3,10 +3,11 @@
   const routes = typeof module === 'object' && module.exports ? require('./broker-routes.js') : root.EraseBrokerRoutes;
   const identityDetails = typeof module === 'object' && module.exports ? require('../../extension/identity-details.js') : root.EraseIdentityDetails;
   const footprintPlanner = typeof module === 'object' && module.exports ? require('./footprint-planner.js') : root.EraseFootprintPlanner;
-  const api = factory(root, routes, identityDetails, footprintPlanner);
+  const peopleTraceDetails = typeof module === 'object' && module.exports ? require('../../extension/peopletrace-details.js') : root.ErasePeopleTraceDetails;
+  const api = factory(root, routes, identityDetails, footprintPlanner, peopleTraceDetails);
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.EraseWorkspace = api;
-})(typeof globalThis === 'object' ? globalThis : this, function (root, routes, identityDetails, footprintPlanner) {
+})(typeof globalThis === 'object' ? globalThis : this, function (root, routes, identityDetails, footprintPlanner, peopleTraceDetails) {
   'use strict';
   const KEY = 'erase-me-workspace-v1';
   const VERSION = 1;
@@ -16,7 +17,7 @@
   const MATCH_STATES = new Set(['matched', 'not_matched', 'ambiguous', 'needs_identity', 'unsupported']);
   const MATCH_EVIDENCE = new Set(['structured_person', 'exact_candidate_url', 'name', 'email', 'phone', 'age', 'city', 'identity']);
   const MATCH_LIFETIME = 30 * 60 * 1000;
-  const SUBMIT_STAGES = Object.freeze({ fastpeoplesearch: 'verification_initiation', searchpeoplefree: 'verification_initiation', apollo: 'verification_initiation', advancedbackgroundchecks: 'verification_initiation',
+  const SUBMIT_STAGES = Object.freeze({ usphonebook: 'verification_initiation', fastpeoplesearch: 'verification_initiation', searchpeoplefree: 'verification_initiation', apollo: 'verification_initiation', advancedbackgroundchecks: 'verification_initiation',
     'tr-nosorgulama': 'request_submission', 'tr-numaraara': 'request_submission', 'tr-numarasor': 'request_submission' });
   const MAIL_ROUTES = new Set(['usphonebook', 'searchpeoplefree', 'fastpeoplesearch']);
   const NEW_MAIL_ROUTES = new Set(['usphonebook', 'fastpeoplesearch']);
@@ -469,6 +470,7 @@
     }
     function preparation(id, reviewed, recover = true) {
       const route = routeFor(id), item = itemFor(id, recover);
+      if (route.transientPrefill === true) throw new WorkspaceError('Review this private form in its separate transient dialog before starting.', 409);
       requireNotHeld(item);
       requireCountryRoute(route, item);
       if (state.campaign.status !== 'active') throw new WorkspaceError('Allow checks before starting a broker action.', 409);
@@ -753,6 +755,42 @@
         request.receiptRef = item.mail_receipt.receipt_ref;
       }
       return request;
+    }
+    function peopleTraceAPI() {
+      const api = peopleTraceDetails || root.ErasePeopleTraceDetails;
+      if (!api || typeof api.validateDetails !== 'function' || !api.CONTRACT) throw new WorkspaceError('Refresh before reviewing this private form.', 409);
+      return api;
+    }
+    function peopleTracePreview() {
+      const id = 'gb-peopletraceuk', route = routeFor(id), item = itemFor(id, false);
+      requireNotHeld(item); requireCountryRoute(route, item);
+      if (state.campaign.status !== 'active' || operationStarted(item) || !OPERATION.test(item.id || ''))
+        throw new WorkspaceError('This private form is paused or already started. Check its existing outcome; no repeat is authorized.', 409);
+      return clone({ routeId: id, operationId: item.id, profileId: state.profile.id, country: state.profile.country || null,
+        identity: { full_name: state.profile.name, email: state.profile.email, age: state.profile.age }, consentId: peopleTraceAPI().CONTRACT.id });
+    }
+    function preparePeopleTrace(preview, details, approval) {
+      const api = peopleTraceAPI();
+      if (!exactKeys(preview, ['routeId','operationId','profileId','country','identity','consentId']) ||
+          !exactKeys(preview.identity, ['full_name','email','age']) || !exactKeys(approval, ['authorized','consentId']) ||
+          approval.authorized !== true || approval.consentId !== api.CONTRACT.id || JSON.stringify(preview) !== JSON.stringify(peopleTracePreview()))
+        throw new WorkspaceError('The reviewed workspace or private form changed. Review and authorize it again.', 409);
+      let canonical;
+      try { canonical = api.validateDetails(details, { age: preview.identity.age, now: clock() }); }
+      catch (error) { throw new WorkspaceError(error?.message || 'Review your private form fields.'); }
+      const item = itemFor(preview.routeId, false);
+      // Only the uncertain boundary and ordinary profile contact are persisted.
+      // Birth date, phone and address remain in the returned one-action payload.
+      item.operation_id = item.id; item.operation_started_at = clock(); item.operation_source = 'browser_workspace';
+      item.operation_email = state.profile.email; item.operation_email_role = 'profile';
+      changed(item, 'running'); event('You authorized one People Trace UK prefill. Additional identity details were not saved.'); save();
+      return { routeId: preview.routeId, operationId: item.operation_id, authorized: true, ownRequestConfirmed: true,
+        consentId: api.CONTRACT.id, identity: clone(preview.identity), details: canonical };
+    }
+    function recordPeopleTrace(profileId, operationId, result) {
+      if (active().profile.id !== profileId || !['prepared','blocked','unknown'].includes(result?.status))
+        throw new WorkspaceError('The private form outcome belongs to another workspace or is unverified.', 409);
+      return recordCompanion('gb-peopletraceuk', operationId, result);
     }
     function identityAPI() {
       const api = identityDetails || root.EraseIdentityDetails;
@@ -1095,7 +1133,7 @@
     return Object.freeze({ api, snapshot: () => clone(read()), profile: () => clone(active().profile), routes: () => clone(routes),
       setEvidence, prepare, fillPreview, prepareReviewed, matchRequest, recordMatch, holdRoute, resumeRoute, mailSessionRequest, bindMailContact, clearMailContact, reserveLocalMailSetupClosure, recordLocalMailSetupClosure, mailCheckRequest, recordMailReceipt,
       mailContinuationRequest, prepareMailContinuation, recordMailContinuation,
-      recordCompanion, observationRequest, focusRequest, identityPreview, prepareIdentitySubmission, recordIdentitySubmission, identityResultRequest, recordObservation, searchRequest, privacyDraftRequest, recordUser, opened, exportData, importData, importFootprint, chooseFootprintItem, recordFootprintProgress, remove, dashboard,
+      recordCompanion, observationRequest, focusRequest, peopleTracePreview, preparePeopleTrace, recordPeopleTrace, identityPreview, prepareIdentitySubmission, recordIdentitySubmission, identityResultRequest, recordObservation, searchRequest, privacyDraftRequest, recordUser, opened, exportData, importData, importFootprint, chooseFootprintItem, recordFootprintProgress, remove, dashboard,
       updateRoute: setEvidence, applyCompanionResult: recordCompanion });
   }
   let instance;
@@ -1107,9 +1145,9 @@
     if (!locks || typeof locks.request !== 'function') throw new WorkspaceError('This browser cannot safely coordinate workspace changes. Use a current browser with Web Locks support.', 503);
     return locks.request(KEY + '-write', { mode: 'exclusive' }, action);
   }
-  const mutators = new Set(['setEvidence', 'prepare', 'prepareReviewed', 'matchRequest', 'recordMatch', 'holdRoute', 'resumeRoute', 'mailSessionRequest', 'bindMailContact', 'clearMailContact', 'reserveLocalMailSetupClosure', 'recordLocalMailSetupClosure', 'mailCheckRequest', 'recordMailReceipt', 'mailContinuationRequest', 'prepareMailContinuation', 'recordMailContinuation', 'prepareIdentitySubmission', 'recordIdentitySubmission', 'recordCompanion', 'observationRequest', 'recordObservation', 'searchRequest', 'privacyDraftRequest', 'recordUser', 'opened', 'importData', 'importFootprint', 'chooseFootprintItem', 'recordFootprintProgress', 'remove', 'updateRoute', 'applyCompanionResult']);
+  const mutators = new Set(['preparePeopleTrace', 'recordPeopleTrace', 'setEvidence', 'prepare', 'prepareReviewed', 'matchRequest', 'recordMatch', 'holdRoute', 'resumeRoute', 'mailSessionRequest', 'bindMailContact', 'clearMailContact', 'reserveLocalMailSetupClosure', 'recordLocalMailSetupClosure', 'mailCheckRequest', 'recordMailReceipt', 'mailContinuationRequest', 'prepareMailContinuation', 'recordMailContinuation', 'prepareIdentitySubmission', 'recordIdentitySubmission', 'recordCompanion', 'observationRequest', 'recordObservation', 'searchRequest', 'privacyDraftRequest', 'recordUser', 'opened', 'importData', 'importFootprint', 'chooseFootprintItem', 'recordFootprintProgress', 'remove', 'updateRoute', 'applyCompanionResult']);
   const exported = { create, KEY, AUTHORIZATION, WorkspaceError, routes: () => clone(routes), listingURL };
-  for (const name of ['snapshot', 'profile', 'setEvidence', 'prepare', 'fillPreview', 'prepareReviewed', 'matchRequest', 'recordMatch', 'holdRoute', 'resumeRoute', 'mailSessionRequest', 'bindMailContact', 'clearMailContact', 'reserveLocalMailSetupClosure', 'recordLocalMailSetupClosure', 'mailCheckRequest', 'recordMailReceipt', 'mailContinuationRequest', 'prepareMailContinuation', 'recordMailContinuation', 'recordCompanion', 'observationRequest', 'focusRequest', 'identityPreview', 'prepareIdentitySubmission', 'recordIdentitySubmission', 'identityResultRequest', 'recordObservation', 'searchRequest', 'privacyDraftRequest', 'recordUser', 'opened', 'exportData', 'importData', 'importFootprint', 'chooseFootprintItem', 'recordFootprintProgress', 'remove', 'dashboard', 'updateRoute', 'applyCompanionResult']) {
+  for (const name of ['snapshot', 'profile', 'setEvidence', 'prepare', 'fillPreview', 'prepareReviewed', 'matchRequest', 'recordMatch', 'holdRoute', 'resumeRoute', 'mailSessionRequest', 'bindMailContact', 'clearMailContact', 'reserveLocalMailSetupClosure', 'recordLocalMailSetupClosure', 'mailCheckRequest', 'recordMailReceipt', 'mailContinuationRequest', 'prepareMailContinuation', 'recordMailContinuation', 'recordCompanion', 'observationRequest', 'focusRequest', 'peopleTracePreview', 'preparePeopleTrace', 'recordPeopleTrace', 'identityPreview', 'prepareIdentitySubmission', 'recordIdentitySubmission', 'identityResultRequest', 'recordObservation', 'searchRequest', 'privacyDraftRequest', 'recordUser', 'opened', 'exportData', 'importData', 'importFootprint', 'chooseFootprintItem', 'recordFootprintProgress', 'remove', 'dashboard', 'updateRoute', 'applyCompanionResult']) {
     exported[name] = (...args) => mutators.has(name) ? exclusive(() => defaults()[name](...args)) : defaults()[name](...args);
   }
   exported.api = async (...args) => {

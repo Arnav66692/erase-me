@@ -1,10 +1,11 @@
 /* Explicit operations and explicit, bounded reconciliation. No scheduled work. */
-if(typeof importScripts==='function')importScripts('broker-executor.js','automatic-executor.js','identity-details.js','final-executor.js');
+if(typeof importScripts==='function')importScripts('broker-executor.js','automatic-executor.js','identity-details.js','final-executor.js','peopletrace-details.js');
 const APP='https://erase-me-preview.vercel.app';
 const EXEC=typeof EraseBrokerExecutor!=='undefined'?EraseBrokerExecutor:require('./broker-executor.js');
 const AUTO=typeof EraseAutomaticExecutor!=='undefined'?EraseAutomaticExecutor:require('./automatic-executor.js');
 const FINAL=typeof EraseFinalExecutor!=='undefined'?EraseFinalExecutor:require('./final-executor.js');
 const IDENTITY=typeof EraseIdentityDetails!=='undefined'?EraseIdentityDetails:require('./identity-details.js');
+const PEOPLETRACE=typeof ErasePeopleTraceDetails!=='undefined'?ErasePeopleTraceDetails:require('./peopletrace-details.js');
 const NATIVE_HOST='org.eraseme.challenge';
 const MAIL_NATIVE_HOST='org.eraseme.mail';
 const active=new Set(),sessions=new WeakMap(),observationKeys=new WeakMap();
@@ -84,7 +85,7 @@ async function automaticSubmit(payload,tabId,documentId,chromeApi){
   const target={tabId,documentIds:[documentId]};
   const [installed]=await chromeApi.scripting.executeScript({target,files:['automatic-executor.js']});
   if(installed?.documentId!==documentId)return unknown('The broker tab changed before submission. No repeat was sent.');
-  if(['fastpeoplesearch','searchpeoplefree'].includes(payload.routeId)){
+  if(['fastpeoplesearch','searchpeoplefree','usphonebook'].includes(payload.routeId)){
     const [readiness]=await chromeApi.scripting.executeScript({target,func:value=>globalThis.EraseAutomaticExecutor.waitReady(value),args:[payload]});
     if(readiness?.documentId!==documentId)return unknown('The broker document changed while its security widget was loading. No submit was attempted.');
     if(readiness.result?.status==='blocked')return {status:'blocked',detail:String(readiness.result.detail||'The broker security check still needs attention.').slice(0,600)};
@@ -393,13 +394,34 @@ async function observe(message,record,key,chromeApi){
     record.result=result;await chromeApi.storage.local.set({[key]:record});return result;
   }catch(_){return unknown();}finally{active.delete(key);}
 }
+async function fillPeopleTrace(message,chromeApi){
+  if(!exactMailObject(message,['type','action','routeId','operationId','authorized','ownRequestConfirmed','consentId','identity','details']))throw new Error('Review the private form first.');
+  const {type,action,...payload}=message;PEOPLETRACE.validatePayload(payload);
+  const key='operation:'+message.operationId,previous=(await chromeApi.storage.local.get(key))[key];
+  if(previous||active.has(key))return previous?.routeId===PEOPLETRACE.ROUTE?previous.result:unknown();
+  active.add(key);const record={routeId:PEOPLETRACE.ROUTE,result:unknown('Private form action started. No automatic repeat is authorized.')};
+  try{
+    if(!await chromeApi.permissions.contains({origins:['https://'+PEOPLETRACE.HOST+'/*']}))throw new Error();
+    await chromeApi.storage.local.set({[key]:record});
+    const tab=await chromeApi.tabs.create({url:PEOPLETRACE.URL,active:true});record.tabId=tab.id;await chromeApi.storage.local.set({[key]:record});await settled(chromeApi,tab.id);
+    if((await chromeApi.tabs.get(tab.id)).url!==PEOPLETRACE.URL)throw new Error();
+    const [installed]=await chromeApi.scripting.executeScript({target:{tabId:tab.id},files:['peopletrace-details.js']});if(typeof installed?.documentId!=='string')throw new Error();
+    const [response]=await chromeApi.scripting.executeScript({target:{tabId:tab.id,documentIds:[installed.documentId]},func:value=>globalThis.ErasePeopleTraceDetails.execute(value),args:[payload]});
+    if(response?.documentId!==installed.documentId||!['prepared','blocked','unknown'].includes(response.result?.status))throw new Error();
+    record.result={status:response.result.status,detail:response.result.status==='prepared'?'Reviewed People Trace UK fields were filled once. Complete its challenge and submission yourself. Acceptance and deletion remain unverified.':'The private form could not be safely filled. Check its existing tab; no automatic repeat is authorized.'};
+    await chromeApi.storage.local.set({[key]:record});return record.result;
+  }catch(_){return record.result;}finally{active.delete(key);}
+}
 async function dispatch(message,sender,chromeApi=chrome){
   if(!trusted(sender)||!message||message.type!=='erase-me')throw new Error('Untrusted request.');
   if(message.action==='ping'){
     const routes=[];
     for(const [routeId,route] of Object.entries(EXEC.ROUTES))if(await chromeApi.permissions.contains({origins:['https://'+route.host+'/*']}))routes.push(routeId);
-    return {status:'connected',version:'0.10.0',routes,capabilities:['usphonebook-continuation-v1','fastpeoplesearch-continuation-v1','explicit-fields-v1','structured-fields-v1','broker-observation-v1','automatic-submit-v1','reviewed-initial-submit-v2','reviewed-initial-submit-v3','structured-record-match-v1','owned-tab-focus-v1','identity-submit-v1','identity-submit-v2','identity-requirements-v1','local-removal-mail-v1']};
+    if(await chromeApi.permissions.contains({origins:['https://'+PEOPLETRACE.HOST+'/*']}))routes.push(PEOPLETRACE.ROUTE);
+    return {status:'connected',version:'0.11.0',routes,capabilities:['peopletrace-prefill-v1','usphonebook-continuation-v1','fastpeoplesearch-continuation-v1','explicit-fields-v1','structured-fields-v1','broker-observation-v1','automatic-submit-v1','reviewed-initial-submit-v2','reviewed-initial-submit-v3','reviewed-initial-submit-v4','structured-record-match-v1','owned-tab-focus-v1','identity-submit-v1','identity-submit-v2','identity-requirements-v1','local-removal-mail-v1']};
   }
+  if(message.action==='fill-peopletrace')return fillPeopleTrace(message,chromeApi);
+  if(message.action==='result'&&message.routeId===PEOPLETRACE.ROUTE&&id(message.operationId)){const previous=(await chromeApi.storage.local.get('operation:'+message.operationId))['operation:'+message.operationId];return previous?.routeId===PEOPLETRACE.ROUTE?previous.result:unknown();}
   if(message.action==='helper-status')return helperStatus(chromeApi);
   if(message.action==='local-mail')return localMail(message,chromeApi);
   if(!id(message.operationId)||!EXEC.ROUTES[message.routeId])throw new Error('Unsupported operation.');
