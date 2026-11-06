@@ -1,5 +1,45 @@
 # Erase Me architecture and data contracts
 
+## Per-user mail transport (0.10.0)
+
+The public browser workspace supports a per-user native Gmail connector after explicit
+desktop setup. The hosted shared-mail pilot retains its operator gate. The two transports
+have separate capability issuers and cannot consume one another's contacts.
+
+```mermaid
+flowchart LR
+  W[Browser-local workspace] -->|Explicit scoped action| E[Chrome companion]
+  E -->|Native message| N[Per-user mail host]
+  N --> P[Private OAuth files and SQLite grants]
+  N -->|Identity check or operation-alias read| G[Separate removal-only Gmail]
+  W -. Gated operator option .-> H[Hosted private relay]
+```
+
+The native host pins the installed extension origin and dedicated Google identity,
+excludes the configured primary account, and binds grants to a workspace and operation.
+Local quotas, leases, consumed continuations and revocation are durable. No expiry job
+or polling loop is installed; time-based limits are evaluated during explicit calls.
+OAuth credentials, raw mail and private confirmation URLs never enter the workspace
+backup. Scoped contact capabilities remain private backup data; restored native contacts
+are inactive history and cannot silently rebind to a replacement workspace.
+
+Holds and cleanup closure persist under the binding lock before native revocation. Late
+issuance revalidates its original approval and revokes under the original scope if that
+context changed; an exact already-bound, unheld grant remains valid during a campaign
+pause. Uncertain cleanup leaves a closed setup tombstone. Public users need their own separate account, installed OAuth
+client and supported native host; no automatic mailbox provisioning is claimed. See
+[setup](LOCAL_REMOVAL_MAIL.md) and the [stage matrix](INTEGRATION_STATUS.md).
+
+SearchPeopleFree adds the sixth guarded initial contract with exact own-email consent,
+genuine Turnstile response and a new minimum companion capability. Its user-owned local
+contact is permitted, while shared operator contacts remain prohibited. Its confirmation
+links remain held pending an observed destination contract.
+
+Apollo adds the seventh guarded initial contract for an explicitly affirmed business
+email. A companion-owned `form-action 'none'` CSP prevents its default GET fallback
+from disclosing the address in a URL; the normal site's prevented-default request can
+still run. A checked event remains an attempt, not receipt or deletion evidence.
+
 This document describes the original agent-skill engine and reference-pack contracts.
 The live browser workspace uses separate storage and permissions; see
 [its current scope and interface](PUBLIC_WORKSPACE.md). Its 43 reference routes do not

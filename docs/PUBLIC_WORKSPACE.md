@@ -21,7 +21,7 @@ asks for the broker's specific outstanding step. It distinguishes a separate rem
 contact from a personal or business address. New actions save that recipient when
 they start; older typed-email actions without a saved recipient say it is unknown.
 For an authenticated FastPeopleSearch matching continuation, **Enter missing information**
-opens an Erase Me dialog. Companion 0.9.0 checks the same existing tab, document,
+opens an Erase Me dialog. Companion 0.10.0 checks the same existing tab, document,
 browser session and private destination proof. The read-only probe returns five native
 requirement flags; it reads no DOB, address or phone value. Missing or changed proof
 stops collection without opening a new URL or resending anything.
@@ -45,7 +45,7 @@ broker form for direct entry. Its held pilot request stays held. **Review reques
 opens local instructions. Holds and pause suppress new actionable prompts; unknown
 and imported outcomes ask for review instead of claiming a confirmed match.
 
-Companion 0.9.0 can initiate People Data Labs email verification and prefill the initial
+Companion 0.10.0 can initiate People Data Labs email verification and prefill the initial
 USPhonebook, SearchPeopleFree, FastPeopleSearch, Apollo, Spokeo, AdvancedBackgroundChecks
 and four reviewed Turkish request forms. Optional initial guarded submission applies to
 FastPeopleSearch's and AdvancedBackgroundChecks' verification forms plus No Sorgulama,
@@ -104,7 +104,7 @@ The person can deselect forms, then check the initially unchecked batch authoriz
 choose **Fill selected forms**. Changing the selection clears that authorization. The
 companion checks access to every selected broker before starting and fills one form at a
 time while the workspace page remains open. Optional submission automation adds only
-two contracts: FastPeopleSearch verification initiation and NumaraAra request submission.
+seven contracts: FastPeopleSearch, SearchPeopleFree, AdvancedBackgroundChecks and Apollo verification initiation, plus the reviewed No Sorgulama, NumaraAra and NumaraSor request forms.
 Their agreements are shown in the review and checked again against the broker's actual
 form. Turning automation off retains prefill behavior. People Data Labs retains its
 existing verification-email initiation; other routes remain prefill-only.
@@ -445,10 +445,10 @@ writes or fabricates its challenge token. The two POST contracts leave anti-forg
 unchanged and keep them only in the executing document's memory. Optional unapproved
 phone, middle-name, related-number and honeypot fields must remain empty.
 
-All five initial submit contracts reject native button destination/method/target/encoding
+All automatic initial submit contracts reject native button destination/method/target/encoding
 overrides and unexpected serialized submitter fields. Changed forms or consent stop the
 action. A checked native submit event remains an attempt, without delivery or deletion proof.
-All five initial contracts require the hardened companion capability before any selected
+All automatic initial contracts require the hardened companion capability before any selected
 batch operation is reserved; an outdated extension cannot strand a newly selected request.
 
 The [integration matrix](INTEGRATION_STATUS.md) lists every catalog route and unimplemented
@@ -461,3 +461,42 @@ dialog requires `identity-submit-v2` before collecting identity values or reserv
 action; installing the updated companion is required for this path too. All five
 initial attempt stages are preserved consistently in the local workspace, while
 acceptance and deletion remain unverified until separate evidence exists.
+
+## Public per-user local mail connector (0.10.0)
+
+Public users can opt into the local transport after [one-time private setup](LOCAL_REMOVAL_MAIL.md).
+It needs a separate Gmail account, their own installed OAuth client, the companion and
+the native helper on a supported desktop. The [connector source download](https://erase-me-preview.vercel.app/downloads/erase-me-local-mail.zip)
+is self-contained and needs no git checkout. This does not provision an email account.
+
+**Connect my removal-only mailbox** checks the dedicated provider identity only; no mail
+is read. Per-route contact, receipt and reviewed continuation actions are separately
+authorized. Google credentials and signing keys stay outside the browser and hosted app.
+The primary email is compared locally by a canonical fingerprint; neither it nor that
+fingerprint is sent to the hosted relay by this transport.
+
+Local contacts carry an explicit transport/workspace binding. Hosted batch mail checks
+exclude them; a local capability is never sent to the operator service. Local-owned
+SearchPeopleFree contacts are permitted while shared operator contacts remain prohibited.
+Its authenticated receipts remain held until an exact confirmation destination is reviewed.
+The initial form now supports guarded native submission with its genuine widget response,
+exact own-email agreement and current policy sources. It requires the updated companion.
+
+Holds and a closed-setup reservation persist under the workspace write lock before native
+revocation. Resuming a route cannot rebind that closing contact. An exact contact already
+bound to an unheld operation is preserved when a duplicate setup completes during a campaign
+pause. The native grant is irreversibly disabled when revoked, including
+when credentials expire; uncertain revocation cannot reactivate browser mail actions.
+Late-issued contacts are rechecked after awaits and revoked if their workspace or route
+changed. Old rendered controls cannot hold or revoke a replacement profile. Restored
+contacts retain inactive references and cannot restore trust or silently rebind to a new
+workspace. Issuance tombstones and original operation references prevent hidden retries.
+
+Native grants, account leases and finite quotas are stored in a private local SQLite
+database. Every check is explicitly initiated. Lease expiry, cooldown and quota-day
+changes are evaluated only during an action; no daemon, polling or timer is installed.
+The v1 confirmation capability expires after seven days. Broader completion-mail parsing
+and independent deletion verification remain separate unfinished integrations.
+
+Both current private live pilot requests, USPhonebook and FastPeopleSearch, are held at
+the user's request. Their acknowledgements have not been promoted to deletion evidence.

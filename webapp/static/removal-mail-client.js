@@ -33,9 +33,13 @@
     } catch (_) { return false; }
   }
   function create(options = {}) {
+    const newContactRoutes = typeof options.request === 'function' && options.localOwnedContacts === true ? ROUTES : NEW_CONTACT_ROUTES;
     const fetcher = options.fetch || ((...args) => root.fetch(...args));
     const location = options.location || root.location;
     async function request(action, body, pilotKey) {
+      // A local native connector can reuse these response validators without
+      // sending a profile, capability or credentials to the hosted relay.
+      if (typeof options.request === 'function') return options.request(action, body);
       let origin;
       try {
         origin = new URL(location.origin);
@@ -76,7 +80,7 @@
       return value;
     }
     async function session(body, pilotKey) {
-      if (!object(body, ['route_id', 'operation_id', 'authorized']) || !NEW_CONTACT_ROUTES.has(body.route_id) ||
+      if (!object(body, ['route_id', 'operation_id', 'authorized']) || !newContactRoutes.has(body.route_id) ||
           typeof body.operation_id !== 'string' || !OPERATION.test(body.operation_id) || body.authorized !== true) throw new Error('Authorize a supported removal contact operation first.');
       const value = await request('session', body, pilotKey);
       if (!object(value, ['status', 'capability', 'request_id', 'route_id', 'operation_id', 'contact_email', 'expires_at', 'automatic_execution']) ||

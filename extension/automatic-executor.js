@@ -2,11 +2,13 @@
 (function (root) {
   'use strict';
   // Reinjecting the file into the same isolated document must not reset its journal.
-  if (root.EraseAutomaticExecutor?.version === 'automatic-executor-v3') {
+  if (root.EraseAutomaticExecutor?.version === 'automatic-executor-v5') {
     if (typeof module !== 'undefined') module.exports = root.EraseAutomaticExecutor;
     return;
   }
   const BASE = root.EraseBrokerExecutor || (typeof require === 'function' ? require('./broker-executor.js') : null);
+  const SPF_CONSENT = 'I confirm that I am the person associated with this email address and consent to receive an email from Search People FREE. The Information you provide here will only be used to process your request. We will not sell or use the information or use it for any other purpose. Please see our Privacy Policy for more details.';
+  const SPF_TERMS = 'By using our site and services, you agree to our Terms of Use. Visit our Notice at Collection and Privacy Notice for information about our privacy practices.';
   const CONTRACTS = Object.freeze({
     fastpeoplesearch: Object.freeze({ id: 'fastpeoplesearch-submit-2026-11-05-v1', stage: 'verification_initiation', requiredCapability: 'reviewed-initial-submit-v2',
       consentText: 'I authorize FastPeopleSearch.com to send communications relating to my privacy request to the email address(es) provided. I certify that I am the subject of the request, or an agent authorized to act on behalf of the subject of the request. I understand that information provided relating to this request will not be used for any purpose other than the processing of this request.', policyUrl: null }),
@@ -21,9 +23,15 @@
       policyUrls: Object.freeze(['https://www.nosorgulama.com.tr/kvkk', 'https://www.nosorgulama.com.tr/gizlilik']) }),
     'tr-numarasor': Object.freeze({ id: 'numarasor-submit-2026-11-05-v1', stage: 'request_submission', requiredCapability: 'reviewed-initial-submit-v2',
       consentText: 'Talebiniz değerlendirilirken numaranın size ait olduğunu doğrulayan ek belge isteyebiliriz.', policyUrl: null,
+      policyUrls: Object.freeze([]) }),
+    searchpeoplefree: Object.freeze({ id: 'searchpeoplefree-submit-2026-11-05-v1', stage: 'verification_initiation', requiredCapability: 'reviewed-initial-submit-v3',
+      consentText: SPF_CONSENT + ' ' + SPF_TERMS, policyUrl: null,
+      policyUrls: Object.freeze(['https://www.searchpeoplefree.com/privacy', 'https://www.searchpeoplefree.com/terms', 'https://www.searchpeoplefree.com/notice-at-collection', 'https://www.searchpeoplefree.com/privacy']) }),
+    apollo: Object.freeze({ id: 'apollo-submit-2026-11-05-v1', stage: 'verification_initiation', requiredCapability: 'reviewed-initial-submit-v3',
+      consentText: 'Erase Me authorization: I authorize my approved business email associated with my own Apollo record to be submitted to Apollo’s verification-information form. This starts verification only and does not establish deletion.', policyUrl: null,
       policyUrls: Object.freeze([]) })
   });
-  const documents = new WeakMap(), pendingReadiness = new WeakMap(), MAX_MEDIA = 512 * 1024, READINESS_TIMEOUT_MS = 12000;
+  const documents = new WeakMap(), pendingReadiness = new WeakMap(), nativeSubmissionGuards = new WeakMap(), MAX_MEDIA = 512 * 1024, READINESS_TIMEOUT_MS = 12000;
   const normal = value => String(value || '').replace(/\s+/g, ' ').trim();
   const blocked = (reason, detail = 'The reviewed form changed. No automatic submission was performed.') => ({ status: 'blocked', reason, detail });
   function reject(reason) { const error = new Error(reason); error.reason = reason; throw error; }
@@ -55,7 +63,44 @@
     return JSON.stringify({ routeId: payload.routeId, operationId: payload.operationId, consentId: payload.consentId,
       authorized: payload.authorized, autoSubmit: payload.autoSubmit,
       fields: Object.entries(payload.fields).sort(([a], [b]) => a.localeCompare(b)),
-      ownRequestConfirmed: payload.ownRequestConfirmed === true });
+      ownRequestConfirmed: payload.ownRequestConfirmed === true, businessEmailConfirmed: payload.businessEmailConfirmed === true });
+  }
+  function blockNativeSubmission(doc) {
+    // Apollo's React handler sends the request; a missing handler must never fall
+    // back to a GET containing the approved business email in its URL. A meta CSP
+    // adds a browser-enforced restriction and cannot relax the site's own policy.
+    let record = nativeSubmissionGuards.get(doc);
+    if (!record) {
+      if (!doc.head || typeof doc.createElement !== 'function' || typeof doc.head.appendChild !== 'function') reject('submission_guard_unavailable');
+      const meta = doc.createElement('meta');
+      meta.httpEquiv = 'Content-Security-Policy'; meta.content = "form-action 'none'";
+      doc.head.appendChild(meta); record = { meta, head: doc.head }; nativeSubmissionGuards.set(doc, record);
+    }
+    if (doc.head !== record.head || record.meta.ownerDocument !== doc || record.meta.parentElement !== record.head || record.meta.isConnected !== true ||
+        record.meta.tagName !== 'META' || record.meta.httpEquiv !== 'Content-Security-Policy' || record.meta.content !== "form-action 'none'") reject('submission_guard_unavailable');
+    return record.meta;
+  }
+  function inspectApollo(payload, env, route, contract) {
+    const doc = env.document, field = one(doc, route.business_email), form = field.form;
+    nativeForm(form, 'get', false);
+    if (!BASE.formAllowed(form.action || env.location.href, route) || form.getAttribute?.('onsubmit') !== null) reject('changed_destination');
+    if ([...doc.querySelectorAll('[role="alert"],.swal2-popup,.alert-success,.alert-danger,.validation-summary-errors')].some(element => visible(element, env))) reject('existing_alert');
+    if (!visible(field, env) || field.tagName !== 'INPUT' || field.type !== 'email' || field.name !== 'email' || !field.required || field.disabled || field.readOnly ||
+        field.value !== payload.fields.business_email || field.labels?.length !== 1) reject('changed_fields');
+    const label = field.labels[0];
+    if (!visible(label, env) || label.tagName !== 'LABEL' || label.htmlFor !== 'email' || label.control !== field || normal(label.textContent) !== 'Work email') reject('changed_fields');
+    const fieldsets = [...form.elements].filter(element => element.tagName === 'FIELDSET'), decorator = fieldsets[0];
+    if (fieldsets.length !== 1 || decorator.form !== form || decorator.name !== '' || decorator.disabled || decorator.type !== 'fieldset' ||
+        decorator.getAttribute?.('aria-hidden') !== 'true' || decorator.textContent !== '\u200b') reject('additional_fields');
+    const submits = [...form.elements].filter(element => ['BUTTON', 'INPUT'].includes(element.tagName) && ['submit', 'image'].includes(element.type)), button = submits[0];
+    nativeSubmitter(button);
+    if (submits.length !== 1 || !visible(button, env) || button.form !== form || button.tagName !== 'BUTTON' || button.type !== 'submit' || button.disabled ||
+        normal(button.textContent) !== 'Get verification information') reject('changed_submit');
+    if (normal(form.textContent) !== 'Work email\u200bGet verification information' || form.querySelectorAll('a').length) reject('changed_consent');
+    const approved = new Set([field, decorator, button]);
+    if ([...form.elements].some(element => !approved.has(element))) reject('additional_fields');
+    const submissionGuard = blockNativeSubmission(doc);
+    return { route, contract, form, controls: [field], selection: null, checkbox: null, label, button, decorator, submissionGuard };
   }
   function inspectABC(payload, env, route, contract) {
     const doc = env.document, first = one(doc, '#sfn'), form = first.form;
@@ -134,6 +179,45 @@
     if ([...form.elements].some(element => !approved.has(element))) reject('additional_fields');
     return { route, contract, form, controls, selection, checkbox: null, label, policyLinks, button, optionalControls, csrf };
   }
+  function inspectSPF(payload, env, route, contract, allowPendingToken) {
+    const doc = env.document, form = one(doc, '#o_form');
+    nativeForm(form, 'get', false);
+    if (!BASE.formAllowed(form.action || env.location.href, route) || form.getAttribute?.('onsubmit') !== 'return o_beginRemoval()') reject('changed_destination');
+    if ([...doc.querySelectorAll('[role="alert"],.swal2-popup,.alert-success,.alert-danger,.validation-summary-errors,#o_fail,#o_success,#o_success_sent')].some(element => visible(element, env))) reject('existing_alert');
+    const controls = Object.entries(payload.fields).map(([key, value]) => {
+      const element = one(doc, route[key]);
+      if (!visible(element, env) || element.form !== form || element.tagName !== 'INPUT' || element.name !== '' || element.required ||
+          element.disabled || element.readOnly || element.type !== (key === 'email' ? 'email' : 'text') || element.value !== value) reject('changed_fields');
+      return element;
+    });
+    const middle = one(doc, '#o_middle');
+    if (!visible(middle, env) || middle.form !== form || middle.tagName !== 'INPUT' || middle.type !== 'text' || middle.name !== '' ||
+        middle.required || middle.disabled || middle.readOnly || middle.value !== '') reject('additional_fields');
+    const checkbox = one(doc, '#o_terms');
+    if (!visible(checkbox, env) || checkbox.form !== form || checkbox.tagName !== 'INPUT' || checkbox.type !== 'checkbox' || checkbox.name !== '' ||
+        checkbox.required || checkbox.disabled || checkbox.readOnly || checkbox.labels?.length !== 1) reject('changed_consent');
+    const label = checkbox.labels[0], labelLinks = [...label.querySelectorAll('a')];
+    if (label.tagName !== 'LABEL' || !visible(label, env) || normal(label.textContent) !== SPF_CONSENT || labelLinks.length !== 1 ||
+        !visible(labelLinks[0], env) || labelLinks[0].href !== contract.policyUrls[0]) reject('changed_consent');
+    const paragraphs = [...form.querySelectorAll('p')], terms = paragraphs[0];
+    if (paragraphs.length !== 1 || !visible(terms, env) || normal(terms.textContent) !== SPF_TERMS) reject('changed_consent');
+    const policyLinks = [...form.querySelectorAll('a')], termsLinks = [...terms.querySelectorAll('a')];
+    if (policyLinks.length !== contract.policyUrls.length || termsLinks.length !== 3 || policyLinks[0] !== labelLinks[0] ||
+        policyLinks.some((link, index) => !visible(link, env) || link.href !== contract.policyUrls[index] || index > 0 && link !== termsLinks[index - 1])) reject('changed_consent');
+    const button = one(doc, '#o_submit');
+    // The reviewed button omits a type attribute, so use the native type property.
+    const submits = [...form.elements].filter(element => ['BUTTON', 'INPUT'].includes(element.tagName) && ['submit', 'image'].includes(element.type));
+    nativeSubmitter(button);
+    if (submits.length !== 1 || submits[0] !== button || !visible(button, env) || button.form !== form || button.tagName !== 'BUTTON' || button.type !== 'submit' || button.disabled ||
+        normal(button.innerText) !== 'Begin removal process.' || normal(button.textContent) !== 'Begin removal process.' || button.children.length !== 0) reject('changed_submit');
+    const token = one(doc, '#o_form input[name="cf-turnstile-response"]'), widget = one(doc, '#o_form .cf-turnstile');
+    if (token.form !== form || token.tagName !== 'INPUT' || token.type !== 'hidden' || token.disabled || token.readOnly || token.required ||
+        typeof token.value !== 'string' || token.value.length > 16384 || !visible(widget, env)) reject('changed_challenge');
+    if (!token.value.trim() && !allowPendingToken) reject('challenge_required');
+    const approved = new Set([...controls, middle, checkbox, button, token]);
+    if ([...form.elements].some(element => !approved.has(element))) reject('additional_fields');
+    return { route, contract, form, controls, selection: null, checkbox, label, terms, policyLinks, button, middle, token, widget };
+  }
   function inspect(payload, env, allowPendingToken = false) {
     const contract = CONTRACTS[payload?.routeId], doc = env.document;
     if (!BASE || !contract || payload.autoSubmit !== true || payload.authorized !== true || payload.consentId !== contract.id ||
@@ -142,6 +226,8 @@
     if (!BASE.allowed(env.location.href, route) || doc.querySelector('input[type="file"]')) reject('changed_destination');
     if (payload.routeId === 'advancedbackgroundchecks') return inspectABC(payload, env, route, contract);
     if (['tr-nosorgulama', 'tr-numarasor'].includes(payload.routeId)) return inspectOwnPost(payload, env, route, contract);
+    if (payload.routeId === 'searchpeoplefree') return inspectSPF(payload, env, route, contract, allowPendingToken);
+    if (payload.routeId === 'apollo') return inspectApollo(payload, env, route, contract);
     const form = one(doc, route.form);
     nativeForm(form, 'post', false);
     if (!BASE.formAllowed(form.action || env.location.href, route)) reject('changed_destination');
@@ -197,7 +283,7 @@
   function waitReady(payload, env = root) {
     let record, doc, operationId;
     try {
-      if (payload?.routeId !== 'fastpeoplesearch') reject('approval_required');
+      if (!['fastpeoplesearch', 'searchpeoplefree'].includes(payload?.routeId)) reject('approval_required');
       const fresh = inspect(payload, env, true);
       doc = env.document; operationId = payload.operationId;
       if (documents.get(doc)?.has(operationId)) reject('already_captured');
@@ -233,8 +319,9 @@
         try {
           if (env.document !== doc || env.location.href !== record.url || signature(payload) !== record.signature) reject('changed_form');
           const fresh = inspect(payload, env, true);
-          if (['form', 'selection', 'checkbox', 'label', 'button', 'token', 'widget'].some(key => record[key] !== fresh[key]) ||
+          if (['form', 'selection', 'checkbox', 'label', 'button', 'token', 'widget', 'terms', 'middle'].some(key => record[key] !== fresh[key]) ||
               record.controls.length !== fresh.controls.length || record.controls.some((element, index) => element !== fresh.controls[index]) ||
+              fresh.policyLinks && (record.policyLinks.length !== fresh.policyLinks.length || record.policyLinks.some((element, index) => element !== fresh.policyLinks[index])) ||
               fresh.checkbox.checked !== record.initialConsent || fresh.checkbox.value !== record.checkboxValue) reject('changed_form');
           if (fresh.token.value.trim()) finish({ status: 'ready' });
           else if (finalRead) finish(blocked('challenge_required', 'The broker still requires its actual challenge response. No token was created or submission attempted.'));
@@ -277,7 +364,7 @@
     return { source, media };
   }
   function same(record, fresh, payload, env, consent, answer) {
-    if (record.signature !== signature(payload) || ['form', 'selection', 'checkbox', 'label', 'button', 'image', 'answer', 'token', 'widget', 'terms', 'notice', 'middle', 'honeypot', 'challengeResponse', 'challengeScript', 'csrf'].some(key => record[key] !== fresh[key]) ||
+    if (record.signature !== signature(payload) || ['form', 'selection', 'checkbox', 'label', 'button', 'image', 'answer', 'token', 'widget', 'terms', 'notice', 'middle', 'honeypot', 'challengeResponse', 'challengeScript', 'csrf', 'decorator', 'submissionGuard'].some(key => record[key] !== fresh[key]) ||
         record.controls.length !== fresh.controls.length || record.controls.some((element, index) => element !== fresh.controls[index]) ||
         fresh.checkbox && (fresh.checkbox.checked !== consent || fresh.checkbox.value !== record.checkboxValue) ||
         fresh.policyLinks && (record.policyLinks.length !== fresh.policyLinks.length || record.policyLinks.some((element, index) => element !== fresh.policyLinks[index])) ||
@@ -360,7 +447,7 @@
     }
     return result;
   }
-  const api = Object.freeze({ version: 'automatic-executor-v3', CONTRACTS, waitReady, capture, submit });
+  const api = Object.freeze({ version: 'automatic-executor-v5', CONTRACTS, waitReady, capture, submit });
   root.EraseAutomaticExecutor = api;
   if (typeof module !== 'undefined') module.exports = api;
 })(typeof globalThis === 'object' ? globalThis : this);

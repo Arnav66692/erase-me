@@ -40,7 +40,7 @@
       if(!receipt.continuation_available||!['usphonebook','fastpeoplesearch'].includes(routeId))return {status:'needs_broker_step',detail:'Authenticated removal mail was received. Its destination has no reviewed automatic confirmation contract, so no link was followed.'};
       const fields=reviewedFields[routeId];
       if(!fields||(routeId==='fastpeoplesearch'?Object.keys(fields).length!==0:Object.keys(fields).length!==3||!['city','state','zip_code'].every(field=>typeof fields[field]==='string'&&fields[field].trim())))
-        return {status:'needs_detail',detail:routeId==='fastpeoplesearch'?'Review the original name and removal contact before opening the authenticated matching form. Required identity details stay on the broker site.':'A reviewed confirmation is available. Review city, state and ZIP before continuing; the broker also requires date of birth or street address directly on its form.'};
+        return {status:'needs_detail',detail:routeId==='fastpeoplesearch'?'Review the original name and removal contact before opening the authenticated matching form. Its required identity details can then be reviewed in Erase Me’s supported collector.':'A reviewed confirmation is available. Review city, state and ZIP before continuing; the broker also requires date of birth or street address directly on its form.'};
       const current=workspace.dashboard();
       if(current.campaign.status!=='active'||current.items.find(item=>item.site_id===routeId)?.held)return {status:'not_started',detail:'The route was put on hold before continuation. No link was followed.'};
       const ping=await companion({action:'ping'});

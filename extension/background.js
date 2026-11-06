@@ -6,6 +6,7 @@ const AUTO=typeof EraseAutomaticExecutor!=='undefined'?EraseAutomaticExecutor:re
 const FINAL=typeof EraseFinalExecutor!=='undefined'?EraseFinalExecutor:require('./final-executor.js');
 const IDENTITY=typeof EraseIdentityDetails!=='undefined'?EraseIdentityDetails:require('./identity-details.js');
 const NATIVE_HOST='org.eraseme.challenge';
+const MAIL_NATIVE_HOST='org.eraseme.mail';
 const active=new Set(),sessions=new WeakMap(),observationKeys=new WeakMap();
 const OBSERVABLE=new Set(['peopledatalabs-form','usphonebook']);
 function trusted(sender){try{const u=new URL(sender.url);return u.origin===APP&&u.protocol==='https:'&&!!sender.tab;}catch(_){return false;}}
@@ -46,12 +47,44 @@ async function helperStatus(chromeApi){
     return {available:true,image:reply.capabilities.image,audio:reply.capabilities.audio};
   }catch(_){return {available:false,image:false,audio:false};}
 }
+function exactMailObject(value,keys){return !!value&&typeof value==='object'&&!Array.isArray(value)&&Object.keys(value).length===keys.length&&keys.every(key=>Object.hasOwn(value,key));}
+async function localMail(message,chromeApi){
+  if(!exactMailObject(message,['type','action','request']))throw new Error('Choose a supported local removal-mail action.');
+  const request=message.request,base=['action','workspace_id','personal_email_sha256'];
+  const fields={status:['authorized'],session:['route_id','operation_id','authorized'],check:['capability','explicit'],continue:['capability','receipt_ref','explicit'],revoke:['capability','explicit']};
+  if(!request||typeof request.action!=='string'||!Object.hasOwn(fields,request.action)||!exactMailObject(request,[...base,...fields[request.action]])||!id(request.workspace_id)||
+    typeof request.personal_email_sha256!=='string'||!/^[a-f0-9]{64}$/.test(request.personal_email_sha256)||JSON.stringify(request).length>8192||
+    (['status','session'].includes(request.action)?request.authorized!==true:request.explicit!==true)||
+    (request.action==='session'&&(!['fastpeoplesearch','usphonebook','searchpeoplefree'].includes(request.route_id)||!id(request.operation_id)))||
+    (['check','continue','revoke'].includes(request.action)&&(typeof request.capability!=='string'||!(/^[A-Za-z0-9_-]{1,1800}\.[A-Za-z0-9_-]{43}$/.test(request.capability))))||
+    (request.action==='continue'&&(typeof request.receipt_ref!=='string'||!/^[a-f0-9]{64}$/.test(request.receipt_ref))))throw new Error('Choose a supported local removal-mail action.');
+  if(!await chromeApi.permissions.contains({permissions:['nativeMessaging']}))throw new Error('Enable local connector access in the companion toolbar, then install the removal-mail host.');
+  let reply;
+  try{reply=await chromeApi.runtime.sendNativeMessage(MAIL_NATIVE_HOST,request);}catch(_){throw new Error('The local removal-mail connector is unavailable. Complete its private setup first.');}
+  if(!reply||reply.ok!==true||!exactMailObject(reply,['ok','result'])||JSON.stringify(reply).length>8192)throw new Error('The local removal-mail action could not be completed. Check its private setup or current request state.');
+  const value=reply.result,scope=['request_id','route_id','operation_id','automatic_execution'];
+  if(request.action==='status'){
+    const keys=['configured','enabled','provider','on_demand','access','authorization_required','automatic_execution','routes',...(Object.hasOwn(value||{},'contact_email')?['contact_email']:[])];
+    if(!exactMailObject(value,keys)||typeof value.configured!=='boolean'||typeof value.enabled!=='boolean'||value.enabled&&!value.configured||value.provider!=='gmail'||value.access!=='local_native'||value.on_demand!==true||value.authorization_required!==true||value.automatic_execution!==false||
+      !Array.isArray(value.routes)||value.routes.length!==3||new Set(value.routes).size!==3||value.routes.some(route=>!['usphonebook','fastpeoplesearch','searchpeoplefree'].includes(route))||
+      (value.enabled&&(!Object.hasOwn(value,'contact_email')||typeof value.contact_email!=='string'))||
+      (Object.hasOwn(value,'contact_email')&&(!value.enabled||typeof value.contact_email!=='string'||value.contact_email.length>254||!/^[a-z0-9._-]{1,25}@(?:gmail\.com|googlemail\.com)$/.test(value.contact_email))))throw new Error('The local removal-mail connector returned an invalid status.');
+    return value;
+  }
+  const keys=request.action==='session'?['status','capability',...scope,'contact_email','expires_at']:request.action==='continue'?['status',...scope,'receipt_ref','confirmation_url']:request.action==='revoke'?['status',...scope]:['status',...scope,...(value?.status==='held'?['reason','received_at','authenticated','receipt_ref','continuation_available']:[])];
+  if(!exactMailObject(value,keys)||!['usphonebook','fastpeoplesearch','searchpeoplefree'].includes(value.route_id)||!id(value.operation_id)||typeof value.request_id!=='string'||!/^[a-f0-9]{32}$/.test(value.request_id)||value.automatic_execution!==false)throw new Error('The local removal-mail connector returned an invalid result.');
+  if(request.action==='session'&&(value.status!=='ready'||value.route_id!==request.route_id||value.operation_id!==request.operation_id||!(/^[A-Za-z0-9_-]{1,1800}\.[A-Za-z0-9_-]{43}$/.test(value.capability||''))||typeof value.contact_email!=='string'||value.contact_email.length>254||!Number.isSafeInteger(value.expires_at)))throw new Error('The local removal contact could not be validated.');
+  if(request.action==='check'&&(!['pending','held'].includes(value.status)||value.status==='held'&&(value.authenticated!==true||!['route_validation_required','confirmation_link_unvalidated'].includes(value.reason)||!Number.isSafeInteger(value.received_at)||!/^[a-f0-9]{64}$/.test(value.receipt_ref||'')||typeof value.continuation_available!=='boolean'||value.route_id==='searchpeoplefree'&&value.continuation_available)))throw new Error('The local removal receipt could not be validated.');
+  if(request.action==='continue'&&(value.status!=='confirmation_ready'||value.receipt_ref!==request.receipt_ref||!EXEC.continuationURL(value.confirmation_url,value.route_id)))throw new Error('The local broker confirmation could not be validated.');
+  if(request.action==='revoke'&&value.status!=='revoked')throw new Error('The local mail grant revocation could not be confirmed.');
+  return value;
+}
 async function automaticSubmit(payload,tabId,documentId,chromeApi){
   if(typeof documentId!=='string')return unknown('The broker document cannot be pinned for automatic submission. No submit was attempted.');
   const target={tabId,documentIds:[documentId]};
   const [installed]=await chromeApi.scripting.executeScript({target,files:['automatic-executor.js']});
   if(installed?.documentId!==documentId)return unknown('The broker tab changed before submission. No repeat was sent.');
-  if(payload.routeId==='fastpeoplesearch'){
+  if(['fastpeoplesearch','searchpeoplefree'].includes(payload.routeId)){
     const [readiness]=await chromeApi.scripting.executeScript({target,func:value=>globalThis.EraseAutomaticExecutor.waitReady(value),args:[payload]});
     if(readiness?.documentId!==documentId)return unknown('The broker document changed while its security widget was loading. No submit was attempted.');
     if(readiness.result?.status==='blocked')return {status:'blocked',detail:String(readiness.result.detail||'The broker security check still needs attention.').slice(0,600)};
@@ -365,9 +398,10 @@ async function dispatch(message,sender,chromeApi=chrome){
   if(message.action==='ping'){
     const routes=[];
     for(const [routeId,route] of Object.entries(EXEC.ROUTES))if(await chromeApi.permissions.contains({origins:['https://'+route.host+'/*']}))routes.push(routeId);
-    return {status:'connected',version:'0.9.0',routes,capabilities:['usphonebook-continuation-v1','fastpeoplesearch-continuation-v1','explicit-fields-v1','structured-fields-v1','broker-observation-v1','automatic-submit-v1','reviewed-initial-submit-v2','structured-record-match-v1','owned-tab-focus-v1','identity-submit-v1','identity-submit-v2','identity-requirements-v1']};
+    return {status:'connected',version:'0.10.0',routes,capabilities:['usphonebook-continuation-v1','fastpeoplesearch-continuation-v1','explicit-fields-v1','structured-fields-v1','broker-observation-v1','automatic-submit-v1','reviewed-initial-submit-v2','reviewed-initial-submit-v3','structured-record-match-v1','owned-tab-focus-v1','identity-submit-v1','identity-submit-v2','identity-requirements-v1','local-removal-mail-v1']};
   }
   if(message.action==='helper-status')return helperStatus(chromeApi);
+  if(message.action==='local-mail')return localMail(message,chromeApi);
   if(!id(message.operationId)||!EXEC.ROUTES[message.routeId])throw new Error('Unsupported operation.');
   if(message.action==='identity-requirements')return identityRequirements(message,chromeApi);
   if(message.action==='identity-result')return identityResult(message,chromeApi);

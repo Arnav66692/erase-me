@@ -16,7 +16,7 @@
   const MATCH_STATES = new Set(['matched', 'not_matched', 'ambiguous', 'needs_identity', 'unsupported']);
   const MATCH_EVIDENCE = new Set(['structured_person', 'exact_candidate_url', 'name', 'email', 'phone', 'age', 'city', 'identity']);
   const MATCH_LIFETIME = 30 * 60 * 1000;
-  const SUBMIT_STAGES = Object.freeze({ fastpeoplesearch: 'verification_initiation', advancedbackgroundchecks: 'verification_initiation',
+  const SUBMIT_STAGES = Object.freeze({ fastpeoplesearch: 'verification_initiation', searchpeoplefree: 'verification_initiation', apollo: 'verification_initiation', advancedbackgroundchecks: 'verification_initiation',
     'tr-nosorgulama': 'request_submission', 'tr-numaraara': 'request_submission', 'tr-numarasor': 'request_submission' });
   const MAIL_ROUTES = new Set(['usphonebook', 'searchpeoplefree', 'fastpeoplesearch']);
   const NEW_MAIL_ROUTES = new Set(['usphonebook', 'fastpeoplesearch']);
@@ -162,7 +162,10 @@
     if (!allowExpired && expires_at <= now) throw new WorkspaceError('This removal contact has expired. No request was repeated.', 410);
     // The server verifies the signature; this local check prevents accidental
     // route/recipient mixups and never establishes broker acceptance.
-    return { capability, request_id, route_id, operation_id, contact_email, expires_at };
+    if(value.transport!==undefined&&value.transport!=='local_native'||value.transport===undefined&&(value.workspace_id!==undefined||value.revoked!==undefined))throw new WorkspaceError('The removal contact transport is unsupported.');
+    if(value.transport==='local_native'&&(!OPERATION.test(value.workspace_id||'')||value.revoked!==undefined&&typeof value.revoked!=='boolean'))throw new WorkspaceError('The local removal contact workspace is invalid.');
+    return { capability, request_id, route_id, operation_id, contact_email, expires_at,
+      ...(value.transport==='local_native'?{transport:'local_native',workspace_id:value.workspace_id,...(value.revoked===true?{revoked:true}:{})}:{}) };
   }
   function confirmationURL(value, routeId = 'usphonebook', fields = null) {
     try {
@@ -294,7 +297,10 @@
           if (item.held !== undefined && typeof item.held !== 'boolean') throw new Error();
           if (item.affirmations) item.affirmations = approvedAffirmations(knownRoute, item.affirmations);
           item.url = knownRoute.url; item.name = knownRoute.name; item.domain = knownRoute.domain;
-          if (item.mail_contact) item.mail_contact = mailContact(item.mail_contact, id, item.operation_id || item.id, Math.floor(Date.parse(clock()) / 1000), true);
+          if (item.mail_contact) {
+            item.mail_contact = mailContact(item.mail_contact, id, item.operation_id || item.id, Math.floor(Date.parse(clock()) / 1000), true);
+            if(item.mail_contact.transport==='local_native'&&item.mail_contact.workspace_id!==parsed.profile.id&&item.mail_contact.revoked!==true)throw new Error('Local mail workspace mismatch.');
+          }
           if (item.operation_source !== undefined && !['browser_workspace', 'imported_user_history'].includes(item.operation_source)) throw new Error();
           if (item.operation_email !== undefined || item.operation_email_role !== undefined) {
             if (!item.operation_id || email(item.operation_email) !== item.operation_email ||
@@ -477,7 +483,8 @@
           throw new WorkspaceError('The broker fields changed in another tab. Review them again before starting.', 409);
       }
       const contact = item.mail_contact ? mailContact(item.mail_contact, id, item.id, Math.floor(Date.parse(clock()) / 1000)) : null;
-      if (id === 'searchpeoplefree' && contact)
+      if(contact?.revoked===true)throw new WorkspaceError('This local removal-mail grant was revoked. Review the contact before starting a broker form.',409);
+      if (id === 'searchpeoplefree' && contact && (contact.transport!=='local_native'||contact.workspace_id!==state.profile.id))
         throw new WorkspaceError('SearchPeopleFree requires an email you own. Explicitly remove this old shared contact before choosing your typed email. No fallback was sent.', 409);
       if (route.requiredAffirmations.some(key => confirmations[key] !== true))
         throw new WorkspaceError(route.requiredAffirmations.includes('own_request') ? 'Confirm this is your own request and review the fields before continuing.' : id === 'apollo' ? 'Confirm this is the business email associated with your own Apollo record.' : 'Confirm that this exact listing belongs to you.');
@@ -529,16 +536,19 @@
         throw new WorkspaceError('The reviewed broker fields or workspace changed. Review this batch entry again before starting.', 409);
       return prepare(snapshot.routeId, current.reviewed);
     }
-    function mailSessionRequest(id) {
+    function mailSessionRequest(id, transport = 'private_pilot') {
       const route = routeFor(id), item = itemFor(id);
       requireNotHeld(item);
       requireCountryRoute(route, item);
-      if (!NEW_MAIL_ROUTES.has(id)) throw new WorkspaceError(id === 'searchpeoplefree' ? 'SearchPeopleFree requires an email you own. Use your explicitly typed email; new shared removal contacts are unavailable.' : 'This broker needs its record-associated email. A removal contact cannot replace it.');
+      if(!['private_pilot','local_native'].includes(transport))throw new WorkspaceError('Choose a supported removal-mail transport.');
+      if (!NEW_MAIL_ROUTES.has(id)&&!(id==='searchpeoplefree'&&transport==='local_native')) throw new WorkspaceError(id === 'searchpeoplefree' ? 'SearchPeopleFree requires an email you own. Use your explicitly typed email; new shared removal contacts are unavailable.' : 'This broker needs its record-associated email. A removal contact cannot replace it.');
       if (state.campaign.status !== 'active') throw new WorkspaceError('Allow checks before choosing a removal contact.', 409);
+      if(item.local_mail_setup_closed===true)throw new WorkspaceError('This interrupted local mail setup is closed. Reconcile its grant locally before using another contact.',409);
       if (operationStarted(item)) throw new WorkspaceError('This action has already started. Its contact email cannot be changed.', 409);
       if (!OPERATION.test(item.id)) throw new WorkspaceError('This workspace operation has no valid private reference.', 409);
       if (item.mail_contact && item.mail_contact.expires_at > Math.floor(Date.parse(clock()) / 1000)) throw new WorkspaceError('This operation already has a removal contact.', 409);
       item.mail_contact_authorized_at = clock();
+      item.mail_contact_transport_authorized = transport;
       event('You authorized a dedicated contact address for ' + route.name + '. No broker was contacted.'); save();
       return { route_id: id, operation_id: item.id, authorized: true };
     }
@@ -546,10 +556,14 @@
       const item = itemFor(id);
       requireNotHeld(item);
       requireCountryRoute(routeFor(id), item);
-      if (!NEW_MAIL_ROUTES.has(id)) throw new WorkspaceError('New shared removal contacts are not available for this route.');
+      const transport=response?.transport||'private_pilot';
+      if(item.local_mail_setup_closed===true)throw new WorkspaceError('This interrupted mail setup is closed. No contact can be bound until it is reconciled.',409);
+      if (!NEW_MAIL_ROUTES.has(id)&&!(id==='searchpeoplefree'&&transport==='local_native')) throw new WorkspaceError('New shared removal contacts are not available for this route.');
       if (state.campaign.status !== 'active' || operationStarted(item)) throw new WorkspaceError('This action is paused or already started. Its contact email cannot be changed.', 409);
       if (!item.mail_contact_authorized_at) throw new WorkspaceError('Explicitly authorize the dedicated contact address first.');
+      if(transport!==(item.mail_contact_transport_authorized||'private_pilot'))throw new WorkspaceError('Review this contact transport before binding its address.');
       const contact = mailContact(response, id, item.id, Math.floor(Date.parse(clock()) / 1000));
+      if(contact.transport==='local_native'&&contact.workspace_id!==state.profile.id)throw new WorkspaceError('The local contact belongs to a different workspace.');
       if (item.mail_contact && item.mail_contact.expires_at > Math.floor(Date.parse(clock()) / 1000)) throw new WorkspaceError('This operation already has a removal contact.', 409);
       item.mail_contact = contact; item.updated_at = clock();
       event('The dedicated contact address is saved for ' + routeFor(id).name + '. Review it before starting the broker form.'); save();
@@ -559,22 +573,59 @@
       const item = itemFor(id);
       requireNotHeld(item);
       if (operationStarted(item)) throw new WorkspaceError('This action has already started. Its contact email cannot be changed.', 409);
-      delete item.mail_contact; delete item.mail_contact_authorized_at;
+      delete item.mail_contact; delete item.mail_contact_authorized_at; delete item.mail_contact_transport_authorized;
       event('You chose your typed profile email for ' + routeFor(id).name + '. No broker was contacted.'); save();
       return dashboard();
     }
-    function mailCheckRequest(id) {
+    function reserveLocalMailSetupClosure(id,operationId,expectedProfileId,response){
+      const contact=mailContact(response,id,operationId,Math.floor(Date.parse(clock())/1000),true);
+      if(contact.transport!=='local_native'||contact.workspace_id!==expectedProfileId)throw new WorkspaceError('The cleanup does not match its original local grant.',409);
+      const current=read();
+      if(current.profile?.id!==expectedProfileId)return{status:'workspace_replaced'};
+      const item=itemFor(id);
+      if(item.id!==operationId)return{status:'operation_replaced'};
+      const bound=item.mail_contact;
+      // A pause stops reads; it does not invalidate another controller's exact
+      // already-bound grant. This decision shares the binding write lock.
+      if(bound?.transport==='local_native'&&bound.workspace_id===expectedProfileId&&bound.capability===contact.capability&&!bound.revoked&&!item.held)return{status:'already_bound'};
+      if(item.local_mail_setup_closed===true)return{status:item.local_mail_cleanup_request_id===contact.request_id&&item.local_mail_setup_revocation_confirmed===true?'already_revoked':'already_reserved'};
+      item.local_mail_setup_closed=true;item.local_mail_setup_cleanup_pending=true;item.local_mail_cleanup_request_id=contact.request_id;
+      item.local_mail_setup_revocation_confirmed=false;item.held=true;item.held_at=clock();
+      if(bound?.transport==='local_native'&&bound.capability===contact.capability)bound.revoked=true;
+      event('A local mail cleanup was reserved. The route is held and this setup cannot bind another contact or resume mailbox reads.');save();return{status:'reserved'};
+    }
+    function recordLocalMailSetupClosure(id,operationId,expectedProfileId,revocationConfirmed,requestId){
+      const current=read();
+      if(current.profile?.id!==expectedProfileId)throw new WorkspaceError('The original local mail setup is no longer current.',409);
+      const item=itemFor(id);
+      if(item.id!==operationId||typeof revocationConfirmed!=='boolean')throw new WorkspaceError('The original local mail setup is no longer current.',409);
+      if(requestId!==undefined){
+        if(!item.local_mail_setup_closed||item.local_mail_cleanup_request_id!==requestId)throw new WorkspaceError('No matching local cleanup was reserved.',409);
+        item.local_mail_setup_cleanup_pending=false;item.local_mail_setup_revocation_confirmed=revocationConfirmed;
+      }else{
+        if(item.operation_id||item.mail_contact)throw new WorkspaceError('The original local mail setup is no longer current.',409);
+        item.local_mail_setup_closed=true;item.local_mail_setup_revocation_confirmed=revocationConfirmed;item.held=true;item.held_at=clock();
+      }
+      event('Local mail cleanup outcome recorded; '+(revocationConfirmed?'the unused grant was revoked.':'grant revocation requires local reconciliation.'));save();return dashboard();
+    }
+    function requireMailTransport(item, transport = 'private_pilot') {
+      if(item.local_mail_setup_closed===true||!['private_pilot','local_native'].includes(transport)||(item.mail_contact?.transport||'private_pilot')!==transport||
+        transport==='local_native'&&(item.mail_contact.workspace_id!==state.profile.id||item.mail_contact.revoked===true))throw new WorkspaceError('Use this contact’s original active removal-mail transport. No other mailbox was contacted.',409);
+    }
+    function mailCheckRequest(id, transport = 'private_pilot') {
       const item = itemFor(id);
       requireNotHeld(item);
       if (state.campaign.status !== 'active') throw new WorkspaceError('Allow checks before reading a removal receipt.', 409);
       if (!item.operation_id || !item.mail_contact) throw new WorkspaceError('Start the matching broker action before checking its removal contact.', 409);
+      requireMailTransport(item,transport);
       const contact = mailContact(item.mail_contact, id, item.operation_id, Math.floor(Date.parse(clock()) / 1000));
       item.mail_check_authorized_at = clock(); save();
       return { capability: contact.capability, explicit: true };
     }
-    function recordMailReceipt(id, result) {
+    function recordMailReceipt(id, result, transport = 'private_pilot') {
       const item = itemFor(id), now = Math.floor(Date.parse(clock()) / 1000);
       if (!item.mail_contact || !item.operation_id) throw new WorkspaceError('No matching removal contact operation is saved.', 409);
+      requireMailTransport(item,transport);
       const contact = mailContact(item.mail_contact, id, item.operation_id, now, true);
       if (!result || result.route_id !== id || result.operation_id !== item.operation_id || result.request_id !== contact.request_id ||
           !['pending', 'held'].includes(result.status) || result.automatic_execution !== false) throw new WorkspaceError('The mailbox result does not match this operation.');
@@ -615,16 +666,18 @@
       return { first_name: text(item.fields.first_name, 120), last_name: text(item.fields.last_name, 120), email: contact.contact_email,
         city, state: stateCode, zip_code: zip };
     }
-    function mailContinuationRequest(id, supplied) {
+    function mailContinuationRequest(id, supplied, transport = 'private_pilot') {
       const { item, contact } = continuationContext(id);
+      requireMailTransport(item,transport);
       if (item.continuation) throw new WorkspaceError('This confirmation action already started. Check its existing broker tab; no replay is allowed.', 409);
       continuationFields(item, contact, supplied,id);
       item.continuation_fields = id==='fastpeoplesearch'?{}:{ city: text(supplied.city, 120), state: text(supplied.state, 2).toUpperCase(), zip_code: text(supplied.zip_code, 5) };
       item.mail_continuation_authorized_at = clock(); save();
       return { capability: contact.capability, explicit: true, receipt_ref: item.mail_receipt.receipt_ref };
     }
-    function prepareMailContinuation(id, response, reviewedFields) {
+    function prepareMailContinuation(id, response, reviewedFields, transport = 'private_pilot') {
       const { item, contact } = continuationContext(id);
+      requireMailTransport(item,transport);
       if (!item.mail_continuation_authorized_at || item.continuation) throw new WorkspaceError('This confirmation action is unapproved or already started. No replay is allowed.', 409);
       const fields = continuationFields(item, contact, reviewedFields,id);
       if (!response || response.status !== 'confirmation_ready' || response.route_id !== id || response.operation_id !== item.operation_id ||
@@ -874,11 +927,13 @@
       if (!item.operation_id && !USER_STATES.has(item.status)) changed(item, 'opened');
       event('You opened the ' + routeFor(id).name + ' official form. No submission was established.'); save(); return dashboard();
     }
-    function holdRoute(id, expectedIdentityPreview) {
+    function holdRoute(id, expectedIdentityPreview, expectedProfileId) {
+      if(expectedProfileId!==undefined&&expectedProfileId!==active().profile.id)throw new WorkspaceError('The workspace changed. Review this route before putting it on hold.',409);
       if (expectedIdentityPreview !== undefined && JSON.stringify(expectedIdentityPreview) !== JSON.stringify(identityPreview(id)))
         throw new WorkspaceError('The request changed. Review its current next step before putting it on hold.', 409);
       const item = itemFor(id);
       item.held = true; item.held_at = clock();
+      if(item.mail_contact?.transport==='local_native')item.mail_contact.revoked=true;
       event('You put ' + routeFor(id).name + ' on hold. No new broker or mailbox action will start.'); save(); return dashboard();
     }
     function resumeRoute(id) {
@@ -952,8 +1007,12 @@
         if (imported.held === true || imported.status === 'held') {
           item.held = true; item.held_at = typeof imported.held_at === 'string' && Number.isFinite(Date.parse(imported.held_at)) ? new Date(imported.held_at).toISOString() : clock();
         }
+        if(imported.local_mail_setup_closed===true){item.local_mail_setup_closed=true;item.local_mail_setup_revocation_confirmed=false;item.held=true;item.held_at=clock();}
         if (restoredContacts[id]) {
           item.id = restoredContacts[id].operation_id; item.mail_contact = restoredContacts[id];
+          // Import creates a new workspace identity. Retain the old native grant
+          // reference for private history, never rebind it to this new identity.
+          if(item.mail_contact.transport==='local_native')item.mail_contact.revoked=true;
           if (imported.mail_receipt && ['held', 'pending'].includes(imported.mail_receipt.status)) item.mail_receipt = {
             status: imported.mail_receipt.status, checked_at: clock(), source: 'imported_user_history', authenticated: false,
             acceptance_verified: false, deletion_verified: false
@@ -1034,7 +1093,7 @@
       }
     }
     return Object.freeze({ api, snapshot: () => clone(read()), profile: () => clone(active().profile), routes: () => clone(routes),
-      setEvidence, prepare, fillPreview, prepareReviewed, matchRequest, recordMatch, holdRoute, resumeRoute, mailSessionRequest, bindMailContact, clearMailContact, mailCheckRequest, recordMailReceipt,
+      setEvidence, prepare, fillPreview, prepareReviewed, matchRequest, recordMatch, holdRoute, resumeRoute, mailSessionRequest, bindMailContact, clearMailContact, reserveLocalMailSetupClosure, recordLocalMailSetupClosure, mailCheckRequest, recordMailReceipt,
       mailContinuationRequest, prepareMailContinuation, recordMailContinuation,
       recordCompanion, observationRequest, focusRequest, identityPreview, prepareIdentitySubmission, recordIdentitySubmission, identityResultRequest, recordObservation, searchRequest, privacyDraftRequest, recordUser, opened, exportData, importData, importFootprint, chooseFootprintItem, recordFootprintProgress, remove, dashboard,
       updateRoute: setEvidence, applyCompanionResult: recordCompanion });
@@ -1048,9 +1107,9 @@
     if (!locks || typeof locks.request !== 'function') throw new WorkspaceError('This browser cannot safely coordinate workspace changes. Use a current browser with Web Locks support.', 503);
     return locks.request(KEY + '-write', { mode: 'exclusive' }, action);
   }
-  const mutators = new Set(['setEvidence', 'prepare', 'prepareReviewed', 'matchRequest', 'recordMatch', 'holdRoute', 'resumeRoute', 'mailSessionRequest', 'bindMailContact', 'clearMailContact', 'mailCheckRequest', 'recordMailReceipt', 'mailContinuationRequest', 'prepareMailContinuation', 'recordMailContinuation', 'prepareIdentitySubmission', 'recordIdentitySubmission', 'recordCompanion', 'observationRequest', 'recordObservation', 'searchRequest', 'privacyDraftRequest', 'recordUser', 'opened', 'importData', 'importFootprint', 'chooseFootprintItem', 'recordFootprintProgress', 'remove', 'updateRoute', 'applyCompanionResult']);
+  const mutators = new Set(['setEvidence', 'prepare', 'prepareReviewed', 'matchRequest', 'recordMatch', 'holdRoute', 'resumeRoute', 'mailSessionRequest', 'bindMailContact', 'clearMailContact', 'reserveLocalMailSetupClosure', 'recordLocalMailSetupClosure', 'mailCheckRequest', 'recordMailReceipt', 'mailContinuationRequest', 'prepareMailContinuation', 'recordMailContinuation', 'prepareIdentitySubmission', 'recordIdentitySubmission', 'recordCompanion', 'observationRequest', 'recordObservation', 'searchRequest', 'privacyDraftRequest', 'recordUser', 'opened', 'importData', 'importFootprint', 'chooseFootprintItem', 'recordFootprintProgress', 'remove', 'updateRoute', 'applyCompanionResult']);
   const exported = { create, KEY, AUTHORIZATION, WorkspaceError, routes: () => clone(routes), listingURL };
-  for (const name of ['snapshot', 'profile', 'setEvidence', 'prepare', 'fillPreview', 'prepareReviewed', 'matchRequest', 'recordMatch', 'holdRoute', 'resumeRoute', 'mailSessionRequest', 'bindMailContact', 'clearMailContact', 'mailCheckRequest', 'recordMailReceipt', 'mailContinuationRequest', 'prepareMailContinuation', 'recordMailContinuation', 'recordCompanion', 'observationRequest', 'focusRequest', 'identityPreview', 'prepareIdentitySubmission', 'recordIdentitySubmission', 'identityResultRequest', 'recordObservation', 'searchRequest', 'privacyDraftRequest', 'recordUser', 'opened', 'exportData', 'importData', 'importFootprint', 'chooseFootprintItem', 'recordFootprintProgress', 'remove', 'dashboard', 'updateRoute', 'applyCompanionResult']) {
+  for (const name of ['snapshot', 'profile', 'setEvidence', 'prepare', 'fillPreview', 'prepareReviewed', 'matchRequest', 'recordMatch', 'holdRoute', 'resumeRoute', 'mailSessionRequest', 'bindMailContact', 'clearMailContact', 'reserveLocalMailSetupClosure', 'recordLocalMailSetupClosure', 'mailCheckRequest', 'recordMailReceipt', 'mailContinuationRequest', 'prepareMailContinuation', 'recordMailContinuation', 'recordCompanion', 'observationRequest', 'focusRequest', 'identityPreview', 'prepareIdentitySubmission', 'recordIdentitySubmission', 'identityResultRequest', 'recordObservation', 'searchRequest', 'privacyDraftRequest', 'recordUser', 'opened', 'exportData', 'importData', 'importFootprint', 'chooseFootprintItem', 'recordFootprintProgress', 'remove', 'dashboard', 'updateRoute', 'applyCompanionResult']) {
     exported[name] = (...args) => mutators.has(name) ? exclusive(() => defaults()[name](...args)) : defaults()[name](...args);
   }
   exported.api = async (...args) => {

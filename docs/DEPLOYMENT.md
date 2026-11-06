@@ -91,7 +91,7 @@ The optional local challenge host is installed on the person's computer, separat
 from Vercel. Hosting the website does not install Tesseract, provide a universal solver
 or connect browsers to the operator's computer. Follow the [per-user helper setup](LOCAL_CHALLENGE_HELPER.md).
 
-No database, account login, inbox, paid API, cron or persistent hosted browser is needed for the workspace and companion. Its catalog has 43 reference routes: two global portals plus US, Canadian, UK, German and Turkish packs. Eleven initial actions have companion support; 32 routes remain other guided channels. All 37 routes outside the original six have an official-channel audit, which does not establish automatic execution or deletion. Other countries see the global portals and an explicit coverage limit. The companion ZIP is generated from an explicit file allowlist and served at `/downloads/erase-me-companion.zip`. No Chrome Web Store purchase is required for loading the unpacked extension. The current companion is version 0.9.0; replace an older extracted copy and reload it in Chrome before using automatic submissions, record matching or local challenge recognition. The extension requests only the eleven reviewed optional broker hosts.
+No database, account login, inbox, paid API, cron or persistent hosted browser is needed for the workspace and companion. Its catalog has 43 reference routes: two global portals plus US, Canadian, UK, German and Turkish packs. Eleven initial actions have companion support; 32 routes remain other guided channels. All 37 routes outside the original six have an official-channel audit, which does not establish automatic execution or deletion. Other countries see the global portals and an explicit coverage limit. The companion ZIP is generated from an explicit file allowlist and served at `/downloads/erase-me-companion.zip`. No Chrome Web Store purchase is required for loading the unpacked extension. The current companion is version 0.10.0; replace an older extracted copy and reload it in Chrome before using automatic submissions, record matching or local challenge recognition. The extension requests only the eleven reviewed optional broker hosts.
 
 Version 0.6.0 waits at most 12 seconds for FastPeopleSearch's ordinary widget response
 within the original approved document and form. It uses DOM/input events and one
@@ -118,3 +118,17 @@ Never expose the separate local Python API or its session-recovery mode publicly
 Current scope is documented in [PUBLIC_WORKSPACE.md](PUBLIC_WORKSPACE.md). Broker verification, CAPTCHA and record matching remain user steps. No independently verified deletion is established by this release.
 
 The application is MIT-licensed. Browser, recognition binaries, fonts and model weights retain their own licenses. See [third-party licenses](../THIRD_PARTY_LICENSES.md).
+
+## Public users' local removal-only email
+
+The public workspace offers a [per-user native connector](LOCAL_REMOVAL_MAIL.md) that
+uses each person's own removal-only Gmail account on their computer. No hosted OAuth
+credential store, operator key or new paid dependency is needed for that transport.
+One-time provider/client and native-host setup is required; supported desktop platforms
+and seven-day capability limits are documented explicitly. The separate hosted shared
+relay retains its existing private gate. Never publish its credentials to enable users.
+
+The public build packages a second explicit source archive at
+`/downloads/erase-me-local-mail.zip`. It contains the six required Python sources,
+two setup documents and MIT license, preserving relative imports. No private config,
+OAuth file, SQLite grant database or user profile is included.

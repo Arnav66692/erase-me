@@ -43,8 +43,8 @@ test('every executable submission contract preserves only its proven attempt sta
     const core=Core.create({storage:{getItem:key=>values.get(key)||null,setItem:(key,value)=>values.set(key,value),removeItem:key=>values.delete(key)},uuid:()=>(++sequence).toString(16).padStart(32,'0'),now:()=> '2026-11-05T00:00:00.000Z'});
     await core.api('/api/signup',{method:'POST',body:JSON.stringify({name:'Example Person',age:35,email:'person@example.test',authorized:true})});
     await core.api('/api/profile',{method:'POST',body:JSON.stringify({country:id.startsWith('tr-')?'TR':'US'})});
-    const fields=id.startsWith('tr-')?{full_name:'Example Person',request_text:'Please remove my own information.',...(id==='tr-numarasor'?{phone:'+90 555 123 45 67'}:{})}:{first_name:'Example',last_name:'Person'};
-    core.setEvidence(id,fields,id==='fastpeoplesearch'?{}:{own_request:true});const operation=core.prepare(id);
+    const fields=id==='apollo'?{business_email:'work@example.test'}:id.startsWith('tr-')?{full_name:'Example Person',request_text:'Please remove my own information.',...(id==='tr-numarasor'?{phone:'+90 555 123 45 67'}:{})}:{first_name:'Example',last_name:'Person'};
+    core.setEvidence(id,fields,id==='apollo'?{business_email:true}:['fastpeoplesearch','searchpeoplefree'].includes(id)?{}:{own_request:true});const operation=core.prepare(id);
     core.recordCompanion(id,operation.operationId,{status:'submission_attempted',attempt_verified:true,stage:proven?contract.stage:'unreviewed_stage'});
     const evidence=core.snapshot().items[id].evidence;
     assert.equal(evidence.attempt_verified,proven,id);assert.equal(evidence.stage,proven?contract.stage:undefined,id);

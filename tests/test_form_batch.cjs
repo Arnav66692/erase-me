@@ -66,6 +66,16 @@ test('new companion capability allows reviewed new submissions while ordinary fi
   }
 });
 
+test('the previous hardened companion cannot reserve the newly added SPF or Apollo submission',async()=>{
+  for(const routeId of ['searchpeoplefree','apollo']){
+    let prepared=0,dispatched=0;
+    const workspace={routes:()=>[{id:routeId,automationLevel:'companion',requiredAffirmations:[]}],prepareReviewed:async()=>{prepared++;throw new Error('Must not reserve.');}};
+    const batch=Batch.create({workspace,companion:async payload=>{if(payload.action==='ping')return{routes:[routeId],capabilities:['automatic-submit-v1','reviewed-initial-submit-v2','explicit-fields-v1']};dispatched++;}});
+    const result=await batch.run([{routeId}],{authorized:true,automate:true});
+    assert.equal(result.status,'stopped');assert.match(result.detail,/Update the companion/);assert.equal(prepared,0);assert.equal(dispatched,0);
+  }
+});
+
 test('batch reserves and persists each form sequentially, never all operations upfront', async () => {
   const f = fixture();
   const result = await f.batch.run(f.previews, { authorized: true });

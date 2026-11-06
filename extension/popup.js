@@ -13,6 +13,6 @@ document.getElementById('enable').addEventListener('click',async()=>{
 document.getElementById('enable-helper').addEventListener('click',async()=>{
   try{
     const granted=await chrome.permissions.request({permissions:['nativeMessaging']});
-    document.getElementById('result').textContent=granted?'Local helper access enabled. Install the per-user host from the source instructions, then choose Check local challenge helper in your workspace.':'Local helper access was not granted. No recognition attempt started.';
+    document.getElementById('result').textContent=granted?'Local connector access enabled. Install the specific challenge or removal-mail host from the source instructions, then explicitly connect it in your workspace.':'Local connector access was not granted. No connector action started.';
   }catch(_){document.getElementById('result').textContent='Local helper access could not be enabled.';}
 });

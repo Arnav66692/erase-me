@@ -135,7 +135,7 @@ function readinessClock(p) {
 
 test('automatic contracts are frozen, narrowly scoped and distinguish initiation from request submission', () => {
   assert.equal(Object.isFrozen(Automatic.CONTRACTS), true);
-  assert.deepEqual(Object.keys(Automatic.CONTRACTS), ['fastpeoplesearch', 'tr-numaraara', 'advancedbackgroundchecks', 'tr-nosorgulama', 'tr-numarasor']);
+  assert.deepEqual(Object.keys(Automatic.CONTRACTS), ['fastpeoplesearch', 'tr-numaraara', 'advancedbackgroundchecks', 'tr-nosorgulama', 'tr-numarasor', 'searchpeoplefree', 'apollo']);
   for (const contract of Object.values(Automatic.CONTRACTS)) assert.equal(Object.isFrozen(contract), true);
   assert.equal(Automatic.CONTRACTS.fastpeoplesearch.stage, 'verification_initiation');
   assert.equal(Automatic.CONTRACTS['tr-numaraara'].stage, 'request_submission');
@@ -143,6 +143,9 @@ test('automatic contracts are frozen, narrowly scoped and distinguish initiation
   assert.equal(Object.isFrozen(Automatic.CONTRACTS.advancedbackgroundchecks.policyUrls), true);
   assert.equal(Automatic.CONTRACTS['tr-nosorgulama'].stage, 'request_submission');
   assert.equal(Automatic.CONTRACTS['tr-numarasor'].stage, 'request_submission');
+  assert.equal(Automatic.CONTRACTS.searchpeoplefree.stage, 'verification_initiation');
+  assert.equal(Automatic.CONTRACTS.searchpeoplefree.requiredCapability, 'reviewed-initial-submit-v3');
+  assert.equal(Automatic.CONTRACTS.apollo.requiredCapability, 'reviewed-initial-submit-v3');
 });
 
 test('FPS requires the real broker response and never creates or alters a challenge token', () => {
@@ -409,13 +412,13 @@ test('new module injection in the same document preserves the one-shot journal',
   context.EraseAutomaticExecutor.submit(p.payload, context); assert.equal(p.clicks(), 1);
 });
 
-test('a stale API is replaced on injection so current contracts are available, then v3 reinjection remains stable', () => {
+test('a stale API is replaced on injection so current contracts are available, then v5 reinjection remains stable', () => {
   const fs = require('node:fs'), vm = require('node:vm'), p = page();
   const source = fs.readFileSync(require.resolve('../extension/automatic-executor.js'), 'utf8');
-  for (const version of ['automatic-executor-v1', 'automatic-executor-v2']) {
+  for (const version of ['automatic-executor-v1', 'automatic-executor-v2', 'automatic-executor-v3', 'automatic-executor-v4']) {
     const context = { ...p.env, EraseBrokerExecutor: Base, EraseAutomaticExecutor: { version }, URL, Map, WeakMap, Object, JSON, Set };
     vm.runInNewContext(source, context); const upgraded = context.EraseAutomaticExecutor;
-    assert.equal(upgraded.version, 'automatic-executor-v3'); assert.equal(typeof upgraded.waitReady, 'function');
+    assert.equal(upgraded.version, 'automatic-executor-v5'); assert.equal(typeof upgraded.waitReady, 'function');
     assert.ok(upgraded.CONTRACTS.advancedbackgroundchecks);
     vm.runInNewContext(source, context); assert.equal(context.EraseAutomaticExecutor, upgraded);
   }

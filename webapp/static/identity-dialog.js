@@ -90,7 +90,7 @@
       finally{frozen=null;operation=null;running=false;editable(true);approval.checked=false;if(dialog.open)close.focus({preventScroll:true});}
     });
     close.addEventListener('click',()=>dialog.close());
-    hold.addEventListener('click',async()=>{if(running)return;try{if(!preview)throw new Error('No current request.');await workspace.holdRoute('fastpeoplesearch',preview);onChange();dialog.close();onFeedback('This request is on hold. No identity details were sent.');}catch(_){status.textContent='The request changed or could not be held. Close this dialog and review its current next step. No identity details were sent.';}});
+    hold.addEventListener('click',async()=>{if(running)return;try{if(!preview)throw new Error('No current request.');await workspace.holdRoute('fastpeoplesearch',preview);onChange();dialog.close();onFeedback('This request is on hold. No identity details were sent.');}catch(error){status.textContent=error?.code==='local_mail_revocation_unconfirmed'?error.message:'The request changed or could not be held. Close this dialog and review its current next step. No identity details were sent.';onFeedback(status.textContent);}});
     const cancel=()=>{epoch++;clear();status.textContent='';};
     dialog.addEventListener('cancel',cancel);
     dialog.addEventListener('close',()=>{cancel();if(opener?.isConnected)opener.focus({preventScroll:true});});

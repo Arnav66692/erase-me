@@ -7,7 +7,7 @@ root = Path(__file__).resolve().parents[1]
 destination = root / 'preview' / 'public'
 destination.mkdir(exist_ok=True)
 files = ['index.html', 'app.js', 'hero.js', 'styles.css', 'broker-audit.js', 'broker-routes.js',
-         'footprint-planner.js', 'workspace-core.js', 'removal-mail-client.js', 'removal-session.js', 'contact-setup.js', 'next-steps.js', 'form-batch.js', 'identity-dialog.js', 'footprint-ui.js', 'workspace-ui.js', 'companion.html', 'companion.css']
+         'footprint-planner.js', 'workspace-core.js', 'removal-mail-client.js', 'local-removal-mail.js', 'removal-session.js', 'contact-setup.js', 'next-steps.js', 'form-batch.js', 'identity-dialog.js', 'footprint-ui.js', 'workspace-ui.js', 'companion.html', 'companion.css']
 files += ['fonts/' + p.name for p in (root / 'webapp/static/fonts').iterdir()
           if p.is_file() and p.suffix in ('.woff2', '.ttf', '.txt')]
 for filename in files:
@@ -18,7 +18,7 @@ shutil.copyfile(root / 'extension' / 'automatic-executor.js', destination / 'aut
 shutil.copyfile(root / 'extension' / 'identity-details.js', destination / 'identity-details.js')
 page = destination / 'index.html'
 scripts = ''.join(f'<script src="/{name}" defer></script>\n  '
-                  for name in ('broker-audit.js', 'broker-routes.js', 'identity-details.js', 'footprint-planner.js', 'workspace-core.js', 'removal-mail-client.js', 'automatic-executor.js', 'removal-session.js', 'contact-setup.js', 'next-steps.js', 'form-batch.js', 'identity-dialog.js', 'footprint-ui.js', 'workspace-ui.js'))
+                  for name in ('broker-audit.js', 'broker-routes.js', 'identity-details.js', 'footprint-planner.js', 'workspace-core.js', 'removal-mail-client.js', 'local-removal-mail.js', 'automatic-executor.js', 'removal-session.js', 'contact-setup.js', 'next-steps.js', 'form-batch.js', 'identity-dialog.js', 'footprint-ui.js', 'workspace-ui.js'))
 page.write_text(page.read_text().replace('id="signup-email" name="email" type="email"', 'id="signup-email" name="email" type="text" inputmode="email"').replace('<html lang="en">', '<html lang="en" data-browser-workspace="true">').replace('<script src="/app.js" defer></script>',
                                        scripts + '<script src="/app.js" defer></script>'))
 downloads = destination / 'downloads'
@@ -29,4 +29,12 @@ with zipfile.ZipFile(downloads / 'erase-me-companion.zip', 'w', zipfile.ZIP_DEFL
                  'popup.html', 'popup.css', 'popup.js'):
         bundle.write(root / 'extension' / name, name)
     bundle.write(root / 'LICENSE', 'LICENSE')
+# Standalone source distribution for the optional per-user native mail connector.
+# Keep the engine's relative layout; credentials and local grants are never packaged.
+with zipfile.ZipFile(downloads / 'erase-me-local-mail.zip', 'w', zipfile.ZIP_DEFLATED) as bundle:
+    for name in ('tools/native_mail_host.py', 'tools/install_mail_host.py',
+                 'tools/install_challenge_host.py', 'tools/connect_removal_gmail.py',
+                 'tools/configure_removal_mailbox.py', 'preview/lib/removal_mail.py',
+                 'docs/LOCAL_REMOVAL_MAIL.md', 'docs/GMAIL_OAUTH.md', 'LICENSE'):
+        bundle.write(root / name, name)
 print('Public workspace built. Personal profiles stay in the browser; no server account or recurring work.')

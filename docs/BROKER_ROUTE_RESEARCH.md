@@ -444,3 +444,32 @@ The existing FastPeopleSearch and NumaraAra forms were also checked live on Nove
 URL-encoded POST forms, empty target, noValidate=false, empty submitter name/value and
 no submitter override attributes. Synthetic native-browser checks validate the executor's
 behavior; they do not establish live delivery, correct-record matching or deletion.
+
+## Version 0.10.0 SearchPeopleFree initial contract
+
+A November 5 read-only check confirmed form#o_form, same-page GET, URL-encoded encoding,
+empty target and native validation enabled. Its exact own-email agreement and four
+policy links are reviewed before the native action. Inputs have no name attributes;
+the normal site handler intercepts submission. The companion uses that normal button,
+requires the genuine Turnstile response, and never calls the site's internal API.
+Hidden success/sending elements are not accepted as proof. A native event records an
+attempt only. A per-user local-owned contact is allowed; shared operator aliases are not.
+
+TelefonSorgulama's observed handler asynchronously calls form.submit() after its normal
+security callback. That bypasses the current native submit event guard, so no automatic
+contract was enabled. Its approved fields can still be entered in Erase Me and filled.
+
+## Version 0.10.0 Apollo initial contract
+
+A November 5 read-only check confirmed the required work-email input, its associated
+label, the MUI fieldset and the exact **Get verification information** submit control.
+The form uses same-page GET and has no consent checkbox or challenge. The workspace
+requires a separately affirmed business email and displays Erase Me's own authorization
+as such; it does not attribute that authorization to Apollo.
+
+Because a native GET fallback would put the named email field into the URL, the
+companion installs and pins an additional `form-action 'none'` CSP before disclosure.
+This blocks default form navigation while permitting Apollo's normal React handler to
+prevent default and make its own request. Local Chromium checks verified both paths
+with synthetic data. The companion calls no internal broker API. Only the checked
+initial event is recorded; later email verification and deletion remain unintegrated.

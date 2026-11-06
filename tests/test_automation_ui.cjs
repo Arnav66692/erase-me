@@ -12,7 +12,7 @@ const listing = 'https://www.spokeo.com/Example-Person/California/Example-City/p
 const key = 'a'.repeat(64);
 function gate() { let resolve; const promise = new Promise(done => { resolve = done; }); return { promise, resolve }; }
 
-async function fixture({ bound = [], started = [], held = [], delayed = false, delayedMail = false, delayedContact = false, preMatched = false, globals = true, country = 'US', matchResult,focusAvailable=true,focusCapability=true,beforeFocusPing } = {}) {
+async function fixture({ bound = [], started = [], held = [], delayed = false, delayedMail = false, delayedContact = false, preMatched = false, globals = true, country = 'US', matchResult,focusAvailable=true,focusCapability=true,beforeFocusPing,localConnector=false,localRevokeFailure=false } = {}) {
   const values = new Map(); let sequence = 0, stamp = '2026-11-05T00:00:00.000Z';
   const core = Core.create({ storage: { getItem: id => values.get(id) || null, setItem: (id, value) => values.set(id, value), removeItem: id => values.delete(id) },
     uuid: () => (++sequence).toString(16).padStart(32, '0'), now: () => stamp });
@@ -106,6 +106,13 @@ async function fixture({ bound = [], started = [], held = [], delayed = false, d
     return {status:'ready',request_id,route_id:request.route_id,operation_id:request.operation_id,contact_email,expires_at,
       capability:Buffer.from(JSON.stringify(claims)).toString('base64url')+'.'+'a'.repeat(43),automatic_execution:false};
   }};
+  const localCalls=[];
+  const local={create:()=>({transport:'local_native',status:async()=>{localCalls.push({action:'status'});return{enabled:true,configured:true,contact_email:'ownremoval@gmail.com'};},session:async request=>{
+    localCalls.push({action:'session',request});
+    const request_id='f'.repeat(32),issued_at=Math.floor(Date.parse(stamp)/1000),expires_at=issued_at+7*86400,contact_email='ownremoval+erase-'+request_id+'@gmail.com';
+    const claims={v:1,request_id,route_id:request.route_id,operation_id:request.operation_id,recipient:contact_email,issued_at,expires_at};
+    return{status:'ready',request_id,route_id:request.route_id,operation_id:request.operation_id,contact_email,expires_at,capability:Buffer.from(JSON.stringify(claims)).toString('base64url')+'.'+'a'.repeat(43),automatic_execution:false,transport:'local_native',workspace_id:core.profile().id};
+  },discardIssuedContact:async(request,response)=>{localCalls.push({action:'discard',request,response});return{status:'revoked'};},revoke:async request=>{localCalls.push({action:'revoke',request});const item=Object.values(core.snapshot().items).find(item=>item.mail_contact?.capability===request.capability);assert.equal(item.held,true);assert.equal(item.mail_contact.revoked,true);if(localRevokeFailure)throw new Error('Unavailable');return{status:'revoked'};}})};
   const listeners = new Map(); let timeoutId = 0;
   const window = {
     addEventListener: (type, callback) => listeners.set(type, callback), removeEventListener: type => listeners.delete(type),
@@ -122,12 +129,12 @@ async function fixture({ bound = [], started = [], held = [], delayed = false, d
       }else if(payload.action==='focus-existing')result={status:focusAvailable?'focused':'unavailable',routeId:payload.routeId,stage:payload.stage};
       else {
         if(payload.action==='ping')beforeFocusPing?.(core);
-        result = { routes: core.routes().filter(route => route.automationLevel === 'companion').map(route => route.id), capabilities: ['explicit-fields-v1', 'structured-fields-v1','fastpeoplesearch-continuation-v1',...(focusCapability?['owned-tab-focus-v1']:[])] };
+        result = { routes: core.routes().filter(route => route.automationLevel === 'companion').map(route => route.id), capabilities: ['explicit-fields-v1', 'structured-fields-v1','fastpeoplesearch-continuation-v1',...(focusCapability?['owned-tab-focus-v1']:[]),...(localConnector?['local-removal-mail-v1']:[])] };
       }
       queueMicrotask(() => listeners.get('message')?.({ source: window, origin: 'https://erase-me-preview.vercel.app', data: { source: 'erase-companion', requestId: message.requestId, reply: { ok: true, result } } }));
     }
   };
-  const context = { document, EraseWorkspace: workspace, EraseFormBatch: batch,EraseNextSteps:NextSteps,EraseIdentityDialog:{create:()=>({open:async(routeId)=>identityOpened.push(routeId)})}, ...(globals ? { EraseAutomaticExecutor: Automatic, EraseRemovalSession: session, EraseRemovalMail: mail, EraseContactSetup: ContactSetup } : {}),
+  const context = { document, EraseWorkspace: workspace, EraseFormBatch: batch,EraseNextSteps:NextSteps,EraseIdentityDialog:{create:()=>({open:async(routeId)=>identityOpened.push(routeId)})}, ...(localConnector?{EraseLocalRemovalMail:local}:{}), ...(globals ? { EraseAutomaticExecutor: Automatic, EraseRemovalSession: session, EraseRemovalMail: mail, EraseContactSetup: ContactSetup } : {}),
     URL, Blob, CustomEvent: class { constructor(type) { this.type = type; } }, location: { origin: 'https://erase-me-preview.vercel.app' },
     crypto: { randomUUID: () => (++sequence).toString(16).padStart(32, '0') }, setTimeout: (_callback, delay) => { deadlines.push(delay); return ++timeoutId; }, clearTimeout() {}, window };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../webapp/static/workspace-ui.js'), 'utf8'), context);
@@ -142,7 +149,7 @@ async function fixture({ bound = [], started = [], held = [], delayed = false, d
   const click = async target => { if (typeof target === 'string') target = button(target); assert.ok(target); assert.equal(target.disabled, false); target.focus(); return target.listeners.click(); };
   const toggle = (id, checked = true) => { const element = typeof id === 'string' ? byId(id) : id; assert.ok(element); assert.equal(element.disabled, false); element.checked = checked; element.listeners.change?.(); };
   const fillNames = id => { input(core.routes().find(route => route.id === id).name + ' Your first name').value = 'Example'; input(core.routes().find(route => route.id === id).name + ' Your last name').value = 'Person'; };
-  return { core, workspace, body, document, values, byId, button, input, click, toggle, fillNames, render, changes, posted, saves, batches, sessions, mailCalls, contactCalls, events, creates, deadlines,identityOpened,
+  return { core, workspace, body, document, values, byId, button, input, click, toggle, fillNames, render, changes, posted, saves, batches, sessions, mailCalls, contactCalls, events, creates, deadlines,identityOpened,localCalls,
     text: () => body.textContent, time: value => { stamp = value; }, complete: runGate.resolve, completeMail: mailGate.resolve,completeContact:contactGate.resolve };
 }
 
@@ -441,4 +448,52 @@ test('next-step renders preserve an intentional focused control and pause suppre
   assert.equal(ui.document.activeElement,ui.byId('next-step-fastpeoplesearch-primary'));
   await ui.core.api('/api/campaign',{method:'POST',body:JSON.stringify({action:'pause'})});ui.render();
   assert.equal(ui.byId('next-step-fastpeoplesearch'),undefined);assert.match(ui.byId('next-steps-panel').textContent,/paused/);assert.deepEqual(ui.posted,[]);
+});
+
+
+test('public local-mail controls make no provider request on render and keep local contacts out of operator mail batches',async()=>{
+  const ui=await fixture({localConnector:true,held:['usphonebook']});
+  assert.deepEqual(ui.localCalls,[]);assert.deepEqual(ui.contactCalls,[]);
+  await ui.click(ui.byId('connect-local-removal-mail'));assert.deepEqual(ui.localCalls.map(call=>call.action),['status']);ui.render();
+  assert.equal(ui.byId('local-mail-usphonebook-contact'),undefined);
+  await ui.click(ui.byId('local-mail-fastpeoplesearch-contact'));ui.render();
+  const contact=ui.core.snapshot().items.fastpeoplesearch.mail_contact;
+  assert.equal(contact.transport,'local_native');assert.equal(contact.workspace_id,ui.core.profile().id);assert.deepEqual(ui.contactCalls,[]);
+  ui.fillNames('fastpeoplesearch');await ui.click('Review form batch');
+  assert.equal(ui.byId('form-batch-mail-route-fastpeoplesearch'),undefined);
+  assert.equal(ui.byId('form-batch-mail').disabled,true);
+  assert.ok(ui.text().includes(contact.contact_email));
+});
+
+test('holding a native-mail route persists the hold before revoking and failed revocation cannot resume mail',async()=>{
+  for(const failure of [false,true]){
+    const ui=await fixture({localConnector:true,localRevokeFailure:failure,held:['usphonebook']});
+    await ui.click(ui.byId('connect-local-removal-mail'));ui.render();await ui.click(ui.byId('local-mail-fastpeoplesearch-contact'));ui.render();
+    await ui.click(ui.byId('hold-route-fastpeoplesearch'));
+    const item=ui.core.snapshot().items.fastpeoplesearch;assert.equal(item.held,true);assert.equal(item.mail_contact.revoked,true);
+    assert.equal(ui.localCalls.filter(call=>call.action==='revoke').length,1);
+    if(failure)assert.match(ui.byId('campaign-feedback').textContent,/could not confirm.*revocation/);
+    ui.core.resumeRoute('fastpeoplesearch');ui.render();assert.equal(ui.byId('local-mail-fastpeoplesearch-check'),undefined);assert.match(ui.text(),/cannot revive/);
+  }
+});
+test('a stale hold button cannot hold or revoke a replacement workspace',async()=>{
+  const ui=await fixture({localConnector:true});const oldProfileId=ui.core.profile().id,oldButton=ui.byId('hold-route-fastpeoplesearch');
+  ui.core.remove();await ui.core.api('/api/signup',{method:'POST',body:JSON.stringify({name:'Other Person',age:42,email:'other@example.test',authorized:true})});await ui.core.api('/api/profile',{method:'POST',body:JSON.stringify({country:'US'})});
+  assert.notEqual(ui.core.profile().id,oldProfileId);
+  await ui.click(oldButton);assert.notEqual(ui.core.snapshot().items.fastpeoplesearch.held,true);assert.deepEqual(ui.localCalls,[]);assert.match(ui.byId('campaign-feedback').textContent,/workspace changed/);
+  assert.throws(()=>ui.core.holdRoute('fastpeoplesearch',undefined,oldProfileId),/workspace changed/);assert.notEqual(ui.core.snapshot().items.fastpeoplesearch.held,true);
+});
+test('unreconciled local issuance exposes no retry button after a route is resumed',async()=>{
+  const ui=await fixture({localConnector:true});await ui.click(ui.byId('connect-local-removal-mail'));ui.render();
+  const request=ui.core.mailSessionRequest('fastpeoplesearch','local_native');ui.core.recordLocalMailSetupClosure('fastpeoplesearch',request.operation_id,ui.core.profile().id,false);
+  ui.core.resumeRoute('fastpeoplesearch');ui.render();
+  assert.equal(ui.byId('local-mail-fastpeoplesearch-contact'),undefined);assert.match(ui.text(),/closed for manual reconciliation/);assert.deepEqual(ui.localCalls.map(call=>call.action),['status']);
+});
+test('every failed local contact binding invokes the issued-grant cleanup path',async()=>{
+  const ui=await fixture({localConnector:true});await ui.click(ui.byId('connect-local-removal-mail'));ui.render();
+  ui.workspace.bindMailContact=async id=>{ui.core.holdRoute(id);throw new Error('Hold committed before binding.');};
+  await ui.click(ui.byId('local-mail-searchpeoplefree-contact'));
+  assert.deepEqual(ui.localCalls.map(call=>call.action),['status','session','discard']);
+  const discarded=ui.localCalls.find(call=>call.action==='discard');assert.equal(discarded.request.route_id,'searchpeoplefree');assert.equal(discarded.response.workspace_id,ui.core.profile().id);
+  assert.equal(ui.core.snapshot().items.searchpeoplefree.mail_contact,undefined);assert.equal(ui.core.snapshot().items.searchpeoplefree.held,true);assert.match(ui.byId('campaign-feedback').textContent,/unused local grant was revoked/);
 });

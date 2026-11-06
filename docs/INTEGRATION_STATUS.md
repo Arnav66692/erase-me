@@ -11,11 +11,12 @@ contract exists. FastPeopleSearch additionally has a reviewed in-app missing-inf
 collector and one final matching-form submission attempt after its authenticated
 continuation. A submit attempt, email confirmation or matching form is not removal.
 
-**Mail availability:** automatic receipt/confirmation checks are a private operator pilot
-using a separately connected removal-only account. They are not an anonymous public
-shared-mailbox service. Personal inboxes stay disconnected. Other users follow the
-broker's official email steps themselves. No polling, recurring schedule or automatic
-resubmission is enabled. The existing USPhonebook pilot remains held.
+**Mail availability:** public users can install the local connector and authorize their
+own separate Gmail account for on-demand receipt checks. No operator key or hosted
+credential upload is required for that transport. It requires one-time native-host and
+installed-client OAuth setup. The existing hosted shared-mailbox relay remains a private
+operator pilot. Personal inboxes stay disconnected. No polling, recurring schedule or automatic
+resubmission is enabled. The existing USPhonebook and FastPeopleSearch live pilots remain held.
 
 In the table, **Yes** means the approved initial fields can be entered in Erase Me and
 filled by the desktop Chrome companion. **Not integrated** means the app has no executable
@@ -25,12 +26,12 @@ deletion has been established or should be inferred from the other columns.
 | Route | Region | Channel type | In-app fields + fill | Initial action | Email continuation | Final request action | Correct-record matching | Verified deletion |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | `peopledatalabs-form` · People Data Labs | * | Reviewed form | Yes | Initiates email verification | Manual; record-associated address | Not integrated | Manual/unobserved | None |
-| `usphonebook` · USPhonebook | US | Reviewed form | Yes | Manual submit after fill | Private operator pilot; second-form prefill | Not integrated | Manual/unobserved | None |
-| `searchpeoplefree` · SearchPeopleFree | US | Reviewed form | Yes | Manual submit after fill | Manual; personally owned address | Not integrated | Manual/unobserved | None |
+| `usphonebook` · USPhonebook | US | Reviewed form | Yes | Manual submit after fill | Local connector or private operator pilot; second-form prefill | Not integrated | Manual/unobserved | None |
+| `searchpeoplefree` · SearchPeopleFree | US | Reviewed form | Yes | Guarded native submit | Local-owned Gmail receipt checks; confirmation held | Not integrated | Manual/unobserved | None |
 | `smartbackgroundchecks` · SmartBackgroundChecks | US | No current accessible form contract | No | Not integrated | Not integrated | Not integrated | Manual/unobserved | None |
-| `fastpeoplesearch` · FastPeopleSearch | US | Reviewed form | Yes | Guarded native submit | Private operator pilot; authenticated matching form | Guarded matching-form attempt | Manual/unobserved | None |
+| `fastpeoplesearch` · FastPeopleSearch | US | Reviewed form | Yes | Guarded native submit | Local connector or private operator pilot; authenticated matching form | Guarded matching-form attempt | Manual/unobserved | None |
 | `spokeo` · Spokeo | US | Reviewed form | Yes | Manual submit after fill | Not integrated | Not integrated | Narrow structured listing check | None |
-| `apollo` · Apollo | * | Reviewed form | Yes | Manual submit after fill | Manual; record-associated business address | Not integrated | Manual/unobserved | None |
+| `apollo` · Apollo | * | Reviewed form | Yes | Guarded native submit | Manual; record-associated business address | Not integrated | Manual/unobserved | None |
 | `addresses` · Addresses.com | US | No current accessible form contract | No | Not integrated | Not integrated | Not integrated | Manual/unobserved | None |
 | `advancedbackgroundchecks` · AdvancedBackgroundChecks | US | Reviewed form | Yes | Guarded native submit | Not integrated | Not integrated | Manual/unobserved | None |
 | `beenverified` · BeenVerified | US | No current accessible form contract | No | Not integrated | Not integrated | Not integrated | Manual/unobserved | None |
@@ -97,7 +98,8 @@ deletion has been established or should be inferred from the other columns.
 | Local cleanup planner | Implemented | Own-list JSON/CSV import, keep/export/remove choice, export acknowledgement and self-reports |
 | Google/Reddit/DROP distinctions | Guidance implemented | Search-result removal differs from source deletion; content deletion precedes account closure; DROP is California-specific |
 | Account/social/company/preference execution | Staged | Local planning is not account closure, content deletion or delivered company requests |
-| Public automatic email confirmations | Staged | Current relay requires a private operator setup and separate removal-only mailbox |
+| Per-user removal-only mail | Implemented with setup | Own dedicated Gmail, local native host and OAuth client; supported confirmations only |
+| Managed zero-setup mailbox service | Not implemented | Hosted shared-mail relay remains private; no anonymous shared credential access |
 | Remaining route-specific final actions | Staged | Need observed official contracts and consented live validation |
 | Real matched-record removal verification | Unverified | Needs a previously matched record plus correlated completion and independent absence evidence |
 
@@ -108,3 +110,17 @@ Source of truth: [route catalog](../webapp/static/broker-routes.js),
 [final executor](../extension/final-executor.js), and
 [broker observations](BROKER_ROUTE_RESEARCH.md). The broader sequence remains
 [discover → choose → export → submit → verify → manually recheck](CLEANUP_ROADMAP.md).
+
+## Public local-mail setup
+
+The per-user connector supports local-owned contacts for FastPeopleSearch, USPhonebook
+and SearchPeopleFree. It keeps credentials and durable grants on the person's computer.
+Provider identity, primary-email exclusion, operation scope, quota and revocation checks
+precede mail reads. SearchPeopleFree's shared-contact restriction remains enforced on
+the hosted relay; only a personally owned local account can supply its new contact.
+Its authenticated receipt does not yet release a confirmation link automatically.
+
+This is a supported-desktop, self-configured software path, not automatic account creation
+or an unlimited managed mail service. See [setup and limits](LOCAL_REMOVAL_MAIL.md).
+TelefonSorgulama retains manual submission because its asynchronous native form.submit()
+can bypass the current event guard; an unsafe automated adapter was not enabled.
