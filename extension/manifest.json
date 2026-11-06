@@ -1,10 +1,15 @@
 {
   "manifest_version": 3,
   "name": "Erase Me Companion",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "description": "Fill approved privacy forms in your browser. No personal inbox access or scheduled work.",
-  "permissions": ["scripting", "storage"],
-  "optional_permissions": ["nativeMessaging"],
+  "permissions": [
+    "scripting",
+    "storage"
+  ],
+  "optional_permissions": [
+    "nativeMessaging"
+  ],
   "optional_host_permissions": [
     "https://privacy.peopledatalabs.com/*",
     "https://www.usphonebook.com/*",
@@ -25,9 +30,33 @@
     "https://www.whitepages.com/*",
     "https://cmadnm.cawebhosting.ca/*",
     "https://thatsthem.com/*",
-    "https://www.peoplefinders.com/*"
+    "https://www.peoplefinders.com/*",
+    "https://www.lnnte-dncl.gc.ca/*",
+    "https://www.tpsonline.org.uk/*",
+    "https://www.192.com/*",
+    "https://app.intelius.com/*",
+    "https://app.truthfinder.com/*",
+    "https://app.instantcheckmate.com/*",
+    "https://app.ussearch.com/*",
+    "https://www.canada411.ca/*",
+    "https://www.truepeoplesearch.com/*"
   ],
-  "background": {"service_worker": "background.js"},
-  "action": {"default_popup": "popup.html", "default_title": "Erase Me Companion"},
-  "content_scripts": [{"matches": ["https://erase-me-preview.vercel.app/*"], "js": ["bridge.js"], "run_at": "document_start"}]
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Erase Me Companion"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://erase-me-preview.vercel.app/*"
+      ],
+      "js": [
+        "bridge.js"
+      ],
+      "run_at": "document_start"
+    }
+  ]
 }

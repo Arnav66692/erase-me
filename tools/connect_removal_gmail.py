@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+from contextlib import nullcontext
 from datetime import datetime, timezone
 import hashlib
 import hmac
@@ -36,6 +37,7 @@ SEND_SCOPES = SCOPES | {GMAIL_SEND}
 SCOPE_ALIASES = {'https://www.googleapis.com/auth/userinfo.email': 'email'}
 MAX_RESPONSE = 65536
 TOKEN_FILE = 'gmail-oauth.json'
+VERSIONED_TOKEN_FILE = re.compile(r'gmail-oauth-[a-f0-9]{32}\.json\Z')
 
 
 class OAuthError(Exception):
@@ -311,35 +313,39 @@ def validate_config(data: object) -> dict:
 
 
 def save_config(path: Path, data: dict, *, replace: bool = False) -> None:
+    import gmail_app_mail as connections
     data = validate_config(data)
     path = _path(path)
-    if path.name != TOKEN_FILE:
+    if path.name != TOKEN_FILE and not VERSIONED_TOKEN_FILE.fullmatch(path.name):
         raise OAuthError('Use the dedicated gmail-oauth.json token file.')
+    if VERSIONED_TOKEN_FILE.fullmatch(path.name) and replace:
+        raise OAuthError('A selected OAuth connection is immutable. Use guided setup for an intentional reconnection.')
     try:
         directory = private.safe_directory(path.parent, create=True)
-        if path.exists() or path.is_symlink():
-            private._regular(path)
-            if not replace:
-                raise OAuthError('OAuth credentials already exist. Use --replace for an explicit reconnection.')
-        fd, temporary = tempfile.mkstemp(prefix='.gmail-oauth-', dir=directory)
-        try:
-            with os.fdopen(fd, 'w', encoding='utf-8') as stream:
-                json.dump(data, stream, indent=2)
-                stream.write('\n')
-                stream.flush()
-                os.fsync(stream.fileno())
-            os.chmod(temporary, 0o600)
-            os.replace(temporary, path)
-        finally:
-            if os.path.exists(temporary):
-                os.unlink(temporary)
-    except (ValueError, OSError):
+        with (connections._selection_lock(directory) if path.name == TOKEN_FILE else nullcontext()):
+            if path.exists() or path.is_symlink():
+                private._regular(path)
+                if not replace:
+                    raise OAuthError('OAuth credentials already exist. Use --replace for an explicit reconnection.')
+            fd, temporary = tempfile.mkstemp(prefix='.gmail-oauth-', dir=directory)
+            try:
+                with os.fdopen(fd, 'w', encoding='utf-8') as stream:
+                    json.dump(data, stream, indent=2)
+                    stream.write('\n')
+                    stream.flush()
+                    os.fsync(stream.fileno())
+                os.chmod(temporary, 0o600)
+                os.replace(temporary, path)
+            finally:
+                if os.path.exists(temporary):
+                    os.unlink(temporary)
+    except (ValueError, OSError, connections.AppMailError):
         raise OAuthError('OAuth credentials could not be saved to an owner-private directory outside the repository.') from None
 
 
 def load_config(path: Path) -> dict:
     path = _path(path)
-    if path.name != TOKEN_FILE:
+    if path.name != TOKEN_FILE and not VERSIONED_TOKEN_FILE.fullmatch(path.name):
         raise OAuthError('Use the dedicated gmail-oauth.json token file.')
     try:
         private.safe_directory(path.parent)
@@ -353,8 +359,8 @@ def load_config(path: Path) -> dict:
 
 def connect(mailbox: str, personal_email: str, client: dict, *, opener=webbrowser.open,
             receiver_factory=OAuthReceiver, request=request_json, timeout: float = 120,
-            allow_sending=False) -> dict:
-    if type(allow_sending) is not bool:
+            allow_sending=False, revoke_on_failure=True) -> dict:
+    if type(allow_sending) is not bool or type(revoke_on_failure) is not bool:
         raise OAuthError('Choose the optional sending permission explicitly.')
     requested = SEND_SCOPES if allow_sending else SCOPES
     mailbox = validate_mailbox(mailbox, personal_email)
@@ -371,7 +377,8 @@ def connect(mailbox: str, personal_email: str, client: dict, *, opener=webbrowse
             issued = tokens(response, expected=requested)
             owner = identity(issued['access_token'], mailbox, request=request)
         except OAuthError:
-            revoke(response, request=request)
+            if revoke_on_failure:
+                revoke(response, request=request)
             raise
     return validate_config({'version': 1, 'provider': 'gmail_oauth', 'mailbox': mailbox,
                             'personal_email_sha256': private.personal_digest(personal_email), 'client': client,
@@ -379,8 +386,11 @@ def connect(mailbox: str, personal_email: str, client: dict, *, opener=webbrowse
                             'connected_at': datetime.now(timezone.utc).isoformat()})
 
 
-def check_token(path: Path, *, request=request_json, now: float | None = None) -> dict:
+def check_token(path: Path, *, request=request_json, now: float | None = None,
+                persist=True, revoke_on_failure=True) -> dict:
     """Check identity on demand, refreshing only when needed. Never calls Gmail."""
+    if type(persist) is not bool or type(revoke_on_failure) is not bool:
+        raise OAuthError('Choose explicit connection-check options.')
     data = load_config(path)
     now = time.time() if now is None else now
     if data['tokens']['expires_at'] <= now + 60:
@@ -388,14 +398,17 @@ def check_token(path: Path, *, request=request_json, now: float | None = None) -
         try:
             data['tokens'] = tokens(response, previous=data['tokens'], now=now, expected=frozenset(data['scopes']))
         except OAuthError:
-            revoke(response, request=request)
+            if revoke_on_failure:
+                revoke(response, request=request)
             raise
     try:
         data['identity'] = identity(data['tokens']['access_token'], data['mailbox'], request=request)
     except IdentityMismatch:
-        revoke(data['tokens'], request=request)
+        if revoke_on_failure:
+            revoke(data['tokens'], request=request)
         raise
-    save_config(path, data, replace=True)
+    if persist and Path(path).name == TOKEN_FILE:
+        save_config(path, data, replace=True)
     return data
 
 
@@ -404,6 +417,7 @@ def default_config() -> Path:
 
 
 def main(argv: list[str] | None = None) -> int:
+    import gmail_app_mail as connections
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--mailbox')
     parser.add_argument('--personal-email')
@@ -414,17 +428,26 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument('--allow-sending', action='store_true', help='Explicitly request optional Gmail sending permission through fresh consent.')
     args = parser.parse_args(argv)
     try:
+        path = _path(args.config)
+        selected = connections.selection(path.parent)
         if args.check_token:
-            check_token(args.config)
+            if selected and path.name == TOKEN_FILE:
+                if selected['provider'] != 'gmail_oauth':
+                    print('The selected connection uses an app password. Use the local setup screen to check it; no other account was accessed.')
+                    return 1
+                path = connections.oauth_config_path(path.parent, selected)
+            check_token(path, revoke_on_failure=False)
             print('Dedicated Gmail identity checked. No Gmail messages were accessed and no scheduled work was started.')
             return 0
         if not all((args.mailbox, args.personal_email, args.client_json)):
             raise OAuthError('Provide --mailbox, --personal-email and --client-json for the dedicated account.')
         validate_mailbox(args.mailbox, args.personal_email)
         client = load_client(args.client_json)
-        path = _path(args.config)
         if path.name != TOKEN_FILE:
             raise OAuthError('Use the dedicated gmail-oauth.json token file.')
+        if selected and (selected['version'] == 2 or selected['provider'] != 'gmail_oauth'):
+            print('Use the guided local setup with intentional replacement to change the selected connection. No saved connection was changed.')
+            return 1
         if path.exists() and not args.replace:
             raise OAuthError('OAuth credentials already exist. Use --replace for an explicit reconnection.')
         # Refuse unsafe destinations before the Google consent window opens.
@@ -432,15 +455,16 @@ def main(argv: list[str] | None = None) -> int:
         if path.exists() or path.is_symlink():
             private._regular(path)
         print('Opening Google consent for the dedicated removal mailbox. Select that account only.')
-        data = connect(args.mailbox, args.personal_email, client, **({'allow_sending': True} if args.allow_sending else {}))
+        data = connect(args.mailbox, args.personal_email, client, revoke_on_failure=False,
+                       **({'allow_sending': True} if args.allow_sending else {}))
         try:
             save_config(path, data, replace=args.replace)
         except OAuthError:
-            revoke(data['tokens'])
+            print('The unused credential was not activated. Google consent was not revoked because it may be shared with another connection.')
             raise
         print('Dedicated Gmail OAuth credentials saved privately. No Gmail messages were accessed and no timers were started.')
         return 0
-    except (OAuthError, ValueError, OSError):
+    except (OAuthError, connections.AppMailError, ValueError, OSError):
         print('Dedicated Gmail connection did not finish. Check the separate account, private client file and Google consent. No provider response or credentials were logged.')
         return 1
     except (KeyboardInterrupt, EOFError):

@@ -1,5 +1,5 @@
 /* Explicit operations and explicit, bounded reconciliation. No scheduled work. */
-if(typeof importScripts==='function')importScripts('broker-executor.js','automatic-executor.js','identity-details.js','final-executor.js','peopletrace-details.js','cma-details.js','mylife-details.js','thatsthem-details.js','peoplefinders-details.js','send-contract.js');
+if(typeof importScripts==='function')importScripts('broker-executor.js','automatic-executor.js','identity-details.js','final-executor.js','peopletrace-details.js','cma-details.js','mylife-details.js','thatsthem-details.js','peoplefinders-details.js','send-contract.js','phone-preference-details.js','association-details.js','directory-suppression-details.js');
 const APP='https://erase-me-preview.vercel.app';
 const EXEC=typeof EraseBrokerExecutor!=='undefined'?EraseBrokerExecutor:require('./broker-executor.js');
 const AUTO=typeof EraseAutomaticExecutor!=='undefined'?EraseAutomaticExecutor:require('./automatic-executor.js');
@@ -11,6 +11,9 @@ const MYLIFE=typeof EraseMyLifeDetails!=='undefined'?EraseMyLifeDetails:require(
 const THATSTHEM=typeof EraseThatsThemDetails!=='undefined'?EraseThatsThemDetails:require('./thatsthem-details.js');
 const PEOPLEFINDERS=typeof ErasePeopleFindersDetails!=='undefined'?ErasePeopleFindersDetails:require('./peoplefinders-details.js');
 const SEND=typeof EraseSendContract!=='undefined'?EraseSendContract:require('./send-contract.js');
+const PHONE_PREFERENCE=typeof ErasePhonePreferenceDetails!=='undefined'?ErasePhonePreferenceDetails:require('./phone-preference-details.js');
+const ASSOCIATION=typeof EraseAssociationDetails!=='undefined'?EraseAssociationDetails:require('./association-details.js');
+const DIRECTORY_SUPPRESSION=typeof EraseDirectorySuppressionDetails!=='undefined'?EraseDirectorySuppressionDetails:require('./directory-suppression-details.js');
 const NATIVE_HOST='org.eraseme.challenge';
 const MAIL_NATIVE_HOST='org.eraseme.mail';
 const active=new Set(),sessions=new WeakMap(),observationKeys=new WeakMap();
@@ -104,7 +107,7 @@ async function automaticSubmit(payload,tabId,documentId,chromeApi){
   const target={tabId,documentIds:[documentId]};
   const [installed]=await chromeApi.scripting.executeScript({target,files:['automatic-executor.js']});
   if(installed?.documentId!==documentId)return unknown('The broker tab changed before submission. No repeat was sent.');
-  if(['fastpeoplesearch','searchpeoplefree','usphonebook','smartbackgroundchecks','familytreenow'].includes(payload.routeId)){
+  if(['fastpeoplesearch','searchpeoplefree','usphonebook','smartbackgroundchecks','familytreenow','truepeoplesearch'].includes(payload.routeId)){
     const [readiness]=await chromeApi.scripting.executeScript({target,func:value=>globalThis.EraseAutomaticExecutor.waitReady(value),args:[payload]});
     if(readiness?.documentId!==documentId)return unknown('The broker document changed while its security widget was loading. No submit was attempted.');
     if(readiness.result?.status==='blocked')return {status:'blocked',detail:String(readiness.result.detail||'The broker security check still needs attention.').slice(0,600)};
@@ -478,6 +481,33 @@ async function fillPeopleFinders(message,chromeApi){
     await chromeApi.storage.local.set({[key]:record});return record.result;
   }catch(_){return record.result;}finally{active.delete(key);}
 }
+function privateRouteHelper(routeId){
+  if(Object.hasOwn(PHONE_PREFERENCE.ROUTES,routeId))return{api:PHONE_PREFERENCE,file:'phone-preference-details.js',global:'ErasePhonePreferenceDetails'};
+  if(Object.hasOwn(ASSOCIATION.ROUTES,routeId))return{api:ASSOCIATION,file:'association-details.js',global:'EraseAssociationDetails'};
+  if(Object.hasOwn(DIRECTORY_SUPPRESSION.ROUTES,routeId))return{api:DIRECTORY_SUPPRESSION,file:'directory-suppression-details.js',global:'EraseDirectorySuppressionDetails'};
+  throw new Error('Unsupported reviewed private form.');
+}
+async function fillPrivateRoute(message,chromeApi){
+  const helper=privateRouteHelper(message.routeId),{type,action,...payload}=message;helper.api.validatePayload(payload);
+  const expectedKeys=['type','action','routeId','operationId','authorized','ownRequestConfirmed','consentId','details',...(Object.hasOwn(payload,'identity')?['identity']:[])];
+  if(!exactMailObject(message,expectedKeys))throw new Error('Review the exact private fields first.');
+  const definition=helper.api.ROUTES[payload.routeId],key='operation:'+payload.operationId,previous=(await chromeApi.storage.local.get(key))[key];
+  if(previous||active.has(key))return previous?.routeId===payload.routeId?previous.result:unknown();
+  active.add(key);const record={routeId:payload.routeId,result:unknown('A reviewed private form action was reserved. No automatic repeat is authorized.')};
+  const expectedURL=url=>url===definition.url||url===definition.url+'?';
+  try{
+    if(!await chromeApi.permissions.contains({origins:['https://'+definition.host+'/*']}))throw new Error();
+    await chromeApi.storage.local.set({[key]:record});const tab=await chromeApi.tabs.create({url:definition.url,active:true});record.tabId=tab.id;await chromeApi.storage.local.set({[key]:record});await settled(chromeApi,tab.id);
+    if(!expectedURL((await chromeApi.tabs.get(tab.id)).url))throw new Error();
+    const [installed]=await chromeApi.scripting.executeScript({target:{tabId:tab.id},files:[helper.file]});if(typeof installed?.documentId!=='string')throw new Error();
+    // Public readiness/accordion navigation receives no identity fields.
+    const [ready]=await chromeApi.scripting.executeScript({target:{tabId:tab.id,documentIds:[installed.documentId]},func:(name,id)=>globalThis[name].preparePage({routeId:id}),args:[helper.global,payload.routeId]});
+    if(ready?.documentId!==installed.documentId||ready.result?.status!=='ready'||!expectedURL((await chromeApi.tabs.get(tab.id)).url))throw new Error();
+    const [response]=await chromeApi.scripting.executeScript({target:{tabId:tab.id,documentIds:[installed.documentId]},func:(name,value)=>globalThis[name].execute(value),args:[helper.global,payload]});
+    if(response?.documentId!==installed.documentId||!['prepared','blocked','unknown'].includes(response.result?.status))throw new Error();
+    record.result={status:response.result.status,detail:response.result.status==='prepared'?'Only the reviewed fields were filled once for this limited form. Complete the official site’s remaining steps. Acceptance and deletion are unverified.':'The reviewed form is blocked or unknown. Check the existing tab; no automatic repeat is authorized.'};await chromeApi.storage.local.set({[key]:record});return record.result;
+  }catch(_){return record.result;}finally{active.delete(key);}
+}
 async function fillPeopleTrace(message,chromeApi){
   if(!exactMailObject(message,['type','action','routeId','operationId','authorized','ownRequestConfirmed','consentId','identity','details']))throw new Error('Review the private form first.');
   const {type,action,...payload}=message;PEOPLETRACE.validatePayload(payload);
@@ -590,6 +620,57 @@ async function prepareFamilyEntry(tabId,chromeApi){
     try{chromeApi.tabs.onUpdated?.addListener(updated);chromeApi.tabs.onRemoved?.addListener(removed);void probe();}catch(error){finish(error);}
   });
 }
+async function prepareTruePeopleSearchEntry(tabId,chromeApi){
+  const privacy='https://www.truepeoplesearch.com/privacy',entry='https://www.truepeoplesearch.com/removal';
+  const tab=await chromeApi.tabs.get(tabId);
+  if(tab.id!==tabId||tab.status!=='complete'||tab.url!==privacy)throw new Error('The official privacy entry changed.');
+  const check=()=>{
+    if(location.href!=='https://www.truepeoplesearch.com/privacy'||document.title!=='Privacy Policy - TruePeopleSearch.com'||document.querySelector('input[type="file"]'))return false;
+    const headings=[...document.querySelectorAll('h2')].filter(e=>e.textContent.replace(/\s+/g,' ').trim()==='TruePeopleSearch Privacy Notice');
+    const links=[...document.querySelectorAll('a[href]')].filter(e=>e.textContent.replace(/\s+/g,' ').trim()==='Opt-Out Form');
+    if(headings.length!==1||links.length!==1||links[0].href!=='https://www.truepeoplesearch.com/removal')return false;
+    for(const e of [headings[0],links[0]]){if(!e.getClientRects().length)return false;for(let n=e;n;n=n.parentElement){const s=getComputedStyle(n);if(s.display==='none'||s.visibility==='hidden'||Number(s.opacity)===0)return false;}}
+    return true;
+  };
+  const [initial]=await chromeApi.scripting.executeScript({target:{tabId},func:check});
+  if(initial?.result!==true||typeof initial.documentId!=='string')throw new Error('The official privacy entry could not be verified.');
+  const [confirmed]=await chromeApi.scripting.executeScript({target:{tabId,documentIds:[initial.documentId]},func:check});
+  const current=await chromeApi.tabs.get(tabId);
+  if(confirmed?.result!==true||confirmed.documentId!==initial.documentId||current.id!==tabId||current.status!=='complete'||current.url!==privacy)throw new Error('The official privacy entry changed.');
+  // Only the public, fixed link is opened. No challenge action, reload, cookie,
+  // header or personal field is supplied while its normal page becomes ready.
+  await chromeApi.tabs.update(tabId,{url:entry});
+  return new Promise((resolve,reject)=>{
+    let done=false,reading=false,pendingCompletion=false;
+    const finish=(error,documentId)=>{if(done)return;done=true;clearTimeout(deadline);try{chromeApi.tabs.onUpdated?.removeListener(updated);}catch(_){}try{chromeApi.tabs.onRemoved?.removeListener(removed);}catch(_){}error?reject(error):resolve(documentId);};
+    const probe=async()=>{
+      if(done)return;if(reading){pendingCompletion=true;return;}reading=true;
+      try{
+        const current=await chromeApi.tabs.get(tabId);
+        if(done)return;
+        if(current.id!==tabId||current.url!==entry)throw new Error('The official removal destination changed.');
+        if(current.status==='complete'){
+          const [installed]=await chromeApi.scripting.executeScript({target:{tabId},files:['broker-executor.js']});
+          if(done)return;
+          if(typeof installed?.documentId==='string'){
+            const [proof]=await chromeApi.scripting.executeScript({target:{tabId,documentIds:[installed.documentId]},func:()=>{try{globalThis.EraseBrokerExecutor.truePeopleSearchFacts(null,globalThis,true);return true;}catch(_){return false;}}});
+            if(done)return;
+            const latest=await chromeApi.tabs.get(tabId);
+            if(done)return;
+            if(proof?.result===true&&proof.documentId===installed.documentId&&latest.id===tabId&&latest.status==='complete'&&latest.url===entry){finish(null,installed.documentId);return;}
+          }
+        }
+      }catch(error){if(error.message==='The official removal destination changed.')finish(error);}
+      finally{reading=false;if(pendingCompletion&&!done){pendingCompletion=false;void probe();}}
+    };
+    const updated=(changed,info)=>{if(changed===tabId&&(info.status==='complete'||info.url))void probe();};
+    const removed=changed=>{if(changed===tabId)finish(new Error('The broker tab was closed.'));};
+    // One foreground deadline and normal document-completion events; no polling
+    // or scheduled work survives this authorized action.
+    const deadline=setTimeout(()=>finish(new Error('The reviewed removal form is unavailable.')),12000);
+    try{chromeApi.tabs.onUpdated?.addListener(updated);chromeApi.tabs.onRemoved?.addListener(removed);void probe();}catch(error){finish(error);}
+  });
+}
 async function dispatch(message,sender,chromeApi=chrome){
   if(!trusted(sender)||!message||message.type!=='erase-me')throw new Error('Untrusted request.');
   if(message.action==='ping'){
@@ -599,8 +680,11 @@ async function dispatch(message,sender,chromeApi=chrome){
     if(await chromeApi.permissions.contains({origins:['https://'+MYLIFE.ENTRY_HOST+'/*','https://'+MYLIFE.HOST+'/*']}))routes.push(MYLIFE.ROUTE);
     if(await chromeApi.permissions.contains({origins:['https://'+CMA.HOST+'/*']}))routes.push(CMA.ROUTE);
     for(const privateRoute of [THATSTHEM,PEOPLEFINDERS])if(await chromeApi.permissions.contains({origins:['https://'+privateRoute.HOST+'/*']}))routes.push(privateRoute.ROUTE);
-    return {status:'connected',version:'0.12.0',routes,capabilities:['thatsthem-prefill-v1','peoplefinders-prefill-v1','mylife-prefill-v1','whitepages-prefill-v1','cma-registration-v1','peopletrace-prefill-v1','usphonebook-continuation-v1','fastpeoplesearch-continuation-v1','explicit-fields-v1','structured-fields-v1','broker-observation-v1','automatic-submit-v1','reviewed-initial-submit-v2','reviewed-initial-submit-v3','reviewed-initial-submit-v4','reviewed-initial-submit-v5','reviewed-initial-submit-v6','structured-record-match-v1','owned-tab-focus-v1','identity-submit-v1','identity-submit-v2','identity-requirements-v1','local-removal-mail-v1','local-removal-send-v1']};
+    for(const helper of [PHONE_PREFERENCE,ASSOCIATION,DIRECTORY_SUPPRESSION])for(const[routeId,route]of Object.entries(helper.ROUTES))if(await chromeApi.permissions.contains({origins:['https://'+route.host+'/*']}))routes.push(routeId);
+    return {status:'connected',version:'0.13.0',routes,capabilities:['phone-preference-prefill-v1','association-prefill-v1','directory-suppression-prefill-v1','smtp-outcome-v1','thatsthem-prefill-v1','peoplefinders-prefill-v1','mylife-prefill-v1','whitepages-prefill-v1','cma-registration-v1','peopletrace-prefill-v1','usphonebook-continuation-v1','fastpeoplesearch-continuation-v1','explicit-fields-v1','structured-fields-v1','broker-observation-v1','automatic-submit-v1','reviewed-initial-submit-v2','reviewed-initial-submit-v3','reviewed-initial-submit-v4','reviewed-initial-submit-v5','reviewed-initial-submit-v6','reviewed-initial-submit-v7','structured-record-match-v1','owned-tab-focus-v1','identity-submit-v1','identity-submit-v2','identity-requirements-v1','local-removal-mail-v1','local-removal-send-v1']};
   }
+  if(message.action==='fill-private-route')return fillPrivateRoute(message,chromeApi);
+  if(message.action==='result'&&[PHONE_PREFERENCE,ASSOCIATION,DIRECTORY_SUPPRESSION].some(api=>Object.hasOwn(api.ROUTES,message.routeId))&&id(message.operationId)){const previous=(await chromeApi.storage.local.get('operation:'+message.operationId))['operation:'+message.operationId];return previous?.routeId===message.routeId?previous.result:unknown();}
   if(message.action==='fill-mylife')return fillMyLife(message,chromeApi);
   if(message.action==='result'&&message.routeId===MYLIFE.ROUTE&&id(message.operationId)){const previous=(await chromeApi.storage.local.get('operation:'+message.operationId))['operation:'+message.operationId];return previous?.routeId===MYLIFE.ROUTE?previous.result:unknown();}
   if(message.action==='fill-thatsthem')return fillThatsThem(message,chromeApi);
@@ -634,14 +718,14 @@ async function dispatch(message,sender,chromeApi=chrome){
     if(!await chromeApi.permissions.contains({origins:['https://'+route.host+'/*']}))throw new Error('Open the companion icon and enable access to the reviewed broker sites.');
     // Save before navigation. No profile fields or verification URLs enter this journal.
     await chromeApi.storage.local.set({[key]:record});
-    const smartEntry=!continuation&&message.routeId==='smartbackgroundchecks',familyEntry=!continuation&&message.routeId==='familytreenow';
-    const tab=await chromeApi.tabs.create({url:smartEntry||familyEntry?route.entryUrl:route.url,active:true});
+    const smartEntry=!continuation&&message.routeId==='smartbackgroundchecks',familyEntry=!continuation&&message.routeId==='familytreenow',trueEntry=!continuation&&message.routeId==='truepeoplesearch';
+    const tab=await chromeApi.tabs.create({url:smartEntry||familyEntry||trueEntry?route.entryUrl:route.url,active:true});
     record.tabId=tab.id;await chromeApi.storage.local.set({[key]:record});
     await settled(chromeApi,tab.id);
     if(smartEntry)await prepareSmartEntry(tab.id,chromeApi);
-    const familyDocument=familyEntry?await prepareFamilyEntry(tab.id,chromeApi):null;
+    const familyDocument=familyEntry?await prepareFamilyEntry(tab.id,chromeApi):trueEntry?await prepareTruePeopleSearchEntry(tab.id,chromeApi):null;
     const [installed]=await chromeApi.scripting.executeScript({target:{tabId:tab.id,...(familyDocument?{documentIds:[familyDocument]}:{})},files:['broker-executor.js']});
-    if(familyEntry&&installed?.documentId!==familyDocument)throw new Error('The reviewed initial form changed before filling.');
+    if((familyEntry||trueEntry)&&installed?.documentId!==familyDocument)throw new Error('The reviewed initial form changed before filling.');
     if(continuation&&typeof installed?.documentId!=='string')throw new Error('The confirmation document cannot be pinned.');
     let observationNonce;
     if(!continuation&&OBSERVABLE.has(message.routeId)&&typeof installed?.documentId==='string'){

@@ -43,7 +43,7 @@
       try{
         const value=await current.send({authorized:true,own_request:true});onChange();
         if(revision!==epoch||!dialog.open||!sameProfile(expected))return;
-        status.textContent=value.status==='provider_accepted'?'Google accepted this email for sending. Delivery, broker acceptance and deletion are still unverified.':'The email outcome is unconfirmed. Read its existing send result before taking another action; no automatic repeat was sent.';
+        status.textContent=value.status==='provider_accepted'?'Google accepted this email for sending. Delivery, broker acceptance and deletion are still unverified.':value.status==='smtp_accepted'?'Gmail’s SMTP server accepted the approved message for sending. This local receipt does not prove delivery, broker acceptance or deletion.':'The email outcome is unconfirmed. Read its existing send result before taking another action; no automatic repeat was sent.';
         ready=false;transmit.disabled=true;edit.disabled=true;onFeedback(status.textContent);
       }catch(error){if(revision===epoch&&sameProfile(expected))status.textContent=error?.message||'The email outcome is uncertain. Check the existing result before sending anything else.';}
       finally{running=false;if(revision===epoch){approve.disabled=true;transmit.disabled=true;edit.disabled=current.isDispatched()||!sameProfile(expected);}}

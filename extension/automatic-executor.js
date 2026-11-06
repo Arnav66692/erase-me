@@ -2,7 +2,7 @@
 (function (root) {
   'use strict';
   // Reinjecting the file into the same isolated document must not reset its journal.
-  if (root.EraseAutomaticExecutor?.version === 'automatic-executor-v8') {
+  if (root.EraseAutomaticExecutor?.version === 'automatic-executor-v9') {
     if (typeof module !== 'undefined') module.exports = root.EraseAutomaticExecutor;
     return;
   }
@@ -41,7 +41,10 @@
     smartbackgroundchecks: Object.freeze({ id: 'smartbackgroundchecks-submit-2026-11-05-v1', stage: 'verification_initiation', requiredCapability: 'reviewed-initial-submit-v5',
       consentText: SMART_CONSENT, policyUrl: null, policyUrls: Object.freeze([]) }),
     familytreenow: Object.freeze({ id: 'familytreenow-submit-2026-11-05-v1', stage: 'verification_initiation', requiredCapability: 'reviewed-initial-submit-v6',
-      consentText: 'I authorize you to send communications relating to my privacy request', policyUrl: null, policyUrls: Object.freeze([]) })
+      consentText: 'I authorize you to send communications relating to my privacy request', policyUrl: null, policyUrls: Object.freeze([]) }),
+    truepeoplesearch: Object.freeze({ id: 'truepeoplesearch-submit-2026-11-06-v1', stage: 'verification_initiation', requiredCapability: 'reviewed-initial-submit-v7',
+      consentText: 'I authorize TruePeopleSearch.com to send communications relating to my privacy request to the email address(es) provided. I certify that I am the subject of the request, or an agent authorized to act on behalf of the subject of the request. I understand that information provided relating to this request will not be used for any purpose other than the processing of this request. '+SPF_TERMS, policyUrl: null,
+      policyUrls: Object.freeze(['https://www.truepeoplesearch.com/terms','https://www.truepeoplesearch.com/notice-at-collection','https://www.truepeoplesearch.com/privacy']) })
   });
   const documents = new WeakMap(), pendingReadiness = new WeakMap(), nativeSubmissionGuards = new WeakMap(), MAX_MEDIA = 512 * 1024, READINESS_TIMEOUT_MS = 12000;
   const normal = value => String(value || '').replace(/\s+/g, ' ').trim();
@@ -358,6 +361,7 @@
     if (payload.routeId === 'usphonebook') return inspectUSPhonebook(payload, env, route, contract, allowPendingToken);
     if (payload.routeId === 'smartbackgroundchecks') return inspectSmart(payload, env, route, contract, allowPendingToken);
     if (payload.routeId === 'familytreenow') return { ...BASE.familyTreeNowFacts(payload.fields, env, allowPendingToken), contract };
+    if (payload.routeId === 'truepeoplesearch') return { ...BASE.truePeopleSearchFacts(payload.fields, env, allowPendingToken), contract };
     const form = one(doc, route.form);
     nativeForm(form, 'post', false);
     if (!BASE.formAllowed(form.action || env.location.href, route)) reject('changed_destination');
@@ -413,7 +417,7 @@
   function waitReady(payload, env = root) {
     let record, doc, operationId;
     try {
-      if (!['fastpeoplesearch', 'searchpeoplefree', 'usphonebook', 'smartbackgroundchecks', 'familytreenow'].includes(payload?.routeId)) reject('approval_required');
+      if (!['fastpeoplesearch', 'searchpeoplefree', 'usphonebook', 'smartbackgroundchecks', 'familytreenow','truepeoplesearch'].includes(payload?.routeId)) reject('approval_required');
       const fresh = inspect(payload, env, true);
       doc = env.document; operationId = payload.operationId;
       if (documents.get(doc)?.has(operationId)) reject('already_captured');
@@ -502,7 +506,7 @@
         fresh.optionalControls && (record.optionalControls.length !== fresh.optionalControls.length || record.optionalControls.some((element, index) => element !== fresh.optionalControls[index])) ||
         fresh.csrf && fresh.csrf.value !== record.csrfValue) reject('changed_form');
     if (fresh.token && fresh.token.value !== record.tokenValue) reject('changed_challenge');
-    if (payload.routeId === 'familytreenow' && fresh.challengeResponse.value !== record.challengeResponseValue) reject('changed_challenge');
+    if (['familytreenow','truepeoplesearch'].includes(payload.routeId) && fresh.challengeResponse.value !== record.challengeResponseValue) reject('changed_challenge');
     if (fresh.answer) {
       if (fresh.answer.value !== answer) reject('changed_challenge');
       const current = imageData(fresh.image, env);
@@ -515,7 +519,7 @@
       const fresh = inspect(payload, env), journal = stateFor(env.document);
       if (journal.has(payload.operationId)) return blocked('already_captured', 'This document already has an automatic action reference. No repeat was started.');
       const record = { ...fresh, signature: signature(payload), checkboxValue: fresh.checkbox?.value, initialConsent: fresh.checkbox?.checked,
-        tokenValue: fresh.token?.value, ...(payload.routeId === 'familytreenow' ? { challengeResponseValue: fresh.challengeResponse.value } : {}), csrfValue: fresh.csrf?.value, phase: 'captured' };
+        tokenValue: fresh.token?.value, ...(['familytreenow','truepeoplesearch'].includes(payload.routeId) ? { challengeResponseValue: fresh.challengeResponse.value } : {}), csrfValue: fresh.csrf?.value, phase: 'captured' };
       if (fresh.image) {
         if (fresh.answer.value) reject('existing_challenge_answer');
         Object.assign(record, imageData(fresh.image, env));
@@ -579,7 +583,7 @@
     }
     return result;
   }
-  const api = Object.freeze({ version: 'automatic-executor-v8', CONTRACTS, waitReady, capture, submit });
+  const api = Object.freeze({ version: 'automatic-executor-v9', CONTRACTS, waitReady, capture, submit });
   root.EraseAutomaticExecutor = api;
   if (typeof module !== 'undefined') module.exports = api;
 })(typeof globalThis === 'object' ? globalThis : this);

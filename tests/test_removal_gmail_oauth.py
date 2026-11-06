@@ -266,7 +266,7 @@ def test_cli_connection_and_check_never_print_codes_or_tokens(client_file, tmp_p
     path = tmp_path / 'removal/gmail-oauth.json'
     monkeypatch.setattr(oauth, 'connect', lambda *a, **kw: data)
     assert oauth.main(['--mailbox', MAILBOX, '--personal-email', PERSONAL, '--client-json', str(client_file), '--config', str(path)]) == 0
-    monkeypatch.setattr(oauth, 'check_token', lambda *a: data)
+    monkeypatch.setattr(oauth, 'check_token', lambda *a, **kw: data)
     assert oauth.main(['--check-token', '--config', str(path)]) == 0
     out = capsys.readouterr().out
     for secret in ('fixture-access-token', 'fixture-refresh-token', 'fixture-client-secret', 'fixture-authorization-code'):

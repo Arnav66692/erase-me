@@ -53,7 +53,7 @@
       busy=true;
       try{
         active();const ping=await companion({action:'ping'});active();
-        if(!ping.capabilities?.includes('local-removal-send-v1'))throw new Error('Update the companion before sending reviewed removal emails.');
+        if(!['local-removal-send-v1','smtp-outcome-v1'].every(cap=>ping.capabilities?.includes(cap)))throw new Error('Update the companion before sending reviewed removal emails.');
         const status=await native('send-status',{authorized:true});active();
         if(!status.enabled||!status.send_enabled)throw new Error('Enable sending in local email setup and explicitly reconnect the same separate account before preparing an email.');
         context=await workspace.beginMailSendPreview(routeId,reference,{own_request:true,profileId:original.id});

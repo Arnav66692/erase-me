@@ -2,6 +2,7 @@
 (function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.EraseSendContract=api;})(typeof globalThis==='object'?globalThis:this,function(){
   'use strict';
   const ROUTES=Object.freeze({
+    'de-11880':Object.freeze({to:'datenschutz.solutions@11880.com',source:'https://unternehmen.11880.com/datenschutz'}),
     'ca-411':Object.freeze({to:'privacy@411.ca',source:'https://www.411.ca/privacy-policy'}),
     ukphonebook:Object.freeze({to:'dpo@simunix.com',source:'https://www.ukphonebook.com/privacy'}),
     'de-teilnehmerverzeichnis-widerspruch':Object.freeze({to:'datenschutz@dasoertliche-marketing.de',source:'https://www.dasoertliche.de/datenschutz'}),
@@ -43,9 +44,10 @@
       if(!exact(value,['status','route_id','operation_id','request_id','capability','expires_at','message_digest','preview','source_url','automatic_execution'])||value.status!=='ready'||!REF.test(value.request_id||'')||!CAP.test(value.capability||'')||!Number.isSafeInteger(value.expires_at)||!HEX.test(value.message_digest||'')||value.source_url!==ROUTES[value.route_id].source)fail();
       preview(value.preview,value.route_id);return value;
     }
-    const keys=['status','route_id','operation_id','request_id','automatic_execution','delivery_verified','acceptance_verified','deletion_verified',...(Object.hasOwn(value,'message_id')?['message_id']:[]),...(Object.hasOwn(value,'thread_id')?['thread_id']:[])];
-    if(!exact(value,keys)||!['provider_accepted','unknown','ready','revoked','already_started','preparing','blocked'].includes(value.status)||value.request_id!==null&&!REF.test(value.request_id||'')||value.delivery_verified!==false||value.acceptance_verified!==false||value.deletion_verified!==false||
-      ['message_id','thread_id'].some(key=>Object.hasOwn(value,key)&&!(typeof value[key]==='string'&&/^[A-Za-z0-9_-]{1,128}$/.test(value[key])) )||value.status==='provider_accepted'&&(!Object.hasOwn(value,'message_id')||!Object.hasOwn(value,'thread_id')))fail();
+    const keys=['status','route_id','operation_id','request_id','automatic_execution','delivery_verified','acceptance_verified','deletion_verified',...['message_id','thread_id','acceptance_kind','receipt_ref'].filter(key=>Object.hasOwn(value,key))];
+    if(!exact(value,keys)||!['provider_accepted','smtp_accepted','unknown','ready','revoked','already_started','preparing','blocked'].includes(value.status)||value.request_id!==null&&!REF.test(value.request_id||'')||value.delivery_verified!==false||value.acceptance_verified!==false||value.deletion_verified!==false||
+      ['message_id','thread_id'].some(key=>Object.hasOwn(value,key)&&!(typeof value[key]==='string'&&/^[A-Za-z0-9_-]{1,128}$/.test(value[key])) )||value.status==='provider_accepted'&&(!Object.hasOwn(value,'message_id')||!Object.hasOwn(value,'thread_id'))||
+      (value.status==='smtp_accepted'?(value.acceptance_kind!=='smtp_250'||!HEX.test(value.receipt_ref||'')||!REF.test(value.request_id||'')||Object.hasOwn(value,'message_id')||Object.hasOwn(value,'thread_id')):(Object.hasOwn(value,'acceptance_kind')||Object.hasOwn(value,'receipt_ref'))))fail();
     return value;
   }
   return Object.freeze({ROUTES,request,response,preview,exact,CAP});

@@ -28,19 +28,30 @@
       <p class="hint">Choose “Copy companion ID” in the Erase Me extension. A command copied from its popup fills this automatically.</p>
       <label for="browser">Desktop browser</label>
       <select id="browser" name="browser"><option value="chrome">Chrome</option><option value="chromium">Chromium (Linux)</option></select>
-      <h2><span>02</span> Google connection file</h2>
+      <h2><span>02</span> Choose how to connect</h2>
+      <label for="connection-method">Connection method</label>
+      <select id="connection-method" name="connection_method"><option value="app_password">App password · no Google Cloud project</option><option value="oauth" selected>Google sign-in · use a connection file</option></select>
+      <div id="app-password-fields" hidden>
+        <label for="app-password">Google app password for the removal-only account</label>
+        <input id="app-password" type="password" minlength="16" maxlength="19" autocomplete="off" spellcheck="false" disabled>
+        <p class="hint">Use the 16-letter app password Google creates, never your Google account password. This simpler option needs no Google Cloud project. Google requires 2-Step Verification and may restrict app passwords for some accounts. If unavailable, choose Google sign-in above. Erase Me does not enable 2-Step Verification for you.</p>
+        <p class="hint"><a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener noreferrer">Create an app password in the separate Google account</a> · <a href="https://support.google.com/accounts/answer/185833" target="_blank" rel="noopener noreferrer">Google’s eligibility guide</a>. Already connected with this method? Leave this empty to reuse it. A new or changed app password requires intentional replacement below.</p>
+        <p class="hint">The password goes only to this local process and its owner-only settings file. It never enters the hosted app, workspace backup or chat. Setup authenticates the exact separate Gmail username without opening messages.</p>
+      </div>
+      <div id="oauth-fields">
       <label for="client-file">Desktop OAuth client JSON</label>
       <input id="client-file" type="file" accept=".json,application/json">
       <p class="hint">Already connected on this computer? Leave this empty to reuse the matching account. For a new connection, select the Desktop client file from your Google Cloud project. It goes only to this local setup process and is removed after use.</p>
       <p class="hint"><a href="https://github.com/Arnav66692/erase-me/blob/main/docs/GMAIL_OAUTH.md#prepare-the-google-client" target="_blank" rel="noopener noreferrer">How to get the Google connection file</a>. A shared, publicly approved Google client is not included yet.</p>
+      </div>
       <details>
         <summary>Change an existing connection</summary>
         <label class="check"><input id="replace-registration" type="checkbox"> Update an existing local connector registration if it belongs to an older companion installation.</label>
-        <label class="check"><input id="reconnect" type="checkbox"> Intentionally replace the saved account authorization through fresh Google consent.</label>
+        <label class="check"><input id="reconnect" type="checkbox"> Intentionally replace the saved separate-account connection. Google sign-in requests fresh consent; app-password setup verifies the new credential.</label>
       </details>
       <h2><span>03</span> Connect once</h2>
-      <label class="check"><input id="allow-sending" type="checkbox"> Request permission to send individually reviewed privacy requests from this separate account.</label>
-      <p class="hint">Optional. Every email still needs an exact message review and its own approval in Erase Me. To add this permission to an existing read-only connection, also choose “Intentionally replace the saved account authorization” above. Unchecking this option does not revoke a previously granted Google permission.</p>
+      <label class="check"><input id="allow-sending" type="checkbox"> Enable individually reviewed privacy-request sending from this separate account.</label>
+      <p class="hint">Optional and off by default. Every email still needs an exact message review and its own approval in Erase Me. To add sending to an existing connection, also choose intentional replacement above. Unchecking this option does not revoke an existing sending permission. App passwords cannot be limited to read-only at Google; Erase Me enforces its selected action limits locally.</p>
       <label class="check"><input id="removal-only" type="checkbox" required> I confirm this separate account contains only removal-related mail. I authorize this local setup to verify that account and install the on-demand connector.</label>
       <button id="connect" type="submit">Connect separate account ↗</button>
     </fieldset>

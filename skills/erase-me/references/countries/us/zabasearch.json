@@ -20,7 +20,7 @@
   },
   "optout": {
     "method": "web_form",
-    "url": "https://suppression.peopleconnect.us/login",
+    "url": "https://www.intelius.com/privacy-center/",
     "email": null,
     "requires": [
       "email_verification"
@@ -31,8 +31,9 @@
       "date_of_birth"
     ],
     "steps": [
-      "Use the intelius parent opt-out, which is the PeopleConnect suppression center.",
-      "Recheck ZabaSearch after 10 days."
+      "Follow the privacy-rights link published in this brand’s own current homepage footer.",
+      "Review the separate tools and their scope in the delegated Intelius privacy center. A delegated link is not proof of complete brand-record suppression.",
+      "Do not duplicate the same Intelius association request or infer accepted removal across brands."
     ],
     "expected_days": 10,
     "notes": "PeopleConnect lists Intelius, TruthFinder, US Search and Instant Checkmate as its brands, and the 2026 California registry lists ZabaSearch and Addresses.com under Intelius, LLC. The PeopleConnect suppression center says it covers name-search results on the people search sites in the PeopleConnect family, not Classmates. No separate ZabaSearch opt-out URL was found in MIT prior art, and zabasearch.com was bot-blocked."
@@ -51,9 +52,19 @@
       "url": "https://cppa.ca.gov/data_broker_registry/",
       "license": "official",
       "attribution": "California Privacy Protection Agency data broker registry, 2026 list fetched 2026-10-27"
+    },
+    {
+      "url": "https://www.zabasearch.com/",
+      "license": "official",
+      "attribution": "Current official footer privacy-tools delegation, inspected read-only 2026-11-06"
+    },
+    {
+      "url": "https://www.intelius.com/privacy-center/",
+      "license": "official",
+      "attribution": "Current official footer privacy-tools delegation, inspected read-only 2026-11-06"
     }
   ],
   "verified": false,
   "last_verified": null,
-  "verification_note": "zabasearch.com bot-blocked on 2026-10-27 (Cloudflare challenge page). Opt-out points at the PeopleConnect suppression center, which loaded that day. Coverage of ZabaSearch is inferred from the California registry, not stated by the site."
+  "verification_note": "Read-only inspection on November 6 confirmed a current first-party footer delegation to Intelius privacy tools. Actual brand-record coverage, request acceptance and deletion remain unverified."
 }

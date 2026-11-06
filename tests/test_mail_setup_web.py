@@ -22,6 +22,15 @@ RESULT = {'ok': True, 'installed': True, 'reused_connection': False,
           'identity_checked': True, 'messages_read': False, 'scheduled_work': False}
 
 
+def oauth_config():
+    return {'version': 1, 'provider': 'gmail_oauth', 'mailbox': 'removal.fixture@gmail.com',
+            'personal_email_sha256': setup.oauth.private.personal_digest('personal.fixture@gmail.com'),
+            'client': {key: json.loads(CLIENT)['installed'][key] for key in ('client_id', 'client_secret')},
+            'tokens': {'access_token': 'fixture-access', 'refresh_token': 'fixture-refresh', 'expires_at': 2000000000},
+            'identity': {'email': 'removal.fixture@gmail.com', 'sub': 'fixture-sub', 'email_verified': True},
+            'scopes': sorted(setup.oauth.SCOPES), 'connected_at': '2026-11-05T00:00:00+00:00'}
+
+
 def payload(**changes):
     return {'personal_email': 'personal.fixture@gmail.com', 'mailbox': 'removal.fixture@gmail.com',
             'extension_id': EXTENSION, 'browser': 'chrome', 'client_json': None,
@@ -298,7 +307,7 @@ def test_cli_help_and_launchers_do_not_read_state_or_start_services():
         assert os.access(path, os.X_OK)
 
 
-def test_fresh_grant_is_revoked_before_save_when_local_setup_closes(tmp_path, monkeypatch):
+def test_canceled_fresh_connection_never_saves_or_revokes_shared_google_consent(tmp_path, monkeypatch):
     home = tmp_path / 'user'
     home.mkdir(mode=0o700)
     config = home / '.erase-me-removal-mail' / 'gmail-oauth.json'
@@ -307,19 +316,19 @@ def test_fresh_grant_is_revoked_before_save_when_local_setup_closes(tmp_path, mo
     client.chmod(0o600)
     answers = iter([payload()['personal_email'], payload()['mailbox'], 'yes', str(client)])
     revoked, saved, installed = [], [], []
-    monkeypatch.setattr(setup.oauth, 'connect', lambda *_args: {'tokens': {'refresh_token': 'fixture-private-token'}})
+    monkeypatch.setattr(setup.oauth, 'connect', lambda *_args, **_kwargs: oauth_config())
     monkeypatch.setattr(setup.oauth, 'revoke', lambda tokens: revoked.append(tokens))
     monkeypatch.setattr(setup.oauth, 'save_config', lambda *_args, **_kwargs: saved.append(True))
     monkeypatch.setattr(setup.installer, 'install', lambda *_args, **_kwargs: installed.append(True))
 
     def guard(stage):
-        if stage == 'before_save':
+        if stage == 'after_oauth_identity':
             raise web.WebSetupError('session_closed')
 
     with pytest.raises(setup.SetupError):
         setup.run_setup(extension_id=EXTENSION, prompt=lambda _question: next(answers), emit=lambda _line: None,
                         home=home, config_path=config, platform='linux', ensure_active=guard)
-    assert revoked == [{'refresh_token': 'fixture-private-token'}] and saved == [] and installed == []
+    assert revoked == [] and saved == [] and installed == []
 
 
 def test_guard_before_install_runs_after_reuse_but_prevents_registration(tmp_path, monkeypatch):
@@ -332,7 +341,7 @@ def test_guard_before_install_runs_after_reuse_but_prevents_registration(tmp_pat
     saved = {'personal_email_sha256': setup.oauth.private.personal_digest(payload()['personal_email']),
              'mailbox': payload()['mailbox']}
     monkeypatch.setattr(setup.oauth, 'load_config', lambda _path: saved)
-    monkeypatch.setattr(setup.oauth, 'check_token', lambda _path: saved)
+    monkeypatch.setattr(setup.oauth, 'check_token', lambda _path, **_kwargs: saved)
     installed, revoked = [], []
     monkeypatch.setattr(setup.installer, 'install', lambda *_args, **_kwargs: installed.append(True))
     monkeypatch.setattr(setup.oauth, 'revoke', lambda tokens: revoked.append(tokens))
@@ -348,8 +357,8 @@ def test_guard_before_install_runs_after_reuse_but_prevents_registration(tmp_pat
     assert installed == [] and revoked == []
 
 
-@pytest.mark.parametrize('phase', ['during_save', 'after_identity', 'complete_without_install'])
-def test_fresh_grant_cancelled_after_save_is_revoked_without_touching_replaced_config(tmp_path, monkeypatch, phase):
+@pytest.mark.parametrize('phase', ['during_save', 'after_identity', 'before_connection_activation'])
+def test_canceled_oauth_stage_preserves_concurrent_legacy_file_and_shared_consent(tmp_path, monkeypatch, phase):
     home = tmp_path / 'user'
     home.mkdir(mode=0o700)
     config = home / '.erase-me-removal-mail' / 'gmail-oauth.json'
@@ -359,42 +368,47 @@ def test_fresh_grant_cancelled_after_save_is_revoked_without_touching_replaced_c
     answers = iter([payload()['personal_email'], payload()['mailbox'], 'yes', str(client)])
     revoked, saved, installed = [], [], []
     state = {'closed': False}
-    monkeypatch.setattr(setup.oauth, 'connect', lambda *_args: {'tokens': {'refresh_token': 'fixture-new-grant'}})
+    monkeypatch.setattr(setup.oauth, 'connect', lambda *_args, **_kwargs: oauth_config())
     monkeypatch.setattr(setup.oauth, 'revoke', lambda tokens: revoked.append(tokens))
     monkeypatch.setattr(setup.installer, 'install', lambda *_args, **_kwargs: installed.append(True))
-    if phase == 'complete_without_install':
-        monkeypatch.setattr(setup.installer, 'check', lambda _spec: {'installed': True})
+    monkeypatch.setattr(setup.installer, 'check', lambda _spec: {'installed': True})
+    real_stage = setup.app_mail.stage_config
 
-    def save(path, _data, **_kwargs):
+    def replace_legacy():
+        config.write_text('independently-replaced-private-config')
+        config.chmod(0o600)
+
+    def stage(directory, data):
+        path = real_stage(directory, data)
         saved.append(True)
-        # A concurrent configuration change must survive cancellation cleanup.
-        path.write_text('independently-replaced-private-config')
-        path.chmod(0o600)
         if phase == 'during_save':
+            replace_legacy()
             state['closed'] = True
+        return path
 
-    monkeypatch.setattr(setup.oauth, 'save_config', save)
+    monkeypatch.setattr(setup.app_mail, 'stage_config', stage)
 
     def guard(stage):
         if phase == 'after_identity' and stage == 'after_identity':
-            # Close immediately after this successful guard; the next guard
-            # must submit revocation before reserving installation.
+            replace_legacy()
             state['closed'] = True
             return
-        if phase == 'complete_without_install' and stage == 'complete':
+        if phase == 'before_connection_activation' and stage == phase:
+            replace_legacy()
             state['closed'] = True
         if state['closed']:
             raise web.WebSetupError('session_closed')
 
-    with pytest.raises(setup.SetupError):
+    with pytest.raises((setup.SetupError, setup.app_mail.AppMailError)):
         setup.run_setup(extension_id=EXTENSION, prompt=lambda _question: next(answers), emit=lambda _line: None,
                         home=home, config_path=config, platform='linux', ensure_active=guard)
-    assert saved == [True] and installed == []
-    assert revoked == [{'refresh_token': 'fixture-new-grant'}]
+    assert saved == ([] if phase == 'after_identity' else [True]) and installed == []
+    assert revoked == [] and setup.app_mail.selection(config.parent) is None
+    assert not list(config.parent.glob('gmail-oauth-*.json'))
     assert config.read_text() == 'independently-replaced-private-config'
 
 
-def test_cancellation_after_installation_reservation_does_not_revoke_the_active_new_grant(tmp_path, monkeypatch):
+def test_close_after_installation_still_prevents_later_connection_activation(tmp_path, monkeypatch):
     home = tmp_path / 'user'
     home.mkdir(mode=0o700)
     config = home / '.erase-me-removal-mail' / 'gmail-oauth.json'
@@ -403,17 +417,17 @@ def test_cancellation_after_installation_reservation_does_not_revoke_the_active_
     client.chmod(0o600)
     answers = iter([payload()['personal_email'], payload()['mailbox'], 'yes', str(client)])
     installed, revoked = [], []
-    monkeypatch.setattr(setup.oauth, 'connect', lambda *_args: {'tokens': {'refresh_token': 'fixture-new-grant'}})
-    monkeypatch.setattr(setup.oauth, 'save_config', lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(setup.oauth, 'connect', lambda *_args, **_kwargs: oauth_config())
     monkeypatch.setattr(setup.oauth, 'revoke', lambda tokens: revoked.append(tokens))
     monkeypatch.setattr(setup.installer, 'check', lambda _spec: {'installed': bool(installed)})
     monkeypatch.setattr(setup.installer, 'install', lambda *_args, **_kwargs: installed.append(True))
 
     def guard(stage):
-        if stage == 'complete':
+        if stage == 'before_provider_selection':
             raise web.WebSetupError('session_closed')
 
     with pytest.raises(setup.SetupError):
         setup.run_setup(extension_id=EXTENSION, prompt=lambda _question: next(answers), emit=lambda _line: None,
                         home=home, config_path=config, platform='linux', ensure_active=guard)
     assert installed == [True] and revoked == []
+    assert setup.app_mail.selection(config.parent) is None and not config.exists()

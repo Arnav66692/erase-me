@@ -45,15 +45,7 @@ broker form for direct entry. Its held pilot request stays held. **Review reques
 opens local instructions. Holds and pause suppress new actionable prompts; unknown
 and imported outcomes ask for review instead of claiming a confirmed match.
 
-Companion 0.12.0 can initiate People Data Labs email verification and prefill the initial
-USPhonebook, SearchPeopleFree, FastPeopleSearch, Apollo, Spokeo, AdvancedBackgroundChecks
-and four reviewed Turkish request forms. Optional initial guarded submission applies to
-FastPeopleSearch's and AdvancedBackgroundChecks' verification forms plus No Sorgulama,
-NumaraAra and NumaraSor request forms; the separate reviewed
-FastPeopleSearch matching continuation above supports a final submission attempt. The review
-displays their exact agreements and fields before the person opts in. An observed safe
-native submit event produces `submission_attempted`, not proof of delivery, acceptance
-or deletion. Other forms retain their existing manual submission steps.
+Companion 0.13.0 supports fifteen standard initial routes and thirteen separate private form actions. Eleven standard forms offer an optional guarded initial submission; the separate reviewed FastPeopleSearch matching continuation above supports one final submission attempt. Each review displays its exact fields, agreements and purpose before approval. A native submit event establishes an attempt, not delivery, broker acceptance or deletion. The new association, directory and first-number prefills retain final submission on their official sites.
 
 NumaraAra's one reviewed image challenge can use a separately installed free local
 helper. Managed challenges still require the site's real accepted response. The private
@@ -162,17 +154,17 @@ remain blocked. A recognized answer is not evidence of broker acceptance.
 
 ## Country coverage
 
-The catalog has 43 reference routes, with fourteen standard initial companion actions
-and five separate transient forms. Twenty-four routes lack reviewed form fill; six
-of these have a separate reviewed email action. Seven email routes are supported in
-total because NumaraAra overlaps the form set. Eighteen routes remain guidance-only. Reference coverage is separate from live integration or removal evidence.
+The catalog has 43 reference routes, with fifteen standard initial companion actions
+and thirteen separate transient forms. Fifteen routes lack reviewed form fill; seven
+of these have a separate reviewed email action. Eight email routes are supported in
+total because NumaraAra overlaps the form set. Eight routes remain guidance-only. Reference coverage is separate from live integration or removal evidence.
 
 | Catalog group | Reference routes | Initial companion actions |
 | --- | --- | --- |
 | Global portals: People Data Labs and Apollo | 2 | 2 |
-| United States | 23 | 11 (including three transient prefills) |
-| Canada | 4 | 1 (marketing registration) |
-| United Kingdom | 5 | 1 (transient prefill) |
+| United States | 23 | 16 (including seven transient prefills) |
+| Canada | 4 | 3 (two marketing preferences and one web directory) |
+| United Kingdom | 5 | 3 (transient forms and a marketing preference) |
 | Germany | 2 | 0 |
 | Turkey | 7 | 4 |
 
@@ -603,3 +595,11 @@ A returned Google message/thread reference means provider API acceptance only.
 Delivery, broker acceptance and deletion remain unverified. The app does not read
 personal inboxes or install polling, recurring checks or future retries. Both live
 pilot requests remain held. See [supported recipients and setup](LOCAL_REMOVAL_MAIL.md#reviewed-privacy-email-delivery).
+
+## Additional private form reviews (0.13)
+
+Use **Review association fields**, **Review phone preference** or **Review directory suppression** on the supported route. Enter accurate own-information details, review the exact canonical values and approve a single prefill. Changing a field clears approval. DOB/phone/location values remain in memory and the approved payload, outside saved state and backups. Closing or changing a workspace before dispatch withholds them; a reserved operation is reconciled instead of repeated.
+
+Association/relative forms do not suppress complete background reports. DNCL and Residential TPS are marketing preferences. Canada411’s form removes its web listing only; 192.com retains its genuine challenge and confirmation. Final submissions for these new private forms remain on the official site.
+
+The local mail screen now offers two dedicated-Gmail connections: Google sign-in with a Desktop OAuth client, or an app password when Google makes that option available. The latter needs 2-Step Verification and has broader provider permissions; local sending is separately opt-in. No personal inbox is authorized, and setup never enables Google security settings for you. A native SMTP acceptance receipt remains distinct from delivery or deletion.

@@ -6,7 +6,7 @@ document.getElementById('enable').addEventListener('click',async()=>{
       'https://www.apollo.io/*','https://www.spokeo.com/*',
       'https://www.advancedbackgroundchecks.com/*','https://www.smartbackgroundchecks.com/*','https://www.familytreenow.com/*','https://www.nosorgulama.com.tr/*',
       'https://www.numaraara.com/*','https://www.numarasor.com/*','https://www.telefonsorgulama.com/*',
-      'https://www.peopletraceuk.com/*','https://www.mylife.com/*','https://mylife.jotform.com/*','https://www.whitepages.com/*','https://cmadnm.cawebhosting.ca/*','https://thatsthem.com/*','https://www.peoplefinders.com/*'
+      'https://www.peopletraceuk.com/*','https://www.mylife.com/*','https://mylife.jotform.com/*','https://www.whitepages.com/*','https://cmadnm.cawebhosting.ca/*','https://thatsthem.com/*','https://www.peoplefinders.com/*','https://www.lnnte-dncl.gc.ca/*','https://www.tpsonline.org.uk/*','https://www.canada411.ca/*','https://www.truepeoplesearch.com/*','https://www.192.com/*','https://app.intelius.com/*','https://app.truthfinder.com/*','https://app.instantcheckmate.com/*','https://app.ussearch.com/*'
     ]});
     document.getElementById('result').textContent=granted?'Broker access enabled. Refresh your workspace.':'Access was not granted. Official forms can still be opened by hand.';
   }catch(_){document.getElementById('result').textContent='Access could not be enabled. Open the extension settings and try again.';}

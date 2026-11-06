@@ -574,3 +574,11 @@ outbox are documented in [local removal mail](LOCAL_REMOVAL_MAIL.md#reviewed-pri
 Support/registry contacts and Vodafone’s recorded-sender instructions are excluded.
 No credentials, real mail send, new pilot submission or recurring timer was used
 for this implementation and its synthetic tests.
+
+## November 6 reviewed additions
+
+Normal browser readiness exposed TruePeopleSearch’s initial POST `/removal/beginremovalidv` form. Its 13-control contract keeps optional middle/agent fields blank, checks the own-subject/contact authorization, fixed policy sources, checkbox fallback and two genuine hCaptcha fields. Privacy entry is checked before a pinned form receives name/email. An optional guarded submit is only a verification-initiation attempt.
+
+The four named PeopleConnect brands each expose a distinct association/relative opt-out in their own `app.<brand>.com/privacy-center/`. Public accordion readiness receives no identity fields. The reviewed six-field prefill is separate from retrieval, account deletion and complete background-report suppression. No action propagates between brands.
+
+DNCL and TPS have exact first-number prefills; TPS public navigation selects Residential only. 192.com has an own-record four-field prefill, keeping optional telephone and other-person controls empty. Canada411’s FAQ publishes a web-only listing-removal modal with reviewed own-name, listed number, email and a fixed privacy reason; comments and challenge are untouched. None of these forms was submitted with real personal data. Later confirmation, matching and deletion remain unverified.

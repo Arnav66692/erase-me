@@ -541,3 +541,16 @@ requires single-select DOB/state controls. The web dialog requires `identity-sub
 before detail collection and reservation; automatic initial batches require
 `reviewed-initial-submit-v2` for every contract. The workspace's bounded stage map
 records proven attempts for all five initial contracts without promoting acceptance.
+
+## Private form and Gmail transport additions (0.13)
+
+`private-route-dialog.js` reviews the fixed phone-preference, directory-suppression and association forms. Shared validators load before Core. `privateRoutePreview` captures the profile, country, purpose and operation; `preparePrivateRoute` rechecks them under the public mutation lock and persists only an operation boundary before returning transient details. The modal clears sensitive controls before dispatch and rechecks hold/profile/campaign state. The companion journals before opening the fixed official URL, runs a public readiness stage with no identity payload, pins its document and only then releases reviewed values. These actions are outside generic batches and accept only prepared/blocked/unknown outcomes.
+
+`gmail_app_mail.py` adds an explicitly selected, fixed-host Gmail IMAP/SMTP transport for eligible app-password accounts. OAuth remains supported. SMTP sends reserve the existing outbox before network work. `smtp_accepted` requires a DATA 250 local receipt and has no Gmail API message/thread IDs; delivery, broker acceptance and deletion stay false. Browser history validates that separate receipt type, preserves it across a hold and strips trust from imports. No transport installs recurring work.
+
+Credential activation uses immutable per-attempt files for both connection methods.
+The selected provider-specific filename and account/profile hashes are published
+atomically under a private commit lock, after comparing the previous selector and
+active file bytes. The loopback Close guard reserves activation under its session
+lock before commit. Losers discard only their inactive stages. Google’s project-wide
+revocation endpoint is not automatically called during rejected or canceled setup.

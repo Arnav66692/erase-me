@@ -13,6 +13,7 @@ import hmac
 import json
 import re
 import secrets
+import sqlite3
 import ssl
 import time
 import unicodedata
@@ -22,6 +23,7 @@ from urllib.request import Request, HTTPSHandler, build_opener
 
 import connect_removal_gmail as oauth
 import configure_removal_mailbox as private
+import gmail_app_mail as app_mail
 
 SEND_URL = 'https://gmail.googleapis.com/gmail/v1/users/me/messages/send'
 LIFETIME = 15 * 60
@@ -32,6 +34,7 @@ CAPABILITY = re.compile(r's1\.[A-Za-z0-9_-]{1,1800}\.[A-Za-z0-9_-]{43}\Z')
 # Only first-party, purpose-verified privacy channels. Support contacts and
 # Vodafone's recorded-sender-only channel are intentionally absent.
 ROUTES = MappingProxyType({
+    'de-11880': ('datenschutz.solutions@11880.com', 'https://unternehmen.11880.com/datenschutz'),
     'ca-411': ('privacy@411.ca', 'https://www.411.ca/privacy-policy'),
     'ukphonebook': ('dpo@simunix.com', 'https://www.ukphonebook.com/privacy'),
     'de-teilnehmerverzeichnis-widerspruch': ('datenschutz@dasoertliche-marketing.de', 'https://www.dasoertliche.de/datenschutz'),
@@ -167,8 +170,14 @@ def _schema(db):
     db.execute('''CREATE TABLE IF NOT EXISTS removal_outbox (
         route TEXT, operation TEXT, workspace TEXT NOT NULL, personal_hash TEXT NOT NULL,
         account TEXT, state TEXT NOT NULL, request_id TEXT NOT NULL, digest TEXT,
-        issued_at INTEGER, expires_at INTEGER, cap_hash TEXT, message_id TEXT, thread_id TEXT,
+        issued_at INTEGER, expires_at INTEGER, cap_hash TEXT, message_id TEXT, thread_id TEXT, receipt_ref TEXT,
         PRIMARY KEY(route,operation))''')
+    if 'receipt_ref' not in {row[1] for row in db.execute('PRAGMA table_info(removal_outbox)')}:
+        try:
+            db.execute('ALTER TABLE removal_outbox ADD COLUMN receipt_ref TEXT')
+        except sqlite3.OperationalError:
+            if 'receipt_ref' not in {row[1] for row in db.execute('PRAGMA table_info(removal_outbox)')}:
+                raise
 
 
 def _row(db, request, route, operation):
@@ -186,6 +195,8 @@ def _outcome(row, route, operation, status=None):
               'acceptance_verified': False, 'deletion_verified': False}
     if row and state == 'provider_accepted':
         result.update(message_id=row['message_id'], thread_id=row['thread_id'])
+    if row and state == 'smtp_accepted':
+        result.update(acceptance_kind='smtp_250', receipt_ref=row['receipt_ref'])
     return result
 
 
@@ -265,15 +276,16 @@ def handle(host, request, *, database, transaction, key_loader):
                     db.execute('INSERT INTO removal_outbox(route,operation,workspace,personal_hash,state,request_id) VALUES (?,?,?,?,?,?)', (route, operation, request['workspace_id'], request['personal_email_sha256'], 'revoked', secrets.token_hex(16)))
                 return _outcome(_row(db, request, route, operation), route, operation)
         try:
-            config = oauth.validate_config(host.loader(host.home / '.erase-me-removal-mail' / 'gmail-oauth.json'))
-        except (ValueError, OSError, oauth.OAuthError):
+            config = host._load_connection()
+        except (ValueError, OSError, oauth.OAuthError, app_mail.AppMailError):
             if action == 'send-status':
                 return _status()
             raise SenderError('not_configured') from None
         if (not hmac.compare_digest(config['personal_email_sha256'], request['personal_email_sha256'])
                 or hmac.compare_digest(private.personal_digest(config['mailbox']), request['personal_email_sha256'])):
             raise SenderError('personal_account_mismatch')
-        if frozenset(config['scopes']) != oauth.SEND_SCOPES:
+        is_app = config['provider'] == app_mail.PROVIDER
+        if (not config['allow_sending'] if is_app else frozenset(config['scopes']) != oauth.SEND_SCOPES):
             if action == 'send-status':
                 return _status(True)
             raise SenderError('send_permission_required')
@@ -315,7 +327,12 @@ def handle(host, request, *, database, transaction, key_loader):
                 owner = _reserve(host, db, request, account, 'send_once', now)
                 db.execute('UPDATE removal_outbox SET state=? WHERE route=? AND operation=?', ('started', route, operation))
         try:
-            token = _token(config, time.monotonic() + 25)
+            token = None
+            if is_app:
+                if action != 'send-once':
+                    app_mail.verify(config, sending=True, deadline=time.monotonic() + 25)
+            else:
+                token = _token(config, time.monotonic() + 25)
             if action == 'send-status':
                 return _status(True, True, config['mailbox'])
             if action == 'send-prepare':
@@ -333,6 +350,16 @@ def handle(host, request, *, database, transaction, key_loader):
             for key in ('from', 'to', 'subject'):
                 message[key.title()] = request['preview'][key]
             message.set_content(request['preview']['body'], charset='utf-8', cte='quoted-printable')
+            if is_app:
+                app_mail.send(config, message.as_bytes(), request['preview']['to'], deadline=time.monotonic() + 25)
+                # This local receipt identifies the journaled SMTP-250 observation;
+                # it is never presented as a Gmail message/thread identifier.
+                receipt = hmac.new(bytes.fromhex(keys['capability_secret']),
+                    ('smtp-250:' + row['request_id'] + ':' + row['digest'] + ':' + operation).encode(), hashlib.sha256).hexdigest()
+                with transaction(db):
+                    db.execute('UPDATE removal_outbox SET state=?,receipt_ref=? WHERE route=? AND operation=? AND state=?',
+                        ('smtp_accepted', receipt, route, operation, 'started'))
+                    return _outcome(_row(db, request, route, operation), route, operation)
             raw = base64.urlsafe_b64encode(message.as_bytes()).decode().rstrip('=')
             response = request_json(SEND_URL, bearer=token, body={'raw': raw}, deadline=time.monotonic() + 8)
             if (not isinstance(response.get('id'), str) or not OPAQUE.fullmatch(response['id'])

@@ -1,0 +1,23 @@
+'use strict';
+const{test}=require('node:test'),assert=require('node:assert/strict');
+const Background=require('../extension/background.js'),Phone=require('../extension/phone-preference-details.js'),Association=require('../extension/association-details.js'),Directory=require('../extension/directory-suppression-details.js');
+const sender={url:'https://erase-me-preview.vercel.app/',tab:{id:1}},OP='a'.repeat(32),all={...Phone.ROUTES,...Association.ROUTES,...Directory.ROUTES};
+function payload(routeId){const phone=!!Phone.ROUTES[routeId],association=!!Association.ROUTES[routeId],api=phone?Phone:association?Association:Directory,contract=phone?api.ROUTES[routeId]:(api.CONTRACTS?.[routeId]||api.CONTRACT);return{type:'erase-me',action:'fill-private-route',routeId,operationId:OP,authorized:true,ownRequestConfirmed:true,consentId:contract.id||contract.consentId,...(phone?{}:{identity:association?{full_name:'Example Person',age:36}:{full_name:'Example Person'}}),details:routeId==='canada411'?{phone:'6135550123',email:'contact@example.test'}:phone?{phone:routeId==='ca-dncl'?'613-555-0123':'02079460000'}:association?{first_name:'Example',last_name:'Person',date_of_birth:'1990-05-01',city:'Private City',state:'CA',email:'contact@example.test'}:{first_name:'Example',last_name:'Person',postcode:'SW1A 1AA',email:'contact@example.test'}};}
+function chrome(routeId,{permission=true,storageFailure=false,ready=true,changedDoc=false,changedURL=false}={}){
+  const records={},calls=[];let opened=0;
+  const api={permissions:{async contains(){return permission;}},storage:{local:{async get(key){return{[key]:records[key]};},async set(value){if(storageFailure)throw Error('quota');Object.assign(records,structuredClone(value));}}},tabs:{async create(){assert.equal(records['operation:'+OP].result.status,'unknown');opened++;return{id:17};},async get(){return{id:17,status:'complete',url:changedURL?'https://example.test/':all[routeId].url};}},scripting:{async executeScript(spec){calls.push(structuredClone({target:spec.target,args:spec.args,files:spec.files}));if(spec.files)return[{documentId:'pinned'}];assert.deepEqual(spec.target.documentIds,['pinned']);if(spec.args.length===2&&typeof spec.args[1]==='string'){assert.equal(spec.args[1],routeId);assert.equal(JSON.stringify(spec.args).includes('Example Person'),false);return[{documentId:changedDoc?'changed':'pinned',result:{status:ready?'ready':'blocked'}}];}assert.equal(ready,true);assert.equal(changedDoc,false);assert.equal(spec.args[1].details.phone||spec.args[1].details.first_name,payload(routeId).details.phone||'Example');return[{documentId:'pinned',result:{status:'prepared'}}];}}};return{api,records,calls,opened:()=>opened};
+}
+for(const routeId of Object.keys(all)){
+  test(routeId+' journal and public readiness precede private fields; result/replay is local and secret-free',async()=>{
+    const f=chrome(routeId),p=payload(routeId);const result=await Background.dispatch(p,sender,f.api);assert.equal(result.status,'prepared');assert.equal(f.opened(),1);assert.equal(f.calls.length,3);assert.equal(JSON.stringify(f.records).includes('contact@example.test'),false);assert.equal(JSON.stringify(f.records).includes('1990-05-01'),false);assert.equal(JSON.stringify(f.records).includes('613-555-0123'),false);assert.equal(JSON.stringify(f.records).includes('SW1A 1AA'),false);
+    assert.deepEqual(await Background.dispatch(p,sender,f.api),result);assert.equal(f.opened(),1);assert.deepEqual(await Background.dispatch({type:'erase-me',action:'result',routeId,operationId:OP},sender,f.api),result);assert.equal(f.calls.length,3);
+  });
+  test(routeId+' changed purpose or document withholds private dispatch',async()=>{
+    for(const options of [{ready:false},{changedDoc:true},{changedURL:true}]){const f=chrome(routeId,options);assert.equal((await Background.dispatch(payload(routeId),sender,f.api)).status,'unknown');assert.equal(f.calls.some(call=>call.args?.[1]?.details),false);}
+  });
+}
+test('private native actions reject unknown fields, foreign origin, missing permission and journal failure',async()=>{
+  const p=payload('192com');for(const change of [{authorized:false},{ownRequestConfirmed:false},{details:{...p.details,phone:'123'}},{unreviewed:true}]){const f=chrome('192com');await assert.rejects(Background.dispatch({...p,...change},sender,f.api));assert.equal(f.opened(),0);}
+  const f=chrome('192com');await assert.rejects(Background.dispatch(p,{...sender,url:'https://example.test/'},f.api));
+  for(const options of [{permission:false},{storageFailure:true}]){const f=chrome('192com',options);assert.equal((await Background.dispatch(p,sender,f.api)).status,'unknown');assert.equal(f.opened(),0);assert.equal(f.calls.length,0);}
+});

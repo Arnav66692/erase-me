@@ -37,6 +37,9 @@ MESSAGES = {
     'already_complete': 'This setup is complete. Return to Erase Me or close this screen.',
     'session_closed': 'This setup was closed or expired. Reopen it when ready. No new installation will start.',
     'setup_failed': 'Setup did not finish. Check the separate account, Desktop client and companion ID, then try again.',
+    'invalid_app_password': 'Enter the 16-letter Google app password in this local screen, or choose Google sign-in with a connection file.',
+    'app_password_unavailable': 'The separate Gmail app-password login did not succeed. Check app-password eligibility or choose Google sign-in with a connection file.',
+    'reconnect_required': 'Review intentional replacement before changing the existing separate connection.',
 }
 
 
@@ -64,13 +67,27 @@ def decode_json(raw):
 
 
 def validate_request(value):
-    if (not isinstance(value, dict) or set(value) not in (REQUEST_KEYS, REQUEST_KEYS | {'allow_sending'})
+    modern = REQUEST_KEYS | {'allow_sending', 'connection_method', 'app_password'}
+    if (not isinstance(value, dict) or set(value) not in (REQUEST_KEYS, REQUEST_KEYS | {'allow_sending'}, modern)
             or value['removal_only'] is not True
             or type(value['replace_registration']) is not bool
             or type(value['reconnect']) is not bool
             or type(value.get('allow_sending', False)) is not bool
             or value['browser'] not in ('chrome', 'chromium')):
         raise WebSetupError('invalid_request')
+    if set(value) == modern:
+        if value['connection_method'] not in ('oauth', 'app_password'):
+            raise WebSetupError('invalid_request')
+        if value['connection_method'] == 'oauth' and value['app_password'] is not None:
+            raise WebSetupError('invalid_request')
+        if value['connection_method'] == 'app_password':
+            if value['client_json'] is not None:
+                raise WebSetupError('invalid_request')
+            if value['app_password'] is not None:
+                try:
+                    setup.app_mail.password(value['app_password'])
+                except setup.app_mail.AppMailError:
+                    raise WebSetupError('invalid_app_password') from None
     try:
         setup.oauth.private.personal_digest(value['personal_email'])
         setup.oauth.validate_mailbox(value['mailbox'], value['personal_email'])
@@ -117,9 +134,10 @@ class SetupSession:
                 self.closed = True
                 if not (self.installation_started and stage == 'complete'):
                     raise WebSetupError('session_closed')
-            if stage == 'before_install':
+            if stage in ('before_install', 'before_connection_activation'):
                 # Reservation and close share a lock. A reserved installation may
-                # finish; a close that wins first prevents installation entirely.
+                # or connection activation may finish; a close that wins first
+                # prevents that step entirely.
                 self.installation_started = True
 
     def close(self):
@@ -181,7 +199,10 @@ class SetupSession:
                                  ensure_active=self.ensure_active,
                                  **({'allow_sending': True} if value.get('allow_sending', False) else {}),
                                  **({'reuse_saved_client': True} if value.get('allow_sending', False)
-                                    and value['reconnect'] and value['client_json'] is None else {}))
+                                    and value['reconnect'] and value['client_json'] is None
+                                    and value.get('connection_method', 'oauth') == 'oauth' else {}),
+                                 **({'connection_method': value['connection_method'], 'app_password': value['app_password']}
+                                    if 'connection_method' in value else {}))
             expected = {'ok', 'installed', 'reused_connection', 'identity_checked', 'messages_read', 'scheduled_work'}
             if (not isinstance(result, dict) or set(result) != expected
                     or any(type(item) is not bool for item in result.values())
@@ -193,11 +214,16 @@ class SetupSession:
             return {key: result[key] for key in expected - {'ok'}}
         except WebSetupError:
             raise
+        except setup.app_mail.AppMailError as error:
+            code = error.code if error.code in ('invalid_app_password', 'app_password_unavailable', 'reconnect_required') else 'setup_failed'
+            raise WebSetupError(code) from None
         except (setup.SetupError, setup.oauth.OAuthError, setup.installer.host.MailHostError, ValueError, OSError):
             with self.lock:
                 code = 'session_closed' if self.closed or self.clock() >= self.deadline else 'setup_failed'
             raise WebSetupError(code) from None
         finally:
+            if 'app_password' in value:
+                value['app_password'] = None
             try:
                 if temporary is not None:
                     temporary.unlink(missing_ok=True)

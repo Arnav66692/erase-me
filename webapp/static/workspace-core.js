@@ -9,10 +9,13 @@
   const thatsThemDetails = typeof module === 'object' && module.exports ? require('../../extension/thatsthem-details.js') : root.EraseThatsThemDetails;
   const peopleFindersDetails = typeof module === 'object' && module.exports ? require('../../extension/peoplefinders-details.js') : root.ErasePeopleFindersDetails;
   const sendContract = typeof module === 'object' && module.exports ? require('../../extension/send-contract.js') : root.EraseSendContract;
-  const api = factory(root, routes, identityDetails, footprintPlanner, peopleTraceDetails, cmaDetails, myLifeDetails, thatsThemDetails, peopleFindersDetails, sendContract);
+  const phonePreferenceDetails = typeof module === 'object' && module.exports ? require('../../extension/phone-preference-details.js') : root.ErasePhonePreferenceDetails;
+  const associationDetails = typeof module === 'object' && module.exports ? require('../../extension/association-details.js') : root.EraseAssociationDetails;
+  const directorySuppressionDetails = typeof module === 'object' && module.exports ? require('../../extension/directory-suppression-details.js') : root.EraseDirectorySuppressionDetails;
+  const api = factory(root, routes, identityDetails, footprintPlanner, peopleTraceDetails, cmaDetails, myLifeDetails, thatsThemDetails, peopleFindersDetails, sendContract, phonePreferenceDetails, associationDetails, directorySuppressionDetails);
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.EraseWorkspace = api;
-})(typeof globalThis === 'object' ? globalThis : this, function (root, routes, identityDetails, footprintPlanner, peopleTraceDetails, cmaDetails, myLifeDetails, thatsThemDetails, peopleFindersDetails, sendContract) {
+})(typeof globalThis === 'object' ? globalThis : this, function (root, routes, identityDetails, footprintPlanner, peopleTraceDetails, cmaDetails, myLifeDetails, thatsThemDetails, peopleFindersDetails, sendContract, phonePreferenceDetails, associationDetails, directorySuppressionDetails) {
   'use strict';
   const KEY = 'erase-me-workspace-v1';
   const VERSION = 1;
@@ -22,12 +25,12 @@
   const MATCH_STATES = new Set(['matched', 'not_matched', 'ambiguous', 'needs_identity', 'unsupported']);
   const MATCH_EVIDENCE = new Set(['structured_person', 'exact_candidate_url', 'name', 'email', 'phone', 'age', 'city', 'identity']);
   const MATCH_LIFETIME = 30 * 60 * 1000;
-  const SUBMIT_STAGES = Object.freeze({ familytreenow: 'verification_initiation', smartbackgroundchecks: 'verification_initiation', usphonebook: 'verification_initiation', fastpeoplesearch: 'verification_initiation', searchpeoplefree: 'verification_initiation', apollo: 'verification_initiation', advancedbackgroundchecks: 'verification_initiation',
+  const SUBMIT_STAGES = Object.freeze({ truepeoplesearch: 'verification_initiation', familytreenow: 'verification_initiation', smartbackgroundchecks: 'verification_initiation', usphonebook: 'verification_initiation', fastpeoplesearch: 'verification_initiation', searchpeoplefree: 'verification_initiation', apollo: 'verification_initiation', advancedbackgroundchecks: 'verification_initiation',
     'tr-nosorgulama': 'request_submission', 'tr-numaraara': 'request_submission', 'tr-numarasor': 'request_submission' });
   const MAIL_ROUTES = new Set(['usphonebook', 'searchpeoplefree', 'fastpeoplesearch']);
   const NEW_MAIL_ROUTES = new Set(['usphonebook', 'fastpeoplesearch']);
   const OPERATION = /^[a-f0-9-]{32,40}$/;
-  const SEND_PHASES = new Set(['preparing','ready','sending','provider_accepted','unknown','blocked','closed','revoked']);
+  const SEND_PHASES = new Set(['preparing','ready','sending','provider_accepted','smtp_accepted','unknown','blocked','closed','revoked']);
   function sendProtocol(){const api=sendContract||root.EraseSendContract;if(!api?.ROUTES||typeof api.preview!=='function')throw new WorkspaceError('Refresh before reviewing a removal-only email.',409);return api;}
   function sendClaims(capability){
     try{
@@ -42,18 +45,19 @@
   }
   function sendRecord(value,id,operationId,profileId){
     const required=['id','workspace_id','source','phase','created_at','closed','revocation_confirmed','attempt_started','context_digest'];
-    const optional=['request_id','capability','message_digest','expires_at','closure_id','observed_at','result','message_id','thread_id'];
+    const optional=['request_id','capability','message_digest','expires_at','closure_id','observed_at','result','message_id','thread_id','acceptance_kind','receipt_ref'];
     if(!value||!Object.hasOwn(sendProtocol().ROUTES,id)||!required.every(key=>Object.hasOwn(value,key))||Object.keys(value).some(key=>![...required,...optional].includes(key))||
       !OPERATION.test(value.id||'')||value.id!==operationId||!OPERATION.test(value.workspace_id||'')||!['local_native','imported_user_history'].includes(value.source)||
       value.source==='local_native'&&value.workspace_id!==profileId||!SEND_PHASES.has(value.phase)||!['closed','revocation_confirmed','attempt_started'].every(key=>typeof value[key]==='boolean')||
       !/^[a-f0-9]{64}$/.test(value.context_digest||'')||typeof value.created_at!=='string'||value.created_at.length>40||!Number.isFinite(Date.parse(value.created_at))||
       value.request_id!==undefined&&!/^[a-f0-9]{32}$/.test(value.request_id)||value.closure_id!==undefined&&!OPERATION.test(value.closure_id)||
       value.observed_at!==undefined&&(typeof value.observed_at!=='string'||value.observed_at.length>40||!Number.isFinite(Date.parse(value.observed_at)))||
-      value.result!==undefined&&!['provider_accepted','unknown','ready','revoked','already_started','preparing','blocked'].includes(value.result)||
+      value.result!==undefined&&!['provider_accepted','smtp_accepted','unknown','ready','revoked','already_started','preparing','blocked'].includes(value.result)||
       ['message_id','thread_id'].some(key=>value[key]!==undefined&&!(typeof value[key]==='string'&&/^[A-Za-z0-9_-]{1,128}$/.test(value[key])))||
       value.revocation_confirmed&&(!value.closed||value.phase!=='revoked')||value.source==='imported_user_history'&&(!value.closed||value.revocation_confirmed)||
-      ['ready','sending','provider_accepted'].includes(value.phase)&&!value.capability||['sending','provider_accepted'].includes(value.phase)&&!value.attempt_started||
-      value.phase==='provider_accepted'&&(value.result!=='provider_accepted'||!value.message_id||!value.thread_id))throw new WorkspaceError('Invalid private outbound email history.');
+      ['ready','sending','provider_accepted','smtp_accepted'].includes(value.phase)&&!value.capability||['sending','provider_accepted','smtp_accepted'].includes(value.phase)&&!value.attempt_started||
+      value.phase==='provider_accepted'&&(value.result!=='provider_accepted'||!value.message_id||!value.thread_id)||
+      (value.phase==='smtp_accepted'?(value.result!=='smtp_accepted'||value.acceptance_kind!=='smtp_250'||!/^[a-f0-9]{64}$/.test(value.receipt_ref||'')||value.message_id!==undefined||value.thread_id!==undefined):(value.acceptance_kind!==undefined||value.receipt_ref!==undefined)))throw new WorkspaceError('Invalid private outbound email history.');
     if(value.capability!==undefined){const claims=sendClaims(value.capability);if(claims.route_id!==id||claims.operation_id!==value.id||claims.workspace_id!==value.workspace_id||claims.request_id!==value.request_id||claims.message_digest!==value.message_digest||claims.expires_at!==value.expires_at)throw new WorkspaceError('The private outbound capability does not match its history.');}
     else if(['message_digest','expires_at'].some(key=>value[key]!==undefined))throw new WorkspaceError('The private outbound capability is missing.');
     return clone(value);
@@ -844,6 +848,36 @@
     function peopleFindersPreview() {const id='peoplefinders',route=routeFor(id),item=itemFor(id,false);requireNotHeld(item);requireCountryRoute(route,item);if(state.campaign.status!=='active'||operationStarted(item)||!OPERATION.test(item.id||''))throw new WorkspaceError('This private form is paused or already started. Reconcile its existing outcome first.',409);return clone({routeId:id,operationId:item.id,profileId:state.profile.id,country:state.profile.country||null,identity:{ full_name:state.profile.name },consentId:peopleFindersAPI().CONTRACT.id});}
     function preparePeopleFinders(preview,details,approval) {const api=peopleFindersAPI();if(!exactKeys(preview,['routeId','operationId','profileId','country','identity','consentId'])||!exactKeys(preview.identity,['full_name'])||!exactKeys(approval,['authorized','consentId'])||approval.authorized!==true||approval.consentId!==api.CONTRACT.id||JSON.stringify(preview)!==JSON.stringify(peopleFindersPreview()))throw new WorkspaceError('The exact private form review or workspace changed. Review it again.',409);let canonical;try{canonical=api.validateDetails(details,{fullName:preview.identity.full_name});}catch(error){throw new WorkspaceError(error?.message||'Review the private matching fields.');}const item=itemFor(preview.routeId,false);item.operation_id=item.id;item.operation_started_at=clock();item.operation_source='browser_workspace';changed(item,'running');event('You authorized one private PeopleFinders prefill. Additional matching details were not saved.');save();return{routeId:preview.routeId,operationId:item.operation_id,authorized:true,ownRequestConfirmed:true,consentId:api.CONTRACT.id,identity:clone(preview.identity),details:canonical};}
     function recordPeopleFinders(profileId,operationId,result) {if(active().profile.id!==profileId||!['prepared','blocked','unknown'].includes(result?.status))throw new WorkspaceError('The private form result belongs to another workspace or has an unreviewed outcome.',409);return recordCompanion('peoplefinders',operationId,result);}
+    function privateRouteAPI(id) {
+      const route=routeFor(id);
+      const api=route.phonePreferencePrefill?(phonePreferenceDetails||root.ErasePhonePreferenceDetails):route.associationPrefill?(associationDetails||root.EraseAssociationDetails):route.directorySuppressionPrefill?(directorySuppressionDetails||root.EraseDirectorySuppressionDetails):null;
+      if(!api?.ROUTES?.[id]||typeof api.validateDetails!=='function')throw new WorkspaceError('Refresh before reviewing this supported private form.',409);
+      return {api,kind:route.phonePreferencePrefill?'phone_preference':route.associationPrefill?'association':'directory_suppression',contract:route.phonePreferencePrefill?api.ROUTES[id]:(api.CONTRACTS?.[id]||api.CONTRACT)};
+    }
+    function privateRoutePreview(id) {
+      const {kind,contract}=privateRouteAPI(id),route=routeFor(id),item=itemFor(id,false),p=active(false).profile;
+      requireNotHeld(item);requireCountryRoute(route,item);
+      if(state.campaign.status!=='active'||operationStarted(item)||!OPERATION.test(item.id||''))throw new WorkspaceError('This private form is paused or already started. Reconcile its existing action first.',409);
+      return clone({routeId:id,operationId:item.id,profileId:p.id,country:p.country||null,kind,
+        profileContext:{name:p.name,email:p.email,age:p.age,city:p.city||null,region:p.region||null},
+        identity:kind==='phone_preference'?null:kind==='association'?{full_name:p.name,age:p.age}:{full_name:p.name},consentId:contract.id||contract.consentId});
+    }
+    function preparePrivateRoute(preview,details,approval) {
+      if(!exactKeys(preview,['routeId','operationId','profileId','country','kind','profileContext','identity','consentId'])||!exactKeys(approval,['authorized','consentId'])||approval.authorized!==true||approval.consentId!==preview.consentId||JSON.stringify(preview)!==JSON.stringify(privateRoutePreview(preview.routeId)))throw new WorkspaceError('The private form review or workspace changed. Review the exact fields again.',409);
+      const {api,kind}=privateRouteAPI(preview.routeId);let canonical;
+      try{canonical=api.validateDetails(details,{routeId:preview.routeId,fullName:preview.profileContext.name,age:preview.profileContext.age,now:clock()});}catch(error){throw new WorkspaceError(error?.message||'Enter accurate own-information fields.');}
+      const item=itemFor(preview.routeId,false);item.operation_id=item.id;item.operation_started_at=clock();item.operation_source='browser_workspace';
+      changed(item,'running','One reviewed private prefill was reserved. No final request or broker deletion was established.');
+      event('You authorized one '+kind.replace(/_/g,' ')+' prefill for '+routeFor(preview.routeId).name+'. Extra details were not saved.');save();
+      return {routeId:preview.routeId,operationId:item.operation_id,authorized:true,ownRequestConfirmed:true,consentId:preview.consentId,...(kind!=='phone_preference'?{identity:clone(preview.identity)}:{}),details:canonical};
+    }
+    function recordPrivateRoute(id,profileId,operationId,result) {
+      const {kind}=privateRouteAPI(id);
+      if(active(false).profile.id!==profileId||!['prepared','blocked','unknown'].includes(result?.status))throw new WorkspaceError('The private form result belongs to another workspace or stage.',409);
+      recordCompanion(id,operationId,result);const item=itemFor(id,false);
+      if(result.status==='prepared'&&!item.held){changed(item,'needs_broker_step',kind==='association'?'Only association/relative matching fields were filled. Complete the official verification and submission yourself. Complete-report suppression, acceptance and deletion are unverified.':kind==='phone_preference'?'Only the first phone-preference field was filled. Continue registration on the official site yourself. This does not establish broker deletion.':'Only your reviewed directory-suppression fields were filled. Complete the official challenge, verification and submission yourself. Acceptance and deletion are unverified.');save();}
+      return dashboard();
+    }
     function peopleTraceAPI() {
       const api = peopleTraceDetails || root.ErasePeopleTraceDetails;
       if (!api || typeof api.validateDetails !== 'function' || !api.CONTRACT) throw new WorkspaceError('Refresh before reviewing this private form.', 409);
@@ -1121,10 +1155,11 @@
       return {routeId:context.routeId,operationId:context.operationId,profileId:context.profileId,capability:record.capability,preview:clone(response.preview),authorized:true,own_request:true};
     }
     function mailSendOutcome(id,operationId,result,record){
-      const keys=['status','route_id','operation_id','request_id','automatic_execution','delivery_verified','acceptance_verified','deletion_verified',...(Object.hasOwn(result||{},'message_id')?['message_id']:[]),...(Object.hasOwn(result||{},'thread_id')?['thread_id']:[])];
-      if(!exactKeys(result,keys)||result.route_id!==id||result.operation_id!==operationId||!['provider_accepted','unknown','ready','revoked','already_started','preparing','blocked'].includes(result.status)||result.automatic_execution!==false||result.delivery_verified!==false||result.acceptance_verified!==false||result.deletion_verified!==false||
+      const keys=['status','route_id','operation_id','request_id','automatic_execution','delivery_verified','acceptance_verified','deletion_verified',...['message_id','thread_id','acceptance_kind','receipt_ref'].filter(key=>Object.hasOwn(result||{},key))];
+      if(!exactKeys(result,keys)||result.route_id!==id||result.operation_id!==operationId||!['provider_accepted','smtp_accepted','unknown','ready','revoked','already_started','preparing','blocked'].includes(result.status)||result.automatic_execution!==false||result.delivery_verified!==false||result.acceptance_verified!==false||result.deletion_verified!==false||
         result.request_id!==null&&!/^[a-f0-9]{32}$/.test(result.request_id)||record.request_id&&result.request_id!==null&&record.request_id!==result.request_id||
-        ['message_id','thread_id'].some(key=>Object.hasOwn(result,key)&&!(typeof result[key]==='string'&&/^[A-Za-z0-9_-]{1,128}$/.test(result[key])))||result.status==='provider_accepted'&&(!record.attempt_started||!result.request_id||!result.message_id||!result.thread_id))throw new WorkspaceError('The local outbox result does not match this request.',409);
+        ['message_id','thread_id'].some(key=>Object.hasOwn(result,key)&&!(typeof result[key]==='string'&&/^[A-Za-z0-9_-]{1,128}$/.test(result[key])))||result.status==='provider_accepted'&&(!record.attempt_started||!result.request_id||!result.message_id||!result.thread_id)||
+        (result.status==='smtp_accepted'?(!record.attempt_started||!result.request_id||result.acceptance_kind!=='smtp_250'||!/^[a-f0-9]{64}$/.test(result.receipt_ref||'')||Object.hasOwn(result,'message_id')||Object.hasOwn(result,'thread_id')):(Object.hasOwn(result,'acceptance_kind')||Object.hasOwn(result,'receipt_ref'))))throw new WorkspaceError('The local outbox result does not match this request.',409);
       return result;
     }
     function recordMailSend(profileId,operationId,result){
@@ -1133,13 +1168,14 @@
       if(!record||record.id!==operationId||record.source!=='local_native'||record.workspace_id!==profileId)throw new WorkspaceError('No matching local email action exists.',409);
       mailSendOutcome(id,operationId,result,record);
       if(record.revocation_confirmed&&result.status!=='revoked')return dashboard();
-      if(record.result==='provider_accepted'&&result.status!=='provider_accepted')throw new WorkspaceError('The provider result is already recorded; no repeat is authorized.',409);
+      if(['provider_accepted','smtp_accepted'].includes(record.result)&&result.status!==record.result)throw new WorkspaceError('The provider result is already recorded; no repeat is authorized.',409);
       record.result=result.status;record.observed_at=clock();if(result.request_id)record.request_id=result.request_id;
       if(result.status==='provider_accepted'){record.phase='provider_accepted';record.message_id=result.message_id;record.thread_id=result.thread_id;}
+      else if(result.status==='smtp_accepted'){record.phase='smtp_accepted';record.acceptance_kind='smtp_250';record.receipt_ref=result.receipt_ref;}
       else if(result.status==='revoked'){record.phase='revoked';record.closed=true;record.revocation_confirmed=true;}
       else if(record.attempt_started)record.phase='unknown';
       item.evidence={source:'local_removal_mail',result:result.status,observed_at:clock(),delivery_verified:false,acceptance_verified:false,deletion_verified:false};
-      if(!item.held)changed(item,result.status==='provider_accepted'?'needs_broker_step':result.status==='revoked'?'blocked':'uncertain',result.status==='provider_accepted'?'Google accepted the approved email. Broker delivery, acceptance and deletion remain unverified.':'The email outcome needs reconciliation. No automatic repeat is authorized.');
+      if(!item.held)changed(item,['provider_accepted','smtp_accepted'].includes(result.status)?'needs_broker_step':result.status==='revoked'?'blocked':'uncertain',['provider_accepted','smtp_accepted'].includes(result.status)?'The separate Gmail service accepted the approved email for sending. Delivery, broker acceptance and deletion remain unverified.':'The email outcome needs reconciliation. No automatic repeat is authorized.');
       event('You recorded the local outbox outcome for '+routeFor(id).name+'. No deletion was established.');save();return dashboard();
     }
     async function reserveMailSendClosure(context,response,approval){
@@ -1151,9 +1187,9 @@
       const item=itemFor(context.routeId,false),record=item.mail_send;
       if(!record||record.id!==context.operationId||record.source!=='local_native')return {status:'operation_replaced'};
       if(record.context_digest!==digest)throw new WorkspaceError('The email cleanup context changed.',409);
-      if(approval.discard_issued&&response&&!item.held&&!record.closed&&record.capability===response.capability&&['ready','sending','provider_accepted'].includes(record.phase))return {status:'already_bound'};
+      if(approval.discard_issued&&response&&!item.held&&!record.closed&&record.capability===response.capability&&['ready','sending','provider_accepted','smtp_accepted'].includes(record.phase))return {status:'already_bound'};
       if(record.revocation_confirmed)return {status:'already_revoked'};
-      record.closed=true;if(!record.closure_id)record.closure_id=uuid();if(record.phase!=='provider_accepted')record.phase='closed';
+      record.closed=true;if(!record.closure_id)record.closure_id=uuid();if(!['provider_accepted','smtp_accepted'].includes(record.phase))record.phase='closed';
       save();return {status:'reserved',closureId:record.closure_id};
     }
     function mailSendClosureContext(id,expectedProfileId){
@@ -1165,8 +1201,8 @@
       const item=itemFor(context.routeId,false),record=item.mail_send;
       if(!record||record.id!==context.operationId||record.source!=='local_native'||!record.closed||!OPERATION.test(closureId||'')||record.closure_id!==closureId)throw new WorkspaceError('The private email cleanup reference changed.',409);
       mailSendOutcome(context.routeId,context.operationId,result,record);if(!['revoked','already_started','unknown'].includes(result.status))throw new WorkspaceError('This result does not establish an email cleanup outcome.',409);
-      if(record.result==='provider_accepted'&&result.status==='revoked')throw new WorkspaceError('A provider-accepted message cannot be withdrawn by revoking a draft.',409);
-      record.revocation_confirmed=record.revocation_confirmed||result.status==='revoked';record.result=record.result==='provider_accepted'?record.result:record.revocation_confirmed?'revoked':result.status;record.observed_at=clock();if(result.request_id&&!record.request_id)record.request_id=result.request_id;
+      if(['provider_accepted','smtp_accepted'].includes(record.result)&&result.status==='revoked')throw new WorkspaceError('A provider-accepted message cannot be withdrawn by revoking a draft.',409);
+      record.revocation_confirmed=record.revocation_confirmed||result.status==='revoked';record.result=['provider_accepted','smtp_accepted'].includes(record.result)?record.result:record.revocation_confirmed?'revoked':result.status;record.observed_at=clock();if(result.request_id&&!record.request_id)record.request_id=result.request_id;
       if(record.revocation_confirmed)record.phase='revoked';save();return dashboard();
     }
     function mailSendResultRequest(id){const item=itemFor(id,false),record=item.mail_send;if(!record||record.source!=='local_native'||record.workspace_id!==state.profile.id)throw new WorkspaceError('No active local outbox reference is available.',409);return {route_id:id,operation_id:record.id,explicit:true};}
@@ -1198,7 +1234,7 @@
       const item = itemFor(id);
       item.held = true; item.held_at = clock();
       if(item.mail_contact?.transport==='local_native')item.mail_contact.revoked=true;
-      if(item.mail_send){item.mail_send.closed=true;if(!['provider_accepted','revoked'].includes(item.mail_send.phase))item.mail_send.phase='closed';}
+      if(item.mail_send){item.mail_send.closed=true;if(!['provider_accepted','smtp_accepted','revoked'].includes(item.mail_send.phase))item.mail_send.phase='closed';}
       event('You put ' + routeFor(id).name + ' on hold. No new broker or mailbox action will start.'); save(); return dashboard();
     }
     function resumeRoute(id) {
@@ -1316,7 +1352,7 @@
         if(restoredMailSends[id]){
           const reference=restoredMailSends[id];item.operation_id=reference.id;item.operation_source='imported_user_history';
           item.mail_send={...reference,source:'imported_user_history',phase:'closed',closed:true,revocation_confirmed:false,result:'unknown'};
-          delete item.mail_send.message_id;delete item.mail_send.thread_id;item.held=true;item.held_at=clock();
+          delete item.mail_send.message_id;delete item.mail_send.thread_id;delete item.mail_send.acceptance_kind;delete item.mail_send.receipt_ref;item.held=true;item.held_at=clock();
           changed(item,'uncertain','Imported email history is inactive. Its capability cannot authorize a new send or establish broker acceptance.');
         }
       }
@@ -1365,6 +1401,7 @@
       }
     }
     return Object.freeze({ api, snapshot: () => clone(read()), profile: () => clone(active().profile), routes: () => clone(routes),
+      privateRoutePreview,preparePrivateRoute,recordPrivateRoute,
       beginMailSendPreview,bindMailSendPreview,prepareMailSend,recordMailSend,reserveMailSendClosure,recordMailSendClosure,mailSendClosureContext,mailSendResultRequest,resetMailSend,
       setEvidence, prepare, fillPreview, prepareReviewed, matchRequest, recordMatch, holdRoute, resumeRoute, mailSessionRequest, bindMailContact, clearMailContact, reserveLocalMailSetupClosure, recordLocalMailSetupClosure, mailCheckRequest, recordMailReceipt,
       mailContinuationRequest, prepareMailContinuation, recordMailContinuation,
@@ -1380,9 +1417,9 @@
     if (!locks || typeof locks.request !== 'function') throw new WorkspaceError('This browser cannot safely coordinate workspace changes. Use a current browser with Web Locks support.', 503);
     return locks.request(KEY + '-write', { mode: 'exclusive' }, action);
   }
-  const mutators = new Set(['beginMailSendPreview','bindMailSendPreview','prepareMailSend','recordMailSend','reserveMailSendClosure','recordMailSendClosure','resetMailSend','prepareThatsThem','recordThatsThem','preparePeopleFinders','recordPeopleFinders','prepareMyLife', 'recordMyLife', 'prepareCMA', 'recordCMA', 'preparePeopleTrace', 'recordPeopleTrace', 'setEvidence', 'prepare', 'prepareReviewed', 'matchRequest', 'recordMatch', 'holdRoute', 'resumeRoute', 'mailSessionRequest', 'bindMailContact', 'clearMailContact', 'reserveLocalMailSetupClosure', 'recordLocalMailSetupClosure', 'mailCheckRequest', 'recordMailReceipt', 'mailContinuationRequest', 'prepareMailContinuation', 'recordMailContinuation', 'prepareIdentitySubmission', 'recordIdentitySubmission', 'recordCompanion', 'observationRequest', 'recordObservation', 'searchRequest', 'privacyDraftRequest', 'recordUser', 'opened', 'importData', 'importFootprint', 'chooseFootprintItem', 'recordFootprintProgress', 'remove', 'updateRoute', 'applyCompanionResult']);
+  const mutators = new Set(['preparePrivateRoute','recordPrivateRoute','beginMailSendPreview','bindMailSendPreview','prepareMailSend','recordMailSend','reserveMailSendClosure','recordMailSendClosure','resetMailSend','prepareThatsThem','recordThatsThem','preparePeopleFinders','recordPeopleFinders','prepareMyLife', 'recordMyLife', 'prepareCMA', 'recordCMA', 'preparePeopleTrace', 'recordPeopleTrace', 'setEvidence', 'prepare', 'prepareReviewed', 'matchRequest', 'recordMatch', 'holdRoute', 'resumeRoute', 'mailSessionRequest', 'bindMailContact', 'clearMailContact', 'reserveLocalMailSetupClosure', 'recordLocalMailSetupClosure', 'mailCheckRequest', 'recordMailReceipt', 'mailContinuationRequest', 'prepareMailContinuation', 'recordMailContinuation', 'prepareIdentitySubmission', 'recordIdentitySubmission', 'recordCompanion', 'observationRequest', 'recordObservation', 'searchRequest', 'privacyDraftRequest', 'recordUser', 'opened', 'importData', 'importFootprint', 'chooseFootprintItem', 'recordFootprintProgress', 'remove', 'updateRoute', 'applyCompanionResult']);
   const exported = { create, KEY, AUTHORIZATION, WorkspaceError, routes: () => clone(routes), listingURL };
-  for (const name of ['beginMailSendPreview','bindMailSendPreview','prepareMailSend','recordMailSend','reserveMailSendClosure','recordMailSendClosure','mailSendClosureContext','mailSendResultRequest','resetMailSend','thatsThemPreview','prepareThatsThem','recordThatsThem','peopleFindersPreview','preparePeopleFinders','recordPeopleFinders','snapshot', 'profile', 'setEvidence', 'prepare', 'fillPreview', 'prepareReviewed', 'matchRequest', 'recordMatch', 'holdRoute', 'resumeRoute', 'mailSessionRequest', 'bindMailContact', 'clearMailContact', 'reserveLocalMailSetupClosure', 'recordLocalMailSetupClosure', 'mailCheckRequest', 'recordMailReceipt', 'mailContinuationRequest', 'prepareMailContinuation', 'recordMailContinuation', 'recordCompanion', 'observationRequest', 'focusRequest', 'myLifePreview', 'prepareMyLife', 'recordMyLife', 'peopleTracePreview', 'cmaPreview', 'prepareCMA', 'recordCMA', 'preparePeopleTrace', 'recordPeopleTrace', 'identityPreview', 'prepareIdentitySubmission', 'recordIdentitySubmission', 'identityResultRequest', 'recordObservation', 'searchRequest', 'privacyDraftRequest', 'recordUser', 'opened', 'exportData', 'importData', 'importFootprint', 'chooseFootprintItem', 'recordFootprintProgress', 'remove', 'dashboard', 'updateRoute', 'applyCompanionResult']) {
+  for (const name of ['privateRoutePreview','preparePrivateRoute','recordPrivateRoute','beginMailSendPreview','bindMailSendPreview','prepareMailSend','recordMailSend','reserveMailSendClosure','recordMailSendClosure','mailSendClosureContext','mailSendResultRequest','resetMailSend','thatsThemPreview','prepareThatsThem','recordThatsThem','peopleFindersPreview','preparePeopleFinders','recordPeopleFinders','snapshot', 'profile', 'setEvidence', 'prepare', 'fillPreview', 'prepareReviewed', 'matchRequest', 'recordMatch', 'holdRoute', 'resumeRoute', 'mailSessionRequest', 'bindMailContact', 'clearMailContact', 'reserveLocalMailSetupClosure', 'recordLocalMailSetupClosure', 'mailCheckRequest', 'recordMailReceipt', 'mailContinuationRequest', 'prepareMailContinuation', 'recordMailContinuation', 'recordCompanion', 'observationRequest', 'focusRequest', 'myLifePreview', 'prepareMyLife', 'recordMyLife', 'peopleTracePreview', 'cmaPreview', 'prepareCMA', 'recordCMA', 'preparePeopleTrace', 'recordPeopleTrace', 'identityPreview', 'prepareIdentitySubmission', 'recordIdentitySubmission', 'identityResultRequest', 'recordObservation', 'searchRequest', 'privacyDraftRequest', 'recordUser', 'opened', 'exportData', 'importData', 'importFootprint', 'chooseFootprintItem', 'recordFootprintProgress', 'remove', 'dashboard', 'updateRoute', 'applyCompanionResult']) {
     exported[name] = (...args) => mutators.has(name) ? exclusive(() => defaults()[name](...args)) : defaults()[name](...args);
   }
   exported.api = async (...args) => {

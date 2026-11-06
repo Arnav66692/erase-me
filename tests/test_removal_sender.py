@@ -371,8 +371,10 @@ def test_explicit_send_upgrade_can_reuse_only_same_profile_private_client(tmp_pa
                             home=home, config_path=path, platform='linux', allow_sending=True,
                             reconnect=True, reuse_saved_client=True)
     assert result['installed'] is True
-    assert calls == [(MAILBOX, PERSONAL, CLIENT, {'allow_sending': True})]
-    assert oauth.load_config(path)['scopes'] == sorted(oauth.SEND_SCOPES)
+    assert calls == [(MAILBOX, PERSONAL, CLIENT, {'revoke_on_failure': False, 'allow_sending': True})]
+    selected = sender.app_mail.selection(path.parent)
+    assert oauth.load_config(sender.app_mail.oauth_config_path(path.parent, selected))['scopes'] == sorted(oauth.SEND_SCOPES)
+    assert oauth.load_config(path)['scopes'] == sorted(oauth.SCOPES)
 
 
 def test_private_client_reuse_cannot_silently_apply_to_another_account(tmp_path, monkeypatch):

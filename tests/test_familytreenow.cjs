@@ -42,7 +42,7 @@ test('FamilyTreeNow fills exact own-subject fields and leaves consent, CSRF, age
   assert.deepEqual([p.csrf.value,p.fallback.value,p.token.value,p.challengeResponse.value],before);assert.equal(p.clicks(),0);assert.equal(p.checkbox.checked,false);for(const[key,value]of Object.entries(p.payload.fields))assert.equal(p.controls[key].value,value);
 });
 test('FamilyTreeNow tenth contract consumes exactly one genuine native submission attempt, never deletion',async()=>{
-  const p=page();assert.equal(Automatic.CONTRACTS[ROUTE].requiredCapability,'reviewed-initial-submit-v6');assert.equal(Automatic.CONTRACTS[ROUTE].consentText,CONSENT);assert.equal(Automatic.version,'automatic-executor-v8');
+  const p=page();assert.equal(Automatic.CONTRACTS[ROUTE].requiredCapability,'reviewed-initial-submit-v6');assert.equal(Automatic.CONTRACTS[ROUTE].consentText,CONSENT);assert.equal(Automatic.version,'automatic-executor-v9');
   assert.deepEqual(await Automatic.waitReady(p.payload,p.env),{status:'ready'});assert.equal(Automatic.capture(p.payload,p.env).status,'ready');const result=Automatic.submit(p.payload,p.env);
   assert.equal(result.status,'submission_attempted');assert.equal(result.stage,'verification_initiation');assert.equal(result.attempt_verified,true);assert.equal(p.sent(),1);assert.equal(p.clicks(),1);assert.equal(p.checkbox.checked,true);assert.equal(p.fallback.value,'false');
   assert.equal(Automatic.submit(p.payload,p.env).reason,'already_started');assert.equal(Automatic.capture(p.payload,p.env).reason,'already_captured');for(const value of Object.values(p.payload.fields))assert.equal(JSON.stringify(result).includes(value),false);

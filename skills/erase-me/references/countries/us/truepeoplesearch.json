@@ -28,20 +28,18 @@
       "email_verification"
     ],
     "fields_needed": [
-      "email",
-      "full_name",
-      "city",
-      "region"
+      "first_name",
+      "last_name",
+      "email"
     ],
     "steps": [
-      "Open the removal page, enter an email, accept the terms and complete the captcha yourself.",
-      "Search by name, city and state inside the removal flow.",
-      "Open the matching record and choose to remove it.",
-      "Click the link in the verification email.",
-      "Repeat for each listing."
+      "Open the official privacy notice and follow its published Opt-Out Form link.",
+      "Review your own first name, surname, email and the contact authorization; leave optional middle-name and agent fields empty.",
+      "Complete the genuine hCaptcha and submit the initial verification form.",
+      "Follow the broker email and later matching instructions. Initial submission and email verification are not deletion."
     ],
-    "expected_days": 3,
-    "notes": "identity-eraser says copies on other top-level domains need their own opt-outs. The 2026 California registry lists the site under Free Data Services, LLC."
+    "expected_days": null,
+    "notes": "Read-only inspection on November 6 observed the 13-control POST /removal/beginremovalidv form. The subject choice, communications authorization, hidden false fallback, fixed policy links and two genuine hCaptcha fields were checked. No live request or final removal was submitted or verified."
   },
   "relist_risk": "medium",
   "registries": {
@@ -67,9 +65,19 @@
       "url": "https://cppa.ca.gov/data_broker_registry/",
       "license": "official",
       "attribution": "California Privacy Protection Agency data broker registry, 2026 list fetched 2026-10-27"
+    },
+    {
+      "url": "https://www.truepeoplesearch.com/privacy",
+      "license": "official",
+      "attribution": "TruePeopleSearch official privacy entry and initial verification form, inspected read-only 2026-11-06"
+    },
+    {
+      "url": "https://www.truepeoplesearch.com/removal",
+      "license": "official",
+      "attribution": "TruePeopleSearch official privacy entry and initial verification form, inspected read-only 2026-11-06"
     }
   ],
-  "verified": false,
-  "last_verified": null,
-  "verification_note": "Bot-blocked on 2026-10-27 (captcha challenge page), URL from nulltrace, identity-eraser and auto-identity-remove."
+  "verified": true,
+  "last_verified": "2026-11-06",
+  "verification_note": "Only the official privacy entry and initial name/email verification form were inspected read-only. Normal visible-browser readiness reached the form after an initial managed response. Search, email continuation, correct-record matching and deletion remain unverified."
 }

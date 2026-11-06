@@ -1,12 +1,12 @@
 # Integration status
 
-Updated November 5, 2026. This matrix describes implemented actions rather than a
+Updated November 6, 2026. This matrix describes implemented actions rather than a
 claim that each provider holds a record or has deleted it. It covers all **43 reference
 routes** in the public catalog; some are registrations or provider preferences rather
 than broker-record deletion services.
 
 **Current supported path:** users type initial missing fields inside Erase Me for
-14 standard companion routes, plus five separate transient forms: People Trace UK, CMA, MyLife, PeopleFinders and That’s Them. CMA is a marketing registration, not broker deletion. Reviewed initial submission is available only where a specific
+15 standard companion routes, plus thirteen separate transient form actions. These include four limited association/relative forms, two first-number marketing preferences and two directory-suppression prefills added in this release. CMA is a marketing registration, not broker deletion. Reviewed initial submission is available only where a specific
 contract exists. FastPeopleSearch additionally has a reviewed in-app missing-information
 collector and one final matching-form submission attempt after its authenticated
 continuation. A submit attempt, email confirmation or matching form is not removal.
@@ -35,34 +35,34 @@ deletion has been established or should be inferred from the other columns.
 | `apollo` · Apollo | * | Reviewed form | Yes | Guarded native submit | Manual; record-associated business address | Not integrated | Manual/unobserved | None |
 | `addresses` · Addresses.com | US | No current accessible form contract | No | Not integrated | Not integrated | Not integrated | Manual/unobserved | None |
 | `advancedbackgroundchecks` · AdvancedBackgroundChecks | US | Reviewed form | Yes | Guarded native submit | Not integrated | Not integrated | Manual/unobserved | None |
-| `beenverified` · BeenVerified | US | Reviewed privacy-email sending | No | Reviewed email send; Google acceptance only | Not integrated | Not integrated | Manual/unobserved | None |
+| `beenverified` · BeenVerified | US | Reviewed privacy-email sending | No | Reviewed email send; Provider acceptance only | Not integrated | Not integrated | Manual/unobserved | None |
 | `clustrmaps` · ClustrMaps | US | No current accessible form contract | No | Not integrated | Not integrated | Not integrated | Manual/unobserved | None |
 | `cyberbackgroundchecks` · CyberBackgroundChecks | US | No current accessible form contract | No | Not integrated | Not integrated | Not integrated | Manual/unobserved | None |
 | `familytreenow` · FamilyTreeNow | US | Reviewed initial privacy form | Yes | Guarded native submit | Not integrated | Not integrated | Manual/unobserved | None |
-| `instantcheckmate` · Instant Checkmate | US | Restricted/manual PeopleConnect | No | Not integrated | Not integrated | Not integrated | Manual/unobserved | None |
-| `intelius` · Intelius (PeopleConnect suppression center) | US | Restricted/manual PeopleConnect | No | Not integrated | Not integrated | Not integrated | Manual/unobserved | None |
+| `instantcheckmate` · Instant Checkmate | US | Limited association/relative form | Yes | Prefill only; manual submit | Not integrated | Not integrated | Manual/unobserved | None |
+| `intelius` · Intelius (PeopleConnect suppression center) | US | Limited association/relative form | Yes | Prefill only; manual submit | Not integrated | Not integrated | Manual/unobserved | None |
 | `mylife` · MyLife | US | Reviewed transient form | Yes | Prefill only; manual submit | Not integrated | Not integrated | Manual/unobserved | None |
 | `nuwber` · Nuwber | US | No current accessible form contract | No | Not integrated | Not integrated | Not integrated | Manual/unobserved | None |
 | `peoplefinders` · PeopleFinders | US | Reviewed transient form | Yes | Prefill only; manual submit | Not integrated | Not integrated | Manual/unobserved | None |
-| `peoplelooker` · PeopleLooker | US | Reviewed privacy-email sending | No | Reviewed email send; Google acceptance only | Not integrated | Not integrated | Manual/unobserved | None |
+| `peoplelooker` · PeopleLooker | US | Reviewed privacy-email sending | No | Reviewed email send; Provider acceptance only | Not integrated | Not integrated | Manual/unobserved | None |
 | `thatsthem` · That's Them | US | Reviewed transient form | Yes | Prefill only; manual submit | Not integrated | Not integrated | Manual/unobserved | None |
-| `truepeoplesearch` · TruePeopleSearch | US | No current accessible form contract | No | Not integrated | Not integrated | Not integrated | Manual/unobserved | None |
-| `truthfinder` · TruthFinder | US | Restricted/manual PeopleConnect | No | Not integrated | Not integrated | Not integrated | Manual/unobserved | None |
-| `ussearch` · US Search | US | Restricted/manual PeopleConnect | No | Not integrated | Not integrated | Not integrated | Manual/unobserved | None |
+| `truepeoplesearch` · TruePeopleSearch | US | Reviewed initial verification form | Yes | Guarded native submit | Not integrated | Not integrated | Manual/unobserved | None |
+| `truthfinder` · TruthFinder | US | Limited association/relative form | Yes | Prefill only; manual submit | Not integrated | Not integrated | Manual/unobserved | None |
+| `ussearch` · US Search | US | Limited association/relative form | Yes | Prefill only; manual submit | Not integrated | Not integrated | Manual/unobserved | None |
 | `whitepages` · Whitepages | US | Reviewed first-step URL field | Yes | Prefill only; Next stays manual | Not integrated | Not integrated | Manual/unobserved | None |
 | `zabasearch` · ZabaSearch | US | Restricted/manual PeopleConnect | No | Not integrated | Not integrated | Not integrated | Manual/unobserved | None |
-| `ca-411` · 411.ca | CA | Reviewed privacy-email sending | No | Reviewed email send; Google acceptance only | Not integrated | Not integrated | Manual/unobserved | None |
+| `ca-411` · 411.ca | CA | Reviewed privacy-email sending | No | Reviewed email send; Provider acceptance only | Not integrated | Not integrated | Manual/unobserved | None |
 | `ca-cma-do-not-mail` · CMA Do Not Mail Service | CA | Marketing registration | Yes | Prefill or guarded marketing registration | Not integrated | Not integrated | Manual/unobserved | None |
-| `ca-dncl` · National Do Not Call List (DNCL) | CA | Marketing registration | No | Not integrated | Not integrated | Not integrated | Manual/unobserved | None |
-| `canada411` · Canada411 | CA | No current accessible form contract | No | Not integrated | Not integrated | Not integrated | Manual/unobserved | None |
-| `192com` · 192.com | GB | No current accessible form contract | No | Not integrated | Not integrated | Not integrated | Manual/unobserved | None |
+| `ca-dncl` · National Do Not Call List (DNCL) | CA | First-step marketing registration | Yes | Phone prefill only; manual registration | Not integrated | Not integrated | Manual/unobserved | None |
+| `canada411` · Canada411 | CA | Reviewed own-record directory form | Yes | Prefill only; manual challenge/submit | Not integrated | Not integrated | Manual/unobserved | None |
+| `192com` · 192.com | GB | Reviewed own-record directory form | Yes | Prefill only; manual challenge/submit | Not integrated | Not integrated | Manual/unobserved | None |
 | `gb-bt-phonebook` · BT Phone Book and 118 500 (ex-directory) | GB | Subscriber/provider action | No | Not integrated | Not integrated | Not integrated | Manual/unobserved | None |
 | `gb-peopletraceuk` · People Trace UK | GB | Reviewed transient form | Yes | Prefill only; manual submit | Not integrated | Not integrated | Manual/unobserved | None |
-| `gb-tps` · Telephone Preference Service (TPS) | GB | Marketing registration | No | Not integrated | Not integrated | Not integrated | Manual/unobserved | None |
-| `ukphonebook` · ukphonebook.com | GB | Reviewed privacy-email sending | No | Reviewed email send; Google acceptance only | Not integrated | Not integrated | Manual/unobserved | None |
-| `de-11880` · 11880.com | DE | Subscriber/provider action | No | Not integrated | Not integrated | Not integrated | Manual/unobserved | None |
-| `de-teilnehmerverzeichnis-widerspruch` · Widerspruch through the phone provider (all directories) | DE | Reviewed privacy-email sending | No | Reviewed email send; Google acceptance only | Not integrated | Not integrated | Manual/unobserved | None |
-| `tr-ceptennumarasorgula` · Cepten Numara Sorgula 11877 (Mobilişim) | TR | Reviewed privacy-email sending | No | Reviewed email send; Google acceptance only | Not integrated | Not integrated | Manual/unobserved | None |
+| `gb-tps` · Telephone Preference Service (TPS) | GB | First-step marketing registration | Yes | Phone prefill only; manual registration | Not integrated | Not integrated | Manual/unobserved | None |
+| `ukphonebook` · ukphonebook.com | GB | Reviewed privacy-email sending | No | Reviewed email send; Provider acceptance only | Not integrated | Not integrated | Manual/unobserved | None |
+| `de-11880` · 11880.com | DE | Reviewed privacy-email sending | No | Reviewed email send; Provider acceptance only | Not integrated | Not integrated | Manual/unobserved | None |
+| `de-teilnehmerverzeichnis-widerspruch` · Widerspruch through the phone provider (all directories) | DE | Reviewed privacy-email sending | No | Reviewed email send; Provider acceptance only | Not integrated | Not integrated | Manual/unobserved | None |
+| `tr-ceptennumarasorgula` · Cepten Numara Sorgula 11877 (Mobilişim) | TR | Reviewed privacy-email sending | No | Reviewed email send; Provider acceptance only | Not integrated | Not integrated | Manual/unobserved | None |
 | `tr-mobile-operator-rehber` · Vodafone and Türk Telekom directory (rehber) listing | TR | Subscriber/provider action | No | Not integrated | Not integrated | Not integrated | Manual/unobserved | None |
 | `tr-nosorgulama` · No Sorgulama (nosorgulama.com.tr) | TR | Reviewed form | Yes | Guarded native submit | Not integrated | Not integrated | Manual/unobserved | None |
 | `tr-numaraara` · NumaraAra | TR | Reviewed form | Yes | Guarded native submit | Not integrated | Not integrated | Manual/unobserved | None |
@@ -72,7 +72,7 @@ deletion has been established or should be inferred from the other columns.
 
 ## Why the remaining stages differ
 
-- Twenty-four routes have no reviewed form-filling contract. Six of those have the separate reviewed privacy-email delivery alternative below. Some official
+- Fifteen routes have no reviewed form-filling contract. Seven of those have the separate reviewed privacy-email alternative below; eight remain guidance only. Some official
   pages were blocked or unavailable in the inspected browser; that is not proof of
   universal unavailability. Other published contact alternatives remain drafts where offered.
 - Four named PeopleConnect brands share manual personal-use guidance with explicit
@@ -106,7 +106,7 @@ deletion has been established or should be inferred from the other columns.
 | People Trace UK transient form | Implemented for prefill | Exact private review; no identity details in saved state; challenge and submit stay manual |
 | Per-user removal-only mail | Implemented with setup | Own dedicated Gmail, local native host and OAuth client; supported confirmations only |
 | Managed zero-setup mailbox service | Not implemented | Hosted shared-mail relay remains private; no anonymous shared credential access |
-| Reviewed privacy-email sending | Implemented for seven fixed privacy contacts | Optional fresh sending consent and exact own-record message review; provider acceptance is not delivery or deletion |
+| Reviewed privacy-email sending | Implemented for eight fixed privacy contacts | Optional fresh sending consent and exact own-record message review; provider acceptance is not delivery or deletion |
 | FamilyTreeNow initial action | Implemented | Subject-only name/email, exact communications authorization and genuine challenge; later stages unverified |
 | MyLife, PeopleFinders and That’s Them | Implemented for transient prefill | Exact own-information review; no extra identity values in saved state; final site actions stay manual |
 | Remaining route-specific final actions | Staged | Need observed official contracts and consented live validation |
@@ -141,9 +141,9 @@ nor phone verification is automated; URL shape never becomes identity or deletio
 
 ## Reviewed privacy-email sending
 
-Seven fixed, purpose-verified contacts support a separate native email action: 411.ca,
-ukphonebook.com, Das Örtliche/DTM, Cepten Numara Sorgula, NumaraAra, BeenVerified and
-PeopleLooker. This overlaps six of the 24 routes without reviewed form fill and one
+Eight fixed, purpose-verified contacts support a separate native email action: 411.ca,
+ukphonebook.com, Das Örtliche/DTM, Cepten Numara Sorgula, NumaraAra, BeenVerified,
+PeopleLooker and 11880. This overlaps seven of the 15 routes without reviewed form fill and one
 existing form route. It does not change the matrix’s form-stage or deletion evidence.
 
 The person reviews the exact dedicated From address, fixed To address, subject and
@@ -154,3 +154,9 @@ Only provider message/thread references and evidence flags are saved, not messag
 bodies or record references. A Gmail-accepted result is not delivery, broker acceptance
 or deletion. Support/registry contacts, Vodafone’s recorded-sender channel and both
 held live pilots are excluded. See [mail delivery](LOCAL_REMOVAL_MAIL.md#reviewed-privacy-email-delivery).
+
+## Connection and scope updates
+
+Eligible users can choose a dedicated Gmail app password in the private local setup screen without preparing a Cloud client. Google 2-Step Verification and app-password availability remain prerequisites for that option. Google sign-in stays available for other accounts. App passwords have broader provider permissions; local sending remains separately opt-in. Credentials stay on the user’s computer. The SMTP transport records DATA 250 acceptance as a local receipt, never fabricated Gmail IDs or deletion proof.
+
+The new association forms address relative/associate features only. Complete background-report suppression remains the separate manual PeopleConnect portal. DNCL/TPS are marketing preferences; Canada411’s form concerns its web listing only. None of these limited stages is a completed removal integration. Both held pilot requests remain held.

@@ -16,7 +16,7 @@ async function fixture(){
     calls.push(structuredClone(payload));const action=payload.action==='ping'?'ping':payload.request.action;
     if(gates[action])await gates[action].promise;
     if(overrides[action])return overrides[action](payload.request,payload);
-    if(action==='ping')return{capabilities:['local-removal-send-v1']};
+    if(action==='ping')return{capabilities:['local-removal-send-v1','smtp-outcome-v1']};
     assert.equal(payload.action,'local-send');const req=Protocol.request(payload.request);
     if(action==='send-status')return{configured:true,enabled:true,send_enabled:true,provider:'gmail',on_demand:true,access:'local_native',authorization_required:true,automatic_execution:false,routes:Object.keys(Protocol.ROUTES),contact_email:MAILBOX};
     if(action==='send-prepare'){

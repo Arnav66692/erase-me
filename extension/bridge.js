@@ -5,7 +5,7 @@
   window.addEventListener('message',event=>{
     const data=event.data;
     if(event.source!==window||event.origin!==origin||!data||data.source!=='erase-workspace'||!/^[a-f0-9-]{32,40}$/.test(data.requestId||''))return;
-    if(!['fill-thatsthem','fill-peoplefinders','fill-mylife','run-cma','fill-peopletrace','ping','helper-status','match','run','result','observe','continue','continuation-result','focus-existing','submit-details','identity-result','identity-requirements','local-mail','local-send'].includes(data.payload?.action))return;
+    if(!['fill-private-route','fill-thatsthem','fill-peoplefinders','fill-mylife','run-cma','fill-peopletrace','ping','helper-status','match','run','result','observe','continue','continuation-result','focus-existing','submit-details','identity-result','identity-requirements','local-mail','local-send'].includes(data.payload?.action))return;
     chrome.runtime.sendMessage({...data.payload,type:'erase-me'},reply=>{
       const error=chrome.runtime.lastError;
       window.postMessage({source:'erase-companion',requestId:data.requestId,reply:error?{ok:false,error:'Companion unavailable. Refresh this page after installing it.'}:reply},origin);

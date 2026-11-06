@@ -33,7 +33,7 @@ test('setup requires explicit separate-account assertion, sends only the exact l
   const f=await fixture();f.prepare();f.get('removal-only').checked=false;await f.submit();assert.equal(f.requests.length,1);
   f.get('removal-only').checked=true;await f.submit();
   assert.deepEqual(f.requests.map(x=>x.path),['/api/info','/api/connect']);
-  assert.deepEqual(f.requests[1].body,{personal_email:'person@example.test',mailbox:'separateremoval@gmail.com',extension_id:'b'.repeat(32),browser:'chrome',client_json:null,removal_only:true,replace_registration:false,reconnect:false,allow_sending:false});
+  assert.deepEqual(f.requests[1].body,{connection_method:'oauth',app_password:null,personal_email:'person@example.test',mailbox:'separateremoval@gmail.com',extension_id:'b'.repeat(32),browser:'chrome',client_json:null,removal_only:true,replace_registration:false,reconnect:false,allow_sending:false});
   assert.equal(f.get('setup-fields').disabled,true);assert.match(f.get('setup-result').textContent,/No messages were read/);
 });
 test('uploaded client is bounded, removed from the input before dispatch and does not enter status text',async()=>{
@@ -54,4 +54,18 @@ test('requesting optional sending permission is explicit and invalidates the acc
   const f=await fixture();f.prepare();assert.equal(f.get('allow-sending').checked,false);
   f.get('allow-sending').checked=true;f.get('allow-sending').listeners.change();assert.equal(f.get('removal-only').checked,false);
   f.get('removal-only').checked=true;await f.submit();assert.equal(f.requests[1].body.allow_sending,true);
+});
+test('eligible app-password setup sends no Google client and clears the secret before local dispatch',async()=>{
+  const f=await fixture();f.get('connection-method').value='app_password';f.get('connection-method').listeners.change();
+  assert.equal(f.get('app-password-fields').hidden,false);assert.equal(f.get('oauth-fields').hidden,true);assert.equal(f.get('client-file').disabled,true);
+  f.prepare();f.get('app-password').value='abcd efgh ijkl mnop';f.get('app-password').listeners.input();assert.equal(f.get('removal-only').checked,false);
+  f.get('removal-only').checked=true;f.get('client-file').files=[{size:20,text:async()=>{throw Error('Inactive client file must not be read');}}];await f.submit();
+  assert.equal(f.requests[1].body.connection_method,'app_password');assert.equal(f.requests[1].body.app_password,'abcd efgh ijkl mnop');assert.equal(f.requests[1].body.client_json,null);
+  assert.equal(f.get('app-password').value,'');assert.doesNotMatch(f.get('setup-result').textContent,/abcd|efgh|ijkl|mnop/);
+});
+test('switching methods and closing a pending connection discard the local password and approval',async()=>{
+  const f=await fixture({pending:true});f.get('connection-method').value='app_password';f.get('connection-method').listeners.change();f.prepare();f.get('app-password').value='abcdefghijklmnop';
+  f.get('connection-method').value='oauth';f.get('connection-method').listeners.change();assert.equal(f.get('app-password').value,'');assert.equal(f.get('removal-only').checked,false);assert.equal(f.get('app-password').disabled,true);
+  f.get('connection-method').value='app_password';f.get('connection-method').listeners.change();f.prepare();f.get('app-password').value='abcdefghijklmnop';const pending=f.submit();await new Promise(resolve=>setImmediate(resolve));await f.close();f.release();await pending;
+  assert.equal(f.get('app-password').value,'');assert.match(f.get('setup-result').textContent,/Local setup is closed/);assert.equal(f.requests.filter(x=>x.path==='/api/connect').length,1);
 });

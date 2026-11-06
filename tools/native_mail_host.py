@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """One explicit, per-user removal-only Gmail action over Chrome native messaging.
 
-Credentials stay in the existing private installed-OAuth configuration. This process
-does not follow links, submit broker forms, send messages or schedule future work.
+Credentials stay in a private, explicitly selected OAuth or app-password configuration.
+The host does not follow links, submit broker forms or schedule work. Its separate
+sender accepts only the exact, individually reviewed native send action.
 """
 from __future__ import annotations
 
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 import hashlib
 import hmac
 import json
@@ -26,6 +27,7 @@ sys.path.insert(0, str(ROOT / 'tools'))
 sys.path.insert(0, str(ROOT))
 import connect_removal_gmail as oauth  # noqa: E402
 import configure_removal_mailbox as private  # noqa: E402
+import gmail_app_mail as app_mail  # noqa: E402
 from preview.lib import removal_mail as relay  # noqa: E402
 
 HOST_NAME = 'org.eraseme.mail'
@@ -258,6 +260,15 @@ class NativeMailHost:
             raise MailHostError('untrusted_origin')
         self.loader, self.engine, self.clock = loader, engine, clock
 
+    def _load_connection(self):
+        directory = self.home / '.erase-me-removal-mail'
+        selected = app_mail.selection(directory)
+        if selected and selected['provider'] == app_mail.PROVIDER:
+            config = app_mail.load_config(app_mail.config_path(directory, selected))
+        else:
+            config = oauth.validate_config(self.loader(app_mail.oauth_config_path(directory, selected)))
+        return app_mail.check_selection(selected, config)
+
     @staticmethod
     def _workspace(db, request):
         previous = db.execute('SELECT personal_hash FROM workspaces WHERE id=?', (request['workspace_id'],)).fetchone()
@@ -300,25 +311,27 @@ class NativeMailHost:
             raise MailHostError('revoked' if row['state'] == 'revoked' else 'already_started')
         return row
 
-    def _session_result(self, row):
+    def _session_result(self, row, engine=None):
+        engine = self.engine if engine is None else engine
         payload = {'v': 1, 'request_id': row['request_id'], 'route_id': row['route'], 'operation_id': row['operation'],
-                   'recipient': self.engine._recipient(row['request_id']), 'issued_at': row['issued_at'], 'expires_at': row['expires_at']}
-        encoded = self.engine._b64(json.dumps(payload, sort_keys=True, separators=(',', ':')).encode())
-        signature = self.engine._b64(hmac.new(self.engine._secret(), encoded.encode('ascii'), hashlib.sha256).digest())
+                   'recipient': engine._recipient(row['request_id']), 'issued_at': row['issued_at'], 'expires_at': row['expires_at']}
+        encoded = engine._b64(json.dumps(payload, sort_keys=True, separators=(',', ':')).encode())
+        signature = engine._b64(hmac.new(engine._secret(), encoded.encode('ascii'), hashlib.sha256).digest())
         return {'status': 'ready', 'capability': encoded + '.' + signature, 'request_id': row['request_id'],
                 'route_id': row['route'], 'operation_id': row['operation'], 'contact_email': payload['recipient'],
                 'expires_at': row['expires_at'], 'automatic_execution': False}
 
-    def _issue(self, request, now, keys):
+    def _issue(self, request, now, keys, engine=None):
+        engine = self.engine if engine is None else engine
         if request['route_id'] != 'searchpeoplefree':
-            return self.engine.session({'route_id': request['route_id'], 'operation_id': request['operation_id'],
+            return engine.session({'route_id': request['route_id'], 'operation_id': request['operation_id'],
                                         'authorized': True}, now=now, pilot_key=keys['pilot_key'])
         # This is a privately authenticated account owned by this user, unlike
         # the public relay's shared service alias. Its hosted issuance gate stays
         # unchanged. No SPF continuation destination is enabled by this adapter.
-        self.engine._gmail_token(time.monotonic() + self.engine.CHECK_BUDGET_SECONDS, keys['pilot_key'])
+        engine._gmail_token(time.monotonic() + engine.CHECK_BUDGET_SECONDS, keys['pilot_key'])
         return self._session_result({'request_id': secrets.token_hex(16), 'route': request['route_id'],
-            'operation': request['operation_id'], 'issued_at': int(now), 'expires_at': int(now) + self.engine.CAPABILITY_LIFETIME})
+            'operation': request['operation_id'], 'issued_at': int(now), 'expires_at': int(now) + engine.CAPABILITY_LIFETIME}, engine)
 
     def handle(self, request):
         _validate(request)
@@ -337,8 +350,8 @@ class NativeMailHost:
                 return {'status': 'revoked', 'route_id': row['route'], 'operation_id': row['operation'],
                         'request_id': row['request_id'], 'automatic_execution': False}
         try:
-            config = oauth.validate_config(self.loader(self.home / '.erase-me-removal-mail' / 'gmail-oauth.json'))
-        except (oauth.OAuthError, ValueError, OSError):
+            config = self._load_connection()
+        except (oauth.OAuthError, app_mail.AppMailError, ValueError, OSError):
             if action == 'status':
                 return _status()
             raise MailHostError('not_configured') from None
@@ -348,7 +361,9 @@ class NativeMailHost:
             raise MailHostError('personal_account_mismatch')
         account = private.personal_digest(config['mailbox'])
         keys = _keys(self.directory)
-        with _database(self.directory) as db, _environment(config, keys):
+        engine = app_mail.MailEngine(config, keys) if config['provider'] == app_mail.PROVIDER else self.engine
+        environment = nullcontext() if config['provider'] == app_mail.PROVIDER else _environment(config, keys)
+        with _database(self.directory) as db, environment:
             now = self.clock()
             owner = None
             row = None
@@ -372,13 +387,13 @@ class NativeMailHost:
                 elif action == 'status':
                     owner = self._network_reservation(db, request, account, 'status', now)
                 else:
-                    claims = self.engine.verify_capability(request['capability'], now=now)
+                    claims = engine.verify_capability(request['capability'], now=now)
                     row = self._grant(db, request, request['capability'], account)
                     if (row['route'] != claims['route_id'] or row['operation'] != claims['operation_id']
                             or row['request_id'] != claims['request_id']):
                         raise MailHostError('grant_mismatch')
                     if action == 'continue':
-                        if claims['route_id'] not in self.engine.CONFIRMATION_CONTRACTS:
+                        if claims['route_id'] not in engine.CONFIRMATION_CONTRACTS:
                             raise MailHostError('unsupported_continuation')
                         if (row['receipt_ref'] != request['receipt_ref'] or row['continuation_available'] != 1):
                             raise MailHostError('receipt_mismatch')
@@ -393,15 +408,15 @@ class NativeMailHost:
                         db.execute('UPDATE grants SET last_check_at=? WHERE route=? AND operation=?', (now, row['route'], row['operation']))
             try:
                 if action == 'status':
-                    self.engine._gmail_token(time.monotonic() + self.engine.CHECK_BUDGET_SECONDS, keys['pilot_key'])
+                    engine._gmail_token(time.monotonic() + engine.CHECK_BUDGET_SECONDS, keys['pilot_key'])
                     return _status(True, config['mailbox'])
                 if action == 'session':
                     if row:
-                        self.engine._gmail_token(time.monotonic() + self.engine.CHECK_BUDGET_SECONDS, keys['pilot_key'])
-                        self._grant(db, request, self._session_result(row)['capability'], account)
-                        return self._session_result(row)
-                    result = self._issue(request, now, keys)
-                    claims = self.engine.verify_capability(result['capability'], now=now)
+                        engine._gmail_token(time.monotonic() + engine.CHECK_BUDGET_SECONDS, keys['pilot_key'])
+                        self._grant(db, request, self._session_result(row, engine)['capability'], account)
+                        return self._session_result(row, engine)
+                    result = self._issue(request, now, keys, engine)
+                    claims = engine.verify_capability(result['capability'], now=now)
                     with _transaction(db):
                         updated = db.execute('UPDATE grants SET state=?,request_id=?,issued_at=?,expires_at=?,cap_hash=? WHERE route=? AND operation=? AND state=?',
                                    ('ready', claims['request_id'], claims['issued_at'], claims['expires_at'], hashlib.sha256(result['capability'].encode()).hexdigest(), request['route_id'], request['operation_id'], 'issuing'))
@@ -409,14 +424,14 @@ class NativeMailHost:
                             raise MailHostError('already_started')
                     return result
                 if action == 'check':
-                    result = self.engine.check({'capability': request['capability'], 'explicit': True}, now=now, pilot_key=keys['pilot_key'])
+                    result = engine.check({'capability': request['capability'], 'explicit': True}, now=now, pilot_key=keys['pilot_key'])
                     with _transaction(db):
                         updated = db.execute('UPDATE grants SET receipt_ref=?,continuation_available=? WHERE route=? AND operation=? AND state=?',
                                    (result.get('receipt_ref'), int(result.get('continuation_available') is True), row['route'], row['operation'], 'ready'))
                         if updated.rowcount != 1:
                             raise MailHostError('revoked')
                     return result
-                result = self.engine.continue_confirmation({'capability': request['capability'], 'receipt_ref': request['receipt_ref'], 'explicit': True}, now=now, pilot_key=keys['pilot_key'])
+                result = engine.continue_confirmation({'capability': request['capability'], 'receipt_ref': request['receipt_ref'], 'explicit': True}, now=now, pilot_key=keys['pilot_key'])
                 with _transaction(db):
                     updated = db.execute('UPDATE grants SET continuation_state=? WHERE route=? AND operation=? AND state=?', ('released', row['route'], row['operation'], 'ready'))
                     if updated.rowcount != 1:

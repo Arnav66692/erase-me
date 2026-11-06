@@ -24,15 +24,17 @@
     }
   },
   "addresses": {
-    "status": "blocked_or_unavailable",
-    "checkedAt": "2026-11-04",
+    "status": "official_delegated_privacy_tools",
+    "checkedAt": "2026-11-06",
     "operationKind": "record_removal",
     "sources": [
       "https://www.addresses.com/optout.php",
-      "https://cppa.ca.gov/data_broker_registry/registry.csv"
+      "https://cppa.ca.gov/data_broker_registry/registry.csv",
+      "https://www.addresses.com/",
+      "https://www.intelius.com/privacy-center/"
     ],
-    "summary": "The official page was blocked or unavailable; no current removal form was validated.",
-    "limits": "A reachable page or business contact does not establish request acceptance or deletion.",
+    "summary": "The current official homepage footer links to Intelius’s privacy center for privacy-rights tools. Follow this published delegation instead of the stale former destination.",
+    "limits": "The delegated center has separate association, retrieval, account and background-suppression tools. A footer link does not prove that the Intelius association form covers this brand’s complete records. No request is duplicated or completion propagated.",
     "requestAccepted": false,
     "deletionVerified": false,
     "privacyContact": {
@@ -142,14 +144,15 @@
     }
   },
   "instantcheckmate": {
-    "status": "manual_self_service",
-    "checkedAt": "2026-11-04",
-    "operationKind": "record_removal",
+    "status": "reviewed_association_prefill",
+    "checkedAt": "2026-11-06",
+    "operationKind": "association_suppression",
     "sources": [
-      "https://suppression.peopleconnect.us/login"
+      "https://suppression.peopleconnect.us/login",
+      "https://app.instantcheckmate.com/privacy-center/"
     ],
-    "summary": "consumer self-service eligibility and terms; email/phone verification; additional matching; suppression request",
-    "limits": "Portal explicitly names four brands and name-based Background Reports only. Terms restrict third-party service/commercial use and non-US access without approval.",
+    "summary": "A separate private review can fill the official association/relative opt-out fields for this brand. This is distinct from complete background-report suppression and account deletion.",
+    "limits": "Only the exact reviewed own-name, birth date, city, state and contact email are filled. Other account/retrieval/deletion controls remain untouched. Verification and final submission stay on the official site; no accepted request or deletion was established.",
     "requestAccepted": false,
     "deletionVerified": false,
     "privacyContact": {
@@ -161,14 +164,15 @@
     }
   },
   "intelius": {
-    "status": "manual_self_service",
-    "checkedAt": "2026-11-04",
-    "operationKind": "record_removal",
+    "status": "reviewed_association_prefill",
+    "checkedAt": "2026-11-06",
+    "operationKind": "association_suppression",
     "sources": [
-      "https://suppression.peopleconnect.us/login"
+      "https://suppression.peopleconnect.us/login",
+      "https://app.intelius.com/privacy-center/"
     ],
-    "summary": "consumer self-service eligibility and terms; email/phone verification; additional matching; suppression request",
-    "limits": "Portal explicitly names four brands and name-based Background Reports only. Terms restrict third-party service/commercial use and non-US access without approval.",
+    "summary": "A separate private review can fill the official association/relative opt-out fields for this brand. This is distinct from complete background-report suppression and account deletion.",
+    "limits": "Only the exact reviewed own-name, birth date, city, state and contact email are filled. Other account/retrieval/deletion controls remain untouched. Verification and final submission stay on the official site; no accepted request or deletion was established.",
     "requestAccepted": false,
     "deletionVerified": false,
     "privacyContact": {
@@ -271,14 +275,15 @@
     "deletionVerified": false
   },
   "truepeoplesearch": {
-    "status": "removal_form_unavailable",
-    "checkedAt": "2026-11-04",
+    "status": "reviewed_initial_form",
+    "checkedAt": "2026-11-06",
     "operationKind": "record_removal",
     "sources": [
+      "https://www.truepeoplesearch.com/privacy",
       "https://www.truepeoplesearch.com/removal"
     ],
-    "summary": "Only search forms/footer observed; no removal-purpose form contract. Document title was Just a moment...",
-    "limits": "Only search forms/footer observed; no removal-purpose form contract. Document title was Just a moment...",
+    "summary": "The companion checks the official privacy page and published Opt-Out Form link before the initial name/email verification form. Optional submission requires exact own-request/contact authorization and the genuine hCaptcha response.",
+    "limits": "Only the initial verification step is implemented. Optional middle/agent fields stay empty, hidden fallback and challenge tokens remain intact. No live request was submitted; email continuation, matching, acceptance and deletion remain unverified.",
     "requestAccepted": false,
     "deletionVerified": false,
     "privacyContact": {
@@ -290,14 +295,15 @@
     }
   },
   "truthfinder": {
-    "status": "manual_self_service",
-    "checkedAt": "2026-11-04",
-    "operationKind": "record_removal",
+    "status": "reviewed_association_prefill",
+    "checkedAt": "2026-11-06",
+    "operationKind": "association_suppression",
     "sources": [
-      "https://suppression.peopleconnect.us/login"
+      "https://suppression.peopleconnect.us/login",
+      "https://app.truthfinder.com/privacy-center/"
     ],
-    "summary": "consumer self-service eligibility and terms; email/phone verification; additional matching; suppression request",
-    "limits": "Portal explicitly names four brands and name-based Background Reports only. Terms restrict third-party service/commercial use and non-US access without approval.",
+    "summary": "A separate private review can fill the official association/relative opt-out fields for this brand. This is distinct from complete background-report suppression and account deletion.",
+    "limits": "Only the exact reviewed own-name, birth date, city, state and contact email are filled. Other account/retrieval/deletion controls remain untouched. Verification and final submission stay on the official site; no accepted request or deletion was established.",
     "requestAccepted": false,
     "deletionVerified": false,
     "privacyContact": {
@@ -309,14 +315,15 @@
     }
   },
   "ussearch": {
-    "status": "manual_self_service",
-    "checkedAt": "2026-11-04",
-    "operationKind": "record_removal",
+    "status": "reviewed_association_prefill",
+    "checkedAt": "2026-11-06",
+    "operationKind": "association_suppression",
     "sources": [
-      "https://suppression.peopleconnect.us/login"
+      "https://suppression.peopleconnect.us/login",
+      "https://app.ussearch.com/privacy-center/"
     ],
-    "summary": "consumer self-service eligibility and terms; email/phone verification; additional matching; suppression request",
-    "limits": "Portal explicitly names four brands and name-based Background Reports only. Terms restrict third-party service/commercial use and non-US access without approval.",
+    "summary": "A separate private review can fill the official association/relative opt-out fields for this brand. This is distinct from complete background-report suppression and account deletion.",
+    "limits": "Only the exact reviewed own-name, birth date, city, state and contact email are filled. Other account/retrieval/deletion controls remain untouched. Verification and final submission stay on the official site; no accepted request or deletion was established.",
     "requestAccepted": false,
     "deletionVerified": false,
     "privacyContact": {
@@ -348,15 +355,17 @@
     }
   },
   "zabasearch": {
-    "status": "manual_scope_unverified",
-    "checkedAt": "2026-11-04",
+    "status": "official_delegated_privacy_tools",
+    "checkedAt": "2026-11-06",
     "operationKind": "record_removal",
     "sources": [
       "https://suppression.peopleconnect.us/login",
-      "https://cppa.ca.gov/data_broker_registry/registry.csv"
+      "https://cppa.ca.gov/data_broker_registry/registry.csv",
+      "https://www.zabasearch.com/",
+      "https://www.intelius.com/privacy-center/"
     ],
-    "summary": "Catalog destination is PeopleConnect login, but the observed portal explicitly names only TruthFinder, Instant Checkmate, Intelius and US Search. Do not infer ZabaSearch coverage.",
-    "limits": "Catalog destination is PeopleConnect login, but the observed portal explicitly names only TruthFinder, Instant Checkmate, Intelius and US Search. Do not infer ZabaSearch coverage.",
+    "summary": "The current official homepage footer links to Intelius’s privacy center for privacy-rights tools. Follow this published delegation instead of the stale former destination.",
+    "limits": "The delegated center has separate association, retrieval, account and background-suppression tools. A footer link does not prove that the Intelius association form covers this brand’s complete records. No request is duplicated or completion propagated.",
     "requestAccepted": false,
     "deletionVerified": false,
     "privacyContact": {
@@ -399,50 +408,52 @@
     "deletionVerified": false
   },
   "ca-dncl": {
-    "status": "first_form_inspected",
-    "checkedAt": "2026-11-04",
+    "status": "reviewed_phone_preference_prefill",
+    "checkedAt": "2026-11-06",
     "operationKind": "do_not_call_registration",
     "sources": [
       "https://www.lnnte-dncl.gc.ca/en/Consumer/Register-your-number"
     ],
-    "summary": "Provide the person’s own phone number and explicitly confirm registration; registration of a shared line affects everyone using it.",
-    "limits": "Government marketing-call suppression registration, not broker-record deletion. Later confirmation/results were not inspected because no number was submitted.",
+    "summary": "Enter and review your own telephone number inside the private form. The companion fills only the first registration field. A shared-line registration affects everyone using that number.",
+    "limits": "Marketing-call preference registration, not broker deletion. No number was submitted during inspection. Later registration, verification and acceptance remain manual and unverified.",
     "requestAccepted": false,
     "deletionVerified": false
   },
   "canada411": {
-    "status": "blocked",
-    "checkedAt": "2026-11-04",
+    "status": "reviewed_directory_prefill",
+    "checkedAt": "2026-11-06",
     "operationKind": "directory_listing_removal",
     "sources": [
       "https://www.canada411.ca/help.html?key=faq"
     ],
-    "summary": "Open the official FAQ in a normal personal browser; current automated inspection cannot validate the removal controls.",
-    "limits": "Both FAQ and homepage returned CloudFront request blocked. Prior pack describes a web-only listing-removal form and separate provider unlisting, but neither was revalidated here.",
+    "summary": "The official FAQ publishes a web-only listing-removal modal. Review your own profile name, listed Canadian number and contact email before filling it once with the privacy reason selected.",
+    "limits": "Web listing only; telephone-provider unlisting is separate. Optional comments and the image challenge stay untouched. Final submission, acceptance and deletion remain unverified.",
     "requestAccepted": false,
     "deletionVerified": false
   },
   "192com": {
-    "status": "blocked",
-    "checkedAt": "2026-11-04",
+    "status": "reviewed_directory_prefill",
+    "checkedAt": "2026-11-06",
     "operationKind": "record_removal",
     "sources": [
       "https://www.192.com/c01/new-request/"
     ],
-    "summary": "Official page needs a normal browser verification step. Do not invent selectors or send details to guessed contacts.",
-    "limits": "Cloudflare verification page only. Existing pack URL and timelines were historically unverified; no current alternate contact or form observed.",
+    "summary": "The official own-record suppression form is reachable in a normal browser. Review your first name, surname, full UK postcode and contact email inside Erase Me before one prefill.",
+    "limits": "Optional telephone and other people’s fields stay blank. The genuine challenge, submit and email confirmation remain on the official service. No request acceptance or deletion was established.",
     "requestAccepted": false,
     "deletionVerified": false
   },
   "gb-bt-phonebook": {
     "status": "official_manual_channel_verified",
-    "checkedAt": "2026-11-04",
+    "checkedAt": "2026-11-06",
     "operationKind": "provider_directory_preference",
     "sources": [
-      "https://www.bt.com/help/home-phone/manage-service/how-do-i-sign-up-to-ex-directory-services-"
+      "https://www.bt.com/help/home-phone/manage-service/how-do-i-sign-up-to-ex-directory-services-",
+      "https://www.bt.com/privacy-policy/",
+      "https://btprivacy.my.onetrust.com/webform/a0327856-31fc-4f51-b6d3-1c9e883e1ecf/064635fb-4ae0-40ad-a7fc-d2004310c918"
     ],
     "summary": "BT account holder calls the provider to choose Ex-directory No calls or Directory Enquiries Only.",
-    "limits": "Official page says both choices are free, but this is a provider/account workflow and does not remove copies held by other brokers.",
+    "limits": "The two directory options are described as free but require a provider call. BT also publishes a general rights portal; no directory-specific choice was observed there, so it is not used for automatic account/contract deletion. No request or deletion was established.",
     "requestAccepted": false,
     "deletionVerified": false,
     "manualContact": {
@@ -472,15 +483,15 @@
     }
   },
   "gb-tps": {
-    "status": "initial_category_step_inspected",
-    "checkedAt": "2026-11-04",
+    "status": "reviewed_phone_preference_prefill",
+    "checkedAt": "2026-11-06",
     "operationKind": "do_not_call_registration",
     "sources": [
       "https://www.tpsonline.org.uk/register",
       "https://www.tpsonline.org.uk/pages/contact"
     ],
-    "summary": "Choose the correct subscriber category and complete phone-registration steps directly; no category or phone number was submitted in this inspection.",
-    "limits": "Free marketing-call opt-out register, not broker-record deletion. Later phone, postal-code and email contracts remain unobserved.",
+    "summary": "Enter and review your own telephone number inside the private form. The companion fills only the first registration field. It selects Residential only before the TPS number step.",
+    "limits": "Marketing-call preference registration, not broker deletion. No number was submitted during inspection. Later registration, verification and acceptance remain manual and unverified.",
     "requestAccepted": false,
     "deletionVerified": false
   },
@@ -505,23 +516,23 @@
     }
   },
   "de-11880": {
-    "status": "verified_provider_channel",
-    "checkedAt": "2026-11-04",
+    "status": "reviewed_privacy_email",
+    "checkedAt": "2026-11-06",
     "operationKind": "provider_request",
     "sources": [
       "https://unternehmen.11880.com/faq",
       "https://unternehmen.11880.com/datenschutz"
     ],
-    "summary": "Ask the subscriber’s telephone provider to remove the directory entry. The official FAQ directs deletion there; no deletion form was observed.",
-    "limits": "The ordinary directory-information lookup is a paid product; do not invoke it. The FAQ is a business-services FAQ but explicitly directs directory-entry deletion to the telephone provider. No accepted request or deletion was observed.",
+    "summary": "The official privacy policy publishes a direct email for informal processing objections and describes erasure/objection rights. A separate own-public-record privacy message can be reviewed and sent once.",
+    "limits": "This is an initial privacy/processing-objection request. The directory FAQ still directs source-feed removal to the subscriber’s telephone provider. Sending does not close an account or establish directory deletion.",
     "requestAccepted": false,
     "deletionVerified": false,
     "privacyContact": {
-      "email": "bdsb@11880.com",
-      "kind": "support",
-      "source": "https://unternehmen.11880.com/faq",
-      "checkedAt": "2026-11-04",
-      "restriction": "11880 group data-protection officer, as published in privacy notice; not a promise of directory removal. No automatic sending or shared sender substitution."
+      "email": "datenschutz.solutions@11880.com",
+      "kind": "privacy",
+      "source": "https://unternehmen.11880.com/datenschutz",
+      "checkedAt": "2026-11-06",
+      "restriction": "Own-public-record privacy/processing-objection request only. Provider subscriber-feed changes remain separate; no account closure or verified directory removal is promised."
     }
   },
   "de-teilnehmerverzeichnis-widerspruch": {
@@ -568,14 +579,14 @@
   },
   "tr-mobile-operator-rehber": {
     "status": "verified_privacy_channel_partial",
-    "checkedAt": "2026-11-04",
+    "checkedAt": "2026-11-06",
     "operationKind": "subscriber_privacy_request",
     "sources": [
       "https://www.vodafone.com.tr/",
       "https://www.vodafone.com.tr/gizlilik-ve-guvenlik-politikalari"
     ],
     "summary": "Subscriber handles the operator’s directory preference or privacy request. Vodafone’s privacy notice permits email from an address already recorded and verified in its systems, or signed/physical channels. A shared service mailbox is not silently substituted.",
-    "limits": "Official PDF request form linked: https://cms.vodafone.com.tr/static/files/25-01/23/kvkk-ilgili-kisi-talep-formu-1.pdf ; contents not separately inspected. No directory-specific public deletion form observed on the Vodafone pages. Türk Telekom procedures were not newly verified; do not infer that the Vodafone channel covers Türk Telekom. No accepted request or deletion was observed.",
+    "limits": "Vodafone’s ordinary email channel requires a previously recorded and verified sender; signed postal/KEP alternatives have separate requirements. No new dedicated sender is substituted. Türk Telekom coverage and directory-specific acceptance remain unverified.",
     "requestAccepted": false,
     "deletionVerified": false,
     "privacyContact": {

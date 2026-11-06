@@ -6,6 +6,7 @@
     usphonebook: {host:'www.usphonebook.com',path:'/removal',url:'https://www.usphonebook.com/removal',first_name:'#subject-firstname',last_name:'#subject-lastname',email:'#subject-email',form:'#verifyEmailForm',method:'post'},
     smartbackgroundchecks: {host:'www.smartbackgroundchecks.com',path:'/remove',url:'https://www.smartbackgroundchecks.com/optout',entryUrl:'https://www.smartbackgroundchecks.com/privacy',first_name:'#subject_fn',last_name:'#subject_ln',email:'#subject_email',form:'form[action="/remove"][method="post"]',formPath:'/remove',method:'post',submitText:'Submit',ownRequest:true,selection:{selector:'#requester_type',value:'subject'}},
     familytreenow: {host:'www.familytreenow.com',path:'/optout',url:'https://www.familytreenow.com/optout',entryUrl:'https://www.familytreenow.com/privacy',first_name:'#FirstName',last_name:'#LastName',email:'#Email',form:'form[action="/optout/beginoptoutidv"][method="post"]',formPath:'/optout/beginoptoutidv',method:'post',submitText:'Begin Privacy Request',ownRequest:true,selection:{selector:'#RequestType',value:'subject'}},
+    truepeoplesearch: {host:'www.truepeoplesearch.com',path:'/removal',url:'https://www.truepeoplesearch.com/removal',entryUrl:'https://www.truepeoplesearch.com/privacy',first_name:'#FirstName',last_name:'#LastName',email:'#Email',form:'form[action="/removal/beginremovalidv"][method="post"][role="form"]',formPath:'/removal/beginremovalidv',method:'post',submitText:'Send Request',ownRequest:true,selection:{selector:'#RightsExerciseType',value:'subject'}},
     searchpeoplefree: {host:'www.searchpeoplefree.com',path:'/opt-out',url:'https://www.searchpeoplefree.com/opt-out',first_name:'#o_first',last_name:'#o_last',email:'#o_email',form:'#o_form',method:'get'},
     fastpeoplesearch: {host:'www.fastpeoplesearch.com',path:'/optout',formPath:'/optout-start-submitted',url:'https://www.fastpeoplesearch.com/optout',first_name:'#firstname',last_name:'#lastname',email:'#email',form:'#optout-start',method:'post'},
     apollo: {host:'www.apollo.io',path:'/privacy-policy/remove',url:'https://www.apollo.io/privacy-policy/remove',business_email:'input#email[name="email"][type="email"]',method:'get',submitText:'Get verification information'},
@@ -69,6 +70,56 @@
     if(form.elements.length!==14||[...form.elements].some(e=>!approved.has(e)))fail('additional_fields');
     return {route,form,controls,selection,middle,optionalControls,checkbox,label,csrf,token,challengeResponse,widget,challengeScript:scripts[0],button,notice:notices[0]};
   }
+  function truePeopleSearchFacts(fields,env=globalThis,allowPendingToken=false){
+    const route=ROUTES.truepeoplesearch,doc=env.document,normal=value=>String(value||'').replace(/\s+/g,' ').trim();
+    const fail=reason=>{const error=new Error('The reviewed TruePeopleSearch initial form changed.');error.reason=reason;throw error;};
+    const one=selector=>{const values=[...doc.querySelectorAll(selector)];if(values.length!==1)fail('changed_controls');return values[0];};
+    const shown=element=>{if(!element||element.hidden||!element.getClientRects().length)return false;for(let node=element;node;node=node.parentElement){const style=env.getComputedStyle(node);if(style.display==='none'||style.visibility==='hidden'||Number(style.opacity)===0)return false;}return true;};
+    if(!allowed(env.location.href,route)||doc.querySelector('input[type="file"]'))fail('changed_destination');
+    const form=one(route.form);
+    if(doc.title!=='Do Not Sell/Right to Opt-out - TruePeopleSearch.com'||doc.forms.length!==3||form.tagName!=='FORM'||!formAllowed(form.action,route)||form.getAttribute('action')!=='/removal/beginremovalidv'||form.method!=='post'||form.enctype!=='application/x-www-form-urlencoded'||form.target!==''||form.noValidate!==false||form.getAttribute('onsubmit')!==null)fail('changed_destination');
+    const headings=[...doc.querySelectorAll('h3')].filter(element=>normal(element.textContent)==='Do Not Sell/Right to Opt-out');
+    const notices=[...doc.querySelectorAll('h5')].filter(element=>normal(element.textContent)==="Enter your name and email address – we'll email you a link to the opt-out form to complete the process");
+    if(headings.length!==1||!shown(headings[0])||notices.length!==1||!shown(notices[0]))fail('changed_purpose');
+    if([...doc.querySelectorAll('[role="alert"],.swal2-popup,.alert-success,.alert-danger,.validation-summary-errors')].some(shown))fail('existing_alert');
+    const expected=fields||{first_name:'',last_name:'',email:''},names={first_name:'FirstName',last_name:'LastName',email:'Email'};
+    const controls=Object.entries(expected).map(([key,value])=>{
+      const element=one(route[key]),email=key==='email';
+      if(!shown(element)||element.form!==form||element.tagName!=='INPUT'||element.name!==names[key]||element.type!==(email?'email':'text')||!element.required||element.disabled||element.readOnly||element.value!==value||element.maxLength!==(email?100:50)||element.placeholder!==(email?'Email Address':key==='first_name'?'First Name':'Last Name')||element.labels.length!==0)fail('changed_fields');
+      return element;
+    });
+    if(controls.length!==3)fail('changed_fields');
+    const selection=one('#RightsExerciseType'),options=[...selection.options],labels=selection.labels;
+    if(!shown(selection)||selection.form!==form||selection.tagName!=='SELECT'||selection.type!=='select-one'||selection.name!=='RightsExerciseType'||selection.required||selection.disabled||selection.readOnly||selection.multiple!==false||selection.value!=='subject'||selection.getAttribute('onchange')!==null||options.length!==3||labels.length!==1||normal(labels[0].textContent)!=='Exercise my rights as a:')fail('changed_purpose');
+    const selections=[['','I am',true],['subject','The subject of the request',false],['agent','An authorized agent of the subject of the request',false]];
+    if(options.some((option,index)=>option.value!==selections[index][0]||normal(option.textContent)!==selections[index][1]||option.disabled!==selections[index][2]))fail('changed_purpose');
+    const middle=one('#MiddleName');
+    if(!shown(middle)||middle.form!==form||middle.tagName!=='INPUT'||middle.type!=='text'||middle.name!=='MiddleName'||middle.required||middle.disabled||middle.readOnly||middle.value!==''||middle.maxLength!==50)fail('additional_fields');
+    const optionalControls=['AgentFirstName','AgentLastName','AgentEmail'].map(name=>{
+      const element=one('#'+name),email=name==='AgentEmail';
+      if(shown(element)||element.form!==form||element.tagName!=='INPUT'||element.type!==(email?'email':'text')||element.name!==name||element.required||element.disabled||element.readOnly||element.value!==''||element.maxLength!==(email?100:50))fail('additional_fields');
+      return element;
+    });
+    const checkbox=one('#AuthorizeContact'),consent='I authorize TruePeopleSearch.com to send communications relating to my privacy request to the email address(es) provided. I certify that I am the subject of the request, or an agent authorized to act on behalf of the subject of the request. I understand that information provided relating to this request will not be used for any purpose other than the processing of this request.';
+    if(!shown(checkbox)||checkbox.form!==form||checkbox.tagName!=='INPUT'||checkbox.type!=='checkbox'||checkbox.name!=='AuthorizeContact'||checkbox.value!=='true'||!checkbox.required||checkbox.disabled||checkbox.readOnly||checkbox.labels.length!==0||checkbox.getAttribute('data-val-required')!=='You must authorize us to send communications')fail('changed_consent');
+    const label=checkbox.parentElement?.parentElement?.querySelector('.col-11');
+    if(!label||!shown(label)||normal(label.textContent)!==consent)fail('changed_consent');
+    const fallback=one(route.form+' input[name="AuthorizeContact"][type="hidden"]');
+    if(fallback.form!==form||fallback.tagName!=='INPUT'||fallback.type!=='hidden'||fallback.name!=='AuthorizeContact'||fallback.value!=='false'||fallback.required||fallback.disabled||fallback.readOnly||shown(fallback))fail('additional_fields');
+    optionalControls.push(fallback);
+    const token=one(route.form+' textarea[name="h-captcha-response"]'),challengeResponse=one(route.form+' textarea[name="g-recaptcha-response"]'),widget=one(route.form+' .h-captcha');
+    for(const[element,name]of [[token,'h-captcha-response'],[challengeResponse,'g-recaptcha-response']])if(element.form!==form||element.tagName!=='TEXTAREA'||element.type!=='textarea'||element.name!==name||element.required||element.disabled||element.readOnly||shown(element)||typeof element.value!=='string'||element.value.length>16384)fail('changed_challenge');
+    const scripts=[...doc.querySelectorAll('script[src]')].filter(element=>element.src==='https://hcaptcha.com/1/api.js');
+    if(widget.tagName!=='DIV'||!shown(widget)||widget.getAttribute('data-sitekey')!=='8c6693a8-2959-420f-ba6c-474f2460a6cf'||scripts.length!==1)fail('changed_challenge');
+    if(!token.value.trim()&&!allowPendingToken)fail('challenge_required');
+    const policyUrls=['https://www.truepeoplesearch.com/terms','https://www.truepeoplesearch.com/notice-at-collection','https://www.truepeoplesearch.com/privacy'],links=[...form.querySelectorAll('a')],terms=one(route.form+' small.text-muted');
+    if(links.length!==3||links.some((link,index)=>link.href!==policyUrls[index]||!shown(link))||!shown(terms)||normal(terms.textContent)!=='By using our site and services, you agree to our Terms of Use. Visit our Notice at Collection and Privacy Notice for information about our privacy practices.')fail('changed_consent');
+    const buttons=[...form.elements].filter(element=>['BUTTON','INPUT'].includes(element.tagName)&&['submit','image'].includes(element.type)),button=buttons[0];
+    if(buttons.length!==1||!shown(button)||button.form!==form||button.tagName!=='BUTTON'||button.type!=='submit'||button.disabled||normal(button.textContent)!=='Send Request'||button.name!==''||button.value!==''||button.formNoValidate!==false||['formaction','formmethod','formtarget','formenctype','formnovalidate'].some(name=>button.hasAttribute(name)))fail('changed_submit');
+    const approved=new Set([...controls,selection,middle,...optionalControls,checkbox,token,challengeResponse,button]);
+    if(form.elements.length!==13||[...form.elements].some(element=>!approved.has(element)))fail('additional_fields');
+    return{route,form,controls,selection,middle,optionalControls,checkbox,label,token,challengeResponse,widget,challengeScript:scripts[0],button,notice:notices[0],terms,policyLinks:links};
+  }
   function visible(e) {
     if(!e || e.hidden || !e.getClientRects().length)return false;
     for(let n=e;n;n=n.parentElement){const s=getComputedStyle(n);if(s.display==='none'||s.visibility==='hidden'||Number(s.opacity)===0)return false;}
@@ -108,6 +159,7 @@
     const keys=fieldKeys(route);
     if(Object.keys(fields).length!==keys.length || Object.keys(fields).some(k=>!keys.includes(k)) || keys.some(k=>!validField(k,fields[k])))throw new Error('Invalid fields.');
     for(const key of ['email','business_email'])if(keys.includes(key)&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(fields[key]))throw new Error('Invalid email.');
+    if(routeId==='truepeoplesearch'&&(fields.first_name.length>50||fields.last_name.length>50||fields.email.length>100))throw new Error('Review the broker’s name and email length limits.');
     if(routeId==='apollo'&&approval.businessEmailConfirmed!==true)throw new Error('Confirm the business email associated with your own Apollo record.');
     if(routeId==='spokeo'&&(!listingURL(fields.listing_url)||approval.listingConfirmed!==true))throw new Error('Confirm the exact Spokeo listing is your own.');
     if(routeId==='whitepages'&&(!whitepagesURL(fields.listing_url)||approval.listingConfirmed!==true))throw new Error('Review and confirm your exact direct Whitepages person-record URL.');
@@ -295,9 +347,9 @@
   async function execute(payload, env=globalThis) {
     const {routeId,fields}=payload,route=validate(routeId,fields,payload),doc=env.document;
     if(routeId==='whitepages')return executeWhitepages(payload,env);
-    const familyFields=routeId==='familytreenow'?{first_name:'',last_name:'',email:''}:null;
-    const familyReady=()=>{try{if(familyFields)familyTreeNowFacts(familyFields,env,true);return true;}catch(_){return false;}};
-    if(!familyReady())return {status:'blocked',detail:'The reviewed FamilyTreeNow initial form is unavailable. No details were filled.'};
+    const familyFields=['familytreenow','truepeoplesearch'].includes(routeId)?{first_name:'',last_name:'',email:''}:null;
+    const familyReady=()=>{try{if(familyFields)(routeId==='truepeoplesearch'?truePeopleSearchFacts:familyTreeNowFacts)(familyFields,env,true);return true;}catch(_){return false;}};
+    if(!familyReady())return {status:'blocked',detail:'The reviewed initial form is unavailable. No details were filled.'};
     const safe=()=>allowed(env.location.href,route)&&!doc.querySelector('input[type="file"]');
     const wait=ms=>new Promise(resolve=>env.setTimeout(resolve,ms));
     const controls=()=>Object.keys(fields).map(key=>({key,e:doc.querySelector(route[key])}));
@@ -345,7 +397,7 @@
     }
     return {status:'unknown',detail:'The broker outcome is unconfirmed. No automatic repeat will be sent.'};
   }
-  const api={ROUTES,allowed,formAllowed,listingURL,whitepagesURL,validate,execute,inspect,continuationURL,validateContinuation,executeContinuation,familyTreeNowFacts};
+  const api={ROUTES,allowed,formAllowed,listingURL,whitepagesURL,validate,execute,inspect,continuationURL,validateContinuation,executeContinuation,familyTreeNowFacts,truePeopleSearchFacts};
   globalThis.EraseBrokerExecutor=api;
   if(typeof module!=='undefined')module.exports=api;
 })();

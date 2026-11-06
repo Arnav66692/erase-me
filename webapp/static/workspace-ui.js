@@ -22,7 +22,7 @@
   let mailStatus=null;
   let localMailStatus=null,localMailClient=null,localMailProfile=null;
   let batchView=null;
-  let identityDialog=null,removalSendDialog=null;
+  let identityDialog=null,removalSendDialog=null,privateRouteDialog=null;
   let footprintPanel=null;
   const formEditors=new Map(),fillActions=new Set();
   const $=id=>document.getElementById(id);
@@ -76,7 +76,7 @@
         stop();const reply=event.data.reply;
         if(reply?.ok)resolve(reply.result);else reject(new Error(reply?.error||'The companion could not complete this action.'));
       };
-      const timeout=setTimeout(()=>{stop();reject(new Error('The companion did not respond. Install it, enable broker access, then refresh this page. No repeat has been sent.'));},['run','continue','match','submit-details','fill-peopletrace','fill-mylife','run-cma','fill-thatsthem','fill-peoplefinders'].includes(payload.action)?60000:['local-mail','local-send'].includes(payload.action)?35000:['focus-existing','identity-requirements','identity-result'].includes(payload.action)?5000:1500);
+      const timeout=setTimeout(()=>{stop();reject(new Error('The companion did not respond. Install it, enable broker access, then refresh this page. No repeat has been sent.'));},['fill-private-route','run','continue','match','submit-details','fill-peopletrace','fill-mylife','run-cma','fill-thatsthem','fill-peoplefinders'].includes(payload.action)?60000:['local-mail','local-send'].includes(payload.action)?35000:['focus-existing','identity-requirements','identity-result'].includes(payload.action)?5000:1500);
       window.addEventListener('message',listener);
       window.postMessage({source:'erase-workspace',requestId,payload},location.origin);
     });
@@ -155,7 +155,7 @@
       automate=n('input');automate.type='checkbox';automate.id='form-batch-automate';
       const label=n('label');label.className='checkbox-label';label.append(automate,n('span','Automatically submit only forms with the exact agreements displayed below.'));
       agreements=n('div',null,'form-batch-agreements');agreements.hidden=true;
-      options.append(label,n('p','Reviewed submission is available for SmartBackgroundChecks, FamilyTreeNow, USPhonebook, FastPeopleSearch, SearchPeopleFree, AdvancedBackgroundChecks, Apollo, No Sorgulama, NumaraAra and NumaraSor. Other selected forms keep their existing fill behavior. Local text recognition is available only with an installed helper; managed challenges can still require attention.','public-route-note'),agreements);
+      options.append(label,n('p','Reviewed submission is available for TruePeopleSearch, SmartBackgroundChecks, FamilyTreeNow, USPhonebook, FastPeopleSearch, SearchPeopleFree, AdvancedBackgroundChecks, Apollo, No Sorgulama, NumaraAra and NumaraSor. Other selected forms keep their existing fill behavior. Local text recognition is available only with an installed helper; managed challenges can still require attention.','public-route-note'),agreements);
     }
     if(S()&&M()){
       mail=n('input');mail.type='checkbox';mail.id='form-batch-mail';const label=n('label');label.className='checkbox-label';label.append(mail,n('span','Check the selected removal-only contacts once during this session.'));
@@ -481,7 +481,7 @@
       const mailDownload=n('a','Download the local mail connector','button button-secondary');mailDownload.id='download-local-removal-mail';mailDownload.href='/downloads/erase-me-local-mail.zip';mailDownload.download='erase-me-local-mail.zip';
       const mailSteps=n('ol');mailSteps.id='local-mail-setup-steps';
       for(const text of ['Download and extract the connector into a folder you will keep.','Open tools/setup-removal-mail.command on Mac or tools/setup-removal-mail.sh on Linux. Copy the companion ID from its toolbar icon into the local setup page, choose your Google connection file and connect the separate account.','Choose Enable local connectors in the companion, then Connect my removal-only mailbox here. This checks account identity without reading messages.'])mailSteps.append(n('li',text));
-      box.append(n('h2','Removal-only email','local-mail-setup-title'),mailSteps,mailDownload,setup,connectLocal,n('p','Each person needs a separate removal-only Gmail account and their own Google Desktop OAuth client. The local setup page keeps credentials on that person’s computer. No personal inbox is connected and no check runs on a schedule.','public-route-note'));
+      box.append(n('h2','Removal-only email','local-mail-setup-title'),mailSteps,mailDownload,setup,connectLocal,n('p','Each person needs a separate removal-only Gmail account. Eligible accounts can use an app password through local setup without a Cloud client; other accounts retain Google sign-in with their own Desktop client. Credentials stay on that person’s computer. No personal inbox is connected and no check runs on a schedule.','public-route-note'));
     }
     if(M())box.append(button('Check removal-mail availability',async()=>{
       mailStatus=await M().status();changed();
@@ -675,6 +675,13 @@
           feedback(current?.automatic_match?'This record has a current automatic match using your name and identity email. No removal request or deletion was established.':'This check did not establish an automatic identity match. Review your own record or supply the missing identity detail; no removal action was started.');
         },()=>!batchRunning());match.disabled=batchRunning();fillActions.add(match);actions.append(match);
       }
+      if((route.phonePreferencePrefill||route.associationPrefill||route.directorySuppressionPrefill)&&!item.held&&!item.operation_id&&globalThis.ErasePrivateRouteDialog?.supports(route.id)){
+        const profileId=W().profile().id,control=button(route.associationPrefill?'Review association fields':route.phonePreferencePrefill?'Review phone preference':'Review directory suppression',async()=>{
+          if(batchRunning())throw new Error('Wait for the current batch before reviewing private fields.');
+          if(!privateRouteDialog)privateRouteDialog=globalThis.ErasePrivateRouteDialog.create({workspace:W(),companion,document,onChange:changed,onFeedback:feedback});
+          await privateRouteDialog.open(route.id,control,profileId);
+        });control.id='private-form-'+route.id;control.disabled=batchRunning();fillActions.add(control);actions.append(control);
+      }
       if(route.id==='mylife'&&route.myLifePrefill&&!item.held&&!item.operation_id&&globalThis.EraseMyLifeDialog){
         const profileId=W().profile().id,control=button('Review MyLife identity fields',async()=>{
           if(batchRunning())throw new Error('Wait for the current form batch before reviewing private MyLife fields.');
@@ -726,8 +733,8 @@
           await W().recordCompanion(route.id,operation.operationId,result);changed();feedback(result.detail||'The companion step is recorded. Finish the broker steps.');
         });fill.disabled=batchRunning();fillActions.add(fill);actions.append(fill);
       }
-      const operationId=item.operationId||item.operation_id;
-      if(operationId&&!item.mail_send&&!item.status.startsWith('user_reported'))actions.append(button('Read companion result',async()=>{const result=await companion({action:'result',routeId:route.id,operationId});if(route.id==='thatsthem')await W().recordThatsThem(W().profile().id,operationId,result);else if(route.id==='peoplefinders')await W().recordPeopleFinders(W().profile().id,operationId,result);else if(route.cmaRegistration)await W().recordCMA(W().profile().id,operationId,result);else if(route.id==='mylife')await W().recordMyLife(W().profile().id,operationId,result);else await W().recordCompanion(route.id,operationId,result);changed();feedback(result.detail||'Companion result checked.');}));
+      const operationId=item.operationId||item.operation_id,operationProfileId=W().profile().id;
+      if(operationId&&!item.mail_send&&!item.status.startsWith('user_reported'))actions.append(button('Read companion result',async()=>{const result=await companion({action:'result',routeId:route.id,operationId});if(route.phonePreferencePrefill||route.associationPrefill||route.directorySuppressionPrefill)await W().recordPrivateRoute(route.id,operationProfileId,operationId,result);else if(route.id==='thatsthem')await W().recordThatsThem(W().profile().id,operationId,result);else if(route.id==='peoplefinders')await W().recordPeopleFinders(W().profile().id,operationId,result);else if(route.cmaRegistration)await W().recordCMA(W().profile().id,operationId,result);else if(route.id==='mylife')await W().recordMyLife(W().profile().id,operationId,result);else await W().recordCompanion(route.id,operationId,result);changed();feedback(result.detail||'Companion result checked.');}));
       if(operationId&&item.continuation)actions.append(button('Read confirmation-form result',async()=>{const result=await companion({action:'continuation-result',routeId:route.id,operationId});await W().recordMailContinuation(route.id,operationId,result);changed();feedback(result.detail||'Confirmation-form result checked. No action was repeated.');}));
       if(operationId&&item.final_submission)actions.append(button('Read final submission result',async()=>{
         const request=await W().identityResultRequest(route.id),result=await companion({action:'identity-result',...request});
@@ -743,7 +750,7 @@
         if(ownOutbox&&R()){
           const result=button('Read email send result',async()=>{
             const outcome=await R().create({workspace:W(),companion,profileId}).result(route.id);changed();
-            feedback(outcome.status==='provider_accepted'?'Google accepted the approved email for sending. Delivery, broker acceptance and deletion remain unverified.':'Saved email outcome: '+outcome.status+'. No message was repeated; no deletion was established.');
+            feedback(outcome.status==='provider_accepted'?'Google accepted the approved email for sending. Delivery, broker acceptance and deletion remain unverified.':outcome.status==='smtp_accepted'?'Gmail’s SMTP server accepted the approved message. Its local receipt proves neither delivery, broker acceptance nor deletion.':'Saved email outcome: '+outcome.status+'. No message was repeated; no deletion was established.');
           });result.id='read-email-result-'+route.id;actions.append(result);
           if(!record.attempt_started&&!record.revocation_confirmed){
             const cancel=button('Cancel unsent email draft',async()=>{
@@ -755,7 +762,7 @@
             const reset=button('Reset canceled email draft',async()=>{await W().resetMailSend(route.id,{authorized:true,profileId});changed();feedback('The revoked, unsent draft was explicitly reset. Review and approve any new email separately.');});reset.id='reset-email-draft-'+route.id;actions.append(reset);
           }
         }
-        actions.append(n('p',record.result==='provider_accepted'?'Google accepted this email for sending. Delivery, broker acceptance and deletion remain unverified.':record.revocation_confirmed?'This unsent email draft was revoked.':'This local outbox operation is reserved. Read its saved result before taking another action.','public-route-note'));
+        actions.append(n('p',record.result==='provider_accepted'?'Google accepted this email for sending. Delivery, broker acceptance and deletion remain unverified.':record.result==='smtp_accepted'?'Gmail’s SMTP server accepted this email for sending. The local receipt does not verify delivery, broker acceptance or deletion.':record.revocation_confirmed?'This unsent email draft was revoked.':'This local outbox operation is reserved. Read its saved result before taking another action.','public-route-note'));
       }
       if(!item.held){
         actions.append(button('I submitted the request',async()=>{await W().recordUser(route.id,'user_reported_requested');changed();feedback('Your report of submitting a request is saved. Broker acceptance and deletion remain unverified.');}));

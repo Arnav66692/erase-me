@@ -11,7 +11,7 @@ MEMBERS = {
     'tools/setup_removal_mail.py', 'tools/mail_setup_web.py',
     'tools/mail_setup_ui.html', 'tools/mail_setup_ui.js', 'tools/mail_setup_ui.css',
     'tools/setup-removal-mail.command', 'tools/setup-removal-mail.sh',
-    'tools/native_mail_host.py', 'tools/removal_sender.py', 'tools/install_mail_host.py',
+    'tools/native_mail_host.py', 'tools/gmail_app_mail.py', 'tools/removal_sender.py', 'tools/install_mail_host.py',
     'tools/install_challenge_host.py', 'tools/connect_removal_gmail.py',
     'tools/configure_removal_mailbox.py', 'preview/lib/removal_mail.py',
     'docs/LOCAL_REMOVAL_MAIL.md', 'docs/GMAIL_OAUTH.md', 'LICENSE',
@@ -70,7 +70,7 @@ print(json.dumps(result))
     assert status['configured'] is False
     assert status['send_enabled'] is False
     assert status['automatic_execution'] is False
-    assert len(status['routes']) == 7
+    assert len(status['routes']) == 8
     assert not (native_home / '.erase-me-removal-mail').exists()
     result = subprocess.run(
         [sys.executable, '-B', str(tmp_path / 'download/tools/connect_removal_gmail.py'), '--help'],
@@ -107,5 +107,5 @@ def test_public_send_scripts_and_companion_bundle_match_source():
         source = ROOT / ('extension' if name == 'send-contract.js' else 'webapp/static') / name
         assert (ROOT / 'preview/public' / name).read_bytes() == source.read_bytes()
     with zipfile.ZipFile(ROOT / 'preview/public/downloads/erase-me-companion.zip') as bundle:
-        assert len(bundle.namelist()) == 18
+        assert len(bundle.namelist()) == 21
         assert bundle.read('send-contract.js') == (ROOT / 'extension/send-contract.js').read_bytes()

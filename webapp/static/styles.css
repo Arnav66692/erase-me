@@ -2147,3 +2147,5 @@ input:disabled { opacity:1; color:var(--muted); background:var(--panel, var(--pa
 #removal-send-dialog dd { margin:0; overflow-wrap:anywhere; }
 #removal-send-dialog .button { margin:12px 8px 0 0; white-space:normal; }
 #removal-send-dialog a,#removal-send-status { overflow-wrap:anywhere; }
+
+#private-route-dialog{width:min(840px,calc(100vw - 24px));max-height:calc(100dvh - 24px);overflow:auto}#private-route-dialog dd{overflow-wrap:anywhere}

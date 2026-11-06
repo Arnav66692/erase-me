@@ -381,6 +381,39 @@
       route.steps.push('A historical PeopleConnect affiliation does not establish that the current suppression center covers this brand. Confirm its official instructions separately.');
     }
   }
+  // These are narrowly scoped private prefill stages, outside standard batches.
+  for(const route of routes){
+    if(['intelius','truthfinder','instantcheckmate','ussearch'].includes(route.id)){
+      route.associationPrefill=true;route.transientPrefill=true;route.availability='reviewed_association_prefill';route.inspectedAt='2026-11-06';
+      const host='app.'+route.id+'.com';if(!route.allowedHosts.includes(host))route.allowedHosts.push(host);
+      route.steps.push('A separate in-app association/relative form review can fill accurate own-name, birth date, city, state and email. It is not the complete background-report suppression route. Final verification and submission remain on the official site.');
+      route.evidence+=' A separate association/relative opt-out form was inspected read-only on November 6; only its private prefill is implemented. No complete-report suppression or deletion was established.';
+    }
+    if(['ca-dncl','gb-tps'].includes(route.id)){
+      route.phonePreferencePrefill=true;route.transientPrefill=true;route.availability='reviewed_phone_preference_prefill';route.inspectedAt='2026-11-06';
+      route.steps=['Enter and review your own telephone number inside the private dialog. '+(route.id==='gb-tps'?'This first step selects Residential only; business subscriptions are outside this form contract.':'A shared-line registration affects everyone using that number.'),'The companion fills only the first phone field. Complete the remaining official registration yourself; no Next/registration submission is automated.','This is a marketing-call preference, not broker-record deletion. No accepted registration or removal was established.'];
+      route.evidence='The official first phone-preference stage was inspected without submitting a number. Later registration and deletion remain unverified.';
+    }
+    if(['addresses','zabasearch'].includes(route.id)){
+      route.url='https://www.intelius.com/privacy-center/';if(!route.allowedHosts.includes('www.intelius.com'))route.allowedHosts.push('www.intelius.com');
+      route.steps=['Follow the privacy-tools destination linked by this brand’s current official homepage footer.','This is a published delegation to Intelius’s privacy center. It does not establish that every association or background-report tool there covers this brand. No duplicate request or completion is propagated.'];
+    }
+    if(route.id==='canada411'){
+      route.directorySuppressionPrefill=true;route.transientPrefill=true;route.availability='reviewed_directory_prefill';route.inspectedAt='2026-11-06';
+      route.steps=['Review your own name, listed Canadian phone number and contact email inside the private dialog.','The companion opens the published Canada411 web-only removal form and fills only the reviewed fields and privacy reason. Optional comments stay blank. Complete its image challenge and final submission yourself.','Telephone-provider unlisting is separate. This prefill does not establish matching, acceptance or deletion.'];
+      route.evidence='The official FAQ and published web-listing removal modal were inspected read-only on November 6. No live request was submitted; deletion remains unverified.';
+    }
+    if(route.id==='truepeoplesearch'){
+      route.fields=['first_name','last_name','email'];route.requiredAffirmations=['own_request'];route.automationLevel='companion';route.automationMode='prefill';route.availability='reviewed_initial_form';route.inspectedAt='2026-11-06';
+      route.steps=['Enter and review your own first name, last name and email inside Erase Me.','The companion checks the official privacy page and its published Opt-Out Form link before navigating to the exact initial verification form.','Optional guarded submission requires the exact contact authorization, subject-only selection, empty optional/agent fields and genuine hCaptcha response. No token is fabricated.','Later email confirmation, correct-record matching and removal remain unverified. An initial attempt is not deletion.'];
+      route.evidence='The official privacy entry and 13-control initial verification form were inspected read-only on November 6. No live request or independently verified deletion was established.';
+    }
+    if(route.id==='192com'){
+      route.directorySuppressionPrefill=true;route.transientPrefill=true;route.availability='reviewed_directory_prefill';route.inspectedAt='2026-11-06';
+      route.steps=['Enter accurate own first name, surname, full UK postcode and contact email inside the private dialog.','The companion fills only those reviewed fields. Optional telephone and other people’s details stay blank; complete the genuine challenge, email verification and submission on the official site.','Preparation does not establish correct-record matching, request acceptance or deletion.'];
+      route.evidence='The official own-record suppression form was inspected read-only on November 6. Private prefill is implemented; later verification and deletion remain unverified.';
+    }
+  }
   return Object.freeze(routes.map(route => Object.freeze({ ...route,
     countries: Object.freeze(route.countries), covers: Object.freeze(route.covers || []), requiredAffirmations: Object.freeze(route.requiredAffirmations || []), fields: Object.freeze(route.fields), allowedHosts: Object.freeze(route.allowedHosts), steps: Object.freeze(route.steps) })));
 });

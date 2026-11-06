@@ -11,6 +11,7 @@ import pytest
 import connect_removal_gmail as oauth
 import install_mail_host as installer
 import setup_removal_mail as setup
+import gmail_app_mail as connections
 
 
 PERSONAL = 'personal.fixture@gmail.com'
@@ -64,10 +65,10 @@ def isolated(tmp_path, monkeypatch):
     google = Google()
     opened = []
     real_connect, real_check = oauth.connect, oauth.check_token
-    monkeypatch.setattr(oauth, 'connect', lambda mailbox, personal, data: real_connect(
+    monkeypatch.setattr(oauth, 'connect', lambda mailbox, personal, data, **kwargs: real_connect(
         mailbox, personal, data, opener=lambda url: opened.append(url) or True,
-        receiver_factory=Receiver, request=google))
-    monkeypatch.setattr(oauth, 'check_token', lambda p: real_check(p, request=google))
+        receiver_factory=Receiver, request=google, **kwargs))
+    monkeypatch.setattr(oauth, 'check_token', lambda p, **kwargs: real_check(p, request=google, **kwargs))
     monkeypatch.setattr(oauth, 'revoke', lambda data, **kwargs: google(oauth.REVOKE_URL, form={'token': data['refresh_token']}))
     logs = []
 
@@ -79,6 +80,10 @@ def isolated(tmp_path, monkeypatch):
     return run, home, path, client, google, opened, logs
 
 
+def active_path(path):
+    return connections.oauth_config_path(path.parent, connections.selection(path.parent))
+
+
 def test_single_command_connects_then_installs_without_mail_or_schedule(isolated):
     run, home, path, _client, google, opened, logs = isolated
     result = run()
@@ -87,7 +92,7 @@ def test_single_command_connects_then_installs_without_mail_or_schedule(isolated
     assert google.calls == [oauth.TOKEN_URL, oauth.IDENTITY_URL]
     assert len(opened) == 1 and opened[0].startswith(oauth.AUTH_URL + '?')
     assert installer.check(installer.plan(EXTENSION, home=home, platform='linux'))['installed']
-    assert stat.S_IMODE(path.stat().st_mode) == 0o600
+    assert stat.S_IMODE(active_path(path).stat().st_mode) == 0o600
     assert stat.S_IMODE(path.parent.stat().st_mode) == 0o700
     text = '\n'.join(logs)
     assert 'No Gmail messages were read' in text
@@ -106,7 +111,7 @@ def test_matching_connection_is_reused_with_identity_only_and_no_registration_re
     assert result['reused_connection'] is True
     assert google.calls == [oauth.IDENTITY_URL] and len(opened) == 1
     assert Path(spec['manifest_path']).stat().st_mtime_ns == before
-    assert oauth.load_config(path)['personal_email_sha256'] == oauth.private.personal_digest(PERSONAL)
+    assert oauth.load_config(active_path(path))['personal_email_sha256'] == oauth.private.personal_digest(PERSONAL)
 
 
 def test_reuse_normalizes_primary_and_dedicated_gmail_alias_equivalence(isolated):
@@ -118,12 +123,11 @@ def test_reuse_normalizes_primary_and_dedicated_gmail_alias_equivalence(isolated
     assert google.calls == [oauth.IDENTITY_URL]
 
 
-def test_saved_expired_token_is_refreshed_only_during_explicit_setup(isolated):
+def test_saved_expired_token_is_refreshed_only_during_explicit_setup(isolated, monkeypatch):
     run, _home, path, _client, google, _opened, _logs = isolated
     run()
-    saved = oauth.load_config(path)
-    saved['tokens']['expires_at'] = 1
-    oauth.save_config(path, saved, replace=True)
+    saved = oauth.load_config(active_path(path))
+    monkeypatch.setattr(oauth.time, 'time', lambda: saved['tokens']['expires_at'] + 1)
     google.calls.clear()
     assert run([PERSONAL, MAILBOX, 'yes'])['reused_connection'] is True
     assert google.calls == [oauth.TOKEN_URL, oauth.IDENTITY_URL]
@@ -176,11 +180,12 @@ def test_unsupported_platform_precedes_google(isolated):
 def test_saved_binding_mismatch_does_not_overwrite_or_contact_google(isolated, personal, mailbox):
     run, _home, path, _client, google, opened, _logs = isolated
     run()
-    before = path.read_bytes()
+    before_path = active_path(path)
+    before = before_path.read_bytes()
     google.calls.clear()
     with pytest.raises(setup.SetupError, match='different profile or mailbox'):
         run([personal, mailbox, 'yes'])
-    assert google.calls == [] and len(opened) == 1 and path.read_bytes() == before
+    assert google.calls == [] and len(opened) == 1 and before_path.read_bytes() == before
 
 
 def test_check_only_never_creates_missing_connection_or_registration(isolated):
@@ -205,26 +210,29 @@ def test_explicit_reconnection_replaces_only_after_new_dedicated_identity(isolat
     google.email = 'other.fixture@gmail.com'
     result = run([PERSONAL, google.email, 'yes', str(client)], reconnect=True)
     assert result['reused_connection'] is False and len(opened) == 2
-    assert oauth.load_config(path)['mailbox'] == google.email
+    assert oauth.load_config(active_path(path))['mailbox'] == google.email
 
 
 def test_failed_reconnection_preserves_original_credentials(isolated):
     run, _home, path, client, google, _opened, _logs = isolated
     run()
-    before = path.read_bytes()
+    previous = active_path(path)
+    before = previous.read_bytes()
     google.email = PERSONAL
     with pytest.raises(oauth.IdentityMismatch):
         run([PERSONAL, MAILBOX, 'yes', str(client)], reconnect=True)
-    assert path.read_bytes() == before and google.calls[-1] == oauth.REVOKE_URL
+    assert previous.read_bytes() == before and active_path(path) == previous
+    assert oauth.REVOKE_URL not in google.calls
 
 
-def test_new_grant_is_revoked_if_saving_fails_and_no_host_is_installed(isolated, monkeypatch):
-    run, home, _path, _client, google, _opened, _logs = isolated
+def test_failed_staging_does_not_activate_or_revoke_a_shared_google_grant(isolated, monkeypatch):
+    run, _home, path, _client, google, _opened, logs = isolated
     monkeypatch.setattr(oauth, 'save_config', lambda *args, **kwargs: (_ for _ in ()).throw(oauth.OAuthError('fixture-save-failure')))
-    with pytest.raises(setup.SetupError, match='submitted for revocation'):
+    with pytest.raises(oauth.OAuthError):
         run()
-    assert google.calls == [oauth.TOKEN_URL, oauth.IDENTITY_URL, oauth.REVOKE_URL]
-    assert not (home / '.erase-me-mail-native').exists()
+    assert google.calls == [oauth.TOKEN_URL, oauth.IDENTITY_URL]
+    assert not path.exists() and connections.selection(path.parent) is None
+    assert any('Google consent was not revoked' in line for line in logs)
 
 
 def test_existing_other_extension_registration_requires_explicit_update(isolated):
@@ -276,9 +284,9 @@ def test_saved_configuration_change_during_identity_check_prevents_install(isola
     run, home, path, _client, _google, _opened, _logs = isolated
     run()
     installer.uninstall(installer.plan(EXTENSION, home=home, platform='linux'))
-    data = oauth.load_config(path)
+    data = oauth.load_config(active_path(path))
     data['personal_email_sha256'] = oauth.private.personal_digest('different@example.com')
-    monkeypatch.setattr(oauth, 'check_token', lambda _: data)
+    monkeypatch.setattr(oauth, 'check_token', lambda _, **kwargs: data)
     with pytest.raises(setup.SetupError, match='changed during'):
         run([PERSONAL, MAILBOX, 'yes'])
     assert not installer.check(installer.plan(EXTENSION, home=home, platform='linux'))['installed']
