@@ -228,10 +228,11 @@ class Handler(BaseHTTPRequestHandler):
             return self.respond(self.dashboard(auth.session_user(self.token())))
         if path.startswith('/api/'):
             raise auth.AuthError('Not found.', 404)
-        allowed = {'/': 'index.html', '/index.html': 'index.html', '/app.js': 'app.js', '/hero.js': 'hero.js', '/styles.css': 'styles.css', '/favicon.svg': 'favicon.svg',
+        allowed = {'/': 'index.html', '/index.html': 'index.html', '/app.js': 'app.js', '/hero.js': 'hero.js', '/styles.css': 'styles.css', '/fusion.css': 'fusion.css', '/favicon.svg': 'favicon.svg',
                    '/fonts/geist.woff2': 'fonts/geist.woff2', '/fonts/jetbrains-mono.woff2': 'fonts/jetbrains-mono.woff2'}
         name = allowed.get(path)
-        bundled_fonts = ('instrument-serif.ttf', 'hanken-grotesk.ttf', 'vt323.ttf')
+        bundled_fonts = ('instrument-serif.ttf', 'hanken-grotesk.ttf', 'vt323.ttf',
+                         'cormorant-garamond-300-latin.woff2', 'cormorant-garamond-300-latin-ext.woff2')
         if path in ('/fonts/' + font for font in bundled_fonts):
             name = path.lstrip('/')
         if not name or not (STATIC / name).is_file():
