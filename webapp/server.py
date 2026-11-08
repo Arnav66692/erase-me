@@ -232,7 +232,8 @@ class Handler(BaseHTTPRequestHandler):
                    '/fonts/geist.woff2': 'fonts/geist.woff2', '/fonts/jetbrains-mono.woff2': 'fonts/jetbrains-mono.woff2'}
         name = allowed.get(path)
         bundled_fonts = ('instrument-serif.ttf', 'hanken-grotesk.ttf', 'vt323.ttf',
-                         'cormorant-garamond-300-latin.woff2', 'cormorant-garamond-300-latin-ext.woff2')
+                         'cormorant-garamond-300-latin.woff2', 'cormorant-garamond-300-latin-ext.woff2',
+                         'saira-extra-condensed-700-latin.woff2')
         if path in ('/fonts/' + font for font in bundled_fonts):
             name = path.lstrip('/')
         if not name or not (STATIC / name).is_file():

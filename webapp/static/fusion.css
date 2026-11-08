@@ -1,7 +1,8 @@
 /* Fusion layer, approved 2026-11-07.
    Words and story are Grail. Actions and transitions are jjettas.
-   Grail owns the light caps serif, chapter labels, the floating card field and the radius 24 cards.
-   jjettas owns pills with a rising fill, the link roll, wide tracked mono captions and the slanted wipe.
+   Grail owns the serif headlines, chapter labels, the curved card belt, the colour chapter, the chapter card, the header button and the dock.
+   jjettas owns the giant textured condensed word, the framed card row with tracked captions and yard lines,
+   the slanted wipes, the pills with a rising fill, the link roll and the dark footer panel.
    The page runs inky black, then ashen gray, then stark white, as if it is being wiped.
    Faded denim is the only accent. Live numbers snap and never animate.
    Original code. No reference code, fonts, images or copy. */
@@ -19,6 +20,12 @@
   font-weight:300;
   font-display:swap;
   unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C4,U+2113,U+2C60-2C7F,U+A720-A7FF;
+}
+@font-face {
+  font-family:SairaX;
+  src:url('/fonts/saira-extra-condensed-700-latin.woff2') format('woff2');
+  font-weight:700;
+  font-display:swap;
 }
 @font-face {
   font-family:GeistFx;
@@ -181,258 +188,326 @@ body[data-tone=dark] .site-header .fx-roll::after { color:var(--denim); }
 
 /* ---------- Landing ---------- */
 .welcome-view.fx { display:block; padding:0; }
-.fx .fx-chapter {
-  display:flex;
-  justify-content:space-between;
-  gap:20px;
-  padding:0 32px;
-  font:500 14px/1.3 var(--sans);
-  letter-spacing:0;
-}
+.fx-sr { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
 
-/* Chapter 01, exposed. Grail stage on inky black. */
-.fx-stage { --wipe:0; height:185svh; position:relative; background:var(--ink); }
-.fx-hero {
-  position:sticky;
-  top:0;
-  height:100svh;
-  min-height:620px;
-  overflow:hidden;
-  display:flex;
-  flex-direction:column;
-  color:var(--paper);
-  background:var(--ink) var(--grain);
-  transform:scale(calc(1 - .18 * var(--wipe)));
-  transform-origin:50% 100%;
+/* Grail header button and chapter labels */
+.fx-header-cta {
+  display:none;
+  align-items:center;
+  height:44px;
+  padding:0 22px;
+  border-radius:999px;
+  background:var(--denim);
+  color:var(--ink);
+  font:600 15px/1 var(--sans);
+  text-decoration:none;
+  transition:transform .15s ease,background-color .15s ease,box-shadow .15s ease;
 }
-.fx-hero .fx-chapter { position:relative; z-index:2; padding-top:calc(var(--header) + 22px); color:rgba(251,251,250,.66); }
-.fx-display {
-  font:300 92px/.88 var(--display);
-  letter-spacing:-.01em;
-  text-transform:uppercase;
-}
-.fx-display mark,.fx-display .accent-text { background:none; color:inherit; }
+.fx-header-cta:hover { transform:translateY(-2px) scale(1.03); background:#a9bdd3; box-shadow:0 8px 24px rgba(142,166,194,.35); }
+.fx-header-cta:active { transform:scale(.99); }
+body:has(#welcome-view:not([hidden])) .fx-header-cta { display:inline-flex; }
+body:has(#welcome-view:not([hidden])) .header-caption { width:430px; white-space:normal; text-align:center; line-height:1.35; }
+.fx .fx-chapter { display:flex; justify-content:space-between; gap:20px; padding:25px 32px 0; font:500 14px/1.3 var(--sans); letter-spacing:0; }
+
+/* ---- Chapter 01. Grail hero. Black stage, one fitted serif line, a curved belt of cards. */
+.fx-stage { --p:0; height:200svh; position:relative; background:var(--ink); }
+.fx-hero { position:sticky; top:0; height:100svh; min-height:620px; overflow:hidden; color:var(--paper); background:var(--ink); }
+.fx-display { font:300 92px/.88 var(--display); letter-spacing:-.01em; text-transform:uppercase; }
 .fx-hero .fx-display {
-  position:relative;
-  z-index:2;
-  margin:18px 0 0;
-  padding:0 var(--side);
-  font-size:var(--fit,12.4vw);
-  pointer-events:none;
-}
-.fx-hero .fx-display { white-space:nowrap; }
-.fx-hero .fx-display .fx-line { display:inline-block; width:max-content; }
-.fx-hero .fx-display mark { color:var(--denim); }
-.fx-hero-foot {
-  position:relative;
-  z-index:2;
-  margin-top:auto;
-  display:grid;
-  grid-template-columns:minmax(0,440px) auto minmax(0,1fr);
-  align-items:end;
-  gap:24px 48px;
-  padding:80px var(--side) 36px;
-  background:linear-gradient(to top,var(--ink) 30%,rgba(14,15,17,0));
-}
-.fx .hero-lede { margin:0; max-width:440px; font-size:18px; line-height:1.4; color:rgba(251,251,250,.82); }
-.fx .hero-actions { display:flex; gap:12px; margin:0; }
-.fx .hero-actions .button { min-width:0; font-size:14px; }
-.fx .hero-actions .button:hover { transform:scale(1.12); }
-.fx .hero-actions .button:hover>span { transform:scale(.82); }
-.fx .hero-actions .button-ghost { border-color:rgba(251,251,250,.45); color:var(--paper); }
-.fx .hero-actions .button-ghost:hover { color:var(--ink); }
-.fx .hero-facts {
-  display:flex;
-  flex-direction:column;
-  align-items:flex-end;
-  gap:6px;
+  position:absolute;
+  z-index:3;
+  left:0;
+  right:0;
+  top:calc(var(--header) + 58px);
   margin:0;
-  padding:0!important;
-  border:0;
-  font:500 11px/1.55 var(--mono);
-  letter-spacing:.16em;
-  text-transform:uppercase;
-  color:rgba(251,251,250,.62);
+  padding:0 var(--side);
+  font-size:var(--fit,10vw);
+  white-space:nowrap;
+  pointer-events:none;
+  transform-origin:50% 0;
+  transform:scale(calc(1 - .62 * min(1, var(--p) * 2.2)));
+  opacity:calc(1 - var(--p) * 2.4);
 }
-.fx .hero-facts span+span:before { content:none; }
-
-/* Letter rise, Grail. Each letter from .62em below, 48ms apart. */
+.fx-hero .fx-display .fx-line { display:inline-block; width:max-content; }
 .fx-ch { display:inline-block; }
 .fx-ready .fx-ch { animation:fx-rise .6s var(--ease) both; animation-delay:calc(var(--i) * 48ms + 120ms); }
 @keyframes fx-rise { from { transform:translateY(.62em); opacity:0; } }
-.fx-sr { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
 
-/* The card field. Plain CSS 3D, no WebGL. Cards drift, follow the pointer and get wiped as you scroll. */
-.fx-field {
+.fx-field { position:absolute; inset:0; z-index:1; perspective:1000px; perspective-origin:50% 40%; }
+.fx-ring {
   position:absolute;
-  inset:0;
-  z-index:1;
-  perspective:1100px;
-  opacity:calc(1 - var(--wipe) * 1.35);
-  filter:blur(calc(var(--wipe) * 9px)) grayscale(var(--wipe));
-}
-.fx-tilt {
-  position:absolute;
-  inset:0;
+  left:50%;
+  top:58%;
+  width:0;
+  height:0;
   transform-style:preserve-3d;
-  transform:rotateX(calc(var(--py,0) * -6deg)) rotateY(calc(var(--px,0) * 9deg)) translateZ(0);
+  transform:translateZ(var(--ringz,250px)) rotateX(calc(var(--py,0) * -4deg)) rotateY(calc(var(--px,0) * 7deg + var(--p) * -64deg)) translateY(calc(var(--p) * -120px));
 }
 .fx-card {
   position:absolute;
-  left:var(--x);
-  top:var(--y);
-  width:172px;
-  height:242px;
-  margin:-121px 0 0 -86px;
+  left:0;
+  top:0;
+  width:236px;
+  height:344px;
+  margin:-172px 0 0 -118px;
   border-radius:14px;
-  padding:16px;
-  background:var(--paper);
-  color:var(--ink);
-  box-shadow:0 24px 50px rgba(0,0,0,.45);
-  transform:translateZ(var(--z)) rotateY(var(--ry)) rotateZ(var(--rz));
-  animation:fx-drift var(--dur,9s) ease-in-out var(--delay,0s) infinite alternate;
-  display:flex;
-  flex-direction:column;
-  gap:9px;
-  font-size:10px;
-  line-height:1.3;
+  overflow:hidden;
+  transform:rotateY(var(--a)) translateZ(var(--r)) translateY(var(--y)) rotateZ(var(--rz,0deg));
   backface-visibility:hidden;
+  animation:fx-bob var(--dur,7s) ease-in-out var(--delay,0s) infinite alternate;
 }
-@keyframes fx-drift {
-  from { transform:translateZ(var(--z)) rotateY(var(--ry)) rotateZ(var(--rz)) translate3d(0,0,0); }
-  to { transform:translateZ(var(--z)) rotateY(calc(var(--ry) * -1)) rotateZ(calc(var(--rz) * -.5)) translate3d(var(--dx,8px),var(--dy,-14px),0); }
-}
-.fx-card-kicker { font:500 8.5px/1.4 var(--mono); letter-spacing:.14em; text-transform:uppercase; color:var(--muted); display:flex; justify-content:space-between; }
-.fx-card-name { font:300 25px/.9 var(--display); text-transform:uppercase; }
-.fx-card-row { display:grid; grid-template-columns:62px 1fr; gap:8px; align-items:center; }
-.fx-card-row b { font:500 8px/1 var(--mono); letter-spacing:.12em; text-transform:uppercase; color:var(--muted); font-weight:500; }
-.fx-card-row i { display:block; height:9px; border-radius:2px; background:var(--ink); width:var(--w,80%); }
-.fx-card-stamp {
-  margin-top:auto;
-  align-self:flex-start;
-  border:1.5px solid var(--denim-ink);
-  color:var(--denim-ink);
-  border-radius:999px;
-  padding:5px 10px;
-  font:800 9px/1 var(--sans);
-  letter-spacing:.06em;
-  text-transform:uppercase;
-}
-.fx-card.is-tile { padding:0; overflow:hidden; background:var(--tile,var(--ash)); }
-.fx-card.is-tile::before {
-  content:'';
-  position:absolute;
-  inset:22%;
-  background:
-    linear-gradient(var(--stroke,var(--ink)) 0 0) 0 18%/100% 11% no-repeat,
-    linear-gradient(var(--stroke,var(--ink)) 0 0) 0 50%/68% 11% no-repeat,
-    linear-gradient(var(--stroke,var(--ink)) 0 0) 0 82%/36% 11% no-repeat;
-}
-.fx-card.is-erased .fx-card-row i { background:transparent; border:1px dashed rgba(14,15,17,.35); }
+@keyframes fx-bob { to { transform:rotateY(var(--a)) translateZ(var(--r)) translateY(calc(var(--y) - 14px)) rotateZ(calc(var(--rz,0deg) * -1)); } }
 
-/* Chapter 02, fading. jjettas slanted panel wipes over the stage. */
+/* Statement cards, as in the reference field: crest, group, a bold line, small print, chips. */
+.fx-card.is-quest { background:linear-gradient(#f6f6f6 70%,#e9e9e7); color:var(--ink); padding:18px 16px 12px; display:flex; flex-direction:column; }
+.fx-crest { display:block; width:34px; height:39px; clip-path:polygon(0 0,100% 0,100% 62%,50% 100%,0 62%); background:var(--pat); background-size:var(--pat-size,8px 8px); }
+.fx-card-group { margin:11px 0 4px; font:400 10px/1.2 var(--sans); color:#6b6b68; }
+.fx-card-line { font:700 19px/1.05 var(--sans); letter-spacing:-.02em; }
+.fx-card-small { margin-top:11px; font:400 10px/1.3 var(--sans); color:#3a3a38; }
+.fx-chips { margin-top:auto; display:flex; gap:4px; align-items:center; }
+.fx-chips span { display:inline-flex; align-items:center; height:21px; padding:0 9px; border-radius:99px; background:#fff; border:1px solid #dcdcd8; font:600 9px/1 var(--sans); color:#2a2a28; }
+.fx-card-foot { margin-top:8px; padding-top:6px; border-top:1px solid #dcdcd6; font:400 8px/1 var(--sans); color:#7a7a76; text-align:center; }
+.fx-card.is-tile { background:var(--pat); background-size:var(--pat-size,24px 24px); }
+
+/* The pattern set. Flat, bold, five colours, drawn in CSS. */
+.pat-check { --pat:repeating-conic-gradient(var(--ink) 0 25%,var(--ash) 0 50%); --pat-size:64px 64px; }
+.pat-check-denim { --pat:repeating-conic-gradient(var(--denim-ink) 0 25%,var(--paper) 0 50%); --pat-size:56px 56px; }
+.pat-stripe { --pat:repeating-linear-gradient(135deg,var(--denim) 0 30px,var(--ink) 30px 60px); --pat-size:auto; }
+.pat-dots { --pat:radial-gradient(circle,var(--paper) 0 15px,transparent 16px) 0 0/64px 64px,var(--denim-ink); --pat-size:64px 64px; }
+.pat-bars { --pat:linear-gradient(var(--ink) 0 0) 22% 30%/60% 9% no-repeat,linear-gradient(var(--ink) 0 0) 22% 50%/42% 9% no-repeat,linear-gradient(var(--ink) 0 0) 22% 70%/22% 9% no-repeat,var(--ash); --pat-size:auto; }
+.pat-steps { --pat:repeating-linear-gradient(0deg,var(--ash-light) 0 30px,var(--ash) 30px 60px),var(--ash); --pat-size:auto; }
+.pat-wave { --pat:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='48'%3E%3Cpath d='M0 36 Q24 12 48 36 T96 36' fill='none' stroke='%238ea6c2' stroke-width='12'/%3E%3C/svg%3E") 0 0/96px 48px,var(--ink); --pat-size:96px 48px; }
+.pat-diamond { --pat:conic-gradient(from 45deg at 50% 50%,var(--paper) 0 25%,var(--denim) 0 50%,var(--paper) 0 75%,var(--denim) 0) 0 0/76px 76px; --pat-size:76px 76px; }
+
+/* ---- Chapter. jjettas moments. A giant textured condensed word, a row of framed cards, yard lines. */
+.fx .fx-moments {
+  --mp:0;
+  position:relative;
+  z-index:4;
+  margin-top:-34svh;
+  background:var(--graphite);
+  color:var(--paper);
+  clip-path:polygon(0 10vw,100% 0,100% 100%,0 100%);
+}
+.fx-moments-pin { position:sticky; top:0; height:100svh; min-height:640px; overflow:hidden; }
+.fx-giant {
+  position:absolute;
+  left:0;
+  right:0;
+  top:calc(var(--header) - 6px);
+  margin:0;
+  padding:0 var(--side);
+  font:700 var(--gfit,24vw)/.85 'SairaX',var(--sans);
+  letter-spacing:-.03em;
+  text-transform:uppercase;
+  white-space:nowrap;
+  color:transparent;
+  background:var(--smudge) 0 0/520px 520px,linear-gradient(#5b6676,#2c3037 85%);
+  background-blend-mode:multiply;
+  -webkit-background-clip:text;
+  background-clip:text;
+  -webkit-mask-image:linear-gradient(#000 45%,transparent 96%);
+  mask-image:linear-gradient(#000 45%,transparent 96%);
+}
+.fx-track-wrap { position:absolute; left:0; right:0; top:24%; bottom:22%; }
+.fx-track {
+  display:flex;
+  align-items:flex-start;
+  gap:min(9vw,140px);
+  height:100%;
+  padding:0 12vw;
+  width:max-content;
+  transform:translateX(calc(var(--mp) * var(--travel,0px) * -1));
+}
+.fx-rcard { margin:0; width:230px; flex:none; text-align:center; }
+.fx-rcard:nth-child(even) { margin-top:150px; }
+.fx-rcard-frame {
+  position:relative;
+  height:338px;
+  padding:7px;
+  border-radius:12px;
+  background:linear-gradient(150deg,#f1f2f3,#9aa3ad 28%,#e9ecef 46%,#6f7883 70%,#d5dae0);
+  box-shadow:0 0 0 1px rgba(255,255,255,.18) inset;
+  filter:drop-shadow(0 8px 16px rgba(0,0,0,.28));
+  transform:perspective(900px) rotateX(var(--tx,0deg)) rotateY(var(--ty,0deg)) scale(var(--ts,1));
+  transition:transform .5s var(--ease),filter .5s var(--ease);
+  animation:fx-float 7s ease-in-out infinite alternate;
+}
+.fx-rcard:nth-child(2n) .fx-rcard-frame { animation-delay:-3.5s; }
+@keyframes fx-float { to { translate:0 -1.3%; } }
+.fx-rcard:hover .fx-rcard-frame { --ts:1.06; filter:drop-shadow(0 34px 50px rgba(0,0,0,.6)); }
+.fx-rcard-face { position:relative; height:100%; border-radius:7px; overflow:hidden; background:var(--ink); }
+.fx-rcard-pattern { position:absolute; inset:0; background:var(--pat); background-size:var(--pat-size,24px 24px); opacity:.9; }
+.fx-rcard-word {
+  position:absolute;
+  z-index:2;
+  left:14px;
+  right:14px;
+  bottom:12px;
+  font:700 54px/.82 'SairaX',var(--sans);
+  letter-spacing:-.02em;
+  text-transform:uppercase;
+  color:var(--paper);
+  text-align:left;
+  text-shadow:0 2px 18px rgba(14,15,17,.55);
+}
+.fx-rcard-face::after { content:''; position:absolute; inset:0; z-index:1; background:linear-gradient(transparent 40%,rgba(14,15,17,.82)); }
+.fx-sheen {
+  position:absolute;
+  inset:7px;
+  border-radius:7px;
+  pointer-events:none;
+  opacity:0;
+  background:linear-gradient(105deg,transparent calc(var(--sx,50%) - 18%),rgba(255,255,255,.55) var(--sx,50%),transparent calc(var(--sx,50%) + 18%)),linear-gradient(135deg,rgba(142,166,194,.5),rgba(230,229,225,.4));
+  mix-blend-mode:screen;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.4);
+  transition:opacity .35s var(--ease);
+}
+.fx-rcard:hover .fx-sheen { opacity:.7; }
+.fx-rcard figcaption { margin-top:22px; display:grid; gap:8px; }
+.fx-rcard figcaption b { font:500 13.68px/1.55 var(--mono); letter-spacing:.12em; text-transform:uppercase; font-weight:500; }
+.fx-rcard figcaption span { font:500 11.23px/1.55 var(--mono); letter-spacing:.16em; text-transform:uppercase; color:#a3a4a6; }
+.fx-rcard[data-face=address] { --pat:repeating-conic-gradient(#2a2d33 0 25%,#3f5a7a 0 50%); --pat-size:46px 46px; }
+.fx-rcard[data-face=phone] { --pat:repeating-linear-gradient(135deg,#8ea6c2 0 18px,#1c1d20 18px 36px); --pat-size:auto; }
+.fx-rcard[data-face=relatives] { --pat:radial-gradient(circle,#bcbbb6 0 9px,transparent 10px) 0 0/40px 40px,#3f5a7a; --pat-size:40px 40px; }
+.fx-rcard[data-face=age] { --pat:repeating-linear-gradient(0deg,#e6e5e1 0 16px,#bcbbb6 16px 32px); --pat-size:auto; }
+.fx-rcard[data-face=email] { --pat:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='28'%3E%3Cpath d='M0 21 Q14 7 28 21 T56 21' fill='none' stroke='%238ea6c2' stroke-width='7'/%3E%3C/svg%3E") 0 0/56px 28px,#0e0f11; --pat-size:56px 28px; }
+.fx-rcard[data-face=accounts] { --pat:conic-gradient(from 45deg at 50% 50%,#fbfbfa 0 25%,#5f7896 0 50%,#fbfbfa 0 75%,#5f7896 0) 0 0/44px 44px; --pat-size:44px 44px; }
+.fx-yard {
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:0;
+  height:22%;
+  display:flex;
+  justify-content:space-around;
+  align-items:flex-start;
+  padding-top:10px;
+  background:repeating-linear-gradient(90deg,rgba(251,251,250,.14) 0 1px,transparent 1px 55px) 0 100%/100% 26px no-repeat;
+}
+.fx-yard span { font:700 96px/1 'SairaX',var(--sans); color:rgba(251,251,250,.12); letter-spacing:.04em; }
+.fx-yard b { position:absolute; right:32px; bottom:36px; font:500 11px/1.4 var(--mono); letter-spacing:.16em; text-transform:uppercase; color:#a3a4a6; font-weight:500; }
+.fx-moments-note { position:absolute; left:32px; bottom:34px; z-index:2; max-width:420px; margin:0; font-size:15px; line-height:1.45; color:rgba(251,251,250,.82); }
+
+/* ---- Chapter 02. Grail colour chapter on the cloudy ash ground, the form in the phone's place. */
 .fx .fx-ash {
   position:relative;
-  z-index:3;
+  z-index:5;
   display:block;
-  margin-top:-62svh;
-  padding:calc(14vw + 40px) 0 120px;
+  margin-top:-10vw;
+  padding:calc(10vw + 10px) 0 240px;
   background:var(--ash) var(--smudge);
   background-size:640px 640px;
   background-blend-mode:multiply;
   color:var(--ink);
-  clip-path:polygon(0 12vw,100% 0,100% 100%,0 100%);
+  clip-path:polygon(0 0,100% 10vw,100% 100%,0 100%);
+  overflow:hidden;
 }
 .fx .fx-ash .fx-chapter { color:var(--ink); }
+.fx-center { text-align:center; }
+.fx .fx-ash .fx-display-md { position:relative; z-index:2; margin:6px auto 0; color:var(--ash-deep); }
+.fx .fx-display-md { font-size:min(6.4vw,92px); }
+.fx-clock { position:absolute; z-index:0; left:0; right:0; top:36%; margin:0; text-align:center; white-space:nowrap; font:300 19vw/1 var(--display); text-transform:uppercase; letter-spacing:-.02em; color:rgba(76,75,71,.17); pointer-events:none; }
 .fx-start-grid {
+  position:relative;
+  z-index:2;
   display:grid;
-  grid-template-columns:minmax(0,1fr) minmax(0,520px);
-  gap:60px;
-  align-items:start;
+  grid-template-columns:minmax(0,1fr) minmax(0,520px) minmax(0,1fr);
+  gap:48px;
+  align-items:end;
   padding:56px var(--side) 0;
 }
-.fx .start-copy { display:block; padding:0; border:0; grid-column:auto; grid-row:auto; }
-.fx .fx-display-md { font-size:min(6.4vw,92px); }
-.fx .fx-ash .accent-text { color:var(--ash-deep); }
-.fx .section-lede { font-size:18px; line-height:1.45; max-width:500px; margin-top:28px; }
-.fx .fact-list { margin:44px 0 0; max-width:560px; }
-.fx .fact-list li { display:grid; grid-template-columns:120px 1fr; gap:20px; padding:16px 0; border-top:1px solid rgba(14,15,17,.28); font-size:17px; line-height:1.4; }
-.fx .fact-list li:last-child { border-bottom:1px solid rgba(14,15,17,.28); }
-.fx .onboarding-column { padding:0; margin:0; max-width:none; grid-column:auto; grid-row:auto; align-self:start; justify-self:stretch; }
+.fx .start-copy { display:block; padding:0 0 8px; border:0; grid-column:1; grid-row:1; max-width:340px; }
+.fx-lead { font:700 18px/1.12 var(--sans); letter-spacing:-.01em; }
+.fx .section-lede { font-size:16px; line-height:1.24; max-width:340px; margin-top:6px; }
+.fx .onboarding-column { grid-column:2; grid-row:1; padding:0; margin:0; max-width:none; justify-self:stretch; align-self:start; }
+.fx .fact-list { grid-column:3; grid-row:1; margin:0; padding:0 0 8px; list-style:none; max-width:340px; justify-self:end; }
+.fx .fact-list li { display:block; padding:12px 0; border-top:1px solid rgba(76,75,71,.28); font-size:16px; line-height:1.24; }
+.fx .fact-list li b { display:block; font:700 18px/1.12 var(--sans); letter-spacing:-.01em; margin-bottom:4px; }
 
-/* Grail cards. Radius 24, flat light ground, they tilt in as they arrive. */
-.fx .form-card,.fx .window-body {
-  border:0;
-  background:none;
-  padding:0;
-}
-.fx .form-card {
-  background:var(--paper);
-  border-radius:24px;
-  padding:36px;
-  box-shadow:0 30px 60px rgba(14,15,17,.16);
-}
+.fx .form-card,.fx .window-body { border:0; background:none; padding:0; }
+.fx .form-card { background:#f6f6f6; border-radius:32px; padding:34px 32px; box-shadow:0 40px 80px rgba(14,15,17,.22); }
 .fx .form-card::before,.fx .form-card::after { content:none; display:none; }
-.fx .form-card h2 { font:300 46px/.88 var(--display); text-transform:uppercase; letter-spacing:-.01em; max-width:none; }
+.fx .form-card h2 { font:300 44px/.88 var(--display); text-transform:uppercase; letter-spacing:-.01em; max-width:none; }
 .fx .form-kicker { color:var(--denim-ink); margin-bottom:14px; }
-.fx .form-description { font-size:16px; line-height:1.45; margin:16px 0 22px; }
-.fx label:not(.checkbox-label) { margin:16px 0 8px; font-size:11px; }
-.fx input:not([type=checkbox]) {
-  border:1px solid rgba(14,15,17,.3);
-  border-radius:12px;
-  background:var(--white);
-  min-height:50px;
-  padding:12px 14px;
-  font:400 17px/1.3 var(--sans);
-}
+.fx .form-description { font-size:15px; line-height:1.4; margin:14px 0 18px; }
+.fx label:not(.checkbox-label) { margin:14px 0 7px; font-size:11px; }
+.fx input:not([type=checkbox]) { border:1px solid rgba(14,15,17,.22); border-radius:12px; background:#fff; min-height:48px; padding:11px 14px; font:400 16px/1.3 var(--sans); }
 .fx input:not([type=checkbox]):focus-visible { border-color:var(--denim-ink); }
-.fx .checkbox-label { font-size:13px; line-height:1.45; margin:22px 0 12px; }
-.fx .authorization-details { font-size:13px; margin:10px 0 22px; }
+.fx .checkbox-label { font-size:12.5px; line-height:1.45; margin:18px 0 10px; }
+.fx .authorization-details { font-size:12.5px; margin:8px 0 18px; }
 .fx .window-body .button-primary { font-size:14px; min-height:54px; }
-.fx .card-footnote,.fx .login-switch { font-size:12.5px; line-height:1.5; }
-.fx-tilt-in { transform:perspective(1200px) rotate(5deg) scale(.88) translateY(60px); opacity:0; transition:transform 1s var(--ease),opacity .7s var(--ease); }
-.fx-tilt-in.is-in { transform:none; opacity:1; }
+.fx .card-footnote,.fx .login-switch { font-size:12px; line-height:1.5; }
 
-/* Chapter 03, erased. Stark white. */
-.fx .fx-white { position:relative; z-index:3; display:block; background:var(--paper); color:var(--ink); padding:120px 0 140px; border:0; grid-column:auto; }
-.fx .how-head { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,440px); gap:48px; align-items:end; padding:56px var(--side) 0; }
-.fx .how-head .section-lede { margin:0; }
-.fx .fx-white .accent-text { color:var(--denim-ink); }
-.fx .step-rows { display:grid; gap:16px; margin:72px var(--side) 0; padding:0; }
-.fx .step-rows li {
-  display:grid;
-  grid-template-columns:minmax(0,1fr) minmax(0,560px);
-  gap:40px;
-  align-items:center;
-  min-height:0;
-  padding:40px 44px;
-  border:0;
+/* ---- Chapter 03. Grail full-width chapter card. Tilts in from 7deg and .84 as its top meets the viewport top. */
+.fx .fx-white { position:relative; z-index:6; display:block; background:var(--paper); color:var(--ink); padding:0 0 140px; border:0; grid-column:auto; }
+.fx-chapter-card {
+  --cp:1;
+  position:relative;
+  margin:-200px 32px 0;
+  padding:0 0 56px;
+  background:#f6f6f6;
   border-radius:24px;
-  background:var(--ash-light);
+  transform-origin:50% 0;
+  transform:rotate(calc((1 - var(--cp)) * 7deg)) scale(calc(.84 + var(--cp) * .16));
+  box-shadow:0 -10px 60px rgba(14,15,17,.08);
 }
-.fx .step-rows li:last-child { border:0; }
-.fx .step-label { font:300 min(8vw,112px)/.85 var(--display); text-transform:uppercase; letter-spacing:-.01em; }
-.fx .step-rows h3 { font:700 20px/1.2 var(--sans); letter-spacing:-.01em; margin-bottom:10px; }
-.fx .step-rows p { font-size:17px; line-height:1.45; max-width:none; }
+.fx-chapter-card .fx-chapter { padding:30px 30px 0; }
+.fx-chapter-card .fx-display { margin:44px 30px 0; font-size:min(6.4vw,92px); }
+.fx-crest-inline { display:inline-block; width:.62em; height:.7em; vertical-align:-.04em; --pat:repeating-conic-gradient(var(--ink) 0 25%,var(--denim-ink) 0 50%); --pat-size:.2em .2em; }
+.fx-card-sub { margin:20px 30px 0; font-size:16px; line-height:1.24; color:#3a3a38; }
+.fx .step-rows { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:0; margin:84px 30px 0; padding:0; list-style:none; }
+.fx .step-rows li { display:block; min-height:0; padding:22px 28px 0 0; margin-right:28px; border:0; border-top:1px solid rgba(14,15,17,.2); background:none; border-radius:0; }
+.fx .step-rows li:last-child { margin-right:0; border-top:1px solid rgba(14,15,17,.2); border-bottom:0; }
+.fx .step-label { display:block; font:300 min(5vw,76px)/.85 var(--display); text-transform:uppercase; letter-spacing:-.01em; margin-bottom:26px; }
+.fx .step-rows h3 { font:700 18px/1.12 var(--sans); letter-spacing:-.01em; margin-bottom:6px; }
+.fx .step-rows p { font-size:16px; line-height:1.24; max-width:none; color:#3a3a38; }
 
-/* Footer. Ends on stark white with an ashen signature. */
-.site-footer { background:var(--paper); color:var(--ink); border-top:1px solid rgba(14,15,17,.14); margin:0; padding-bottom:0; overflow:hidden; }
-.site-footer .footer-inner { padding:44px var(--side) 40px; }
-.site-footer p { font-size:16px; line-height:1.45; }
-.footer-note { font-size:11px; }
-.site-footer a:hover { text-decoration:none; }
-.footer-signature {
-  padding:0 var(--side) 0;
-  margin-bottom:-.12em;
-  font:300 11.6vw/.84 var(--display);
-  white-space:nowrap;
-  letter-spacing:-.015em;
-  text-transform:uppercase;
-  color:var(--ash);
-  display:block;
+/* ---- Grail dock. Travels left to right as a scroll progress bar, theme set by the chapter under it. */
+.fx-dock {
+  --dp:0;
+  position:fixed;
+  z-index:35;
+  bottom:24px;
+  left:24px;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  height:58px;
+  padding:6px 6px 6px 16px;
+  border-radius:84px;
+  border:1px solid rgba(255,255,255,.14);
+  background:rgba(24,24,24,.6);
+  -webkit-backdrop-filter:blur(14px);
+  backdrop-filter:blur(14px);
+  color:var(--denim);
+  transform:translateX(calc(var(--dp) * (100vw - 100% - 48px))) translateY(var(--dy,140%));
+  transition:background-color .35s ease,border-color .35s ease,color .35s ease,translate .35s ease;
 }
+.fx-dock.is-on { --dy:0; }
+.fx-dock .brand-mark { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:2.4; }
+.fx-dock-button { display:inline-flex; align-items:center; height:44px; padding:0 22px; border-radius:99px; background:var(--denim); color:var(--ink); font:600 15px/1 var(--sans); text-decoration:none; transition:transform .2s ease,background-color .35s ease; }
+.fx-dock-button:hover { transform:scale(1.03); }
+.fx-dock[data-theme=ash] { background:rgba(76,75,71,.18); border-color:rgba(255,255,255,.3); color:var(--ink); }
+.fx-dock[data-theme=ash] .fx-dock-button { background:rgba(255,255,255,.6); color:var(--ink); }
+.fx-dock[data-theme=light] { background:#fff; border-color:rgba(0,0,0,.14); color:var(--ink); }
+.fx-dock[data-theme=light] .fx-dock-button { background:var(--ash-light); color:var(--ink); }
+body:has(#welcome-view[hidden]) .fx-dock { display:none; }
+
+/* ---- Footer. jjettas dark nav panel, then the ashen serif signature. */
+.site-footer { background:var(--paper); color:var(--ink); border:0; margin:0; padding:0; overflow:hidden; }
+.site-footer .footer-inner { display:grid; grid-template-columns:minmax(0,600px) minmax(0,1fr); gap:40px; align-items:end; padding:16px; }
+.fx-closing { display:grid; justify-items:end; gap:22px; padding:0 24px 12px 0; text-align:right; }
+.fx-closing .fx-display { font-size:min(5.6vw,80px); }
+.fx-footer-panel { display:grid; grid-template-columns:auto 1fr; gap:28px 48px; align-items:start; max-width:640px; padding:28px; border-radius:20px; background:var(--graphite); color:var(--paper); }
+.fx-footer-panel .brand { grid-column:1/-1; }
+.fx-footer-links { grid-column:1/-1; list-style:none; margin:0; padding:0; display:grid; gap:2px; }
+.fx-footer-links a { font:800 30.96px/1.05 var(--sans); letter-spacing:-.015em; color:var(--paper); }
+.fx-footer-links .fx-roll::after { color:var(--denim); }
+.fx-footer-panel p { grid-column:1; max-width:360px; font-size:13px; line-height:1.5; color:rgba(251,251,250,.7); }
+.fx-footer-panel .footer-note { grid-column:2; justify-self:end; align-self:end; color:rgba(251,251,250,.7); }
+.footer-signature { padding:24px var(--side) 0; margin-bottom:-.12em; font:300 11.6vw/.84 var(--display); letter-spacing:-.015em; text-transform:uppercase; color:var(--ash); display:block; white-space:nowrap; }
 .footer-signature>span { display:block; }
-.footer-signature>span:last-child { display:block; }
 
 body:has(#welcome-view:not([hidden])) #demo-banner {
   position:fixed;
@@ -484,50 +559,80 @@ dialog { border-radius:24px; }
 
 /* ---------- Breakpoints, Grail 768 main ---------- */
 @media(max-width:1100px) {
-  .fx-hero-foot { grid-template-columns:minmax(0,1fr) auto; }
-  .fx .hero-facts { grid-column:1/-1; flex-direction:row; flex-wrap:wrap; align-items:flex-start; gap:6px 18px; }
-  .fx-start-grid,.fx .how-head { grid-template-columns:1fr; }
-  .fx .onboarding-column { max-width:560px; }
+  body:has(#welcome-view:not([hidden])) .header-caption { display:none; }
+  .fx-start-grid { grid-template-columns:minmax(0,1fr) minmax(0,520px); }
+  .fx .start-copy { grid-column:1; grid-row:1; }
+  .fx .fact-list { grid-column:1; grid-row:2; justify-self:start; }
+  .fx .onboarding-column { grid-column:2; grid-row:1 / span 2; }
 }
 @media(max-width:767px) {
-  :root { --side:20px; --header:64px; }
-  .header-caption { display:none; }
-  .fx .fx-chapter { padding-left:16px; padding-right:16px; font-size:13px; }
-  body:has(#welcome-view:not([hidden])) #demo-banner { top:auto; bottom:10px; left:10px; right:10px; transform:none; max-width:none; border-radius:16px; }
-  .fx-stage { height:160svh; }
+  :root { --side:16px; --header:64px; }
+  .header-caption,.fx-header-cta { display:none!important; }
+  .fx .fx-chapter { padding:20px 16px 0; font-size:13px; }
+  .fx-stage { height:170svh; }
   .fx-hero { min-height:560px; }
-  .fx-hero .fx-display { font-size:var(--fit,15.5vw); margin-top:14px; white-space:normal; }
+  .fx-hero .fx-display { top:calc(var(--header) + 40px); white-space:normal; font-size:var(--fit,15.5vw); }
   .fx-hero .fx-display .fx-line { display:block; }
-  .fx-hero-foot { grid-template-columns:1fr; padding:120px var(--side) 24px; gap:18px; }
-  .fx .hero-lede { font-size:16px; }
-  .fx .hero-actions .button { flex:1 1 0; padding:0 14px; }
-  .fx-card { width:132px; height:186px; margin:-93px 0 0 -66px; padding:11px; gap:6px; border-radius:10px; }
-  .fx-card-name { font-size:17px; }
-  .fx-card-row { grid-template-columns:42px 1fr; }
-  .fx-card-row b { font-size:6px; }
-  .fx-card-kicker { font-size:6.5px; }
-  .fx .fx-ash { margin-top:-40svh; padding:calc(18vw + 28px) 0 80px; clip-path:polygon(0 18vw,100% 0,100% 100%,0 100%); }
-  .fx-start-grid { padding:36px var(--side) 0; gap:44px; }
+  .fx-ring { top:60%; }
+  .fx-card { width:128px; height:188px; margin:-94px 0 0 -64px; border-radius:9px; }
+  .fx-card.is-quest { padding:10px 9px 7px; }
+  .fx-crest { width:19px; height:22px; }
+  .fx-card-group,.fx-card-small { font-size:6px; }
+  .fx-card-line { font-size:10.5px; }
+  .fx-chips span { height:12px; padding:0 4px; font-size:5px; }
+  .fx-card-foot { font-size:4.5px; }
+  .fx .fx-moments { margin-top:-24svh; clip-path:polygon(0 16vw,100% 0,100% 100%,0 100%); }
+  .fx-moments-pin { position:relative; height:auto; min-height:0; padding:calc(16vw + 60px) 0 40px; }
+  .fx-giant { position:relative; top:auto; font-size:var(--gfit,24vw); }
+  .fx-track-wrap { position:relative; inset:auto; margin-top:-8vw; overflow-x:auto; scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+  .fx-track { transform:none; padding:10px 16px 20px; gap:20px; }
+  .fx-rcard { width:200px; scroll-snap-align:center; }
+  .fx-rcard:nth-child(even) { margin-top:0; }
+  .fx-rcard-frame { height:294px; }
+  .fx-rcard-word { font-size:46px; }
+  .fx-yard { position:relative; height:110px; }
+  .fx-yard span { font-size:54px; }
+  .fx-yard b { right:16px; bottom:34px; left:16px; text-align:right; font-size:9px; }
+  .fx-moments-note { position:relative; left:auto; bottom:auto; padding:22px 16px 0; font-size:15px; }
+  .fx .fx-ash { margin-top:-16vw; padding:calc(16vw + 10px) 0 200px; clip-path:polygon(0 0,100% 16vw,100% 100%,0 100%); }
   .fx .fx-display-md { font-size:clamp(34px,10.4vw,52px); }
-  .fx .form-card { padding:24px 20px; border-radius:20px; }
+  .fx-clock { top:14%; font-size:30vw; }
+  .fx-start-grid { grid-template-columns:1fr; gap:28px; padding-top:36px; }
+  .fx .start-copy,.fx .fact-list,.fx .onboarding-column { grid-column:1; grid-row:auto; max-width:none; justify-self:stretch; }
+  .fx .onboarding-column { order:2; }
+  .fx .start-copy { order:1; }
+  .fx .fact-list { order:3; }
+  .fx .form-card { padding:24px 20px; border-radius:24px; }
   .fx .form-card h2 { font-size:36px; }
-  .fx .fact-list li { grid-template-columns:1fr; gap:4px; }
-  .fx .fx-white { padding:80px 0 90px; }
-  .fx .how-head { padding-top:36px; gap:24px; }
-  .fx .step-rows { margin-top:44px; gap:12px; }
-  .fx .step-rows li { grid-template-columns:1fr; gap:18px; padding:26px 22px; border-radius:20px; }
-  .fx .step-label { font-size:56px; }
-  .site-footer .footer-inner { grid-template-columns:1fr; gap:20px; }
-  .footer-note { grid-column:auto; }
+  .fx-chapter-card { margin:-160px 10px 0; padding-bottom:36px; }
+  .fx-chapter-card .fx-chapter { padding:20px 18px 0; }
+  .fx-chapter-card .fx-display { margin:30px 18px 0; font-size:clamp(32px,10vw,50px); }
+  .fx-card-sub { margin:16px 18px 0; }
+  .fx .step-rows { grid-template-columns:1fr; margin:44px 18px 0; }
+  .fx .step-rows li { margin-right:0; padding:20px 0 24px; }
+  .fx .step-label { font-size:56px; margin-bottom:16px; }
+  .fx-dock { left:50%; transform:translateX(-50%) translateY(var(--dy,140%)); bottom:16px; }
+  .site-footer .footer-inner { grid-template-columns:1fr; }
+  .fx-closing { justify-items:start; text-align:left; padding:8px; }
+  .fx-closing .fx-display { font-size:clamp(34px,10vw,48px); }
+  .fx-footer-panel { grid-template-columns:1fr; padding:22px; }
+  .fx-footer-panel .footer-note { grid-column:1; justify-self:start; }
+  .fx-footer-links a { font-size:26px; }
   .footer-signature { font-size:12.4vw; }
+  body:has(#welcome-view:not([hidden])) #demo-banner { top:auto; bottom:84px; left:10px; right:10px; transform:none; max-width:none; border-radius:16px; }
 }
 
-/* Reduced motion. No rise, no drift, no wipe scaling, no tilt, no smooth scroll. */
+/* Reduced motion. No rise, no bob, no ring spin, no pin travel, no tilt, no dock travel, no smooth scroll. */
 @media(prefers-reduced-motion:reduce) {
-  .fx-ready .fx-ch,.fx-card { animation:none; }
-  .fx-hero { transform:none; }
-  .fx-field { filter:none; }
-  .fx-tilt { transform:none; }
-  .fx-tilt-in { transform:none; opacity:1; transition:none; }
-  .site-header,.button,.button::before,.button>span,.fx-roll::after,.text-button.fx-roll { transition:none; }
+  .fx-ready .fx-ch,.fx-card,.fx-rcard-frame { animation:none; }
+  .fx-hero .fx-display { transform:none; opacity:1; }
+  .fx-ring { transform:translateZ(var(--ringz,250px)); }
+  .fx-moments-pin { position:relative; height:auto; padding:calc(10vw + 80px) 0 60px; }
+  .fx-giant { position:relative; top:auto; }
+  .fx-track-wrap { position:relative; inset:auto; overflow-x:auto; }
+  .fx-track { transform:none; }
+  .fx-yard,.fx-moments-note { position:relative; }
+  .fx-chapter-card { transform:none; }
+  .fx-dock { transform:none; left:auto; right:24px; transition:none; }
+  .site-header,.button,.button::before,.button>span,.fx-roll::after,.text-button.fx-roll,.fx-rcard-frame,.fx-sheen { transition:none; }
 }
