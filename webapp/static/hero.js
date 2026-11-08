@@ -16,7 +16,7 @@
   if (!welcome || !story || !stage) return;
   root.classList.add('g-js');
   // Shared with gl/scene.js, which draws the WebGL card field from these values.
-  const glStage = window.EraseMeStage = { g: 0, c: 0, px: 0, py: 0 };
+  const glStage = window.EraseMeStage = { g: 0, c: 0, px: 0, py: 0, ph: 0 };
 
   const body = document.body;
   const motion = () => !reduced.matches;
@@ -294,7 +294,7 @@
     if (!motion()) {
       set(head, '--hs', '1'); set(head, '--ho', '1'); set(head, '--hy', '0px');
       set(rig, '--g', '0'); set(rig, '--c', '0');
-      glStage.g = 0; glStage.c = 0;
+      glStage.g = 0; glStage.c = 0; glStage.ph = 1;
       set(object, '--oy', land.oy.toFixed(1) + 'px'); set(object, '--os', land.os.toFixed(3));
       set(object, '--fold', '1'); set(object, '--e', '1');
       set(burn, '--ph', '1'); set(burn, '--rule', '1');
@@ -328,7 +328,8 @@
     if (burn) {
       set(burn, '--bv', b > 0 ? 'visible' : 'hidden');
       set(burn, '--bs', (360 * Math.pow(1 - smooth(b), 1.15)).toFixed(2) + '%');
-      set(burn, '--ph', range(s, 2.28, 2.55).toFixed(3));
+      glStage.ph = range(s, 2.28, 2.55);
+      set(burn, '--ph', glStage.ph.toFixed(3));
       set(burn, '--rule', smooth(range(s, 2.55, 2.85)).toFixed(3));
     }
     toggle(burnHead, 'is-in', s > 2.4);

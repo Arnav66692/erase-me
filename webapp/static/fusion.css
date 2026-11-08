@@ -726,3 +726,8 @@ dialog { border-radius:24px; }
 @media (max-width:767px) {
   .gl-on .g-token-wrap { position:relative; width:auto; height:min(62svh,420px); margin:12px -16px 0; }
 }
+
+/* The story phones are real geometry when WebGL runs. The CSS box stays for layout, fade and blur. */
+.gl-on .g-phone { background:none; box-shadow:none; }
+.gl-on .g-phone > .g-phone-screen { visibility:hidden; }
+.g-gl.g-gl-phone { inset:auto; left:-70px; top:-70px; width:calc(100% + 140px); height:calc(100% + 140px); }

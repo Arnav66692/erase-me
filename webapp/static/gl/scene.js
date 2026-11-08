@@ -7,6 +7,7 @@ import * as THREE from './vendor/three.module.min.js';
 import { GLTFLoader } from './vendor/GLTFLoader.js';
 import { RoomEnvironment } from './vendor/RoomEnvironment.js';
 import { drawQuest, drawTile, drawBack, drawForm, drawEmail, INK } from './crests.js';
+import { startPhone } from './phone.js';
 
 const root = document.documentElement;
 const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -430,6 +431,12 @@ function boot() {
     try {
       if (field) startField(field, { sans });
       if (wrap) startRoutes(wrap, { sans });
+      const css = getComputedStyle(document.documentElement);
+      const fonts = { sans, ui: 'system-ui, -apple-system, sans-serif', display: css.getPropertyValue('--display').trim() || 'serif' };
+      const storyPhone = document.querySelector('.g-burn .g-phone');
+      if (storyPhone) startPhone(storyPhone, { fonts, stage: () => (window.EraseMeStage ? window.EraseMeStage.ph : 1) });
+      const voicePhone = document.querySelector('.g-voice .g-phone');
+      if (voicePhone) startPhone(voicePhone, { fonts, dark: true });
       root.classList.add('gl-on');
     } catch {
       root.classList.remove('gl-on');
@@ -437,7 +444,8 @@ function boot() {
   };
   // Card faces need the real font before they are drawn into textures.
   if (document.fonts && document.fonts.load) {
-    Promise.all([document.fonts.load(`700 60px ${sans}`), document.fonts.load(`400 30px ${sans}`)]).then(go, go);
+    const display = getComputedStyle(document.documentElement).getPropertyValue('--display').trim() || 'serif';
+    Promise.all([document.fonts.load(`700 60px ${sans}`), document.fonts.load(`400 30px ${sans}`), document.fonts.load(`300 25px ${display}`)]).then(go, go);
   } else go();
 }
 boot();
