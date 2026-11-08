@@ -1,219 +1,331 @@
-// Landing motion for the fusion layer. Original code.
-// Grail: the curved card belt, the letter rise, the chapter card tilt and the travelling dock.
-// jjettas: the pinned card row, card tilt with a sheen, wheel smoothing at lerp .16.
-// Live readings on the dashboard are never animated. Everything here stops for reduced motion.
+// Landing motion in the jjettas.com design language. Original code, no libraries.
+// Wheel smoothing (lerp .16, multiplier .72), the loader count, the hero wipe, the pinned card row,
+// the quote reveal with thrown prints, the pinned feature pane, card tilt, tone switching and UI sounds.
+// Everything stops for reduced motion. Dashboard numbers are never animated.
 (() => {
   'use strict';
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
-  const finePointer = window.matchMedia('(pointer: fine)');
-  const phone = window.matchMedia('(max-width: 767px)');
+  const fine = window.matchMedia('(pointer: fine)');
+  const phone = window.matchMedia('(max-width: 767px), (max-width: 900px) and (pointer: coarse)');
   const $ = (id) => document.getElementById(id);
   const body = document.body;
   const welcome = $('welcome-view');
-  const stage = $('fx-stage');
+  const stage = $('jj-stage');
   if (!welcome || !stage) return;
-  const field = $('fx-field');
-  const heading = $('hero-heading');
-  const giant = $('fx-giant');
-  const moments = $('fx-moments');
-  const track = $('fx-track');
-  const chapterCard = $('fx-chapter-card');
-  const dock = $('fx-dock');
-  const landingVisible = () => !welcome.hidden;
+  const hero = $('jj-hero');
+  const track = $('jj-track');
+  const quote = $('jj-quote');
+  const feature = $('jj-feature');
   const clamp = (v) => Math.min(1, Math.max(0, v));
+  const ease = (t) => 1 - Math.pow(1 - t, 3);
   const motion = () => !reduced.matches;
+  const visible = () => !welcome.hidden;
+  if (motion()) document.documentElement.classList.add('jj-motion');
 
-  // ---- The card belt. Removal tasks written as short statements, plus flat pattern tiles.
-  const QUESTS = [
-    { pat: 'pat-check', group: 'People search', line: 'Ask a people-search site to drop your home address.', small: 'Use its own form. Keep the confirmation.', chips: ['Form', 'Email', '+12'] },
-    { pat: 'pat-stripe', group: 'California', line: 'Send one deletion request to every registered broker.', small: 'Through the state DROP platform. Free for residents.', chips: ['Portal', 'One request'] },
-    { pat: 'pat-dots', group: 'Caller ID', line: 'Take your number out of a caller-ID app.', small: 'Unlisting is a setting, not a deletion.', chips: ['App', 'Settings'] },
-    { pat: 'pat-check-denim', group: 'Verify', line: 'Check that last week’s request actually stuck.', small: 'A request sent is not yet a removal.', chips: ['Recheck', 'Record'] },
-    { pat: 'pat-wave', group: 'Search', line: 'Find every listing with your age and city on it.', small: 'Name plus age or city tells you apart.', chips: ['Search', 'Match'] },
-    { pat: 'pat-diamond', group: 'Old accounts', line: 'Close the sign-ups you forgot about.', small: 'Deletion links, sorted by how hard they are.', chips: ['Link', 'Account'] },
-  ];
-  const TILES = ['pat-check', 'pat-wave', 'pat-bars', 'pat-dots', 'pat-stripe', 'pat-steps', 'pat-diamond', 'pat-check-denim', 'pat-wave', 'pat-bars'];
-
-  function el(tag, cls, text) {
-    const n = document.createElement(tag);
-    if (cls) n.className = cls;
-    if (text) n.textContent = text;
-    return n;
-  }
-  function quest(q) {
-    const c = el('div', 'fx-card is-quest');
-    const chips = el('p', 'fx-chips');
-    q.chips.forEach((t) => chips.append(el('span', '', t)));
-    c.append(el('i', 'fx-crest ' + q.pat), el('p', 'fx-card-group', q.group), el('p', 'fx-card-line', q.line),
-      el('p', 'fx-card-small', q.small), chips, el('p', 'fx-card-foot', 'Removal depends on each site.'));
-    return c;
-  }
-  if (field) {
-    const ring = el('div', 'fx-ring');
-    // Two strands that wrap around the camera and fall from upper left to lower right.
-    const count = phone.matches ? 6 : 6;
-    const spread = phone.matches ? 44 : 78;
-    let qi = 0, ti = 0, n = 0;
-    for (let strand = 0; strand < 2; strand++) {
-      for (let k = 0; k < count; k++) {
-        const t = (k + strand * .5) / (count - .5);
-        const isQuest = (k + strand) % 2 === (strand ? 1 : 0) && qi < QUESTS.length;
-        const card = isQuest ? quest(QUESTS[qi++]) : el('div', 'fx-card is-tile ' + TILES[ti++ % TILES.length]);
-        const a = spread - 2 * spread * t;
-        const y = (phone.matches ? -150 : -250) + t * (phone.matches ? 300 : 470) + strand * (phone.matches ? 150 : 190) + (((k * 53) % 40) - 20);
-        card.style.setProperty('--a', a.toFixed(1) + 'deg');
-        card.style.setProperty('--r', (phone.matches ? -460 : -780) + 'px');
-        card.style.setProperty('--y', 'calc(' + (y / 9).toFixed(2) + 'svh)');
-        card.style.setProperty('--rz', (((n * 7) % 9) - 4) + 'deg');
-        card.style.setProperty('--dur', (6 + (n % 4)) + 's');
-        card.style.setProperty('--delay', (-n * 1.3) + 's');
-        ring.append(card);
-        n++;
+  // ---- Sound. WebAudio voices made in code. Off until the visitor turns it on with a click.
+  const sound = (() => {
+    const btn = $('jj-sound');
+    let ctx = null, on = false;
+    try { on = localStorage.getItem('jj-sound') === 'on'; } catch { on = false; }
+    function setLabel() {
+      if (!btn) return;
+      btn.setAttribute('aria-pressed', String(on));
+      btn.setAttribute('aria-label', on ? 'Interface sounds on. Turn off' : 'Interface sounds off. Turn on');
+    }
+    function voice(freq, dur, type, gain, slide) {
+      if (!on || !ctx) return;
+      const t = ctx.currentTime;
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = type;
+      o.frequency.setValueAtTime(freq, t);
+      if (slide) o.frequency.exponentialRampToValueAtTime(slide, t + dur);
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(gain, t + .006);
+      g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+      o.connect(g).connect(ctx.destination);
+      o.start(t);
+      o.stop(t + dur + .02);
+    }
+    function rub(dur, gain) {
+      if (!on || !ctx) return;
+      const t = ctx.currentTime;
+      const len = Math.floor(ctx.sampleRate * dur);
+      const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+      const src = ctx.createBufferSource();
+      const f = ctx.createBiquadFilter();
+      const g = ctx.createGain();
+      src.buffer = buf;
+      f.type = 'bandpass';
+      f.frequency.setValueAtTime(900, t);
+      f.frequency.exponentialRampToValueAtTime(2600, t + dur);
+      f.Q.value = .8;
+      g.gain.value = gain;
+      src.connect(f).connect(g).connect(ctx.destination);
+      src.start(t);
+    }
+    const api = {
+      hover: () => voice(2200, .045, 'sine', .018),
+      click: () => { voice(520, .09, 'triangle', .05, 260); rub(.05, .05); },
+      slide: () => rub(.28, .06),
+      reveal: () => { voice(660, .18, 'sine', .022); setTimeout(() => voice(990, .22, 'sine', .016), 70); },
+    };
+    if (btn) {
+      setLabel();
+      btn.addEventListener('click', () => {
+        on = !on;
+        if (on && !ctx) {
+          const AC = window.AudioContext || window.webkitAudioContext;
+          if (AC) ctx = new AC();
+        }
+        if (ctx && ctx.state === 'suspended') ctx.resume();
+        try { localStorage.setItem('jj-sound', on ? 'on' : 'off'); } catch { /* storage blocked, keep the in-page state */ }
+        setLabel();
+        api.click();
+      });
+      // A remembered "on" still waits for a real click before any audio context exists.
+      if (on) {
+        const wake = () => {
+          const AC = window.AudioContext || window.webkitAudioContext;
+          if (!ctx && AC) ctx = new AC();
+          window.removeEventListener('pointerdown', wake);
+        };
+        window.addEventListener('pointerdown', wake);
       }
     }
-    field.append(ring);
+    return api;
+  })();
+  welcome.addEventListener('pointerover', (e) => {
+    const t = e.target.closest('.jj-pill, .jj-roll, .jj-dot');
+    if (t && !t.contains(e.relatedTarget)) sound.hover();
+  });
+  document.addEventListener('click', (e) => { if (e.target.closest('.jj-pill, .jj-roll, .jj-dot, .site-header a, .site-header button')) sound.click(); });
+
+  // ---- Loader percent. The panel itself is timed in CSS and leaves by 1.2 s whatever happens here.
+  const pct = $('jj-pct');
+  if (pct && motion()) {
+    const t0 = performance.now();
+    const tick = (now) => {
+      const p = Math.round(ease(clamp((now - t0) / 380)) * 100);
+      pct.textContent = String(p);
+      if (p < 100) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
   }
 
-  // ---- Headline letters, with one readable copy for assistive tech.
-  if (heading) {
-    const sr = el('span', 'fx-sr', heading.textContent.replace(/\s+/g, ' ').trim());
-    let i = 0;
-    for (const line of heading.querySelectorAll('.fx-line')) {
-      const text = line.textContent;
-      line.textContent = '';
-      line.setAttribute('aria-hidden', 'true');
-      for (const ch of text) {
-        const s = el('span', 'fx-ch', ch === ' ' ? ' ' : ch);
-        s.style.setProperty('--i', i++);
-        line.append(s);
-      }
-    }
-    heading.prepend(sr);
-  }
+  // ---- Ghost wordmarks behind the hero, long enough for a seamless 90 s loop.
+  welcome.querySelectorAll('.jj-hero-ghost span').forEach((s) => { s.textContent = Array(8).fill('Erase me').join(' '); });
 
-  // Fit text to the width minus both margins. Grail fits its hero line, jjettas fills the width with its giant word.
-  function textWidth(node) {
-    if (node === heading) {
-      const ls = [...node.querySelectorAll('.fx-line')];
-      if (phone.matches) return Math.max(...ls.map((l) => l.getBoundingClientRect().width));
-      return ls[ls.length - 1].getBoundingClientRect().right - ls[0].getBoundingClientRect().left;
-    }
-    const r = document.createRange();
-    r.selectNodeContents(node);
-    return r.getBoundingClientRect().width;
-  }
-  function fitTo(node, prop, max) {
-    if (!node) return;
-    node.style.setProperty(prop, '100px');
-    const side = parseFloat(getComputedStyle(node).paddingLeft) || 0;
-    const room = node.clientWidth - side * 2;
-    const w = textWidth(node);
-    if (w > 0 && room > 0) node.style.setProperty(prop, Math.min(100 * room / w, max).toFixed(2) + 'px');
-  }
-  function fitAll() { fitTo(heading, '--fit', 260); fitTo(giant, '--gfit', 520); layout(); }
-  const ready = () => { fitAll(); if (heading) heading.classList.add('fx-ready'); };
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(ready); else ready();
-  window.addEventListener('resize', fitAll);
-  phone.addEventListener('change', fitAll);
-
-  // ---- Pinned card row. The section is as tall as the row is wide, so vertical scroll walks it sideways.
-  let travel = 0;
-  function layout() {
-    if (!moments || !track) return;
-    const pinned = motion() && !phone.matches;
-    travel = pinned ? Math.max(0, track.scrollWidth - window.innerWidth) : 0;
-    track.style.setProperty('--travel', travel + 'px');
-    moments.style.height = pinned ? (window.innerHeight + travel) + 'px' : '';
-    onScroll();
-  }
-
-  // ---- Scroll state.
-  const toned = [...document.querySelectorAll('[data-tone]')].filter((n) => n !== body);
-  function toneAt(y) {
-    let tone = 'dark';
-    for (const n of toned) {
-      const r = n.getBoundingClientRect();
-      if (r.height && r.top <= y && r.bottom > y) tone = n.dataset.tone;
-    }
-    return tone;
-  }
-  function onScroll() {
-    if (!landingVisible()) { body.dataset.tone = 'light'; return; }
-    body.dataset.tone = toneAt(36);
-    const vh = window.innerHeight;
-    stage.style.setProperty('--p', motion() ? clamp(window.scrollY / Math.max(1, stage.offsetHeight - vh)).toFixed(3) : '0');
-    if (moments && travel) moments.style.setProperty('--mp', clamp(-moments.getBoundingClientRect().top / travel).toFixed(4));
-    if (chapterCard) chapterCard.style.setProperty('--cp', motion() ? clamp((vh - chapterCard.getBoundingClientRect().top) / vh).toFixed(3) : '1');
-    if (dock) {
-      const max = document.documentElement.scrollHeight - vh;
-      const footer = document.querySelector('.site-footer');
-      const atFooter = footer && footer.getBoundingClientRect().top < vh - 40;
-      dock.classList.toggle('is-on', window.scrollY > vh * .6 && !atFooter);
-      dock.style.setProperty('--dp', phone.matches || !motion() ? '0' : clamp(window.scrollY / Math.max(1, max)).toFixed(4));
-      dock.dataset.theme = toneAt(vh - 50);
-    }
-  }
-  window.addEventListener('scroll', onScroll, { passive: true });
-  new MutationObserver(layout).observe(welcome, { attributes: true, attributeFilter: ['hidden'] });
-  reduced.addEventListener('change', layout);
-  layout();
-
-  // ---- Pointer follow for the belt, eased per frame.
-  const ring = field && field.querySelector('.fx-ring');
-  let px = 0, py = 0, tx = 0, ty = 0, raf = 0;
-  function follow() {
-    px += (tx - px) * .06; py += (ty - py) * .06;
-    if (ring) { ring.style.setProperty('--px', px.toFixed(4)); ring.style.setProperty('--py', py.toFixed(4)); }
-    raf = Math.abs(tx - px) + Math.abs(ty - py) > .001 ? requestAnimationFrame(follow) : 0;
-  }
-  window.addEventListener('pointermove', (e) => {
-    if (!motion() || !finePointer.matches || !landingVisible() || window.scrollY > window.innerHeight) return;
-    tx = e.clientX / window.innerWidth * 2 - 1;
-    ty = e.clientY / window.innerHeight * 2 - 1;
-    if (!raf) raf = requestAnimationFrame(follow);
-  }, { passive: true });
-
-  // ---- Framed cards tilt toward the pointer and catch a sheen.
-  for (const card of document.querySelectorAll('.fx-rcard')) {
-    const frame = card.querySelector('.fx-rcard-frame');
-    card.addEventListener('pointermove', (e) => {
-      if (!motion() || !finePointer.matches) return;
-      const r = frame.getBoundingClientRect();
-      const x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
-      frame.style.setProperty('--ty', ((x - .5) * 16).toFixed(2) + 'deg');
-      frame.style.setProperty('--tx', ((.5 - y) * 12).toFixed(2) + 'deg');
-      frame.style.setProperty('--sx', (x * 100).toFixed(1) + '%');
+  // ---- Fit giant words to the frame width, capped at the measured reference sizes.
+  function fitGiants() {
+    const vu = Math.min(Math.min(innerWidth, 1728) / 100, 1.8 * Math.max(innerHeight / 100, 7));
+    welcome.querySelectorAll('.jj-giant').forEach((g) => {
+      const cap = phone.matches ? Infinity : (g.dataset.fit === 'feature' ? 30 : 21.76) * vu;
+      const side = phone.matches ? 16 : (g.dataset.fit === 'feature' ? 64 : 40);
+      let inner = g.firstElementChild;
+      if (!inner) { inner = document.createElement('span'); inner.textContent = g.textContent; g.textContent = ''; g.append(inner); }
+      g.style.setProperty('--gfs', '100px');
+      const natural = inner.getBoundingClientRect().width || 1;
+      const size = Math.min(cap, 100 * (Math.min(innerWidth, 1728) - side * 2) / natural);
+      g.style.setProperty('--gfs', size.toFixed(2) + 'px');
     });
-    card.addEventListener('pointerleave', () => { frame.style.setProperty('--ty', '0deg'); frame.style.setProperty('--tx', '0deg'); });
   }
 
-  // ---- Wheel smoothing on the landing only. Keyboard, anchors and touch stay native.
-  let target = window.scrollY, current = window.scrollY, smoothing = false;
-  function blocked(e) {
-    if (e.ctrlKey || !motion() || !finePointer.matches || !landingVisible()) return true;
-    if (document.querySelector('dialog[open]')) return true;
-    for (let n = e.target; n && n !== body; n = n.parentElement) {
-      if (n.matches && n.matches('textarea, select, dialog, [contenteditable]')) return true;
+  // ---- Wheel smoothing, written to match lerp .16 and wheel multiplier .72. Fine pointers only.
+  const smooth = { on: false, target: 0, current: 0, ours: false };
+  function scrollMax() { return document.documentElement.scrollHeight - innerHeight; }
+  function startSmooth() {
+    if (smooth.on || !motion() || !fine.matches) return;
+    smooth.on = true;
+    smooth.target = smooth.current = scrollY;
+    window.addEventListener('wheel', onWheel, { passive: false });
+    window.addEventListener('scroll', () => {
+      if (smooth.ours) { smooth.ours = false; return; }
+      if (Math.abs(scrollY - smooth.current) > 2) smooth.target = smooth.current = scrollY;
+    }, { passive: true });
+  }
+  function scrollableParent(node) {
+    for (let n = node; n && n !== document.body; n = n.parentElement) {
+      if (n.nodeType !== 1) continue;
+      if (n.tagName === 'DIALOG') return true;
       const s = getComputedStyle(n);
-      if (/(auto|scroll)/.test(s.overflowY) && n.scrollHeight > n.clientHeight) return true;
+      if (/(auto|scroll)/.test(s.overflowY) && n.scrollHeight > n.clientHeight + 1) return true;
     }
     return false;
   }
-  function step() {
-    current += (target - current) * .16;
-    if (Math.abs(target - current) < .5) current = target;
-    window.scrollTo(0, current);
-    smoothing = current !== target;
-    if (smoothing) requestAnimationFrame(step);
-  }
-  window.addEventListener('wheel', (e) => {
-    if (blocked(e) || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+  function onWheel(e) {
+    if (e.ctrlKey || !visible() || scrollableParent(e.target)) return;
+    if (document.querySelector('dialog[open]')) return;
     e.preventDefault();
-    if (!smoothing) target = current = window.scrollY;
-    const unit = e.deltaMode === 1 ? 32 : e.deltaMode === 2 ? window.innerHeight : 1;
-    const max = document.documentElement.scrollHeight - window.innerHeight;
-    target = Math.max(0, Math.min(max, target + e.deltaY * unit * .72 * 1.4));
-    if (!smoothing) { smoothing = true; requestAnimationFrame(step); }
-  }, { passive: false });
-  window.addEventListener('scroll', () => { if (!smoothing) target = current = window.scrollY; }, { passive: true });
+    const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? innerHeight : 1;
+    smooth.target = Math.max(0, Math.min(scrollMax(), smooth.target + e.deltaY * unit * .72));
+  }
+  function stepSmooth() {
+    if (!smooth.on) return;
+    const d = smooth.target - smooth.current;
+    if (Math.abs(d) < .4) { if (d !== 0) { smooth.current = smooth.target; smooth.ours = true; window.scrollTo(0, smooth.current); } return; }
+    smooth.current += d * .16;
+    smooth.ours = true;
+    window.scrollTo(0, smooth.current);
+  }
+  // Anchor links jump through the smoother so the target stays in sync.
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest('a[href^="#"]');
+    if (!a || !smooth.on || !visible()) return;
+    const el = document.getElementById(a.getAttribute('href').slice(1));
+    if (!el) return;
+    e.preventDefault();
+    const top = el.getBoundingClientRect().top + scrollY - (el.id === 'signup-panel' ? 120 : 0);
+    smooth.target = Math.max(0, Math.min(scrollMax(), top));
+    const focusable = el.querySelector('input') || el;
+    setTimeout(() => focusable.focus({ preventScroll: true }), 900);
+  });
+
+  // ---- Pointer parallax for the hero object and the feature object.
+  let px = 0, py = 0, tx = 0, ty = 0;
+  if (fine.matches) {
+    window.addEventListener('pointermove', (e) => {
+      tx = (e.clientX / innerWidth) * 2 - 1;
+      ty = (e.clientY / innerHeight) * 2 - 1;
+    }, { passive: true });
+  }
+
+  // ---- Card tilt with a sheen that follows the pointer.
+  welcome.querySelectorAll('[data-tilt]').forEach((card) => {
+    const frame = card.querySelector('.jj-frame');
+    if (!frame || !fine.matches) return;
+    card.addEventListener('pointerenter', () => { if (!motion()) return; card.classList.add('is-hover'); frame.style.setProperty('--hover', '1'); sound.hover(); });
+    card.addEventListener('pointermove', (e) => {
+      if (!motion()) return;
+      const r = frame.getBoundingClientRect();
+      const x = clamp((e.clientX - r.left) / r.width);
+      const y = clamp((e.clientY - r.top) / r.height);
+      frame.style.setProperty('--ry', ((x - .5) * 22).toFixed(2) + 'deg');
+      frame.style.setProperty('--rx', ((.5 - y) * 18).toFixed(2) + 'deg');
+      frame.style.setProperty('--mx', x.toFixed(3));
+    });
+    card.addEventListener('pointerleave', () => {
+      card.classList.remove('is-hover');
+      ['--hover', '--rx', '--ry'].forEach((p) => frame.style.removeProperty(p));
+    });
+  });
+
+  // ---- Feature steps. The dot index jumps to a step inside the pin.
+  const steps = feature ? [...feature.querySelectorAll('.jj-step')] : [];
+  const objs = feature ? [...feature.querySelectorAll('.jj-fobj')] : [];
+  const dots = feature ? [...feature.querySelectorAll('.jj-dot')] : [];
+  let step = 0;
+  function setStep(n, quiet) {
+    if (n === step) return;
+    const back = n < step;
+    step = n;
+    steps.forEach((s, i) => s.classList.toggle('is-on', i === n));
+    objs.forEach((o, i) => { o.classList.toggle('is-on', i === n); o.classList.toggle('is-gone', back ? i > n : i < n); });
+    dots.forEach((d, i) => { d.classList.toggle('is-on', i === n); if (i === n) d.setAttribute('aria-current', 'step'); else d.removeAttribute('aria-current'); });
+    if (!quiet) sound.slide();
+  }
+  dots.forEach((d) => d.addEventListener('click', () => {
+    const n = Number(d.dataset.go);
+    if (!motion()) { setStep(n, true); return; }
+    const span = feature.offsetHeight - innerHeight;
+    const y = feature.getBoundingClientRect().top + scrollY + span * ((n + .5) / steps.length);
+    if (smooth.on) smooth.target = y; else window.scrollTo(0, y);
+  }));
+
+  // ---- Scroll-linked state for the stage, quote and feature pane.
+  let trackTravel = 0;
+  function measure() {
+    fitGiants();
+    if (!track) return;
+    const cards = track.querySelectorAll('.jj-card');
+    const last = cards[cards.length - 1];
+    if (!last) return;
+    track.style.setProperty('--tx', '0px');
+    const right = last.getBoundingClientRect().right - track.getBoundingClientRect().left;
+    trackTravel = Math.max(0, right - innerWidth * (phone.matches ? .94 : .78));
+    const note = track.querySelector('.jj-yard-note');
+    if (note) trackTravel = Math.max(trackTravel, note.offsetLeft + note.offsetWidth - innerWidth + 48);
+  }
+  let lastTone = '';
+  function setTone(t) {
+    if (t === lastTone) return;
+    lastTone = t;
+    if (t) body.dataset.tone = t; else delete body.dataset.tone;
+  }
+  function frame() {
+    if (!visible()) { setTone(''); return; }
+    const vh = innerHeight;
+    if (motion()) {
+      // Stage. --wipe runs 0 to 1 over 227vh (2045px at 900 tall), then the card row travels.
+      const top = -stage.getBoundingClientRect().top;
+      const wipeLen = vh * (phone.matches ? 1.2 : 2.27);
+      const travelLen = stage.offsetHeight - vh - wipeLen;
+      const wipe = clamp(top / wipeLen);
+      const tp = clamp((top - wipeLen) / Math.max(1, travelLen));
+      stage.style.setProperty('--wipe', wipe.toFixed(4));
+      if (track) track.style.setProperty('--tx', (-tp * trackTravel).toFixed(1) + 'px');
+      // Quote. The solid fill wipes across the dotted words, then three prints land over them.
+      if (quote) {
+        const q = clamp(-quote.getBoundingClientRect().top / Math.max(1, quote.offsetHeight - vh));
+        quote.style.setProperty('--qr', ease(clamp(q / .42)).toFixed(4));
+        [.38, .56, .74].forEach((s, i) => quote.style.setProperty('--p' + (i + 1), ease(clamp((q - s) / .2)).toFixed(4)));
+        if (q > .38 && !quote.dataset.thrown) { quote.dataset.thrown = '1'; sound.slide(); }
+      }
+      if (feature) {
+        const f = clamp(-feature.getBoundingClientRect().top / Math.max(1, feature.offsetHeight - vh));
+        setStep(Math.min(steps.length - 1, Math.floor(f * steps.length * .999)));
+      }
+      // Parallax, eased per frame.
+      px += (tx - px) * .06;
+      py += (ty - py) * .06;
+      const obj = $('jj-object');
+      if (obj) { obj.style.setProperty('--px', px.toFixed(4)); obj.style.setProperty('--py', py.toFixed(4)); }
+      const fo = feature && feature.querySelector('.jj-objects');
+      if (fo) { fo.style.setProperty('--px', px.toFixed(4)); fo.style.setProperty('--py', py.toFixed(4)); }
+      stepSmooth();
+    }
+    // Tone under the header line decides the header colour.
+    const line = 52;
+    let tone = 'dark';
+    const sr = stage.getBoundingClientRect();
+    if (sr.top <= line && sr.bottom > line) {
+      const w = motion() ? Number(stage.style.getPropertyValue('--wipe') || 0) : 0;
+      tone = motion() ? (w > .93 ? 'dark' : 'light') : (hero.getBoundingClientRect().bottom > line ? 'light' : 'dark');
+    } else {
+      const start = $('start');
+      if (start) {
+        const r = start.getBoundingClientRect();
+        const slant = innerWidth * (phone.matches ? .24 : .2);
+        if (r.top + slant * .5 <= line && r.bottom > line) tone = 'light';
+      }
+    }
+    setTone(tone);
+  }
+  function loop() { frame(); requestAnimationFrame(loop); }
+
+  // ---- Reveals. Rows rise 26px and fade over .7s on the reveal curve.
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((en) => {
+        if (!en.isIntersecting) return;
+        en.target.classList.add('is-in');
+        if (en.target.classList.contains('jj-closing')) sound.reveal();
+        io.unobserve(en.target);
+      });
+    }, { rootMargin: '0px 0px -20% 0px' });
+    document.querySelectorAll('[data-reveal], .jj-closing').forEach((n) => io.observe(n));
+  } else {
+    document.querySelectorAll('[data-reveal], .jj-closing').forEach((n) => n.classList.add('is-in'));
+  }
+
+  reduced.addEventListener('change', () => {
+    document.documentElement.classList.toggle('jj-motion', motion());
+    if (!motion()) { stage.style.removeProperty('--wipe'); if (track) track.style.removeProperty('--tx'); }
+  });
+  let rt = 0;
+  window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(measure, 120); });
+  const go = () => { measure(); startSmooth(); requestAnimationFrame(loop); };
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(go, go); else go();
 })();
