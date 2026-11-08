@@ -17,6 +17,8 @@ from urllib.parse import urlsplit
 from . import auth, store
 
 STATIC = Path(__file__).parent / 'static'
+# The landing's WebGL scene, its vendored three.js and the CC0 models. Fixed folders and file types only.
+GL_PATH = re.compile(r'/gl/(?:[a-z]+\.js|vendor/[A-Za-z]+(?:\.module\.min)?\.js|models/[a-z0-9_]+/(?:[a-z0-9_]+\.(?:gltf|bin)|textures/[a-z0-9_]+\.jpg))')
 EMAIL = re.compile(r'[^@\s<>]+@[^@\s<>]+\.[^@\s<>]+')
 COUNTRY = re.compile(r'[A-Z]{2}')
 REGION = re.compile(r'[A-Z]{2}-[A-Z0-9]{1,3}')
@@ -236,13 +238,17 @@ class Handler(BaseHTTPRequestHandler):
                          'saira-extra-condensed-700-latin.woff2')
         if path in ('/fonts/' + font for font in bundled_fonts):
             name = path.lstrip('/')
+        if GL_PATH.fullmatch(path) and '..' not in path:
+            name = path.lstrip('/')
         if not name or not (STATIC / name).is_file():
             raise auth.AuthError('Not found.', 404)
         data = (STATIC / name).read_bytes()
         self.send_response(200)
         self.headers_secure()
         content_type = mimetypes.guess_type(name)[0] or 'application/octet-stream'
-        if name.endswith('.woff2'):
+        if name.endswith('.gltf'):
+            content_type = 'model/gltf+json'
+        elif name.endswith('.woff2'):
             content_type = 'font/woff2'
         elif name.endswith('.ttf'):
             content_type = 'font/ttf'

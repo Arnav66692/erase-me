@@ -15,6 +15,8 @@
   const stage = $('g-stage');
   if (!welcome || !story || !stage) return;
   root.classList.add('g-js');
+  // Shared with gl/scene.js, which draws the WebGL card field from these values.
+  const glStage = window.EraseMeStage = { g: 0, c: 0, px: 0, py: 0 };
 
   const body = document.body;
   const motion = () => !reduced.matches;
@@ -190,7 +192,8 @@
     const r = document.createRange();
     r.selectNodeContents(lastFront);
     const w = r.getBoundingClientRect().width;
-    const room = nameFront.clientWidth - (phone.matches ? 32 : 80);
+    // A long route name can widen its own box, so measure against the viewport as well.
+    const room = Math.min(nameFront.clientWidth, document.documentElement.clientWidth) - (phone.matches ? 32 : 80);
     const size = Math.min(100 * room / Math.max(1, w), phone.matches ? 60 : 208);
     set(nameFront, '--nfit', size.toFixed(1) + 'px');
     set(nameBack, '--nfit', size.toFixed(1) + 'px');
@@ -217,6 +220,7 @@
     if (tokenFace) tokenFace.className = 'is-face ' + r.pat;
     for (const b of document.querySelectorAll('.g-pill')) b.setAttribute('aria-pressed', String(Number(b.dataset.route) === n));
     fitName();
+    document.dispatchEvent(new CustomEvent('g-route', { detail: n }));
   }
   for (const b of document.querySelectorAll('.g-pill')) b.addEventListener('click', () => showRoute(Number(b.dataset.route)));
   showRoute(0);
@@ -290,6 +294,7 @@
     if (!motion()) {
       set(head, '--hs', '1'); set(head, '--ho', '1'); set(head, '--hy', '0px');
       set(rig, '--g', '0'); set(rig, '--c', '0');
+      glStage.g = 0; glStage.c = 0;
       set(object, '--oy', land.oy.toFixed(1) + 'px'); set(object, '--os', land.os.toFixed(3));
       set(object, '--fold', '1'); set(object, '--e', '1');
       set(burn, '--ph', '1'); set(burn, '--rule', '1');
@@ -302,7 +307,9 @@
     set(head, '--ho', (1 - hs).toFixed(3));
     set(head, '--hy', (-.18 * s * vh).toFixed(1) + 'px');
     const c = smooth(range(s, .6, 1.1));
-    set(rig, '--g', smooth(range(s, .02, .55)).toFixed(4));
+    glStage.g = smooth(range(s, .02, .55));
+    glStage.c = c;
+    set(rig, '--g', glStage.g.toFixed(4));
     set(rig, '--c', c.toFixed(4));
     if (field) field.style.visibility = c >= 1 ? 'hidden' : '';
     if (problem) {
@@ -401,6 +408,7 @@
   function follow() {
     px += (tx - px) * .06; py += (ty - py) * .06;
     set(rig, '--px', px.toFixed(4)); set(rig, '--py', py.toFixed(4));
+    glStage.px = px; glStage.py = py;
     praf = Math.abs(tx - px) + Math.abs(ty - py) > .001 ? requestAnimationFrame(follow) : 0;
   }
   window.addEventListener('pointermove', (e) => {

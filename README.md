@@ -202,7 +202,7 @@ MIT. See [LICENSE](LICENSE). Data, fonts and other third-party material retain t
 
 Related work includes [unbroker](https://github.com/NousResearch/hermes-agent), alongside the licensed projects credited in the notices. Erase Me does not reuse unbroker's broker data or the unlicensed Big Ass Data Broker Opt-Out List.
 
-The interface design is an original fusion inspired by two sites, [grail-app.com](https://grail-app.com/) and [jjettas.com](https://jjettas.com/). No code, fonts, images or copy from either site are used. Display type is Cormorant Garamond and Saira Extra Condensed, both under the SIL Open Font License.
+The landing design follows the design language of [grail-app.com](https://grail-app.com/), rebuilt in original code. No code, fonts, images, models or copy from that site are used. Display type is Cormorant Garamond, under the SIL Open Font License. The WebGL scene runs on [three.js](https://threejs.org/) r170 (MIT, licence in `webapp/static/gl/vendor/LICENSE-three.txt`). The four 3D models in the routes chapter are CC0 scans from [Poly Haven](https://polyhaven.com/): Clipboard, Classic Laptop, Marble Bust 01 and Kite Shield.
 
 Privacy-law references are informational and may become outdated. Check their official sources. This software does not provide legal advice.
 

@@ -133,3 +133,8 @@ SOFTWARE.
 - Instrument Serif. `OFL-instrumentserif.txt`
 - Hanken Grotesk. `OFL-hankengrotesk.txt`
 - VT323. `OFL-vt323.txt`
+
+## WebGL scene on the landing page
+
+- three.js r170, Copyright 2010-2024 three.js authors, MIT License. The build and four example modules (GLTFLoader, RoomEnvironment, RoundedBoxGeometry, BufferGeometryUtils) are vendored in `webapp/static/gl/vendor/` with their import paths changed to local files. License text in `webapp/static/gl/vendor/LICENSE-three.txt`.
+- 3D models from Poly Haven, released under CC0 1.0 (public domain), in `webapp/static/gl/models/`. Clipboard, Classic Laptop, Marble Bust 01 and Kite Shield, 1k glTF downloads from polyhaven.com.
