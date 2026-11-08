@@ -1,0 +1,533 @@
+/* Fusion layer, approved 2026-11-07.
+   Words and story are Grail. Actions and transitions are jjettas.
+   Grail owns the light caps serif, chapter labels, the floating card field and the radius 24 cards.
+   jjettas owns pills with a rising fill, the link roll, wide tracked mono captions and the slanted wipe.
+   The page runs inky black, then ashen gray, then stark white, as if it is being wiped.
+   Faded denim is the only accent. Live numbers snap and never animate.
+   Original code. No reference code, fonts, images or copy. */
+
+@font-face {
+  font-family:Cormorant;
+  src:url('/fonts/cormorant-garamond-300-latin.woff2') format('woff2');
+  font-weight:300;
+  font-display:swap;
+  unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
+@font-face {
+  font-family:Cormorant;
+  src:url('/fonts/cormorant-garamond-300-latin-ext.woff2') format('woff2');
+  font-weight:300;
+  font-display:swap;
+  unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C4,U+2113,U+2C60-2C7F,U+A720-A7FF;
+}
+@font-face {
+  font-family:GeistFx;
+  src:url('/fonts/geist.woff2') format('woff2');
+  font-weight:100 900;
+  font-display:swap;
+}
+
+:root {
+  /* the four erasure colours */
+  --ink:#0e0f11;
+  --graphite:#1c1d20;
+  --ash:#bcbbb6;
+  --ash-light:#e6e5e1;
+  --ash-deep:#4c4b47;
+  --paper:#fbfbfa;
+  --white:#fbfbfa;
+  --denim:#8ea6c2;
+  --denim-ink:#3f5a7a;
+  /* roles kept from the workspace, re-pointed */
+  --accent:var(--ash);
+  --muted:#55554f;
+  --line:var(--ink);
+  --good:#2e5a44;
+  --good-bg:#dfe8e2;
+  --warn:#6b4a1c;
+  --warn-bg:#efe6d6;
+  --bad:#8a251b;
+  --bad-bg:#f6e3de;
+  --chrome:var(--ash);
+  --window:#f3f2ef;
+  --panel:var(--ash-light);
+  --sans:GeistFx,ui-sans-serif,system-ui,sans-serif;
+  --mono:Mono,ui-monospace,monospace;
+  --term:Mono,ui-monospace,monospace;
+  --display:Cormorant,'Times New Roman',serif;
+  /* Grail main curve, jjettas wipe, UI and pop curves */
+  --ease:cubic-bezier(.22,1,.36,1);
+  --ease-edit:cubic-bezier(.65,.05,.36,1);
+  --ease-ui:cubic-bezier(.4,0,.2,1);
+  --ease-pop:cubic-bezier(.34,1.56,.64,1);
+  --side:40px;
+  --header:72px;
+  --smudge:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='640' height='640'%3E%3Cfilter id='s'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.006 .012' numOctaves='4' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .05 0 0 0 0 .05 0 0 0 0 .06 0 0 0 -1.6 1.05'/%3E%3C/filter%3E%3Crect width='640' height='640' filter='url(%23s)' opacity='.34'/%3E%3C/svg%3E");
+  --grain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23g)' opacity='.5'/%3E%3C/svg%3E");
+}
+
+body {
+  font:400 17px/1.45 var(--sans);
+  letter-spacing:.005em;
+  padding-top:var(--header);
+  --page-ground:var(--paper);
+}
+body:has(#welcome-view:not([hidden])) { padding-top:0; }
+body:has(#welcome-view:not([hidden])):not([data-tone=ash]):not([data-tone=light]) { --page-ground:var(--ink); }
+::selection { background:var(--denim); color:var(--ink); }
+:focus-visible { outline:2px solid var(--denim-ink); outline-offset:3px; box-shadow:0 0 0 5px var(--paper); }
+[data-tone=dark] :focus-visible { outline-color:var(--paper); box-shadow:0 0 0 5px var(--ink); }
+
+/* Mono captions, jjettas. Wide tracked caps. */
+.mode-badge,.quiet-label,.eyebrow,.form-kicker,.footer-note,.fact-label,label:not(.checkbox-label) {
+  font-family:var(--mono);
+  font-weight:500;
+  font-size:12px;
+  line-height:1.55;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+}
+
+/* Header. Fixed, no bar, colour follows the ground under it. */
+.site-header {
+  height:var(--header);
+  background:color-mix(in srgb,var(--page-ground) 84%,transparent);
+  -webkit-backdrop-filter:blur(10px);
+  backdrop-filter:blur(10px);
+  color:var(--ink);
+  border:0;
+  transition:background-color .6s var(--ease-edit),color .6s var(--ease-edit);
+}
+.site-header .header-inner {
+  height:var(--header);
+  width:100%;
+  padding:0 var(--side);
+  border:0;
+}
+body[data-tone=dark] .site-header { color:var(--paper); }
+body[data-tone=ash] { --page-ground:var(--ash); }
+body[data-tone=light] { --page-ground:var(--paper); }
+.brand { font:300 26px/1 var(--display); text-transform:uppercase; letter-spacing:.01em; gap:10px; }
+.brand-mark { width:20px; height:20px; stroke-width:2.4; }
+.header-caption { font:400 14px/1.4 var(--sans); opacity:.72; letter-spacing:0; }
+.mode-badge { border-radius:999px; padding:4px 10px; }
+.text-button { text-decoration:none; font:500 14px/1 var(--sans); }
+
+/* Link roll, jjettas. The word lifts 2px and a denim copy wipes over it. */
+.fx-roll { position:relative; display:inline-block; text-decoration:none; overflow:hidden; vertical-align:bottom; }
+.fx-roll::after {
+  content:attr(data-label);
+  position:absolute;
+  left:0;
+  top:50%;
+  transform:translateY(-50%);
+  color:var(--denim-ink);
+  clip-path:inset(0 100% 0 0);
+  transition:clip-path .38s cubic-bezier(.16,1,.3,1);
+  white-space:nowrap;
+}
+body[data-tone=dark] .site-header .fx-roll::after { color:var(--denim); }
+.fx-roll:hover::after,.fx-roll:focus-visible::after { clip-path:inset(0 0 0 0); }
+.text-button.fx-roll { transition:transform .38s cubic-bezier(.16,1,.3,1); }
+.text-button.fx-roll:hover { transform:translateY(-2px); }
+
+/* Pills, jjettas. Fully round heavy caps with a domed fill rising from below. */
+.button,.button-primary,.button-danger,.button-secondary {
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  min-height:48px;
+  padding:0 26px;
+  border:1px solid transparent;
+  border-radius:999px;
+  background:var(--ink);
+  color:var(--paper);
+  font:800 14px/1.1 var(--sans);
+  letter-spacing:-.015em;
+  text-transform:uppercase;
+  text-decoration:none;
+  --fill:var(--denim-ink);
+  transition:transform .2s var(--ease-ui),color .2s var(--ease-ui),border-color .2s var(--ease-ui);
+}
+.button::after { content:none; }
+.button::before {
+  content:'';
+  position:absolute;
+  inset:-2px;
+  z-index:-1;
+  background:var(--fill);
+  border-radius:50% 50% 0 0/36% 36% 0 0;
+  transform:translateY(104%);
+  transition:transform .42s var(--ease),border-radius .42s var(--ease);
+}
+.button:hover { text-decoration:none; transform:scale(1.04); }
+.button:hover::before,.button:focus-visible::before { transform:translateY(0); border-radius:0; }
+.button>span { display:inline-block; transition:transform .32s var(--ease-pop); }
+.button:hover>span { transform:scale(.9); }
+.button-primary { background:var(--denim-ink); color:var(--paper); --fill:var(--ink); }
+.button-primary:hover,.button-danger:hover { background:var(--denim-ink); }
+.button-danger { background:var(--bad); color:var(--paper); --fill:var(--ink); }
+.button-danger:hover { background:var(--bad); }
+.button-secondary { background:transparent; color:var(--ink); border-color:rgba(14,15,17,.4); --fill:var(--ash-light); }
+.button-ghost { background:transparent; color:inherit; border-color:currentColor; --fill:var(--ash-light); }
+.button-ghost:hover { color:var(--ink); }
+.button-light { background:var(--paper); color:var(--ink); --fill:var(--denim); }
+.button-small { min-height:40px; padding:0 18px; font-size:12px; }
+.button-full { width:100%; }
+
+/* ---------- Landing ---------- */
+.welcome-view.fx { display:block; padding:0; }
+.fx .fx-chapter {
+  display:flex;
+  justify-content:space-between;
+  gap:20px;
+  padding:0 32px;
+  font:500 14px/1.3 var(--sans);
+  letter-spacing:0;
+}
+
+/* Chapter 01, exposed. Grail stage on inky black. */
+.fx-stage { --wipe:0; height:185svh; position:relative; background:var(--ink); }
+.fx-hero {
+  position:sticky;
+  top:0;
+  height:100svh;
+  min-height:620px;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+  color:var(--paper);
+  background:var(--ink) var(--grain);
+  transform:scale(calc(1 - .18 * var(--wipe)));
+  transform-origin:50% 100%;
+}
+.fx-hero .fx-chapter { position:relative; z-index:2; padding-top:calc(var(--header) + 22px); color:rgba(251,251,250,.66); }
+.fx-display {
+  font:300 92px/.88 var(--display);
+  letter-spacing:-.01em;
+  text-transform:uppercase;
+}
+.fx-display mark,.fx-display .accent-text { background:none; color:inherit; }
+.fx-hero .fx-display {
+  position:relative;
+  z-index:2;
+  margin:18px 0 0;
+  padding:0 var(--side);
+  font-size:var(--fit,12.4vw);
+  pointer-events:none;
+}
+.fx-hero .fx-display { white-space:nowrap; }
+.fx-hero .fx-display .fx-line { display:inline-block; width:max-content; }
+.fx-hero .fx-display mark { color:var(--denim); }
+.fx-hero-foot {
+  position:relative;
+  z-index:2;
+  margin-top:auto;
+  display:grid;
+  grid-template-columns:minmax(0,440px) auto minmax(0,1fr);
+  align-items:end;
+  gap:24px 48px;
+  padding:80px var(--side) 36px;
+  background:linear-gradient(to top,var(--ink) 30%,rgba(14,15,17,0));
+}
+.fx .hero-lede { margin:0; max-width:440px; font-size:18px; line-height:1.4; color:rgba(251,251,250,.82); }
+.fx .hero-actions { display:flex; gap:12px; margin:0; }
+.fx .hero-actions .button { min-width:0; font-size:14px; }
+.fx .hero-actions .button:hover { transform:scale(1.12); }
+.fx .hero-actions .button:hover>span { transform:scale(.82); }
+.fx .hero-actions .button-ghost { border-color:rgba(251,251,250,.45); color:var(--paper); }
+.fx .hero-actions .button-ghost:hover { color:var(--ink); }
+.fx .hero-facts {
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  gap:6px;
+  margin:0;
+  padding:0!important;
+  border:0;
+  font:500 11px/1.55 var(--mono);
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:rgba(251,251,250,.62);
+}
+.fx .hero-facts span+span:before { content:none; }
+
+/* Letter rise, Grail. Each letter from .62em below, 48ms apart. */
+.fx-ch { display:inline-block; }
+.fx-ready .fx-ch { animation:fx-rise .6s var(--ease) both; animation-delay:calc(var(--i) * 48ms + 120ms); }
+@keyframes fx-rise { from { transform:translateY(.62em); opacity:0; } }
+.fx-sr { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+
+/* The card field. Plain CSS 3D, no WebGL. Cards drift, follow the pointer and get wiped as you scroll. */
+.fx-field {
+  position:absolute;
+  inset:0;
+  z-index:1;
+  perspective:1100px;
+  opacity:calc(1 - var(--wipe) * 1.35);
+  filter:blur(calc(var(--wipe) * 9px)) grayscale(var(--wipe));
+}
+.fx-tilt {
+  position:absolute;
+  inset:0;
+  transform-style:preserve-3d;
+  transform:rotateX(calc(var(--py,0) * -6deg)) rotateY(calc(var(--px,0) * 9deg)) translateZ(0);
+}
+.fx-card {
+  position:absolute;
+  left:var(--x);
+  top:var(--y);
+  width:172px;
+  height:242px;
+  margin:-121px 0 0 -86px;
+  border-radius:14px;
+  padding:16px;
+  background:var(--paper);
+  color:var(--ink);
+  box-shadow:0 24px 50px rgba(0,0,0,.45);
+  transform:translateZ(var(--z)) rotateY(var(--ry)) rotateZ(var(--rz));
+  animation:fx-drift var(--dur,9s) ease-in-out var(--delay,0s) infinite alternate;
+  display:flex;
+  flex-direction:column;
+  gap:9px;
+  font-size:10px;
+  line-height:1.3;
+  backface-visibility:hidden;
+}
+@keyframes fx-drift {
+  from { transform:translateZ(var(--z)) rotateY(var(--ry)) rotateZ(var(--rz)) translate3d(0,0,0); }
+  to { transform:translateZ(var(--z)) rotateY(calc(var(--ry) * -1)) rotateZ(calc(var(--rz) * -.5)) translate3d(var(--dx,8px),var(--dy,-14px),0); }
+}
+.fx-card-kicker { font:500 8.5px/1.4 var(--mono); letter-spacing:.14em; text-transform:uppercase; color:var(--muted); display:flex; justify-content:space-between; }
+.fx-card-name { font:300 25px/.9 var(--display); text-transform:uppercase; }
+.fx-card-row { display:grid; grid-template-columns:62px 1fr; gap:8px; align-items:center; }
+.fx-card-row b { font:500 8px/1 var(--mono); letter-spacing:.12em; text-transform:uppercase; color:var(--muted); font-weight:500; }
+.fx-card-row i { display:block; height:9px; border-radius:2px; background:var(--ink); width:var(--w,80%); }
+.fx-card-stamp {
+  margin-top:auto;
+  align-self:flex-start;
+  border:1.5px solid var(--denim-ink);
+  color:var(--denim-ink);
+  border-radius:999px;
+  padding:5px 10px;
+  font:800 9px/1 var(--sans);
+  letter-spacing:.06em;
+  text-transform:uppercase;
+}
+.fx-card.is-tile { padding:0; overflow:hidden; background:var(--tile,var(--ash)); }
+.fx-card.is-tile::before {
+  content:'';
+  position:absolute;
+  inset:22%;
+  background:
+    linear-gradient(var(--stroke,var(--ink)) 0 0) 0 18%/100% 11% no-repeat,
+    linear-gradient(var(--stroke,var(--ink)) 0 0) 0 50%/68% 11% no-repeat,
+    linear-gradient(var(--stroke,var(--ink)) 0 0) 0 82%/36% 11% no-repeat;
+}
+.fx-card.is-erased .fx-card-row i { background:transparent; border:1px dashed rgba(14,15,17,.35); }
+
+/* Chapter 02, fading. jjettas slanted panel wipes over the stage. */
+.fx .fx-ash {
+  position:relative;
+  z-index:3;
+  display:block;
+  margin-top:-62svh;
+  padding:calc(14vw + 40px) 0 120px;
+  background:var(--ash) var(--smudge);
+  background-size:640px 640px;
+  background-blend-mode:multiply;
+  color:var(--ink);
+  clip-path:polygon(0 12vw,100% 0,100% 100%,0 100%);
+}
+.fx .fx-ash .fx-chapter { color:var(--ink); }
+.fx-start-grid {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,520px);
+  gap:60px;
+  align-items:start;
+  padding:56px var(--side) 0;
+}
+.fx .start-copy { display:block; padding:0; border:0; grid-column:auto; grid-row:auto; }
+.fx .fx-display-md { font-size:min(6.4vw,92px); }
+.fx .fx-ash .accent-text { color:var(--ash-deep); }
+.fx .section-lede { font-size:18px; line-height:1.45; max-width:500px; margin-top:28px; }
+.fx .fact-list { margin:44px 0 0; max-width:560px; }
+.fx .fact-list li { display:grid; grid-template-columns:120px 1fr; gap:20px; padding:16px 0; border-top:1px solid rgba(14,15,17,.28); font-size:17px; line-height:1.4; }
+.fx .fact-list li:last-child { border-bottom:1px solid rgba(14,15,17,.28); }
+.fx .onboarding-column { padding:0; margin:0; max-width:none; grid-column:auto; grid-row:auto; align-self:start; justify-self:stretch; }
+
+/* Grail cards. Radius 24, flat light ground, they tilt in as they arrive. */
+.fx .form-card,.fx .window-body {
+  border:0;
+  background:none;
+  padding:0;
+}
+.fx .form-card {
+  background:var(--paper);
+  border-radius:24px;
+  padding:36px;
+  box-shadow:0 30px 60px rgba(14,15,17,.16);
+}
+.fx .form-card::before,.fx .form-card::after { content:none; display:none; }
+.fx .form-card h2 { font:300 46px/.88 var(--display); text-transform:uppercase; letter-spacing:-.01em; max-width:none; }
+.fx .form-kicker { color:var(--denim-ink); margin-bottom:14px; }
+.fx .form-description { font-size:16px; line-height:1.45; margin:16px 0 22px; }
+.fx label:not(.checkbox-label) { margin:16px 0 8px; font-size:11px; }
+.fx input:not([type=checkbox]) {
+  border:1px solid rgba(14,15,17,.3);
+  border-radius:12px;
+  background:var(--white);
+  min-height:50px;
+  padding:12px 14px;
+  font:400 17px/1.3 var(--sans);
+}
+.fx input:not([type=checkbox]):focus-visible { border-color:var(--denim-ink); }
+.fx .checkbox-label { font-size:13px; line-height:1.45; margin:22px 0 12px; }
+.fx .authorization-details { font-size:13px; margin:10px 0 22px; }
+.fx .window-body .button-primary { font-size:14px; min-height:54px; }
+.fx .card-footnote,.fx .login-switch { font-size:12.5px; line-height:1.5; }
+.fx-tilt-in { transform:perspective(1200px) rotate(5deg) scale(.88) translateY(60px); opacity:0; transition:transform 1s var(--ease),opacity .7s var(--ease); }
+.fx-tilt-in.is-in { transform:none; opacity:1; }
+
+/* Chapter 03, erased. Stark white. */
+.fx .fx-white { position:relative; z-index:3; display:block; background:var(--paper); color:var(--ink); padding:120px 0 140px; border:0; grid-column:auto; }
+.fx .how-head { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,440px); gap:48px; align-items:end; padding:56px var(--side) 0; }
+.fx .how-head .section-lede { margin:0; }
+.fx .fx-white .accent-text { color:var(--denim-ink); }
+.fx .step-rows { display:grid; gap:16px; margin:72px var(--side) 0; padding:0; }
+.fx .step-rows li {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,560px);
+  gap:40px;
+  align-items:center;
+  min-height:0;
+  padding:40px 44px;
+  border:0;
+  border-radius:24px;
+  background:var(--ash-light);
+}
+.fx .step-rows li:last-child { border:0; }
+.fx .step-label { font:300 min(8vw,112px)/.85 var(--display); text-transform:uppercase; letter-spacing:-.01em; }
+.fx .step-rows h3 { font:700 20px/1.2 var(--sans); letter-spacing:-.01em; margin-bottom:10px; }
+.fx .step-rows p { font-size:17px; line-height:1.45; max-width:none; }
+
+/* Footer. Ends on stark white with an ashen signature. */
+.site-footer { background:var(--paper); color:var(--ink); border-top:1px solid rgba(14,15,17,.14); margin:0; padding-bottom:0; overflow:hidden; }
+.site-footer .footer-inner { padding:44px var(--side) 40px; }
+.site-footer p { font-size:16px; line-height:1.45; }
+.footer-note { font-size:11px; }
+.site-footer a:hover { text-decoration:none; }
+.footer-signature {
+  padding:0 var(--side) 0;
+  margin-bottom:-.12em;
+  font:300 11.6vw/.84 var(--display);
+  white-space:nowrap;
+  letter-spacing:-.015em;
+  text-transform:uppercase;
+  color:var(--ash);
+  display:block;
+}
+.footer-signature>span { display:block; }
+.footer-signature>span:last-child { display:block; }
+
+body:has(#welcome-view:not([hidden])) #demo-banner {
+  position:fixed;
+  left:50%;
+  top:calc(var(--header) + 10px);
+  transform:translateX(-50%);
+  z-index:40;
+  max-width:min(560px,calc(100vw - 32px));
+  border:1px solid rgba(14,15,17,.2);
+  border-radius:999px;
+  padding:8px 16px 8px 8px;
+  background:var(--ash-light);
+  color:var(--ink);
+  font-size:11px;
+}
+
+/* ---------- Workspace. Same type and colour, no motion on data. ---------- */
+body:has(#dashboard-view:not([hidden])) { --page-ground:var(--paper); background:var(--paper); }
+.dashboard-view .dash-band { background:var(--ash) var(--smudge); background-size:640px 640px; background-blend-mode:multiply; border:0; color:var(--ink); }
+.dashboard-header h1 { font:300 min(8vw,112px)/.86 var(--display); text-transform:uppercase; letter-spacing:-.01em; }
+/* Grail cards for data. Mono labels, serif numbers that snap. No title bars. */
+.dashboard-header { border-top:1px solid rgba(14,15,17,.28); }
+.metric { background:var(--paper); border:1px solid rgba(14,15,17,.16); border-radius:20px; padding:18px 20px 20px; }
+.metric p { background:none; color:var(--muted); height:auto; margin:0 0 10px; padding:0; font:500 12px/1.5 var(--mono); letter-spacing:.12em; text-transform:uppercase; }
+.metric strong { background:none; padding:0; font:300 84px/.9 var(--display); color:var(--ink); }
+.metric span { background:none; padding:8px 0 0; color:var(--muted); }
+.metric-success { background:var(--good-bg); border-color:rgba(46,90,68,.3); }
+.metric-success strong,.metric-success span,.metric-success p { background:none; color:var(--good); }
+.panel { background:var(--window); padding:0; border:1px solid rgba(14,15,17,.16); border-radius:24px; overflow:hidden; }
+.panel-header { background:none; color:var(--ink); margin:0; padding:22px 22px 14px; min-height:0; border:0; align-items:baseline; }
+.panel-header h2 { font:300 40px/.9 var(--display); text-transform:uppercase; letter-spacing:-.01em; }
+.panel-header .quiet-label { color:var(--muted); }
+.filters,.listing-items,.activity-list,.activity-empty,.next-check,.empty-state { background:none; border:0; }
+.filters { padding:0 22px 14px; }
+.listing-items,.activity-list { border-top:1px solid rgba(14,15,17,.14); }
+.listing-item { padding:20px 22px; }
+.empty-state { border-top:1px solid rgba(14,15,17,.14); }
+.empty-state h3 { font:300 36px/.95 var(--display); text-transform:uppercase; }
+.activity-empty,.next-check { padding-left:22px; padding-right:22px; }
+.next-check { border-top:1px solid rgba(14,15,17,.14); }
+.filter-button { border:1px solid rgba(14,15,17,.3); background:none; }
+.filter-button.selected { background:var(--ink); color:var(--paper); border-color:var(--ink); }
+.status-pill { border-radius:999px; }
+.topbar { background:var(--ash-light); border-color:rgba(14,15,17,.2); }
+.topbar-tag { border-radius:999px; }
+.status-pill,.filter-button { border-radius:999px; }
+dialog { border-radius:24px; }
+.dialog-body h2 { font-family:var(--display); font-weight:300; text-transform:uppercase; line-height:.9; }
+
+/* ---------- Breakpoints, Grail 768 main ---------- */
+@media(max-width:1100px) {
+  .fx-hero-foot { grid-template-columns:minmax(0,1fr) auto; }
+  .fx .hero-facts { grid-column:1/-1; flex-direction:row; flex-wrap:wrap; align-items:flex-start; gap:6px 18px; }
+  .fx-start-grid,.fx .how-head { grid-template-columns:1fr; }
+  .fx .onboarding-column { max-width:560px; }
+}
+@media(max-width:767px) {
+  :root { --side:20px; --header:64px; }
+  .header-caption { display:none; }
+  .fx .fx-chapter { padding-left:16px; padding-right:16px; font-size:13px; }
+  body:has(#welcome-view:not([hidden])) #demo-banner { top:auto; bottom:10px; left:10px; right:10px; transform:none; max-width:none; border-radius:16px; }
+  .fx-stage { height:160svh; }
+  .fx-hero { min-height:560px; }
+  .fx-hero .fx-display { font-size:var(--fit,15.5vw); margin-top:14px; white-space:normal; }
+  .fx-hero .fx-display .fx-line { display:block; }
+  .fx-hero-foot { grid-template-columns:1fr; padding:120px var(--side) 24px; gap:18px; }
+  .fx .hero-lede { font-size:16px; }
+  .fx .hero-actions .button { flex:1 1 0; padding:0 14px; }
+  .fx-card { width:132px; height:186px; margin:-93px 0 0 -66px; padding:11px; gap:6px; border-radius:10px; }
+  .fx-card-name { font-size:17px; }
+  .fx-card-row { grid-template-columns:42px 1fr; }
+  .fx-card-row b { font-size:6px; }
+  .fx-card-kicker { font-size:6.5px; }
+  .fx .fx-ash { margin-top:-40svh; padding:calc(18vw + 28px) 0 80px; clip-path:polygon(0 18vw,100% 0,100% 100%,0 100%); }
+  .fx-start-grid { padding:36px var(--side) 0; gap:44px; }
+  .fx .fx-display-md { font-size:clamp(34px,10.4vw,52px); }
+  .fx .form-card { padding:24px 20px; border-radius:20px; }
+  .fx .form-card h2 { font-size:36px; }
+  .fx .fact-list li { grid-template-columns:1fr; gap:4px; }
+  .fx .fx-white { padding:80px 0 90px; }
+  .fx .how-head { padding-top:36px; gap:24px; }
+  .fx .step-rows { margin-top:44px; gap:12px; }
+  .fx .step-rows li { grid-template-columns:1fr; gap:18px; padding:26px 22px; border-radius:20px; }
+  .fx .step-label { font-size:56px; }
+  .site-footer .footer-inner { grid-template-columns:1fr; gap:20px; }
+  .footer-note { grid-column:auto; }
+  .footer-signature { font-size:12.4vw; }
+}
+
+/* Reduced motion. No rise, no drift, no wipe scaling, no tilt, no smooth scroll. */
+@media(prefers-reduced-motion:reduce) {
+  .fx-ready .fx-ch,.fx-card { animation:none; }
+  .fx-hero { transform:none; }
+  .fx-field { filter:none; }
+  .fx-tilt { transform:none; }
+  .fx-tilt-in { transform:none; opacity:1; transition:none; }
+  .site-header,.button,.button::before,.button>span,.fx-roll::after,.text-button.fx-roll { transition:none; }
+}

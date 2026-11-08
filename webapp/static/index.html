@@ -4,11 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 fill=%27%2317231d%27/%3E%3Cpath d=%27M7 10h18M7 16h13M7 22h8%27 stroke=%27%23b8cbb5%27 stroke-width=%273%27/%3E%3C/svg%3E">
+  <meta name="theme-color" content="#0e0f11">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 fill=%27%230e0f11%27/%3E%3Cpath d=%27M7 10h18M7 16h13M7 22h8%27 stroke=%27%238ea6c2%27 stroke-width=%273%27/%3E%3C/svg%3E">
   <meta name="description" content="Start and track privacy requests. Free local app and installable skill. Broker coverage is in development.">
   <title>Erase Me</title>
-  <link rel="preload" href="/fonts/instrument-serif.ttf" as="font" type="font/ttf" crossorigin>
+  <link rel="preload" href="/fonts/cormorant-garamond-300-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/fusion.css">
   <script src="/app.js" defer></script>
   <script src="/hero.js" defer></script>
 </head>
@@ -24,7 +26,7 @@
       <span class="header-caption">Your information belongs with you.</span>
       <nav class="header-actions" aria-label="Account">
         <span id="mode-badge" class="mode-badge" hidden></span>
-        <button class="text-button" id="privacy-button" type="button">Privacy</button>
+        <button class="text-button fx-roll" id="privacy-button" type="button" data-label="Privacy">Privacy</button>
         <button class="button button-ghost button-small" id="logout-button" type="button" hidden>Log out</button>
       </nav>
     </div>
@@ -36,30 +38,28 @@
       <div id="page-error" class="notice error-notice" role="alert" hidden></div>
     </div>
 
-    <section id="welcome-view" class="welcome-view">
-      <div class="hero">
-
-        <div class="container hero-inner">
-          <p class="hero-index"><span>Personal privacy, on your terms.</span><span aria-hidden="true">[ erase-me ]</span></p>
-          <div class="headline-crop">
-            <i aria-hidden="true"></i><i aria-hidden="true"></i><i aria-hidden="true"></i><i aria-hidden="true"></i>
-            <h1>Your life.<br><mark>Less public.</mark></h1>
+    <section id="welcome-view" class="welcome-view fx">
+      <div class="fx-stage" id="fx-stage">
+        <div class="fx-hero" data-tone="dark">
+          <div class="fx-field" id="fx-field" aria-hidden="true"></div>
+          <p class="fx-chapter"><span>Personal privacy, on your terms</span><span>01 / Exposed</span></p>
+          <h1 class="fx-display fx-rise" id="hero-heading"><span class="fx-line">Your life.</span> <mark class="fx-line">Less public.</mark></h1>
+          <div class="fx-hero-foot">
+            <p class="hero-lede">Make requests to the sites holding your information. Keep your details here, and keep track of what happens next.</p>
+            <div class="hero-actions">
+              <a class="button button-light" href="#signup-panel"><span>Get started</span></a>
+              <a class="button button-ghost" href="https://github.com/Arnav66692/erase-me"><span>Get the source</span></a>
+            </div>
+            <p class="hero-facts" aria-label="What Erase Me does not do"><span>Your details stay with you</span><span>No personal inbox connection</span><span>Every run starts with you</span></p>
           </div>
-          <p class="hero-lede">Make requests to the sites holding your information. Keep your details here, and keep track of what happens next.</p>
-          <div class="hero-actions">
-            <a class="button button-light" href="#signup-panel">Get started</a>
-            <a class="button button-ghost" href="https://github.com/Arnav66692/erase-me">Get the source</a>
-          </div>
-        </div>
-        <div class="container hero-facts" aria-label="What Erase Me does not do">
-          <span>Your details stay with you</span><span>No personal inbox connection</span><span>Every run starts with you</span>
         </div>
       </div>
 
-      <div class="light">
-        <section class="container framed start" id="start" aria-labelledby="start-heading">
+      <section class="fx-ash start" id="start" data-tone="ash" aria-labelledby="start-heading">
+        <p class="fx-chapter"><span>The record</span><span>02 / Fading</span></p>
+        <div class="fx-start-grid">
           <div class="start-copy">
-            <h2 id="start-heading">Take it off the list.<br><span class="accent-text">Keep the record.</span></h2>
+            <h2 id="start-heading" class="fx-display fx-display-md">Take it off the list.<br><span class="accent-text">Keep the record.</span></h2>
             <p class="section-lede">Each broker has its own removal process. This workspace helps you open the right form, supply the required details and record the response. A request and a verified removal are different stages.</p>
             <ul class="fact-list">
               <li><span class="fact-label">Stored</span><span>In your browser workspace.</span></li>
@@ -125,20 +125,21 @@
               </div>
             </section>
           </div>
-        </section>
+        </div>
+      </section>
 
-        <section class="container framed how" id="how" aria-labelledby="how-heading">
-          <div class="how-head">
-            <h2 id="how-heading">A smaller footprint.<br><span class="accent-text">One site at a time.</span></h2>
-            <p class="section-lede">You choose when to begin. Broker verification stays with you. Nothing comes back to run in the background.</p>
-          </div>
-          <ol class="step-rows">
-            <li><span class="step-label">Find</span><div><h3>Search for your listings</h3><p>Open the broker’s search and check that the listing is yours. Use your name together with an age or location before requesting removal.</p></div></li>
-            <li><span class="step-label">Request</span><div><h3>Ask each site to remove them</h3><p>Open the official form. Supported routes can use the browser companion to fill required fields. Complete any broker email or verification step yourself.</p></div></li>
-            <li><span class="step-label">Verify</span><div><h3>Check that the page is gone</h3><p>Save the broker’s response and recheck the original listing. Your report stays distinct from an independently verified removal.</p></div></li>
-          </ol>
-        </section>
-      </div>
+      <section class="fx-white how" id="how" data-tone="light" aria-labelledby="how-heading">
+        <p class="fx-chapter"><span>How it works</span><span>03 / Erased</span></p>
+        <div class="how-head">
+          <h2 id="how-heading" class="fx-display fx-display-md">A smaller footprint.<br><span class="accent-text">One site at a time.</span></h2>
+          <p class="section-lede">You choose when to begin. Broker verification stays with you. Nothing comes back to run in the background.</p>
+        </div>
+        <ol class="step-rows">
+          <li class="fx-card-row"><span class="step-label">Find</span><div><h3>Search for your listings</h3><p>Open the broker’s search and check that the listing is yours. Use your name together with an age or location before requesting removal.</p></div></li>
+          <li class="fx-card-row"><span class="step-label">Request</span><div><h3>Ask each site to remove them</h3><p>Open the official form. Supported routes can use the browser companion to fill required fields. Complete any broker email or verification step yourself.</p></div></li>
+          <li class="fx-card-row"><span class="step-label">Verify</span><div><h3>Check that the page is gone</h3><p>Save the broker’s response and recheck the original listing. Your report stays distinct from an independently verified removal.</p></div></li>
+        </ol>
+      </section>
     </section>
 
     <section id="dashboard-view" class="dashboard-view" aria-labelledby="dashboard-heading" hidden>
@@ -228,16 +229,16 @@
     </section>
   </main>
 
-  <footer class="site-footer">
+  <footer class="site-footer" data-tone="light">
     <div class="container footer-inner">
       <a class="brand" href="/" aria-label="Erase Me home">
         <svg class="brand-mark" viewBox="0 0 20 20" aria-hidden="true"><path d="M2 5h16M2 10h11M2 15h6"/></svg>
         <span>Erase Me</span>
       </a>
       <p>Removal depends on each site. Public records and every copy of your information cannot be erased.</p>
-      <span class="footer-note"><a href="https://github.com/Arnav66692/erase-me">Open source, MIT</a>. <a href="https://github.com/Arnav66692/erase-me#agent-skill">Install the skill</a>.</span>
+      <span class="footer-note"><a class="fx-roll" data-label="Open source, MIT" href="https://github.com/Arnav66692/erase-me">Open source, MIT</a>. <a class="fx-roll" data-label="Install the skill" href="https://github.com/Arnav66692/erase-me#agent-skill">Install the skill</a>.</span>
     </div>
-    <div class="footer-signature" aria-hidden="true"><span>Keep your life</span><span>yours. <svg viewBox="0 0 100 60"><path d="M10 12h80M10 30h55M10 48h28"/></svg></span></div>
+    <div class="footer-signature" aria-hidden="true"><span>Keep your life</span><span>yours.</span></div>
   </footer>
 
   <dialog id="privacy-dialog" aria-labelledby="privacy-heading">

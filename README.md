@@ -202,6 +202,8 @@ MIT. See [LICENSE](LICENSE). Data, fonts and other third-party material retain t
 
 Related work includes [unbroker](https://github.com/NousResearch/hermes-agent), alongside the licensed projects credited in the notices. Erase Me does not reuse unbroker's broker data or the unlicensed Big Ass Data Broker Opt-Out List.
 
+The interface design is an original fusion inspired by two sites, [grail-app.com](https://grail-app.com/) and [jjettas.com](https://jjettas.com/). No code, fonts, images or copy from either site are used. Display type is Cormorant Garamond under the SIL Open Font License.
+
 Privacy-law references are informational and may become outdated. Check their official sources. This software does not provide legal advice.
 
 *Documentation reviewed November 6, 2026. Capability counts describe companion 0.13.0.*

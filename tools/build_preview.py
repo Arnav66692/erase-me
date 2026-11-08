@@ -6,7 +6,7 @@ import zipfile
 root = Path(__file__).resolve().parents[1]
 destination = root / 'preview' / 'public'
 destination.mkdir(exist_ok=True)
-files = ['index.html', 'app.js', 'hero.js', 'styles.css', 'broker-audit.js', 'broker-routes.js',
+files = ['index.html', 'app.js', 'hero.js', 'styles.css', 'fusion.css', 'broker-audit.js', 'broker-routes.js',
          'footprint-planner.js', 'workspace-core.js', 'removal-mail-client.js', 'local-removal-mail.js', 'removal-send.js', 'removal-send-dialog.js', 'private-route-dialog.js', 'removal-session.js', 'contact-setup.js', 'next-steps.js', 'form-batch.js', 'identity-dialog.js', 'peopletrace-dialog.js', 'cma-dialog.js', 'mylife-dialog.js', 'thatsthem-dialog.js', 'peoplefinders-dialog.js', 'footprint-ui.js', 'workspace-ui.js', 'companion.html', 'companion.css']
 files += ['fonts/' + p.name for p in (root / 'webapp/static/fonts').iterdir()
           if p.is_file() and p.suffix in ('.woff2', '.ttf', '.txt')]
