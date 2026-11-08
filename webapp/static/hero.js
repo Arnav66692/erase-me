@@ -63,7 +63,7 @@
         const y = (phone.matches ? -150 : -250) + t * (phone.matches ? 300 : 470) + strand * (phone.matches ? 150 : 190) + (((k * 53) % 40) - 20);
         card.style.setProperty('--a', a.toFixed(1) + 'deg');
         card.style.setProperty('--r', (phone.matches ? -460 : -780) + 'px');
-        card.style.setProperty('--y', y.toFixed(0) + 'px');
+        card.style.setProperty('--y', 'calc(' + (y / 9).toFixed(2) + 'svh)');
         card.style.setProperty('--rz', (((n * 7) % 9) - 4) + 'deg');
         card.style.setProperty('--dur', (6 + (n % 4)) + 's');
         card.style.setProperty('--delay', (-n * 1.3) + 's');

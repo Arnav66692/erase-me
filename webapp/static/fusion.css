@@ -237,7 +237,7 @@ body:has(#welcome-view:not([hidden])) .header-caption { width:430px; white-space
 .fx-ring {
   position:absolute;
   left:50%;
-  top:58%;
+  top:61%;
   width:0;
   height:0;
   transform-style:preserve-3d;
