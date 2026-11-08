@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="/fusion.css">
   <script src="/app.js" defer></script>
   <script src="/hero.js" defer></script>
+  <script type="module" src="/gl/scene.js"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -23,9 +24,10 @@
         <svg class="brand-mark" viewBox="0 0 20 20" aria-hidden="true"><path d="M2 5h16M2 10h11M2 15h6"/></svg>
         <span>Erase Me</span>
       </a>
-      <span class="header-caption">Your information belongs with you.</span>
+      <span class="header-caption">Find the sites that publish your address and number. Ask each one to take it down, and keep the record.</span>
       <nav class="header-actions" aria-label="Account">
         <span id="mode-badge" class="mode-badge" hidden></span>
+        <a class="fx-header-cta" href="#signup-panel">Get started</a>
         <button class="text-button fx-roll" id="privacy-button" type="button" data-label="Privacy">Privacy</button>
         <button class="button button-ghost button-small" id="logout-button" type="button" hidden>Log out</button>
       </nav>
@@ -38,108 +40,210 @@
       <div id="page-error" class="notice error-notice" role="alert" hidden></div>
     </div>
 
-    <section id="welcome-view" class="welcome-view fx">
-      <div class="fx-stage" id="fx-stage">
-        <div class="fx-hero" data-tone="dark">
-          <div class="fx-field" id="fx-field" aria-hidden="true"></div>
-          <p class="fx-chapter"><span>Personal privacy, on your terms</span><span>01 / Exposed</span></p>
-          <h1 class="fx-display fx-rise" id="hero-heading"><span class="fx-line">Your life.</span> <mark class="fx-line">Less public.</mark></h1>
-          <div class="fx-hero-foot">
-            <p class="hero-lede">Make requests to the sites holding your information. Keep your details here, and keep track of what happens next.</p>
-            <div class="hero-actions">
-              <a class="button button-light" href="#signup-panel"><span>Get started</span></a>
-              <a class="button button-ghost" href="https://github.com/Arnav66692/erase-me"><span>Get the source</span></a>
+    <section id="welcome-view" class="welcome-view g">
+      <div class="g-loader" id="g-loader" aria-hidden="true">
+        <div class="g-loader-card"><div class="g-loader-face"><svg class="g-mark" viewBox="0 0 20 20"><path d="M2 5h16M2 10h11M2 15h6"/></svg><span class="g-loader-word">Loading <b id="g-loader-pc">0</b>%</span></div></div>
+      </div>
+
+      <div class="g-story" id="g-story">
+        <div class="g-stage" id="g-stage" data-tone="dark">
+          <div class="g-field" id="g-field" aria-hidden="true"></div>
+          <div class="g-scrim" aria-hidden="true"></div>
+          <h1 class="g-hero-line" id="hero-heading"><span class="g-line">Keep your</span> <span class="g-line">life yours</span></h1>
+
+          <section class="g-problem" id="g-problem" aria-labelledby="problem-heading">
+            <p class="g-label"><span>About Listings</span><span>Chapter 01</span></p>
+            <h2 class="g-display g-problem-head" id="problem-heading" data-rise><span class="g-l">Anyone can find</span> <span class="g-l">your address,</span> <span class="g-l">your number and your</span> <span class="g-l">family online.</span></h2>
+            <p class="g-body g-problem-body" data-rise>People-search sites gather public records, old sign-ups and marketing lists, then publish them as one page with your name on it. Home address, phone number, age, relatives. Anyone who types your name can open it, and every site has its own way to ask for removal.</p>
+          </section>
+
+          <div class="g-burn" id="g-burn">
+            <div class="g-cloud" aria-hidden="true"></div>
+            <p class="g-label"><span>About Requests</span><span>Chapter 02</span></p>
+            <h2 id="start-heading" class="g-display g-burn-head" data-rise><span class="g-l">Take it off the list.</span> <span class="g-l">Keep the record.</span></h2>
+            <p class="g-clock" aria-hidden="true">45 days</p>
+            <div class="g-phone" aria-hidden="true">
+              <div class="g-phone-screen">
+                <p class="g-phone-status"><span>9:41</span><i></i></p>
+                <p class="g-phone-brand"><svg class="g-mark" viewBox="0 0 20 20"><path d="M2 5h16M2 10h11M2 15h6"/></svg>Erase Me</p>
+                <p class="g-phone-bar"><span>Recheck</span><span>Saved</span></p>
+              </div>
             </div>
-            <p class="hero-facts" aria-label="What Erase Me does not do"><span>Your details stay with you</span><span>No personal inbox connection</span><span>Every run starts with you</span></p>
+            <div class="g-burn-foot">
+              <i class="g-rule" id="g-burn-rule"></i>
+              <p class="g-lead">A removal request is where the record starts. In California, a business has 45 calendar days to respond.</p>
+              <p class="g-body">The workspace opens the right form, supplies the required details and records the response. A request and a verified removal are different stages, so nothing counts as gone until you recheck the listing.</p>
+            </div>
+          </div>
+
+          <div class="g-object" id="g-object" aria-hidden="true">
+            <div class="g-slip">
+              <div class="g-half g-half-top">
+                <i class="g-crest pat-lines"></i>
+                <p class="g-card-group">People search listing</p>
+                <p class="g-card-line">Alex Morgan, 35</p>
+                <p class="g-fact"><span>Home address</span><b>1200 Example Ave</b></p>
+                <p class="g-fact"><span>Phone</span><b>(555) 010 0142</b></p>
+              </div>
+              <div class="g-half g-half-bottom">
+                <div class="g-half-front">
+                  <p class="g-fact"><span>Relatives</span><b>Three listed</b></p>
+                  <p class="g-fact"><span>Age and city</span><b>35, San Diego</b></p>
+                  <p class="g-chips"><span>Public page</span><span>Indexed</span></p>
+                  <p class="g-card-foot">Anyone with your name can open this page.</p>
+                </div>
+                <div class="g-half-back">
+                  <i class="g-crest pat-check"></i>
+                  <p class="g-card-group">Removal request</p>
+                  <p class="g-card-line">Request recorded.</p>
+                  <p class="g-chips"><span>Form</span><span>Recheck next</span></p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      <section class="fx-ash start" id="start" data-tone="ash" aria-labelledby="start-heading">
-        <p class="fx-chapter"><span>The record</span><span>02 / Fading</span></p>
-        <div class="fx-start-grid">
-          <div class="start-copy">
-            <h2 id="start-heading" class="fx-display fx-display-md">Take it off the list.<br><span class="accent-text">Keep the record.</span></h2>
-            <p class="section-lede">Each broker has its own removal process. This workspace helps you open the right form, supply the required details and record the response. A request and a verified removal are different stages.</p>
-            <ul class="fact-list">
-              <li><span class="fact-label">Stored</span><span>In your browser workspace.</span></li>
-              <li><span class="fact-label">Sent</span><span>Only the fields a removal form asks for.</span></li>
-              <li><span class="fact-label">Counted</span><span>A removal, once the listing is actually gone.</span></li>
-            </ul>
-          </div>
+      <section class="g-card-wrap" id="how" data-tone="light" aria-labelledby="how-heading">
+        <article class="g-ccard" id="g-ccard">
+          <p class="g-label"><span>About Process</span><span>Chapter 03</span></p>
+          <h2 id="how-heading" class="g-display g-ccard-head" data-rise><span class="g-l">It starts with one site <i class="g-crest g-crest-inline pat-check" aria-hidden="true"></i></span> <span class="g-l">It rarely stays one.</span></h2>
+          <p class="g-sub">You choose when to begin. Broker verification stays with you. Nothing comes back to run in the background.</p>
+          <ol class="g-rows">
+            <li class="g-row"><p class="g-row-k">Find</p><h3>Search for your listings.</h3><span class="g-row-n">01</span><i class="g-row-tile pat-wave" aria-hidden="true"></i><p class="g-row-p">Open the broker’s search and check that the listing is yours. Use your name together with an age or location before requesting removal.</p></li>
+            <li class="g-row"><p class="g-row-k">Request</p><h3>Ask each site to remove them.</h3><span class="g-row-n">02</span><i class="g-row-tile pat-lines" aria-hidden="true"></i><p class="g-row-p">Open the official form. Supported routes can use the browser companion to fill required fields. Complete any broker email or verification step yourself.</p></li>
+            <li class="g-row"><p class="g-row-k">Verify</p><h3>Check that the page is gone.</h3><span class="g-row-n">03</span><i class="g-row-tile pat-check" aria-hidden="true"></i><p class="g-row-p">Save the broker’s response and recheck the original listing. Your report stays distinct from an independently verified removal.</p></li>
+            <li class="g-row"><p class="g-row-k">Record</p><h3>Keep what happened.</h3><span class="g-row-n">04</span><i class="g-row-tile pat-zig" aria-hidden="true"></i><p class="g-row-p">Every step is saved with its date in your workspace. Export it as a private backup, or delete it from this browser.</p></li>
+          </ol>
+        </article>
+      </section>
 
-          <div class="onboarding-column">
-            <section id="signup-panel" class="form-card" aria-labelledby="signup-heading">
-              <div class="window-body">
-              <span class="form-kicker">Your private workspace</span>
-              <h2 id="signup-heading">Keep your life yours.</h2>
-              <p class="form-description">Start with three details. Add a location only when a site needs a better match.</p>
-              <form id="signup-form">
-                <label for="signup-name">Full name</label>
-                <input id="signup-name" name="name" autocomplete="name" maxlength="120" placeholder="First and last name" required>
-                <div class="form-grid">
-                  <div><label for="signup-age">Age</label><input id="signup-age" name="age" type="number" min="18" max="120" inputmode="numeric" placeholder="18+" required></div>
-                  <div><label for="signup-email">Email</label><input id="signup-email" name="email" type="email" autocomplete="email" maxlength="254" placeholder="you@example.com" required></div>
-                </div>
+      <section class="g-voice" id="g-voice" data-tone="ash" aria-labelledby="voice-heading">
+        <div class="g-voice-pin">
+          <div class="g-cloud" aria-hidden="true"></div>
+          <p class="g-label"><span>About Records</span><span>Chapter 04</span></p>
+          <h2 id="voice-heading" class="g-sr">Keep the record, see what actually stuck</h2>
+          <p class="g-display g-flank g-flank-l" aria-hidden="true" data-rise><span class="g-l">Keep</span><span class="g-l">the</span><span class="g-l">record</span></p>
+          <p class="g-display g-flank g-flank-r" aria-hidden="true" data-rise><span class="g-l">See what</span><span class="g-l">actually</span><span class="g-l">stuck</span></p>
+          <div class="g-phone g-phone-dark" aria-hidden="true">
+            <div class="g-phone-screen">
+              <p class="g-phone-status"><span>9:41</span><i></i></p>
+              <p class="g-phone-brand"><svg class="g-mark" viewBox="0 0 20 20"><path d="M2 5h16M2 10h11M2 15h6"/></svg>Erase Me</p>
+              <div class="g-sheet">
+                <i class="g-sheet-grip"></i>
+                <p class="g-sheet-title">What came back?</p>
+                <p class="g-sheet-sub">Save the broker’s reply, then look again.</p>
+                <ul class="g-sheet-rows"><li><span>Request sent</span><b>Saved</b></li><li><span>Reply</span><b>Saved</b></li><li><span>Listing</span><b>Recheck</b></li></ul>
+                <p class="g-sheet-pills"><span>Gone</span><span>Still listed</span></p>
+              </div>
+            </div>
+          </div>
+          <p class="g-body g-voice-p g-voice-pl">Save the broker’s response and recheck the original listing. A reply that says done is a report, not a verified removal, and the workspace keeps the two apart.</p>
+          <p class="g-body g-voice-p g-voice-pr">Erase Me does not connect to your inbox or schedule recurring checks. You run each check when you choose, and every result is kept with its date.</p>
+        </div>
+      </section>
+
+      <section class="g-feature" id="g-feature" data-tone="dark" aria-labelledby="feature-name">
+        <div class="g-feature-pin">
+          <div class="g-smoke" aria-hidden="true"></div>
+          <p class="g-label"><span>About Routes</span><span>Chapter 05</span></p>
+          <p class="g-feature-one" id="g-feature-one" aria-live="polite">Most sites ask for a form. The workspace opens the right one.</p>
+          <p class="g-count" id="g-count" aria-hidden="true">(1)</p>
+          <p class="g-name g-name-back" id="g-name-back" aria-hidden="true"><span>The</span><span>web form</span></p>
+          <div class="g-token-wrap" aria-hidden="true"><div class="g-token" id="g-token"></div></div>
+          <h2 class="g-name g-name-front" id="feature-name"><span class="g-sr">The web form</span><span aria-hidden="true">The</span><span aria-hidden="true">web form</span></h2>
+          <i class="g-feature-rule" aria-hidden="true"></i>
+          <p class="g-display g-feature-tag" data-rise><span class="g-l">Every site</span> <span class="g-l">has its way.</span></p>
+          <div class="g-feature-side">
+            <p class="g-feature-p" id="g-feature-p">Each broker has its own removal process. Supported routes can use the browser companion to fill required fields. You complete any broker email or verification step yourself.</p>
+            <div class="g-pills" role="group" aria-label="Removal routes">
+              <button class="g-pill" type="button" aria-pressed="true" data-route="0">Web form</button>
+              <button class="g-pill" type="button" aria-pressed="false" data-route="1">Email</button>
+              <button class="g-pill" type="button" aria-pressed="false" data-route="2">State portal</button>
+              <button class="g-pill" type="button" aria-pressed="false" data-route="3">Companion</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="g-stats" id="g-stats" data-tone="dark" aria-labelledby="stats-heading">
+        <div class="g-stats-pin">
+          <div class="g-smoke" aria-hidden="true"></div>
+          <p class="g-label"><span>About Your record</span><span>Chapter 06</span></p>
+          <h2 id="stats-heading" class="g-display g-stats-head" data-rise><span class="g-l">Every request</span> <span class="g-l">leaves a record.</span></h2>
+          <p class="g-body g-stats-p">Point the workspace at the sites that list you, and each request lands in one place. What you sent, what came back, and what is still up. Nothing is counted as removed until you have looked again.</p>
+          <dl class="g-cols">
+            <div class="g-col pat-zig"><dt>Response window</dt><dd>45 days</dd></div>
+            <div class="g-col pat-wave"><dt>Checks</dt><dd>On demand</dd></div>
+            <div class="g-col pat-key"><dt>Stored</dt><dd>In your browser</dd></div>
+            <div class="g-col pat-stamp"><dt>Counted as removed</dt><dd>After a recheck</dd></div>
+          </dl>
+          <div class="g-pile" id="g-pile" aria-hidden="true"></div>
+        </div>
+      </section>
+
+      <section class="g-get" id="start" data-tone="dark" aria-labelledby="signup-heading">
+        <p class="g-label"><span>Get started</span><span>Chapter 07</span></p>
+        <div class="g-tile-wrap" aria-hidden="true"><i class="g-rays"></i><span class="g-tile"><svg class="g-mark" viewBox="0 0 20 20"><path d="M2 5h16M2 10h11M2 15h6"/></svg></span></div>
+        <div class="g-forms">
+          <section id="signup-panel" class="form-card" aria-labelledby="signup-heading">
+            <div class="window-body">
+            <span class="form-kicker">Your private workspace</span>
+            <h2 id="signup-heading">Start with one site.</h2>
+            <p class="form-description">Start with three details. Add a location only when a site needs a better match.</p>
+            <form id="signup-form">
+              <div class="g-field-big g-field-name"><label for="signup-name">Full name</label>
+              <input id="signup-name" name="name" autocomplete="name" maxlength="120" placeholder="Your name" required></div>
+              <div class="form-grid">
+                <div class="g-field-big g-field-age"><label for="signup-age">Age</label><input id="signup-age" name="age" type="number" min="18" max="120" inputmode="numeric" placeholder="18+" required></div>
+                <div class="g-field-big g-field-email"><label for="signup-email">Email</label><input id="signup-email" name="email" type="email" autocomplete="email" maxlength="254" placeholder="Your email" required></div>
+              </div>
+              <div class="g-form-row">
                 <label class="checkbox-label" for="signup-consent"><input id="signup-consent" name="authorized" type="checkbox" required><span>I’m requesting removal of <strong>my own information</strong>. When I run a check, I authorize Erase Me to search for matches and submit supported broker forms using the details I provide.</span></label>
-                <details class="authorization-details"><summary>What this authorizes</summary><p id="authorization-statement">Run checks on demand and submit supported broker forms with your details. Broker verification emails go to the address you enter, and you complete any required email or portal steps. Erase Me does not connect to your inbox or schedule recurring checks. No ID uploads, and no deleting accounts on other sites.</p></details>
-                <button class="button button-primary button-full" type="submit">Get started</button>
-                <p class="form-error" id="signup-error" role="alert" hidden></p>
-              </form>
-              <p class="card-footnote">Use your own email address for broker replies. Complete broker verification steps when required. No ID uploads.</p>
-              <p class="login-switch">Already started? <button id="show-login" class="inline-button" type="button">Log in</button></p>
-
+                <button class="button button-primary g-submit" type="submit">Get started</button>
               </div>
-            </section>
+              <details class="authorization-details"><summary>What this authorizes</summary><p id="authorization-statement">Run checks on demand and submit supported broker forms with your details. Broker verification emails go to the address you enter, and you complete any required email or portal steps. Erase Me does not connect to your inbox or schedule recurring checks. No ID uploads, and no deleting accounts on other sites.</p></details>
+              <p class="form-error" id="signup-error" role="alert" hidden></p>
+            </form>
+            <p class="card-footnote">Use your own email address for broker replies. Complete broker verification steps when required. No ID uploads.</p>
+            <p class="login-switch">Already started? <button id="show-login" class="inline-button" type="button">Log in</button></p>
+            </div>
+          </section>
 
-            <section id="login-panel" class="form-card" aria-labelledby="login-heading" hidden>
-              <div class="window-body">
-              <span class="form-kicker">Welcome back</span>
-              <h2 id="login-heading">Pick up where you left off.</h2>
-              <p class="form-description">Enter your email and we’ll send you a sign-in code.</p>
-              <form id="login-form">
-                <label for="login-email">Email</label>
-                <input id="login-email" name="email" type="email" autocomplete="email" maxlength="254" required>
-                <button class="button button-primary button-full" type="submit">Send sign-in code</button>
-                <p id="login-error" class="form-error" role="alert" hidden></p>
-              </form>
-              <p class="login-switch">New here? <button id="show-signup" class="inline-button" type="button">Get started</button></p>
+          <section id="login-panel" class="form-card" aria-labelledby="login-heading" hidden>
+            <div class="window-body">
+            <span class="form-kicker">Welcome back</span>
+            <h2 id="login-heading">Pick up where you left off.</h2>
+            <p class="form-description">Enter your email and we’ll send you a sign-in code.</p>
+            <form id="login-form">
+              <div class="g-field-big"><label for="login-email">Email</label>
+              <input id="login-email" name="email" type="email" autocomplete="email" maxlength="254" placeholder="Your email" required></div>
+              <div class="g-form-row g-form-row-end"><button class="button button-primary g-submit" type="submit">Send sign-in code</button></div>
+              <p id="login-error" class="form-error" role="alert" hidden></p>
+            </form>
+            <p class="login-switch">New here? <button id="show-signup" class="inline-button" type="button">Get started</button></p>
+            </div>
+          </section>
 
-              </div>
-            </section>
-
-            <section id="verification-panel" class="form-card" aria-labelledby="verification-heading" hidden>
-              <div class="window-body">
-              <span class="form-kicker">One quick check</span>
-              <h2 id="verification-heading">Check your inbox.</h2>
-              <p class="form-description">Enter the sign-in code sent to <strong id="verification-email"></strong>.</p>
-              <div id="demo-code-notice" class="notice demo-code" hidden>Demo code <strong id="demo-code"></strong></div>
-              <form id="verification-form">
-                <label for="verification-code">Verification code</label>
-                <input id="verification-code" class="code-input" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" placeholder="000000" required>
-                <button class="button button-primary button-full" type="submit">Verify email</button>
-                <p id="verification-error" class="form-error" role="alert" hidden></p>
-              </form>
-              <p class="login-switch"><button id="back-to-login" class="inline-button" type="button">Use a different email or request a new code</button></p>
-
-              </div>
-            </section>
-          </div>
+          <section id="verification-panel" class="form-card" aria-labelledby="verification-heading" hidden>
+            <div class="window-body">
+            <span class="form-kicker">One quick check</span>
+            <h2 id="verification-heading">Check your inbox.</h2>
+            <p class="form-description">Enter the sign-in code sent to <strong id="verification-email"></strong>.</p>
+            <div id="demo-code-notice" class="notice demo-code" hidden>Demo code <strong id="demo-code"></strong></div>
+            <form id="verification-form">
+              <div class="g-field-big"><label for="verification-code">Verification code</label>
+              <input id="verification-code" class="code-input" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" placeholder="000000" required></div>
+              <div class="g-form-row g-form-row-end"><button class="button button-primary g-submit" type="submit">Verify email</button></div>
+              <p id="verification-error" class="form-error" role="alert" hidden></p>
+            </form>
+            <p class="login-switch"><button id="back-to-login" class="inline-button" type="button">Use a different email or request a new code</button></p>
+            </div>
+          </section>
         </div>
       </section>
 
-      <section class="fx-white how" id="how" data-tone="light" aria-labelledby="how-heading">
-        <p class="fx-chapter"><span>How it works</span><span>03 / Erased</span></p>
-        <div class="how-head">
-          <h2 id="how-heading" class="fx-display fx-display-md">A smaller footprint.<br><span class="accent-text">One site at a time.</span></h2>
-          <p class="section-lede">You choose when to begin. Broker verification stays with you. Nothing comes back to run in the background.</p>
-        </div>
-        <ol class="step-rows">
-          <li class="fx-card-row"><span class="step-label">Find</span><div><h3>Search for your listings</h3><p>Open the broker’s search and check that the listing is yours. Use your name together with an age or location before requesting removal.</p></div></li>
-          <li class="fx-card-row"><span class="step-label">Request</span><div><h3>Ask each site to remove them</h3><p>Open the official form. Supported routes can use the browser companion to fill required fields. Complete any broker email or verification step yourself.</p></div></li>
-          <li class="fx-card-row"><span class="step-label">Verify</span><div><h3>Check that the page is gone</h3><p>Save the broker’s response and recheck the original listing. Your report stays distinct from an independently verified removal.</p></div></li>
-        </ol>
-      </section>
+      <div class="g-dock" id="g-dock" data-theme="dark"><svg class="g-mark" viewBox="0 0 20 20" aria-hidden="true"><path d="M2 5h16M2 10h11M2 15h6"/></svg><a class="g-dock-button" href="#signup-panel">Get started</a></div>
     </section>
 
     <section id="dashboard-view" class="dashboard-view" aria-labelledby="dashboard-heading" hidden>
@@ -229,16 +333,22 @@
     </section>
   </main>
 
-  <footer class="site-footer" data-tone="light">
-    <div class="container footer-inner">
-      <a class="brand" href="/" aria-label="Erase Me home">
-        <svg class="brand-mark" viewBox="0 0 20 20" aria-hidden="true"><path d="M2 5h16M2 10h11M2 15h6"/></svg>
-        <span>Erase Me</span>
-      </a>
-      <p>Removal depends on each site. Public records and every copy of your information cannot be erased.</p>
-      <span class="footer-note"><a class="fx-roll" data-label="Open source, MIT" href="https://github.com/Arnav66692/erase-me">Open source, MIT</a>. <a class="fx-roll" data-label="Install the skill" href="https://github.com/Arnav66692/erase-me#agent-skill">Install the skill</a>.</span>
-    </div>
-    <div class="footer-signature" aria-hidden="true"><span>Keep your life</span><span>yours.</span></div>
+  <footer class="site-footer" data-tone="dark">
+    <nav class="g-foot" aria-label="Footer">
+      <div class="g-foot-col">
+        <a href="https://github.com/Arnav66692/erase-me">Open source, MIT</a>
+        <a href="/companion.html">Companion</a>
+      </div>
+      <div class="g-foot-mid">
+        <a class="g-foot-brand" href="/" aria-label="Erase Me home"><svg class="g-mark" viewBox="0 0 20 20" aria-hidden="true"><path d="M2 5h16M2 10h11M2 15h6"/></svg><span>Erase Me</span></a>
+        <p>Removal depends on each site.</p>
+      </div>
+      <div class="g-foot-col g-foot-end">
+        <a href="https://github.com/Arnav66692/erase-me#agent-skill">Agent skill</a>
+        <a href="https://github.com/Arnav66692/erase-me">Source</a>
+      </div>
+    </nav>
+    <p class="g-foot-note">Public records and every copy of your information cannot be erased.</p>
   </footer>
 
   <dialog id="privacy-dialog" aria-labelledby="privacy-heading">

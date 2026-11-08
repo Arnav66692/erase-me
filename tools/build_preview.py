@@ -10,9 +10,11 @@ files = ['index.html', 'app.js', 'hero.js', 'styles.css', 'fusion.css', 'broker-
          'footprint-planner.js', 'workspace-core.js', 'removal-mail-client.js', 'local-removal-mail.js', 'removal-send.js', 'removal-send-dialog.js', 'private-route-dialog.js', 'removal-session.js', 'contact-setup.js', 'next-steps.js', 'form-batch.js', 'identity-dialog.js', 'peopletrace-dialog.js', 'cma-dialog.js', 'mylife-dialog.js', 'thatsthem-dialog.js', 'peoplefinders-dialog.js', 'footprint-ui.js', 'workspace-ui.js', 'companion.html', 'companion.css']
 files += ['fonts/' + p.name for p in (root / 'webapp/static/fonts').iterdir()
           if p.is_file() and p.suffix in ('.woff2', '.ttf', '.txt')]
+files += [str(p.relative_to(root / 'webapp/static')) for p in sorted((root / 'webapp/static/gl').rglob('*'))
+          if p.is_file() and p.suffix in ('.js', '.gltf', '.bin', '.jpg', '.txt')]
 for filename in files:
     target = destination / filename
-    target.parent.mkdir(exist_ok=True)
+    target.parent.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(root / 'webapp' / 'static' / filename, target)
 for helper in ('phone-preference-details.js','association-details.js','directory-suppression-details.js'):
     shutil.copyfile(root / 'extension' / helper,destination / helper)

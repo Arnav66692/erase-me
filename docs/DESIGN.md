@@ -2,21 +2,23 @@
 
 ## Approved division
 
-Approved on November 7, 2026, replacing the November 4 Locomotive and Typesafe blend. The interface fuses two references. Words and story are Grail. Actions and transitions are jjettas.
+Approved on November 7, 2026, replacing the November 4 Locomotive and Typesafe blend. Revised the same night after the first pass read as AI made. The second pass takes each reference's signature moves instead of a light mix.
 
-- Grail owns the light all-caps serif, the chapter labels, the floating card field in the hero, the radius 24 cards and the single easing curve, cubic-bezier(.22,1,.36,1).
-- jjettas owns the round pills with a domed fill rising from below, the link roll, the wide-tracked mono captions, the slanted wipe panel and the wheel smoothing at lerp .16.
-- No element mixes both owners.
+- Grail owns the serif headlines, the about and chapter labels, the hero belt of statement cards and flat pattern tiles, the cloudy colour chapter with a giant faint number behind the form, the full-width chapter card that tilts in from 7 degrees and .84 scale, the header button and the travelling dock.
+- jjettas owns the giant textured condensed word, the row of framed cards with tracked mono captions that walks sideways while the section is pinned, the yard-line numbers, the slanted wipes, the pills with a rising fill, the link roll and the dark footer nav panel with its closing line.
+- No element mixes both owners. The giant condensed word is a backdrop, so headlines stay in the Grail serif as approved.
 
-The page runs in four colours. Inky black is the exposed hero. Ashen gray, with a graphite smudge texture, is the fading middle. Stark white is the erased end and the workspace. Faded denim is the only accent. The workspace uses the same type and colour with no motion on data. Live numbers snap and never animate.
+The page runs in four colours. Inky black is the hero, graphite is the card row, ashen gray with a smudge texture is the colour chapter, and stark white is the chapter card, the footer and the workspace. Faded denim is the only accent. The workspace uses the same type and colour with no motion on data. Live numbers snap and never animate.
 
-Decisions taken on November 7. The display face is the Grail serif, not the jjettas condensed caps. The ground runs black to white. The hero card field is plain CSS 3D with no three.js and no outside request. Motion is on the landing only, with no loader. Wheel smoothing, pointer follow, the letter rise, the wipe and the tilt-in all stop for reduced motion, touch and dialogs.
+The 45 day figure on the yard ruler and the faint clock comes from `skills/erase-me/references/jurisdictions/us-ca-ccpa.json`, which cites Cal. Civ. Code 1798.130(a)(2)(A).
+
+Motion is on the landing only, with no loader. Wheel smoothing, pointer follow, the letter rise, the belt spin, the pinned row, the chapter card tilt and the dock travel all stop for reduced motion. Touch and phone keep native scroll, and the card row becomes a swipe row.
 
 ## Reference studies
 
 Forensic studies were made with REA and real Chrome with the GPU on, at 1440, 1920 and 390 wide. They are in `docs/design-study/grail/STUDY.md` and `docs/design-study/jjettas/STUDY.md`. Raw frames and contact sheets stay in `qa/out/refs/`, which is git-ignored. No independent re-measure pass was run on either study.
 
-No reference code, copy, fonts, images, models or marks are shipped. Cormorant Garamond 300 stands in for the Grail serif, Geist for body text and JetBrains Mono for captions, all under the included font licenses. Design quality relative to the references is a visual judgement, not a measured equivalence claim.
+No reference code, copy, fonts, images, models or marks are shipped. Cormorant Garamond 300 stands in for the Grail serif, Saira Extra Condensed 700 for the jjettas condensed face, Geist for body text and JetBrains Mono for captions, all under the included font licenses. Card faces and pattern tiles are drawn in CSS. Design quality relative to the references is a visual judgement, not a measured equivalence claim.
 
 ## Verification
 
